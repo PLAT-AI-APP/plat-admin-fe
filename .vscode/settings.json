@@ -1,0 +1,12 @@
+{
+  "tailwindCSS.classAttributes": [
+    "class",
+    "className",
+    "gridClassName",
+    "cardClassName",
+    "inputClassName",
+    "inputBoxClassName",
+    "formClassName",
+    "boxClassName"
+  ]
+}
