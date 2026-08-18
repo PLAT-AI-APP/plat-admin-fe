@@ -14,6 +14,10 @@ export const CURATION_SLOT_CONFIG: Record<CurationSlotKey, CurationSlotConfig> =
       maxCount: 10,
       officialOnly: false,
       defaultSort: "RECENT",
+      serverSection: {
+        path: "GET /home/today-pick",
+        rule: "홈 상단에서 고른 순서대로 카드로 노출됩니다.",
+      },
     },
     OFFICIAL_TASTE: {
       slotKey: "OFFICIAL_TASTE",
@@ -21,6 +25,10 @@ export const CURATION_SLOT_CONFIG: Record<CurationSlotKey, CurationSlotConfig> =
       maxCount: 3,
       officialOnly: true,
       defaultSort: "CHAT_COUNT",
+      serverSection: {
+        path: "GET /home/official-preview",
+        rule: "세계관의 에피소드 맛보기까지 함께 실리는 섹션입니다.",
+      },
     },
     ASSET_RICH: {
       slotKey: "ASSET_RICH",
@@ -28,6 +36,10 @@ export const CURATION_SLOT_CONFIG: Record<CurationSlotKey, CurationSlotConfig> =
       maxCount: 3,
       officialOnly: false,
       defaultSort: "ASSET_COUNT",
+      serverSection: {
+        path: "GET /home/asset-preview",
+        rule: "에셋 이미지를 크게 보여 주는 큰 카드 섹션입니다.",
+      },
     },
   };
 

@@ -9,15 +9,32 @@ import {
   findActiveGroupKey,
   isMenuItemActive,
 } from "@/constants/menu";
+import { usePendingCountsQuery } from "@/api/ops/getPendingCounts";
 import { ChevronDown, ChevronLeft } from "@/icons";
 import { cn } from "@/lib/utils";
+import { useAdminStore } from "@/store/useAdminStore";
 import { useSidebarStore } from "@/store/useSidebarStore";
+import { hasPermission, type PermissionKey } from "@/type/permission";
 import Badge from "@/components/ui/Badge";
 
 const Sidebar = () => {
   const pathname = usePathname();
   const { isCollapsed, openGroupKeys, toggleCollapsed, toggleGroup, openGroup } =
     useSidebarStore();
+
+  const admin = useAdminStore((state) => state.admin);
+  // 밀린 일이 있는 메뉴에만 건수를 붙인다. 0이면 뱃지를 그리지 않는다.
+  const { data: pendingCounts } = usePendingCountsQuery();
+
+  /**
+   * 권한이 없는 메뉴는 아예 그리지 않는다.
+   *
+   * 회색으로 두고 눌렀을 때 막는 방법도 있지만, 그러면 운영자는 자기가 못 하는 일의
+   * 목록을 매일 본다. 무엇이 있는지 알려 줄 이유가 없는 자리다.
+   */
+  const isAllowed = (permission?: PermissionKey) =>
+    !permission ||
+    hasPermission(admin?.permissions, permission, admin?.isSuperAdmin);
 
   const activeGroupKey = findActiveGroupKey(pathname);
 
@@ -32,6 +49,8 @@ const Sidebar = () => {
 
     // 하위가 없는 단독 메뉴
     if (group.href) {
+      if (!isAllowed(group.permission)) return null;
+
       return (
         <li key={group.key}>
           <Link
@@ -46,11 +65,27 @@ const Sidebar = () => {
             )}
           >
             <span className="shrink-0">{group.icon}</span>
-            {!isCollapsed && <span className="truncate">{group.label}</span>}
+            {!isCollapsed && (
+              <>
+                <span className="flex-1 truncate">{group.label}</span>
+                {group.isMock && (
+                  <Badge tone="neutral" className="px-1.5 py-0.5 text-[11px]">
+                    MOCK
+                  </Badge>
+                )}
+              </>
+            )}
           </Link>
         </li>
       );
     }
+
+    /* 볼 수 있는 하위가 하나도 없으면 그룹 자체를 숨긴다. 눌러도 빈 목록만 열린다. */
+    const visibleChildren = (group.children ?? []).filter((item) =>
+      isAllowed(item.permission),
+    );
+
+    if (visibleChildren.length === 0) return null;
 
     return (
       <li key={group.key}>
@@ -91,7 +126,7 @@ const Sidebar = () => {
           )}
         >
           <ul className="overflow-hidden">
-            {group.children?.map((item) => {
+            {visibleChildren.map((item) => {
               const isActive = isMenuItemActive(item, pathname);
 
               return (
@@ -106,6 +141,24 @@ const Sidebar = () => {
                     )}
                   >
                     <span className="flex-1 truncate">{item.label}</span>
+
+                    {item.pendingKey && Boolean(pendingCounts?.[item.pendingKey]) && (
+                      <Badge
+                        tone="danger"
+                        className="min-w-5 justify-center px-1.5 py-0.5 text-[11px] tabular-nums"
+                      >
+                        {pendingCounts?.[item.pendingKey]}
+                      </Badge>
+                    )}
+
+                    {item.isMock && (
+                      <Badge
+                        tone="neutral"
+                        className="px-1.5 py-0.5 text-[11px]"
+                      >
+                        MOCK
+                      </Badge>
+                    )}
 
                     {item.isExcludedFromMvp && (
                       <Badge

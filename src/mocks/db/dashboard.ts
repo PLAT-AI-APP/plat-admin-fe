@@ -3,6 +3,7 @@ import type {
   DashboardSummary,
   DashboardTrendPoint,
 } from "@/type/dashboard";
+import { qnaItems } from "./communication";
 import { reports } from "./report";
 import { daysAgo, randomInt } from "../utils";
 
@@ -117,5 +118,5 @@ export const dashboardSummary: DashboardSummary = {
   pendingReportCount: reports.filter(
     (report) => report.status === "PENDING" || report.status === "REVIEWING",
   ).length,
-  pendingQnaCount: randomInt(303, 4, 18),
+  pendingQnaCount: qnaItems.filter((qna) => qna.status === "OPEN").length,
 };

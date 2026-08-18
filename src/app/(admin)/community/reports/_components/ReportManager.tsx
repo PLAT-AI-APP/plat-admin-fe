@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { useReportListQuery } from "@/api/report/getReportList";
 import { useReportMutation } from "@/api/report/mutateReport";
 import { ExternalLink } from "@/icons";
@@ -61,13 +62,23 @@ const REPORT_CSV_COLUMNS: CsvColumn<Report>[] = [
   { header: "처리일", value: (row) => formatDateTime(row.handledAt) },
 ];
 
+/** 주소에 실리는 목록 조건 */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  status: "",
+  targetType: "",
+  reason: "",
+  sort: "RECENT",
+};
+
 const ReportManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState<ReportStatus | "">("");
-  const [targetType, setTargetType] = useState<ReportTargetType | "">("");
-  const [reason, setReason] = useState<ReportReason | "">("");
-  const [sort, setSort] = useState<ReportSort>("RECENT");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const status = params.status as ReportStatus | "";
+  const targetType = params.targetType as ReportTargetType | "";
+  const reason = params.reason as ReportReason | "";
+  const sort = params.sort as ReportSort;
 
   const [handlingReport, setHandlingReport] = useState<Report | null>(null);
 
@@ -85,9 +96,6 @@ const ReportManager = () => {
 
   const reports = data?.content ?? [];
 
-  /** 필터가 바뀌면 이전 페이지 번호가 의미를 잃으므로 1로 되돌린다. */
-  const resetPage = () => setPage(1);
-
   const handleSubmit = (values: {
     status: ReportStatus;
     handlerNote: string;
@@ -102,23 +110,29 @@ const ReportManager = () => {
 
   const columns: TableColumn<Report>[] = [
     {
+      key: "targetType",
+      header: "분류",
+      width: "90px",
+      render: (row) => (
+        <Badge tone={REPORT_TARGET_TYPE_TONE[row.targetType]}>
+          {REPORT_TARGET_TYPE_LABEL[row.targetType]}
+        </Badge>
+      ),
+    },
+    {
       key: "target",
       header: "신고 대상",
-      width: "220px",
+      width: "160px",
       render: (row) => (
-        <div className="flex min-w-0 flex-col gap-1">
-          <Badge tone={REPORT_TARGET_TYPE_TONE[row.targetType]}>
-            {REPORT_TARGET_TYPE_LABEL[row.targetType]}
-          </Badge>
-
-          <Link
-            href={getReportTargetHref(row)}
-            className="flex items-center gap-1 truncate text-[13px] text-font-1 transition hover:text-brand"
-          >
-            <span className="truncate">{row.targetName}</span>
-            <ExternalLink size={11} className="shrink-0" />
-          </Link>
-        </div>
+        // 대상 이름을 누르면 목록이 아니라 그 대상의 상세로 바로 이동한다.
+        <Link
+          href={getReportTargetHref(row)}
+          onClick={(event) => event.stopPropagation()}
+          className="flex min-w-0 items-center gap-1 text-[13px] text-font-1 transition hover:text-brand"
+        >
+          <span className="truncate">{row.targetName}</span>
+          <ExternalLink size={11} className="shrink-0" />
+        </Link>
       ),
     },
     {
@@ -151,7 +165,8 @@ const ReportManager = () => {
       width: "130px",
       render: (row) => (
         <Link
-          href={`/users?keyword=${encodeURIComponent(row.reporterNickname)}`}
+          href={`/users/${row.reporterId}`}
+          onClick={(event) => event.stopPropagation()}
           className="text-font-2 transition hover:text-brand"
         >
           {truncate(row.reporterNickname, 12)}
@@ -224,20 +239,14 @@ const ReportManager = () => {
         <Tabs
           items={REPORT_STATUS_TABS}
           value={status}
-          onChange={(next) => {
-            setStatus(next);
-            resetPage();
-          }}
+          onChange={(next) => setParams({ status: next })}
           className="px-3"
         />
 
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
           <SearchInput
             value={keyword}
-            onSearch={(next) => {
-              setKeyword(next);
-              resetPage();
-            }}
+            onSearch={(next) => setParams({ keyword: next })}
             placeholder="대상 · 신고자 · 신고 내용으로 검색"
           />
 
@@ -246,10 +255,7 @@ const ReportManager = () => {
               aria-label="대상 필터"
               options={REPORT_TARGET_TYPE_FILTER_OPTIONS}
               value={targetType}
-              onChange={(event) => {
-                setTargetType(event.target.value as ReportTargetType | "");
-                resetPage();
-              }}
+              onChange={(event) => setParams({ targetType: event.target.value })}
               selectBoxClassName="w-32"
             />
 
@@ -257,10 +263,7 @@ const ReportManager = () => {
               aria-label="신고 사유 필터"
               options={REPORT_REASON_FILTER_OPTIONS}
               value={reason}
-              onChange={(event) => {
-                setReason(event.target.value as ReportReason | "");
-                resetPage();
-              }}
+              onChange={(event) => setParams({ reason: event.target.value })}
               selectBoxClassName="w-32"
             />
 
@@ -268,10 +271,7 @@ const ReportManager = () => {
               aria-label="정렬"
               options={REPORT_SORT_OPTIONS}
               value={sort}
-              onChange={(event) => {
-                setSort(event.target.value as ReportSort);
-                resetPage();
-              }}
+              onChange={(event) => setParams({ sort: event.target.value })}
               selectBoxClassName="w-44"
             />
           </div>
@@ -291,7 +291,7 @@ const ReportManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
 

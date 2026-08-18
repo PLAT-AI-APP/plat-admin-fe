@@ -15,6 +15,7 @@ export const commentHandlers = [
     const targetType = url.searchParams.get("targetType") ?? "";
     const status = url.searchParams.get("status") ?? "";
     const onlyReported = url.searchParams.get("onlyReported") === "true";
+    const authorId = url.searchParams.get("authorId") ?? "";
     const sort = url.searchParams.get("sort") ?? "RECENT";
 
     let filtered = comments.filter((comment) =>
@@ -41,6 +42,12 @@ export const commentHandlers = [
       filtered = filtered.filter((comment) => comment.reportCount > 0);
     }
 
+    if (authorId) {
+      filtered = filtered.filter(
+        (comment) => comment.authorId === Number(authorId),
+      );
+    }
+
     const sorted = [...filtered].sort((a, b) => {
       if (sort === "REPORTED") return b.reportCount - a.reportCount;
 
@@ -50,6 +57,23 @@ export const commentHandlers = [
     await delay(MOCK_DELAY_MS);
 
     return HttpResponse.json(paginate(sorted, url));
+  }),
+
+  http.get(`${BASE_URI}/admin/comments/:commentId`, async ({ params }) => {
+    const comment = comments.find(
+      (item) => item.commentId === Number(params.commentId),
+    );
+
+    await delay(MOCK_DELAY_MS);
+
+    if (!comment) {
+      return HttpResponse.json(
+        { code: "NOT_FOUND", message: "존재하지 않는 댓글입니다." },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json(comment);
   }),
 
   http.patch(

@@ -14,11 +14,11 @@ export const getCurationSlot = async (slotKey: CurationSlotKey) => {
 
 export const updateCurationSlot = async (
   slotKey: CurationSlotKey,
-  scenarioIds: number[],
+  universeIds: number[],
 ) => {
   const response = await adminAxios.put<CurationSlot>(
     `/admin/main/curations/${slotKey}`,
-    { scenarioIds },
+    { universeIds },
   );
 
   return response.data;
@@ -37,7 +37,7 @@ export const useCurationSlotMutation = (slotKey: CurationSlotKey) => {
   const queryClient = useQueryClient();
 
   return useMutation<CurationSlot, AppError, number[]>({
-    mutationFn: (scenarioIds) => updateCurationSlot(slotKey, scenarioIds),
+    mutationFn: (universeIds) => updateCurationSlot(slotKey, universeIds),
     onSuccess: () => {
       showAppToast("success", "저장했습니다.");
       queryClient.invalidateQueries({

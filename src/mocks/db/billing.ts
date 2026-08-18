@@ -158,58 +158,6 @@ const ADJUSTMENT_REASONS: Record<AdjustmentType, string[]> = {
 
 const ADJUSTMENT_PROCESSORS = ["운영자", "결제관리자"] as const;
 
-export const creditAdjustments: CreditAdjustment[] = Array.from(
-  { length: 15 },
-  (_, index) => {
-    const seed = index + 1;
-    const user = pickOne(seed * 3, creditUsers);
-    const type = pickOne(seed * 7, ["GRANT", "GRANT", "DEDUCT"] as const);
-    const amount = randomInt(seed * 5, 1, 40) * 10;
-    const balanceAfter = Math.max(
-      0,
-      user.creditBalance + (type === "GRANT" ? amount : -amount),
-    );
-
-    return {
-      adjustmentId: 15 - index,
-      userId: user.userId,
-      userNickname: user.nickname,
-      type,
-      amount,
-      reason: pickOne(seed * 9, ADJUSTMENT_REASONS[type]),
-      balanceAfter,
-      processedBy: pickOne(seed * 11, ADJUSTMENT_PROCESSORS),
-      createdAt: daysAgo(index * 2 + 1, randomInt(seed * 13, 9, 19)),
-    };
-  },
-);
-
-/**
- * 유형별 등장 비중.
- * 실제 운영과 비슷하게 사용 > 결제·충전 > 환불·수동 조정 순으로 배분한다.
- * 환불이 결제보다 많아 보이면 요약 카드가 비현실적으로 읽히므로 비중을 낮게 둔다.
- */
-const LEDGER_TYPE_POOL: LedgerType[] = [
-  "PAYMENT",
-  "PAYMENT",
-  "PAYMENT",
-  "PAYMENT",
-  "CHARGE",
-  "CHARGE",
-  "CHARGE",
-  "CHARGE",
-  "USE",
-  "USE",
-  "USE",
-  "USE",
-  "USE",
-  "USE",
-  "USE",
-  "USE",
-  "REFUND",
-  "ADJUSTMENT",
-];
-
 const USE_MEMOS = [
   "채팅 메시지 사용",
   "이미지 생성 사용",
@@ -217,70 +165,215 @@ const USE_MEMOS = [
   "세계관 확장 사용",
 ];
 
-/** 장부 1건을 유형에 맞게 만든다. 금액과 크레딧 증감이 서로 어긋나지 않게 한다. */
-const buildLedgerEntry = (index: number): LedgerEntry => {
-  const seed = index + 1;
-  const type = pickOne(seed, LEDGER_TYPE_POOL);
-  const user = pickOne(seed * 3, creditUsers);
-  const product = pickOne(seed * 5, billingProducts);
+/** 가입 축하 크레딧. 크레딧 정책(SIGN_UP_BONUS)과 같은 금액을 쓴다. */
+const SIGN_UP_BONUS = POLICY_SEEDS.SIGN_UP_BONUS.amount;
+
+/** ledgerId·balanceAfter를 나중에 채우기 위해 그 전 단계의 장부 형태를 따로 둔다. */
+type DraftLedgerEntry = Omit<LedgerEntry, "ledgerId">;
+
+/** 가입일로부터 며칠이 지났는지. 장부 기록이 가입일보다 앞서지 않도록 한다. */
+const daysSinceJoin = (user: User) =>
+  Math.max(
+    0,
+    Math.round(
+      (Date.now() - new Date(user.createdAt).getTime()) / 86_400_000,
+    ),
+  );
+
+/**
+ * 유저 한 명의 장부를 만든다.
+ *
+ * 결제는 반드시 "결제 승인(PAYMENT) → 크레딧 지급(CHARGE)" 짝으로 남기고,
+ * 사용(USE)은 보유 크레딧 안에서만 일어나게 한다.
+ * 이렇게 해야 유저의 보유 크레딧·누적 결제금액을 장부에서 그대로 계산할 수 있다.
+ */
+const buildUserLedger = (user: User): DraftLedgerEntry[] => {
+  const seed = user.userId;
+  const joinedDaysAgo = daysSinceJoin(user);
+  const entries: DraftLedgerEntry[] = [];
+
   const base = {
-    ledgerId: 200 - index,
-    type,
     userId: user.userId,
     userNickname: user.nickname,
-    createdAt: daysAgo(Math.floor(index / 3), 9 + (index % 12)),
   };
 
-  if (type === "PAYMENT") {
-    return {
+  // 가입 축하 크레딧은 모든 유저가 가입 당일에 받는다.
+  entries.push({
+    ...base,
+    type: "CHARGE",
+    amount: 0,
+    creditDelta: SIGN_UP_BONUS,
+    memo: "가입 축하 크레딧 지급",
+    createdAt: daysAgo(joinedDaysAgo, 10),
+  });
+
+  const paymentCount = randomInt(seed * 3, 0, 3);
+  let chargedCredit = SIGN_UP_BONUS;
+
+  Array.from({ length: paymentCount }).forEach((_, paymentIndex) => {
+    const paymentSeed = seed * 100 + paymentIndex;
+    const product = pickOne(paymentSeed, billingProducts);
+    const createdDaysAgo = randomInt(paymentSeed * 3, 0, joinedDaysAgo);
+    const credit = product.credit + product.bonusCredit;
+
+    entries.push({
       ...base,
+      type: "PAYMENT",
       amount: product.price,
       creditDelta: 0,
       productName: product.name,
       memo: `${product.platform} 인앱 결제 승인`,
-    };
-  }
+      createdAt: daysAgo(createdDaysAgo, 11 + paymentIndex),
+    });
 
-  if (type === "CHARGE") {
-    return {
+    entries.push({
       ...base,
+      type: "CHARGE",
       amount: 0,
-      creditDelta: product.credit + product.bonusCredit,
+      creditDelta: credit,
       productName: product.name,
       memo: "결제 완료 후 크레딧 지급",
-    };
-  }
+      createdAt: daysAgo(createdDaysAgo, 12 + paymentIndex),
+    });
 
-  if (type === "REFUND") {
-    return {
+    chargedCredit += credit;
+
+    // 결제한 유저 중 일부만 환불한다. 환불은 지급했던 크레딧을 그대로 회수한다.
+    if (paymentIndex === 0 && seed % 11 === 4) {
+      entries.push({
+        ...base,
+        type: "REFUND",
+        amount: product.price,
+        creditDelta: -credit,
+        productName: product.name,
+        memo: "고객 요청 환불 처리",
+        createdAt: daysAgo(Math.max(0, createdDaysAgo - 1), 13),
+      });
+
+      chargedCredit -= credit;
+    }
+  });
+
+  // 사용은 보유한 크레딧을 넘지 않는다.
+  const useCount = randomInt(seed * 5, 0, 5);
+  let usedCredit = 0;
+
+  Array.from({ length: useCount }).forEach((_, useIndex) => {
+    const useSeed = seed * 200 + useIndex;
+    const cost = randomInt(useSeed, 1, 12) * 5;
+
+    if (usedCredit + cost > chargedCredit) return;
+
+    usedCredit += cost;
+    entries.push({
       ...base,
-      amount: product.price,
-      creditDelta: -(product.credit + product.bonusCredit),
-      productName: product.name,
-      memo: "고객 요청 환불 처리",
-    };
-  }
-
-  if (type === "ADJUSTMENT") {
-    const isGrant = randomInt(seed * 7, 0, 1) === 1;
-
-    return {
-      ...base,
+      type: "USE",
       amount: 0,
-      creditDelta: (isGrant ? 1 : -1) * randomInt(seed * 9, 1, 30) * 10,
-      memo: isGrant ? "운영자 수동 지급" : "운영자 수동 차감",
-    };
-  }
+      creditDelta: -cost,
+      memo: pickOne(useSeed * 3, USE_MEMOS),
+      createdAt: daysAgo(randomInt(useSeed * 5, 0, joinedDaysAgo), 14 + useIndex),
+    });
+  });
 
-  return {
-    ...base,
-    amount: 0,
-    creditDelta: -randomInt(seed * 11, 1, 12) * 5,
-    memo: pickOne(seed * 13, USE_MEMOS),
-  };
+  return entries;
 };
 
-/** 페이지네이션을 확인할 수 있도록 넉넉하게 만든다. */
-export const ledgerEntries: LedgerEntry[] = Array.from({ length: 84 }, (_, index) =>
-  buildLedgerEntry(index),
+const baseEntries: DraftLedgerEntry[] = creditUsers.flatMap(buildUserLedger);
+
+/** 조정 전 시점의 유저별 잔액. 차감이 보유 크레딧을 넘지 않도록 하는 데 쓴다. */
+const remainingCredit = new Map<number, number>(
+  creditUsers.map((user) => [
+    user.userId,
+    baseEntries
+      .filter((entry) => entry.userId === user.userId)
+      .reduce((sum, entry) => sum + entry.creditDelta, 0),
+  ]),
+);
+
+/**
+ * 수동 조정도 장부에 남아야 하므로 조정 이력을 먼저 만들고 장부에 합친다.
+ * 보유 크레딧보다 많이 차감할 수 없다는 규칙(핸들러의 400 응답)을 시드도 똑같이 지킨다.
+ */
+const adjustmentDrafts = Array.from({ length: 15 }, (_, index) => {
+  const seed = index + 1;
+  const user = pickOne(seed * 3, creditUsers);
+  const available = remainingCredit.get(user.userId) ?? 0;
+  const requested = randomInt(seed * 5, 1, 40) * 10;
+
+  // 차감할 크레딧이 없으면 지급으로 돌린다.
+  const type: AdjustmentType =
+    pickOne(seed * 7, ["GRANT", "GRANT", "DEDUCT"] as const) === "DEDUCT" &&
+    available > 0
+      ? "DEDUCT"
+      : "GRANT";
+  const amount = type === "DEDUCT" ? Math.min(requested, available) : requested;
+
+  remainingCredit.set(
+    user.userId,
+    available + (type === "GRANT" ? amount : -amount),
+  );
+
+  return {
+    adjustmentId: 15 - index,
+    userId: user.userId,
+    userNickname: user.nickname,
+    type,
+    amount,
+    reason: pickOne(seed * 9, ADJUSTMENT_REASONS[type]),
+    processedBy: pickOne(seed * 11, ADJUSTMENT_PROCESSORS),
+    createdAt: daysAgo(
+      Math.min(index * 2 + 1, daysSinceJoin(user)),
+      randomInt(seed * 13, 9, 19),
+    ),
+  };
+});
+
+const draftEntries: DraftLedgerEntry[] = [
+  ...baseEntries,
+  ...adjustmentDrafts.map((adjustment) => ({
+    type: "ADJUSTMENT" as LedgerType,
+    userId: adjustment.userId,
+    userNickname: adjustment.userNickname,
+    amount: 0,
+    creditDelta:
+      adjustment.type === "GRANT" ? adjustment.amount : -adjustment.amount,
+    memo: `운영자 수동 조정 · ${adjustment.reason}`,
+    createdAt: adjustment.createdAt,
+  })),
+];
+
+/** 최신순으로 정렬한 뒤 위에서부터 큰 번호를 매겨 최근 건이 앞 번호를 갖게 한다. */
+export const ledgerEntries: LedgerEntry[] = draftEntries
+  .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  .map((entry, index, all) => ({ ...entry, ledgerId: all.length - index }));
+
+/**
+ * 유저의 보유 크레딧·누적 결제금액은 장부의 합이다.
+ * 유저 상세에서 지표와 장부를 나란히 보여주므로 따로 난수를 뿌리면 바로 어긋난다.
+ */
+creditUsers.forEach((user) => {
+  const own = ledgerEntries.filter((entry) => entry.userId === user.userId);
+
+  user.creditBalance = own.reduce((sum, entry) => sum + entry.creditDelta, 0);
+  user.totalPaidAmount = own.reduce((sum, entry) => {
+    if (entry.type === "PAYMENT") return sum + entry.amount;
+    if (entry.type === "REFUND") return sum - entry.amount;
+
+    return sum;
+  }, 0);
+});
+
+/** 조정 후 잔액은 그 시점까지의 장부 누적이다. 같은 유저에 조정이 여러 건이어도 흐름이 이어진다. */
+export const creditAdjustments: CreditAdjustment[] = adjustmentDrafts.map(
+  (adjustment) => {
+    const balanceAfter = ledgerEntries
+      .filter(
+        (entry) =>
+          entry.userId === adjustment.userId &&
+          entry.createdAt <= adjustment.createdAt,
+      )
+      .reduce((sum, entry) => sum + entry.creditDelta, 0);
+
+    return { ...adjustment, balanceAfter };
+  },
 );

@@ -12,6 +12,8 @@ export const reportHandlers = [
     const targetType = url.searchParams.get("targetType") ?? "";
     const status = url.searchParams.get("status") ?? "";
     const reason = url.searchParams.get("reason") ?? "";
+    const reporterId = url.searchParams.get("reporterId") ?? "";
+    const targetId = url.searchParams.get("targetId") ?? "";
     const sort = url.searchParams.get("sort") ?? "RECENT";
 
     let filtered = reports.filter((report) =>
@@ -34,6 +36,18 @@ export const reportHandlers = [
 
     if (reason) {
       filtered = filtered.filter((report) => report.reason === reason);
+    }
+
+    if (reporterId) {
+      filtered = filtered.filter(
+        (report) => report.reporterId === Number(reporterId),
+      );
+    }
+
+    if (targetId) {
+      filtered = filtered.filter(
+        (report) => report.targetId === Number(targetId),
+      );
     }
 
     const sorted = [...filtered].sort((a, b) => {

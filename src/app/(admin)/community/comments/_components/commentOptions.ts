@@ -7,7 +7,7 @@ import {
 } from "@/type/comment";
 
 export const COMMENT_TARGET_TYPE_TONE: Record<CommentTargetType, BadgeTone> = {
-  SCENARIO: "brand",
+  UNIVERSE: "brand",
   CHARACTER: "info",
   NOTICE: "neutral",
 };

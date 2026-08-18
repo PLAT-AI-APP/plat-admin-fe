@@ -8,11 +8,18 @@ import {
 } from "@hello-pangea/dnd";
 import Image from "next/image";
 import { useState } from "react";
+import { useHashtagListQuery } from "@/api/hashtag/getHashtagList";
 import { useBannerListQuery } from "@/api/main-exposure/getBannerList";
 import { useBannerMutation } from "@/api/main-exposure/mutateBanner";
 import { Edit, Grip, ImageIcon, Plus, Trash } from "@/icons";
 import { formatDate } from "@/lib/dayjs";
 import { cn, reorder } from "@/lib/utils";
+import {
+  isExposableUniverse,
+  mainCharacterOf,
+  universeBlockReason,
+} from "@/type/character";
+import { resolveHashtagLabel } from "@/type/hashtag";
 import type { Banner, BannerFormValues } from "@/type/mainExposure";
 import { resolveBannerContent } from "@/type/mainExposure";
 import { openConfirm } from "@/store/useConfirmStore";
@@ -28,6 +35,18 @@ import BannerPreview from "./BannerPreview";
 
 const BannerManager = () => {
   const { data, isLoading } = useBannerListQuery();
+  /* 배너가 지정한 해시태그를 라벨로 풀어 준다. 목록·미리보기가 같은 값을 본다. */
+  const { data: hashtagData } = useHashtagListQuery({
+    page: 1,
+    size: 200,
+    isActive: "true",
+  });
+  const hashtagLabels = new Map(
+    (hashtagData?.content ?? []).map((hashtag) => [
+      hashtag.hashtagId,
+      resolveHashtagLabel(hashtag),
+    ]),
+  );
   const { createMutation, updateMutation, deleteMutation, orderMutation } =
     useBannerMutation();
 
@@ -39,6 +58,10 @@ const BannerManager = () => {
 
   const banners = draft ?? data ?? [];
   const activeBanners = banners.filter((banner) => banner.isActive);
+  // 노출 중인데 가리키는 세계관이 앱에 없는 배너
+  const blockedBanners = activeBanners.filter(
+    (banner) => !isExposableUniverse(banner.universe),
+  );
   const previewTarget = activeBanners[previewIndex] ?? activeBanners[0];
 
   const savedOrder = data?.map((banner) => banner.bannerId) ?? [];
@@ -70,7 +93,7 @@ const BannerManager = () => {
   };
 
   const handleDelete = (banner: Banner) => {
-    const { title } = resolveBannerContent(banner);
+    const { title } = resolveBannerContent(banner, "KO", hashtagLabels);
 
     openConfirm({
       title: "배너를 삭제할까요?",
@@ -96,9 +119,27 @@ const BannerManager = () => {
   return (
     <>
       <Alert tone="info">
-        배너는 위에서부터 순서대로 메인 캐러셀에 노출됩니다. 순서를 바꾼 뒤에는
-        반드시 &apos;순서 저장&apos;을 눌러 주세요.
+        배너는 위에서부터 순서대로 메인 캐러셀에 노출됩니다. 여기에 등록해야
+        메인 서버가 가져가므로, 순서를 바꾼 뒤에는 반드시 &apos;순서 저장&apos;을
+        눌러 주세요.
       </Alert>
+
+      {/*
+        배너 이미지는 살아 있어도 가리키는 세계관이 내려가면 눌렀을 때 갈 곳이 없다.
+        노출 중인 배너만 짚는다. 미노출 배너는 지금 문제가 되지 않는다.
+      */}
+      {blockedBanners.length > 0 && (
+        <Alert tone="warning" title="세계관이 내려간 배너가 노출 중입니다.">
+          {blockedBanners
+            .map(
+              (banner) =>
+                `${resolveBannerContent(banner, "KO", hashtagLabels).title} (${universeBlockReason(banner.universe)})`,
+            )
+            .join(" · ")}{" "}
+          — 배너를 눌러도 앱에서 열 세계관이 없습니다. 노출을 끄거나 다른 세계관으로
+          바꿔 주세요.
+        </Alert>
+      )}
 
       <Card
         title="메인 캐러셀 미리보기"
@@ -112,7 +153,7 @@ const BannerManager = () => {
           <div className="flex flex-col gap-3">
             <BannerPreview
               imageUrl={previewTarget.imageUrl}
-              {...resolveBannerContent(previewTarget)}
+              {...resolveBannerContent(previewTarget, "KO", hashtagLabels)}
               index={previewIndex + 1}
               totalCount={activeBanners.length}
             />
@@ -204,7 +245,11 @@ const BannerManager = () => {
                   className="flex flex-col gap-2"
                 >
                   {banners.map((banner, index) => {
-                    const { title, tags } = resolveBannerContent(banner);
+                    const { title, tags } = resolveBannerContent(
+                      banner,
+                      "KO",
+                      hashtagLabels,
+                    );
 
                     return (
                       <Draggable
@@ -256,11 +301,17 @@ const BannerManager = () => {
                                 >
                                   {banner.isActive ? "노출 중" : "미노출"}
                                 </Badge>
+
+                                {!isExposableUniverse(banner.universe) && (
+                                  <Badge tone="warning">
+                                    세계관 {universeBlockReason(banner.universe)}
+                                  </Badge>
+                                )}
                               </div>
 
                               <p className="mt-0.5 truncate text-[12px] text-font-2">
-                                세계관 #{banner.scenarioId} ·{" "}
-                                {banner.scenario.characterName}
+                                세계관 #{banner.universeId} ·{" "}
+                                {mainCharacterOf(banner.universe)?.name ?? "캐릭터 없음"}
                               </p>
 
                               <p className="mt-1 truncate text-[12px] text-font-2">

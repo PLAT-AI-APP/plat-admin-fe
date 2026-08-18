@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import PageHeader from "@/components/layout/PageHeader";
+import Skeleton from "@/components/ui/Skeleton";
 import CommentManager from "./_components/CommentManager";
 
 export default function CommentPage() {
@@ -9,7 +11,9 @@ export default function CommentPage() {
         description="세계관·캐릭터·공지사항에 달린 댓글을 한 화면에서 확인하고 숨김 처리합니다."
       />
 
-      <CommentManager />
+      <Suspense fallback={<Skeleton className="h-64 w-full rounded-card" />}>
+        <CommentManager />
+      </Suspense>
     </>
   );
 }

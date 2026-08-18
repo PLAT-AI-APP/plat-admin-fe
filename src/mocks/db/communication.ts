@@ -12,6 +12,7 @@ import type {
 } from "@/type/communication";
 import { daysAgo, pickOne, randomInt } from "../utils";
 import { characters } from "./character";
+import { users } from "./user";
 
 /* ------------------------------------------------------------------ */
 /* Q&A                                                                 */
@@ -86,17 +87,6 @@ const QNA_ANSWER: Record<QnaCategory, string> = {
   ETC: "안녕하세요, PLAT 운영팀입니다. 제휴 및 제안은 partner@plat.example 로 보내 주시면 담당 부서에서 검토 후 회신드립니다. 관심 가져 주셔서 감사합니다.",
 };
 
-const USER_NICKNAMES = [
-  "달빛여우",
-  "코코넛",
-  "밤하늘",
-  "은하수",
-  "픽셀드림",
-  "무명작가",
-  "고래밥",
-  "하늘색",
-];
-
 /**
  * Q&A 시드 34건.
  * 페이지네이션(기본 20건)을 확인해야 하므로 한 페이지를 넘기는 양으로 만든다.
@@ -106,6 +96,8 @@ export const qnaItems: QnaItem[] = Array.from({ length: 34 }, (_, index) => {
   const category = pickOne(seed * 5, QNA_CATEGORIES);
   const status = pickOne(seed * 3, QNA_STATUSES);
   const isAnswered = status !== "OPEN";
+  // 문의 작성자는 실제 유저여야 한다. ID와 닉네임을 따로 만들면 서로 다른 사람이 된다.
+  const user = pickOne(seed * 11, users);
 
   return {
     qnaId: seed,
@@ -113,8 +105,8 @@ export const qnaItems: QnaItem[] = Array.from({ length: 34 }, (_, index) => {
     title: pickOne(seed * 7, QNA_TITLE[category]),
     content: QNA_CONTENT[category],
     status,
-    userId: randomInt(seed * 11, 1, 40),
-    userNickname: `${pickOne(seed * 13, USER_NICKNAMES)}${randomInt(seed * 17, 1, 99)}`,
+    userId: user.userId,
+    userNickname: user.nickname,
     answer: isAnswered ? QNA_ANSWER[category] : undefined,
     answeredBy: isAnswered ? "운영자" : undefined,
     // 답변일은 항상 작성일 이후가 되도록 하루 뒤로 잡는다.

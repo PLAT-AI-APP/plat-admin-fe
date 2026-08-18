@@ -6,14 +6,14 @@ import type {
   UpdateCurationRequest,
 } from "@/type/mainExposure";
 import { banners, curationSlots } from "../db/mainExposure";
-import { scenarios } from "../db/character";
+import { universes } from "../db/character";
 import { MOCK_DELAY_MS, nextId } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
 /** 세계관 ID로 세계관을 찾는다. 없으면 404 응답용으로 undefined를 반환한다. */
-const findScenario = (scenarioId: number) =>
-  scenarios.find((scenario) => scenario.scenarioId === scenarioId);
+const findUniverse = (universeId: number) =>
+  universes.find((universe) => universe.universeId === universeId);
 
 export const mainExposureHandlers = [
   http.get(`${BASE_URI}/admin/main/banners`, async () => {
@@ -26,11 +26,11 @@ export const mainExposureHandlers = [
 
   http.post(`${BASE_URI}/admin/main/banners`, async ({ request }) => {
     const body = (await request.json()) as BannerFormValues;
-    const scenario = findScenario(body.scenarioId);
+    const universe = findUniverse(body.universeId);
 
-    if (!scenario) {
+    if (!universe) {
       return HttpResponse.json(
-        { code: "SCENARIO_NOT_FOUND", message: "존재하지 않는 세계관입니다." },
+        { code: "UNIVERSE_NOT_FOUND", message: "존재하지 않는 세계관입니다." },
         { status: 404 },
       );
     }
@@ -38,7 +38,7 @@ export const mainExposureHandlers = [
     const created: Banner = {
       ...body,
       bannerId: nextId(banners, "bannerId"),
-      scenario,
+      universe,
       order: banners.length + 1,
       createdAt: new Date().toISOString(),
     };
@@ -69,16 +69,16 @@ export const mainExposureHandlers = [
       const bannerId = Number(params.bannerId);
       const body = (await request.json()) as BannerFormValues;
       const index = banners.findIndex((banner) => banner.bannerId === bannerId);
-      const scenario = findScenario(body.scenarioId);
+      const universe = findUniverse(body.universeId);
 
-      if (index < 0 || !scenario) {
+      if (index < 0 || !universe) {
         return HttpResponse.json(
           { code: "NOT_FOUND", message: "대상을 찾을 수 없습니다." },
           { status: 404 },
         );
       }
 
-      banners[index] = { ...banners[index], ...body, scenario };
+      banners[index] = { ...banners[index], ...body, universe };
       await delay(MOCK_DELAY_MS);
 
       return HttpResponse.json(banners[index]);
@@ -112,16 +112,16 @@ export const mainExposureHandlers = [
     `${BASE_URI}/admin/main/curations/:slotKey`,
     async ({ params, request }) => {
       const slotKey = params.slotKey as CurationSlotKey;
-      const { scenarioIds } = (await request.json()) as UpdateCurationRequest;
+      const { universeIds } = (await request.json()) as UpdateCurationRequest;
 
       curationSlots[slotKey] = {
         slotKey,
-        items: scenarioIds
-          .map((scenarioId, index) => {
-            const scenario = findScenario(scenarioId);
+        items: universeIds
+          .map((universeId, index) => {
+            const universe = findUniverse(universeId);
 
-            return scenario
-              ? { scenarioId, order: index + 1, scenario }
+            return universe
+              ? { universeId, order: index + 1, universe }
               : undefined;
           })
           .filter((item) => item !== undefined),

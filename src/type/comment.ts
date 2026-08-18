@@ -7,10 +7,10 @@
  * 새 영역에 댓글이 생기면 `CommentTargetType`에 값을 하나 추가하면 화면은 그대로 쓴다.
  */
 
-export type CommentTargetType = "SCENARIO" | "CHARACTER" | "NOTICE";
+export type CommentTargetType = "UNIVERSE" | "CHARACTER" | "NOTICE";
 
 export const COMMENT_TARGET_TYPE_LABEL: Record<CommentTargetType, string> = {
-  SCENARIO: "세계관",
+  UNIVERSE: "세계관",
   CHARACTER: "캐릭터",
   NOTICE: "공지사항",
 };
@@ -49,13 +49,18 @@ export interface Comment {
   createdAt: string;
 }
 
-/** 대상 화면으로 이동할 경로를 만든다. 대상 타입이 늘면 여기만 고친다. */
+/**
+ * 대상의 **상세 화면**으로 바로 가는 경로를 만든다. 대상 타입이 늘면 여기만 고친다.
+ *
+ * 캐릭터·세계관은 상세 페이지가 있어 그대로 이동하고,
+ * 공지사항은 상세 페이지가 없으므로 목록에서 상세 모달이 열리도록 ID를 실어 보낸다.
+ */
 export const getCommentTargetHref = (comment: Comment): string => {
-  const routeByType: Record<CommentTargetType, string> = {
-    SCENARIO: "/characters/scenarios",
-    CHARACTER: "/characters",
-    NOTICE: "/communication/notices",
+  const hrefByType: Record<CommentTargetType, string> = {
+    UNIVERSE: `/universes/${comment.targetId}`,
+    CHARACTER: `/universes/characters/${comment.targetId}`,
+    NOTICE: `/communication/notices?noticeId=${comment.targetId}`,
   };
 
-  return `${routeByType[comment.targetType]}?keyword=${encodeURIComponent(comment.targetName)}`;
+  return hrefByType[comment.targetType];
 };

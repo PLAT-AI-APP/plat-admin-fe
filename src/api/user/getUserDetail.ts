@@ -10,8 +10,8 @@ export const getUserDetail = async (userId: number) => {
 };
 
 /**
- * 유저 상세 모달에서 사용합니다.
- * 모달이 닫혀 있을 때는 userId가 null이므로 조회하지 않습니다.
+ * 유저 상세 화면에서 사용합니다.
+ * userId가 없으면 조회하지 않습니다.
  */
 export const useUserDetailQuery = (userId: number | null) => {
   return useQuery<UserDetail, AppError>({

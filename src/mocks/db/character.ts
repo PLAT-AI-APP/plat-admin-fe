@@ -2,9 +2,18 @@ import type {
   Character,
   ChatExportJob,
   NsfwKeyword,
-  Scenario,
+  ScenarioLifecycle,
+  ScenarioType,
+  Universe,
+  UniverseCategory,
+  UniverseReviewStatus,
+  UniverseScenario,
+  UniverseStatus,
+  UniverseTendency,
 } from "@/type/character";
 import { daysAgo, pickOne, randomInt } from "../utils";
+import { CHARACTER_TAG_POOL, hashtags } from "./hashtag";
+import { creatorUsers, officialCreatorUsers, users } from "./user";
 
 const CHARACTER_NAMES = [
   "루시아",
@@ -33,33 +42,7 @@ const CHARACTER_NAMES = [
   "리안",
 ];
 
-const CREATOR_NICKNAMES = [
-  "달빛작가",
-  "코코넛",
-  "PLAT공식",
-  "이야기공방",
-  "밤하늘",
-  "무명작가",
-  "픽셀드림",
-  "은하수",
-];
-
-const TAG_POOL = [
-  "판타지",
-  "로맨스",
-  "학원물",
-  "SF",
-  "미스터리",
-  "일상",
-  "무협",
-  "힐링",
-  "추리",
-  "역사",
-  "느와르",
-  "코미디",
-];
-
-const SCENARIO_PREFIX = [
+const UNIVERSE_PREFIX = [
   "잊혀진",
   "달빛 아래",
   "마지막",
@@ -70,7 +53,7 @@ const SCENARIO_PREFIX = [
   "새벽의",
 ];
 
-const SCENARIO_SUFFIX = [
+const UNIVERSE_SUFFIX = [
   "왕국",
   "약속",
   "여행",
@@ -81,61 +64,320 @@ const SCENARIO_SUFFIX = [
   "재회",
 ];
 
-/** seed 기반 태그 2~3개 선택 */
+/** seed 기반 태그 2~3개 선택. 등록된 해시태그에서만 고른다. */
 const buildTags = (seed: number): string[] => {
   const count = randomInt(seed, 2, 3);
 
   return Array.from({ length: count }, (_, index) =>
-    pickOne(seed + index * 7, TAG_POOL),
+    pickOne(seed + index * 7, CHARACTER_TAG_POOL),
   ).filter((tag, index, tags) => tags.indexOf(tag) === index);
 };
 
-export const characters: Character[] = CHARACTER_NAMES.map((name, index) => {
+/** 캐릭터가 만들어진 날. 세계관 등록일이 이보다 앞서지 않도록 여기서 한 번만 계산한다. */
+const characterCreatedDaysAgo = (index: number) => index * 3 + 2;
+
+/**
+ * 지표(세계관 수·에셋·대화)를 뺀 캐릭터 기본 정보.
+ * 지표는 하위 세계관이 만들어진 뒤에 합산해야 하므로 2단계로 나눈다.
+ */
+const characterBases = CHARACTER_NAMES.map((name, index) => {
   const seed = index + 1;
-  const isOfficial = index % 6 === 0;
+  // 운영 계정이 만든 캐릭터를 섞어 둔다. 공식 여부는 db/official이 판정한다.
+  const isOperated = index % 6 === 0;
+  const creator = isOperated
+    ? pickOne(seed * 3, officialCreatorUsers)
+    : pickOne(seed * 3, creatorUsers);
+  const status = index % 11 === 0 ? "BLOCKED" : "ACTIVE";
 
   return {
     characterId: seed,
     name,
     thumbnailUrl: `https://picsum.photos/seed/plat-character-${seed}/160/160`,
-    creatorId: randomInt(seed * 3, 1, 8),
-    creatorNickname: isOfficial
-      ? "PLAT공식"
-      : pickOne(seed * 5, CREATOR_NICKNAMES),
-    isOfficial,
-    visibility: index % 9 === 0 ? "HIDDEN" : "PUBLIC",
-    status: index % 11 === 0 ? "BLOCKED" : "ACTIVE",
+    creatorId: creator.userId,
+    creatorNickname: creator.nickname,
+    /* 공식 여부는 공식 계정 목록에서 파생된다. db/official의 syncOfficialFlags가 채운다. */
+    isOfficial: false,
+    // 차단된 캐릭터가 앱에 계속 공개돼 있으면 안 된다.
+    visibility:
+      status === "BLOCKED" || index % 9 === 0
+        ? ("HIDDEN" as const)
+        : ("PUBLIC" as const),
+    status: status as Character["status"],
     isNsfw: index % 7 === 0,
     tags: buildTags(seed),
-    scenarioCount: randomInt(seed * 2, 1, 5),
-    assetCount: randomInt(seed * 4, 0, 48),
-    chatCount: randomInt(seed * 6, 120, 48_000),
     likeCount: randomInt(seed * 8, 30, 12_000),
-    createdAt: daysAgo(index * 3 + 2),
+    createdAt: daysAgo(characterCreatedDaysAgo(index)),
   };
 });
 
-/** 캐릭터당 1~3개의 세계관을 만든다. (실서비스는 최대 5개) */
-export const scenarios: Scenario[] = characters.flatMap((character, index) =>
-  Array.from({ length: randomInt(index + 3, 1, 3) }, (_, scenarioIndex) => {
-    const seed = index * 10 + scenarioIndex + 1;
+const UNIVERSE_CATEGORIES: readonly UniverseCategory[] = [
+  "ROMANCE",
+  "FANTASY",
+  "DRAMA",
+  "MARTIAL_ARTS",
+  "GL",
+  "BL",
+  "HORROR",
+  "MYSTERY",
+];
 
-    return {
-      scenarioId: seed,
-      characterId: character.characterId,
-      characterName: character.name,
-      name: `${pickOne(seed, SCENARIO_PREFIX)} ${pickOne(seed * 3, SCENARIO_SUFFIX)}`,
-      description:
-        "오래전 봉인된 기억을 따라가며, 당신과 함께 잃어버린 조각을 되찾는 이야기입니다.",
-      thumbnailUrl: `https://picsum.photos/seed/plat-scenario-${seed}/1200/440`,
-      tags: buildTags(seed * 2),
-      isOfficial: character.isOfficial,
-      assetCount: randomInt(seed * 5, 0, 64),
-      chatCount: randomInt(seed * 7, 80, 32_000),
-      createdAt: daysAgo(index * 2 + scenarioIndex + 1),
-    };
-  }),
+const UNIVERSE_TENDENCIES: readonly UniverseTendency[] = [
+  "ALL",
+  "MALE_ORIENTED",
+  "FEMALE_ORIENTED",
+];
+
+const REVIEW_REJECTION_REASONS = [
+  "타인의 저작물로 보이는 이미지가 포함되어 있습니다.",
+  "설명에 선정적인 표현이 있어 수정이 필요합니다.",
+  "제목과 내용이 서로 맞지 않습니다.",
+];
+
+/** 서버 파일 설정(`file.temp.release-expiration: P1D`)과 같은 파기 유예 기간 */
+const PURGE_GRACE_DAYS = 1;
+
+/**
+ * 세계관 ↔ 캐릭터 매핑. 서버 `universe_character_mappings`에 해당한다.
+ *
+ * **N:M이다.** 세계관 하나에 캐릭터가 여럿 나올 수 있고, 같은 캐릭터가 다른
+ * 세계관에도 등장한다. 매핑을 따로 두지 않고 세계관에 캐릭터 하나를 박아 두면
+ * "이 캐릭터가 어디에 나오나"를 셀 수 없다.
+ */
+const universeCharacterIds = (seed: number, ownerIndex: number): number[] => {
+  const owner = characterBases[ownerIndex].characterId;
+  // 3번에 한 번꼴로 다른 세계관의 캐릭터가 함께 등장한다.
+  const hasGuest = seed % 3 === 0;
+  const guest =
+    characterBases[(ownerIndex + randomInt(seed, 1, 5)) % characterBases.length]
+      .characterId;
+
+  return hasGuest && guest !== owner ? [owner, guest] : [owner];
+};
+
+/** 캐릭터당 1~3개의 세계관을 만든다. (실서비스는 최대 5개) */
+export const universes: Universe[] = characterBases.flatMap(
+  (character, index) =>
+    Array.from({ length: randomInt(index + 3, 1, 3) }, (_, universeIndex) => {
+      const seed = index * 10 + universeIndex + 1;
+      // 세계관은 캐릭터가 만들어진 뒤에 등록된다.
+      const createdDaysAgo = Math.max(
+        0,
+        characterCreatedDaysAgo(index) - universeIndex - 1,
+      );
+
+      /*
+        심사·삭제 상태를 섞어 둔다. 서버는 승인되지 않았거나 삭제된 세계관을
+        홈 섹션에서 빼기 때문에, 운영 화면에서 그 이유를 구분할 수 있어야 한다.
+      */
+      const reviewStatus: UniverseReviewStatus =
+        seed % 17 === 0 ? "REJECTED" : seed % 9 === 0 ? "PENDING" : "APPROVED";
+      const status: UniverseStatus =
+        seed % 23 === 0
+          ? "PURGED"
+          : seed % 13 === 0
+            ? "DELETED"
+            : seed % 19 === 0
+              ? "INACTIVE"
+              : "ACTIVE";
+      const isDeleted = status === "DELETED" || status === "PURGED";
+      // 삭제는 등록 이후, 오늘 사이에 일어난다.
+      const deletedDaysAgo = randomInt(seed * 3, 0, createdDaysAgo);
+
+      return {
+        universeId: seed,
+        characters: universeCharacterIds(seed, index).map((characterId) => {
+          const item = characterBases.find(
+            (base) => base.characterId === characterId,
+          )!;
+
+          return {
+            characterId: item.characterId,
+            name: item.name,
+            // 캐릭터 프로필 이미지는 세계관 대표 이미지와 따로 올린다.
+            thumbnailUrl: item.thumbnailUrl,
+          };
+        }),
+        creatorId: character.creatorId,
+        creatorNickname: character.creatorNickname,
+        name: `${pickOne(seed, UNIVERSE_PREFIX)} ${pickOne(seed * 3, UNIVERSE_SUFFIX)}`,
+        description:
+          "오래전 봉인된 기억을 따라가며, 당신과 함께 잃어버린 조각을 되찾는 이야기입니다.",
+        thumbnailUrl: `https://picsum.photos/seed/plat-universe-${seed}/1200/440`,
+        tags: buildTags(seed * 2),
+        /* 공식 여부는 공식 계정 목록에서 파생된다. db/official의 syncOfficialFlags가 채운다. */
+        isOfficial: false,
+        visibility:
+          status === "ACTIVE"
+            ? seed % 11 === 0
+              ? ("UNLISTED" as const)
+              : ("PUBLIC" as const)
+            : ("PRIVATE" as const),
+        status,
+        category: pickOne(seed * 2, UNIVERSE_CATEGORIES),
+        tendency: pickOne(seed * 4, UNIVERSE_TENDENCIES),
+        reviewStatus,
+        reviewRejectionReason:
+          reviewStatus === "REJECTED"
+            ? pickOne(seed, REVIEW_REJECTION_REASONS)
+            : undefined,
+        commentEnabled: seed % 5 !== 0,
+        assetCount: randomInt(seed * 5, 0, 64),
+        // 시나리오는 아래에서 만든다. 수는 그 결과와 맞춰 다시 채운다.
+        scenarioCount: 0,
+        chatCount: randomInt(seed * 7, 80, 32_000),
+        likeCount: randomInt(seed * 9, 0, 9_400),
+        deletedAt: isDeleted ? daysAgo(deletedDaysAgo, 9) : undefined,
+        // 파기 예정 시각은 삭제 시각 + 유예 기간이다.
+        purgeAt: isDeleted
+          ? daysAgo(deletedDaysAgo - PURGE_GRACE_DAYS, 9)
+          : undefined,
+        purgedAt:
+          status === "PURGED"
+            ? daysAgo(Math.max(0, deletedDaysAgo - PURGE_GRACE_DAYS), 10)
+            : undefined,
+        createdAt: daysAgo(createdDaysAgo),
+      };
+    }),
 );
+
+/* -------------------------------------------------------------------------
+ * 시나리오 (세계관 안의 에피소드)
+ * ---------------------------------------------------------------------- */
+
+const SCENARIO_TITLES = [
+  "첫 만남",
+  "비 오는 밤의 약속",
+  "잊고 있던 이름",
+  "사라진 편지",
+  "마지막 선택",
+  "돌아온 자리",
+];
+
+const SCENARIO_SITUATIONS = [
+  "늦은 밤 도서관, 마지막까지 남은 두 사람이 마주친다.",
+  "폐허가 된 정원에서 오래된 상자를 함께 열어 본다.",
+  "떠나기 전날, 아무 말도 못 하고 문 앞에 서 있다.",
+  "축제 인파 속에서 손을 놓쳤다가 겨우 다시 만난다.",
+];
+
+const SCENARIO_FIRST_DIALOGUES = [
+  "…또 여기 있었네요. 오늘은 무슨 일이에요?",
+  "늦었어요. 그래도 기다렸으니까 됐어요.",
+  "이 얘기, 지금 아니면 못 할 것 같아서요.",
+  "잠깐만요. 손 좀 잡아도 될까요? 사람이 너무 많아서.",
+];
+
+/**
+ * 세계관당 시나리오 1~4편.
+ *
+ * 1편은 반드시 `START`다. 시작 시나리오가 없으면 유저가 세계관에 들어와도
+ * 고를 것이 없다 — 실제 서비스에서 있을 수 없는 상태라 목업에서도 만들지 않는다.
+ */
+export const universeScenarios: UniverseScenario[] = universes.flatMap(
+  (universe, index) =>
+    Array.from({ length: randomInt(index + 5, 1, 4) }, (_, episodeIndex) => {
+      const seed = universe.universeId * 10 + episodeIndex + 1;
+      const isStart = episodeIndex === 0;
+
+      const type: ScenarioType = isStart
+        ? "START"
+        : seed % 11 === 0
+          ? "ENDING"
+          : seed % 7 === 0
+            ? "EVENT"
+            : "NORMAL";
+
+      /* 구버전·숨김을 섞어 둔다. 시작 시나리오는 항상 살아 있어야 한다. */
+      const status: ScenarioLifecycle = isStart
+        ? "ACTIVE"
+        : seed % 13 === 0
+          ? "DEPRECATED"
+          : seed % 9 === 0
+            ? "HIDDEN"
+            : "ACTIVE";
+
+      return {
+        scenarioId: seed,
+        universeId: universe.universeId,
+        episodeNo: episodeIndex + 1,
+        type,
+        status,
+        versionNo: status === "DEPRECATED" ? 1 : randomInt(seed, 1, 3),
+        title: pickOne(seed, SCENARIO_TITLES),
+        situation: pickOne(seed * 3, SCENARIO_SITUATIONS),
+        firstDialogue: pickOne(seed * 5, SCENARIO_FIRST_DIALOGUES),
+        createdAt: universe.createdAt,
+      };
+    }),
+);
+
+/* 세계관의 시나리오 수는 실제 시나리오에서 센다. 따로 난수를 뿌리면 바로 어긋난다. */
+universes.forEach((universe) => {
+  universe.scenarioCount = universeScenarios.filter(
+    (scenario) =>
+      scenario.universeId === universe.universeId &&
+      scenario.status !== "DEPRECATED",
+  ).length;
+});
+
+/**
+ * 캐릭터 지표는 하위 세계관의 합이다.
+ * 상세 화면에서 캐릭터 지표와 세계관 목록이 나란히 보이므로 따로 난수를 뿌리면 바로 어긋난다.
+ */
+/**
+ * 캐릭터 지표는 **그 캐릭터가 등장하는 세계관**의 합이다.
+ * 소유가 아니라 등장 기준이라, 다른 사람의 세계관에 초대된 캐릭터도 함께 잡힌다.
+ */
+export const characters: Character[] = characterBases.map((character) => {
+  // 삭제·파기된 세계관은 앱에서 사라지므로 캐릭터 지표에서도 뺀다.
+  const appearedUniverses = universes.filter(
+    (universe) =>
+      universe.characters.some(
+        (item) => item.characterId === character.characterId,
+      ) &&
+      universe.status !== "DELETED" &&
+      universe.status !== "PURGED",
+  );
+
+  return {
+    ...character,
+    universeCount: appearedUniverses.length,
+    assetCount: appearedUniverses.reduce(
+      (sum, item) => sum + item.assetCount,
+      0,
+    ),
+    chatCount: appearedUniverses.reduce((sum, item) => sum + item.chatCount, 0),
+  };
+});
+
+/**
+ * 캐릭터에서 파생되는 다른 도메인의 집계값을 다시 계산한다.
+ * 캐릭터가 추가·삭제되거나 태그가 바뀌면 핸들러에서 다시 불러 준다.
+ */
+export const syncCharacterDerivedCounts = () => {
+  // 삭제된 캐릭터는 목록에서 빠지므로 집계에서도 뺀다.
+  const listed = characters.filter(
+    (character) => character.status !== "DELETED",
+  );
+
+  // 해시태그의 "사용 수"는 실제로 그 태그를 달고 있는 캐릭터·세계관의 수다.
+  hashtags.forEach((hashtag) => {
+    const label = hashtag.labels.KO;
+
+    hashtag.usageCount =
+      listed.filter((character) => character.tags.includes(label)).length +
+      universes.filter((universe) => universe.tags.includes(label)).length;
+  });
+
+  // 유저의 "캐릭터 수"는 그 유저가 크리에이터로 등록한 캐릭터의 수다.
+  users.forEach((user) => {
+    user.characterCount = listed.filter(
+      (character) => character.creatorId === user.userId,
+    ).length;
+  });
+};
+
+syncCharacterDerivedCounts();
 
 const CHARACTER_DESCRIPTION_POOL = [
   "왕국의 마지막 서기관. 사라진 기록을 좇으며 당신에게 진실의 조각을 건넨다.",

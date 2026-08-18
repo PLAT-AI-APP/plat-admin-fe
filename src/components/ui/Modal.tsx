@@ -19,6 +19,13 @@ interface ModalProps {
   footer?: ReactNode;
   /** 파괴적 작업 모달은 오버레이 클릭으로 닫지 않는다. */
   closeOnOverlayClick?: boolean;
+  /**
+   * 닫기 버튼을 감춘다.
+   *
+   * 강제 비밀번호 변경처럼 **끝내야만 지나갈 수 있는** 모달에 쓴다.
+   * ESC도 함께 막는다. 닫기 버튼만 감추면 ESC로 빠져나갈 수 있어 반쪽이 된다.
+   */
+  hideCloseButton?: boolean;
   children: ReactNode;
   className?: string;
 }
@@ -45,6 +52,7 @@ const Modal = ({
   size = "md",
   footer,
   closeOnOverlayClick = true,
+  hideCloseButton = false,
   children,
   className,
 }: ModalProps) => {
@@ -52,7 +60,7 @@ const Modal = ({
   const isClient = useIsClient();
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || hideCloseButton) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -61,13 +69,13 @@ const Modal = ({
     window.addEventListener("keydown", handleKeyDown);
 
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, hideCloseButton, onClose]);
 
   if (!isClient || !isOpen) return null;
 
   return createPortal(
     <div
-      onClick={closeOnOverlayClick ? onClose : undefined}
+      onClick={closeOnOverlayClick && !hideCloseButton ? onClose : undefined}
       className="animate-fade-in fixed inset-0 z-100 flex items-center justify-center bg-overlay p-6 backdrop-blur-[2px]"
     >
       <div
@@ -88,12 +96,14 @@ const Modal = ({
             )}
           </div>
 
-          <IconButton
-            label="닫기"
-            icon={<Close size={18} />}
-            onClick={onClose}
-            className="-mt-1 -mr-2"
-          />
+          {!hideCloseButton && (
+            <IconButton
+              label="닫기"
+              icon={<Close size={18} />}
+              onClick={onClose}
+              className="-mt-1 -mr-2"
+            />
+          )}
         </header>
 
         <div className="flex-1 overflow-y-auto px-6 py-5 scrollbar-thin">

@@ -3,11 +3,20 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useHashtagListQuery } from "@/api/hashtag/getHashtagList";
 import { BANNER_ASPECT_RATIO } from "@/constants/mainExposure";
 import { Globe } from "@/icons";
 import { toDateInputValue } from "@/lib/dayjs";
 import { bannerSchema, type BannerSchema } from "@/schema/banner.schema";
-import type { Scenario } from "@/type/character";
+import type { Universe } from "@/type/character";
+import { resolveHashtagLabel } from "@/type/hashtag";
+import {
+  EMPTY_LOCALIZED_TEXT,
+  SERVICE_LANGUAGES,
+  SERVICE_LANGUAGE_LABEL,
+  countFilledLanguages,
+  type ServiceLanguage,
+} from "@/type/language";
 import type { Banner, BannerFormValues } from "@/type/mainExposure";
 import { resolveBannerContent } from "@/type/mainExposure";
 import Button from "@/components/ui/Button";
@@ -16,9 +25,11 @@ import FormField from "@/components/ui/FormField";
 import ImageUploadField from "@/components/ui/ImageUploadField";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
+import Tabs from "@/components/ui/Tabs";
 import Textarea from "@/components/ui/Textarea";
-import ScenarioPickerModal from "@/components/scenario/ScenarioPickerModal";
-import ScenarioSummary from "@/components/scenario/ScenarioSummary";
+import HashtagSelectField from "@/components/domain/HashtagSelectField";
+import UniversePickerModal from "@/components/universe/UniversePickerModal";
+import UniverseSummary from "@/components/universe/UniverseSummary";
 import BannerPreview from "./BannerPreview";
 
 interface BannerFormModalProps {
@@ -32,21 +43,28 @@ interface BannerFormModalProps {
 
 const EMPTY_VALUES: BannerSchema = {
   imageUrl: "",
-  scenarioId: 0,
-  titleOverride: "",
-  descriptionOverride: "",
-  tagsOverride: [],
+  universeId: 0,
+  titleOverrides: { ...EMPTY_LOCALIZED_TEXT },
+  descriptionOverrides: { ...EMPTY_LOCALIZED_TEXT },
+  hashtagIds: [],
   isActive: true,
   startAt: "",
   endAt: "",
 };
 
-/** 쉼표로 구분된 태그 입력값을 배열로 변환한다. */
-const parseTags = (value: string): string[] =>
-  value
-    .split(",")
-    .map((tag) => tag.trim().replace(/^#/, ""))
-    .filter(Boolean);
+/** 배너 후보로 쓸 해시태그 수. 라벨을 찾기 위한 조회라 넉넉히 받는다. */
+const HASHTAG_LOOKUP_SIZE = 200;
+
+/** 비어 있는 언어는 아예 보내지 않는다. 빈 문자열로 덮어쓰면 제목이 사라진다. */
+const dropEmptyLanguages = (text: Record<ServiceLanguage, string>) => {
+  const filled = SERVICE_LANGUAGES.filter((language) => text[language]?.trim());
+
+  return filled.length > 0
+    ? Object.fromEntries(
+        filled.map((language) => [language, text[language].trim()]),
+      )
+    : undefined;
+};
 
 const BannerFormModal = ({
   isOpen,
@@ -55,10 +73,12 @@ const BannerFormModal = ({
   onSubmit,
   isSubmitting,
 }: BannerFormModalProps) => {
-  const [scenario, setScenario] = useState<Scenario | undefined>(
-    banner?.scenario,
+  const [universe, setUniverse] = useState<Universe | undefined>(
+    banner?.universe,
   );
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  /** 지금 편집 중인 언어. 입력·미리보기가 같은 언어를 본다. */
+  const [language, setLanguage] = useState<ServiceLanguage>("KO");
 
   const {
     control,
@@ -77,15 +97,22 @@ const BannerFormModal = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    setScenario(banner?.scenario);
+    setUniverse(banner?.universe);
+    setLanguage("KO");
     reset(
       banner
         ? {
             imageUrl: banner.imageUrl,
-            scenarioId: banner.scenarioId,
-            titleOverride: banner.titleOverride ?? "",
-            descriptionOverride: banner.descriptionOverride ?? "",
-            tagsOverride: banner.tagsOverride ?? [],
+            universeId: banner.universeId,
+            titleOverrides: {
+              ...EMPTY_LOCALIZED_TEXT,
+              ...banner.titleOverrides,
+            },
+            descriptionOverrides: {
+              ...EMPTY_LOCALIZED_TEXT,
+              ...banner.descriptionOverrides,
+            },
+            hashtagIds: banner.hashtagIds ?? [],
             isActive: banner.isActive,
             startAt: toDateInputValue(banner.startAt),
             endAt: toDateInputValue(banner.endAt),
@@ -96,37 +123,54 @@ const BannerFormModal = ({
 
   const values = watch();
 
-  const handleSelectScenario = (selected: Scenario[]) => {
+  /* 선택한 해시태그의 라벨을 보여 주려면 목록이 필요하다. 미리보기도 같은 값을 쓴다. */
+  const { data: hashtagData } = useHashtagListQuery({
+    page: 1,
+    size: HASHTAG_LOOKUP_SIZE,
+    isActive: "true",
+  });
+
+  const hashtagLabels = new Map(
+    (hashtagData?.content ?? []).map((hashtag) => [
+      hashtag.hashtagId,
+      resolveHashtagLabel(hashtag, language),
+    ]),
+  );
+
+  const handleSelectUniverse = (selected: Universe[]) => {
     const [next] = selected;
     if (!next) return;
 
-    setScenario(next);
-    setValue("scenarioId", next.scenarioId, { shouldValidate: true });
+    setUniverse(next);
+    setValue("universeId", next.universeId, { shouldValidate: true });
   };
 
   const submit = handleSubmit((formValues) => {
     onSubmit({
       ...formValues,
-      titleOverride: formValues.titleOverride || undefined,
-      descriptionOverride: formValues.descriptionOverride || undefined,
-      tagsOverride:
-        formValues.tagsOverride && formValues.tagsOverride.length > 0
-          ? formValues.tagsOverride
-          : undefined,
+      /* 빈 언어를 그대로 보내면 "덮어쓰기 없음"과 "빈 문자열로 덮어쓰기"가 섞인다. */
+      titleOverrides: dropEmptyLanguages(formValues.titleOverrides),
+      descriptionOverrides: dropEmptyLanguages(formValues.descriptionOverrides),
+      hashtagIds:
+        formValues.hashtagIds.length > 0 ? formValues.hashtagIds : undefined,
       startAt: formValues.startAt || undefined,
       endAt: formValues.endAt || undefined,
     });
   });
 
-  // 미리보기는 저장 전 값 기준으로 계산한다. 오버라이드가 비어 있으면 세계관 원본을 쓴다.
-  const previewContent = scenario
-    ? resolveBannerContent({
-        ...(banner ?? ({} as Banner)),
-        scenario,
-        titleOverride: values.titleOverride,
-        descriptionOverride: values.descriptionOverride,
-        tagsOverride: values.tagsOverride,
-      })
+  // 미리보기는 저장 전 값 기준으로, 지금 편집 중인 언어로 계산한다.
+  const previewContent = universe
+    ? resolveBannerContent(
+        {
+          ...(banner ?? ({} as Banner)),
+          universe,
+          titleOverrides: values.titleOverrides,
+          descriptionOverrides: values.descriptionOverrides,
+          hashtagIds: values.hashtagIds,
+        },
+        language,
+        hashtagLabels,
+      )
     : { title: "", description: "", tags: [] as string[] };
 
   return (
@@ -164,12 +208,12 @@ const BannerFormModal = ({
           <FormField
             label="세계관"
             required
-            error={errors.scenarioId?.message}
+            error={errors.universeId?.message}
             hint="배너 제목·설명·태그의 원본입니다."
           >
-            {scenario ? (
+            {universe ? (
               <div className="flex items-center gap-3 rounded-field border border-border-main p-3">
-                <ScenarioSummary scenario={scenario} className="flex-1" />
+                <UniverseSummary universe={universe} className="flex-1" />
                 <Button
                   variant="secondary"
                   size="sm"
@@ -211,50 +255,79 @@ const BannerFormModal = ({
             />
           </FormField>
 
-          <FormField
-            label="제목 덮어쓰기"
-            htmlFor="banner-title"
-            error={errors.titleOverride?.message}
-            hint="비워두면 세계관 제목을 사용합니다."
-          >
-            <Input
-              id="banner-title"
-              placeholder={scenario?.name ?? "세계관을 먼저 선택해 주세요"}
-              hasError={Boolean(errors.titleOverride)}
-              {...register("titleOverride")}
+          {/*
+            언어 탭. 6개 언어 × (제목·설명)을 한 화면에 늘어놓으면 입력이 12칸이 된다.
+            탭으로 나누면 미리보기도 지금 보는 언어를 그대로 따라간다.
+          */}
+          <div className="flex flex-col gap-3 rounded-field border border-border-main p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[13px] font-medium text-font-1">
+                문구 덮어쓰기
+              </p>
+              <span className="text-[12px] text-font-2">
+                입력한 언어 {countFilledLanguages(values.titleOverrides)}/
+                {SERVICE_LANGUAGES.length} · 비우면 세계관 원본을 씁니다
+              </span>
+            </div>
+
+            <Tabs
+              items={SERVICE_LANGUAGES.map((item) => ({
+                label: SERVICE_LANGUAGE_LABEL[item],
+                value: item,
+              }))}
+              value={language}
+              onChange={setLanguage}
             />
-          </FormField>
+
+            <FormField
+              label="제목"
+              htmlFor={`banner-title-${language}`}
+              error={errors.titleOverrides?.[language]?.message}
+            >
+              <Input
+                id={`banner-title-${language}`}
+                placeholder={
+                  language === "KO"
+                    ? (universe?.name ?? "세계관을 먼저 선택해 주세요")
+                    : "미입력 시 한국어 · 세계관 원본"
+                }
+                hasError={Boolean(errors.titleOverrides?.[language])}
+                {...register(`titleOverrides.${language}`)}
+              />
+            </FormField>
+
+            <FormField
+              label="설명"
+              htmlFor={`banner-description-${language}`}
+              error={errors.descriptionOverrides?.[language]?.message}
+            >
+              <Textarea
+                id={`banner-description-${language}`}
+                rows={3}
+                placeholder={
+                  language === "KO"
+                    ? (universe?.description ?? "")
+                    : "미입력 시 한국어 · 세계관 원본"
+                }
+                hasError={Boolean(errors.descriptionOverrides?.[language])}
+                {...register(`descriptionOverrides.${language}`)}
+              />
+            </FormField>
+          </div>
 
           <FormField
-            label="설명 덮어쓰기"
-            htmlFor="banner-description"
-            error={errors.descriptionOverride?.message}
-            hint="비워두면 세계관 설명을 사용합니다."
-          >
-            <Textarea
-              id="banner-description"
-              rows={3}
-              placeholder={scenario?.description ?? ""}
-              hasError={Boolean(errors.descriptionOverride)}
-              {...register("descriptionOverride")}
-            />
-          </FormField>
-
-          <FormField
-            label="태그 덮어쓰기"
-            htmlFor="banner-tags"
-            error={errors.tagsOverride?.message}
-            hint="쉼표로 구분 · 비워두면 세계관 태그를 사용합니다."
+            label="해시태그"
+            error={errors.hashtagIds?.message}
+            hint="등록된 해시태그에서 고릅니다. 비워두면 세계관 태그를 씁니다."
           >
             <Controller
               control={control}
-              name="tagsOverride"
+              name="hashtagIds"
               render={({ field }) => (
-                <Input
-                  id="banner-tags"
-                  placeholder="판타지, 로맨스"
-                  value={field.value?.join(", ") ?? ""}
-                  onChange={(event) => field.onChange(parseTags(event.target.value))}
+                <HashtagSelectField
+                  value={field.value}
+                  onChange={field.onChange}
+                  language={language}
                 />
               )}
             />
@@ -293,11 +366,11 @@ const BannerFormModal = ({
         </form>
       </Modal>
 
-      <ScenarioPickerModal
+      <UniversePickerModal
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
-        onConfirm={handleSelectScenario}
-        selectedScenarioIds={[]}
+        onConfirm={handleSelectUniverse}
+        selectedUniverseIds={[]}
         selectableCount={1}
       />
     </>

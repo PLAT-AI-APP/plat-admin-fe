@@ -66,13 +66,18 @@ export interface UpdateReportStatusValues {
   handlerNote?: string;
 }
 
-/** 신고 대상 화면으로 이동할 경로를 만든다. 대상 타입이 늘면 여기만 고친다. */
+/**
+ * 신고 대상의 **상세 화면**으로 바로 가는 경로를 만든다. 대상 타입이 늘면 여기만 고친다.
+ *
+ * 캐릭터·유저는 상세 페이지가 있어 그대로 이동하고,
+ * 댓글은 상세 페이지가 없으므로 목록에서 상세 모달이 열리도록 ID를 실어 보낸다.
+ */
 export const getReportTargetHref = (report: Report): string => {
-  const routeByType: Record<ReportTargetType, string> = {
-    CHARACTER: "/characters",
-    COMMENT: "/community/comments",
-    USER: "/users",
+  const hrefByType: Record<ReportTargetType, string> = {
+    CHARACTER: `/universes/characters/${report.targetId}`,
+    COMMENT: `/community/comments?commentId=${report.targetId}`,
+    USER: `/users/${report.targetId}`,
   };
 
-  return `${routeByType[report.targetType]}?keyword=${encodeURIComponent(report.targetName)}`;
+  return hrefByType[report.targetType];
 };

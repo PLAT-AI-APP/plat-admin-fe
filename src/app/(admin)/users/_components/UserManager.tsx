@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useKeywordParam } from "@/hooks/useKeywordParam";
+import { useListParams } from "@/hooks/useListParams";
 import { useUserListQuery } from "@/api/user/getUserList";
 import { useUserMutation } from "@/api/user/mutateUser";
 import { Ban, CheckCircle, Eye, Gear } from "@/icons";
@@ -39,7 +40,6 @@ import {
   USER_STATUS_LABEL,
   USER_STATUS_TONE,
 } from "../_constants/userOptions";
-import UserDetailModal from "./UserDetailModal";
 import UserRoleModal from "./UserRoleModal";
 import UserSuspendModal from "./UserSuspendModal";
 
@@ -72,19 +72,23 @@ const USER_CSV_COLUMNS: CsvColumn<User>[] = [
   { header: "가입일", value: (row) => formatDate(row.createdAt) },
 ];
 
+/** 주소에 실리는 목록 조건. 전역 검색(⌘K)이 넘겨 주는 keyword도 여기로 들어온다. */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  status: "",
+  role: "",
+  isAdultVerified: "",
+};
+
 const UserManager = () => {
-  const [page, setPage] = useState(1);
-  // 전역 검색(⌘K)에서 넘어온 검색어를 초기값으로 쓰고, 화면에서 검색하면 그 값이 우선한다.
-  const keywordParam = useKeywordParam();
-  const [draftKeyword, setDraftKeyword] = useState<string | null>(null);
-  const keyword = draftKeyword ?? keywordParam;
-  const setKeyword = setDraftKeyword;
-  const [status, setStatus] = useState<UserStatus | "">("");
-  const [role, setRole] = useState<UserRole | "">("");
-  const [isAdultVerified, setIsAdultVerified] = useState("");
+  const router = useRouter();
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword, isAdultVerified } = params;
+  const status = params.status as UserStatus | "";
+  const role = params.role as UserRole | "";
 
   // 모달은 대상 유저를 상태로 들고 있는 방식으로 하나씩만 연다.
-  const [detailUserId, setDetailUserId] = useState<number | null>(null);
   const [suspendTarget, setSuspendTarget] = useState<User | null>(null);
   const [roleTarget, setRoleTarget] = useState<User | null>(null);
 
@@ -98,12 +102,6 @@ const UserManager = () => {
   });
 
   const { statusMutation, roleMutation } = useUserMutation();
-
-  /** 검색·필터가 바뀌면 항상 첫 페이지로 돌아간다. */
-  const handleSearch = (nextKeyword: string) => {
-    setKeyword(nextKeyword);
-    setPage(1);
-  };
 
   const handleUnsuspend = (user: User) => {
     openConfirm({
@@ -158,7 +156,7 @@ const UserManager = () => {
       {
         label: "상세 보기",
         icon: <Eye size={15} />,
-        onSelect: () => setDetailUserId(user.userId),
+        onSelect: () => router.push(`/users/${user.userId}`),
       },
     ];
 
@@ -315,7 +313,7 @@ const UserManager = () => {
       width: "56px",
       align: "center",
       render: (user) => (
-        // 행 클릭(상세 모달)과 겹치지 않도록 액션 영역에서 이벤트를 멈춘다.
+        // 행 클릭(상세 페이지 이동)과 겹치지 않도록 액션 영역에서 이벤트를 멈춘다.
         <div
           className="flex justify-center"
           onClick={(event) => event.stopPropagation()}
@@ -332,7 +330,7 @@ const UserManager = () => {
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
           <SearchInput
             value={keyword}
-            onSearch={handleSearch}
+            onSearch={(next) => setParams({ keyword: next })}
             placeholder="닉네임 · 이메일 · 유저 ID 검색"
           />
 
@@ -348,8 +346,7 @@ const UserManager = () => {
               options={USER_STATUS_FILTER_OPTIONS}
               value={status}
               onChange={(event) => {
-                setStatus(event.target.value as UserStatus | "");
-                setPage(1);
+                setParams({ status: event.target.value });
               }}
               selectBoxClassName="w-36"
             />
@@ -359,8 +356,7 @@ const UserManager = () => {
               options={USER_ROLE_FILTER_OPTIONS}
               value={role}
               onChange={(event) => {
-                setRole(event.target.value as UserRole | "");
-                setPage(1);
+                setParams({ role: event.target.value });
               }}
               selectBoxClassName="w-40"
             />
@@ -370,8 +366,7 @@ const UserManager = () => {
               options={ADULT_VERIFIED_FILTER_OPTIONS}
               value={isAdultVerified}
               onChange={(event) => {
-                setIsAdultVerified(event.target.value);
-                setPage(1);
+                setParams({ isAdultVerified: event.target.value });
               }}
               selectBoxClassName="w-40"
             />
@@ -383,7 +378,7 @@ const UserManager = () => {
           rows={data?.content ?? []}
           getRowKey={(user) => String(user.userId)}
           isLoading={isLoading}
-          onRowClick={(user) => setDetailUserId(user.userId)}
+          onRowClick={(user) => router.push(`/users/${user.userId}`)}
           emptyTitle="조건에 맞는 유저가 없습니다."
           emptyDescription="검색어나 상태·역할 필터를 바꿔서 다시 찾아보세요."
         />
@@ -392,14 +387,9 @@ const UserManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
-
-      <UserDetailModal
-        userId={detailUserId}
-        onClose={() => setDetailUserId(null)}
-      />
 
       <UserSuspendModal
         user={suspendTarget}

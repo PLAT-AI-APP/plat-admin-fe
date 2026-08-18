@@ -1,5 +1,5 @@
 import PageHeader from "@/components/layout/PageHeader";
-import CurationSlotBoard from "@/components/scenario/CurationSlotBoard";
+import CurationSlotBoard from "@/components/universe/CurationSlotBoard";
 
 export default function OfficialPickPage() {
   return (
@@ -11,7 +11,7 @@ export default function OfficialPickPage() {
 
       <CurationSlotBoard
         slotKey="OFFICIAL_TASTE"
-        guide="후보 목록에는 공식 캐릭터에 등록된 세계관만 노출됩니다. 저장해야 실제 앱에 반영됩니다."
+        guide="후보 목록에는 '공식 계정'으로 지정된 크리에이터의 세계관만 노출됩니다. 후보가 비어 있으면 캐릭터 > 공식 계정에서 계정을 먼저 등록하세요."
       />
     </>
   );

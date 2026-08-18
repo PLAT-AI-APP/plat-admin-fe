@@ -140,7 +140,7 @@ PLAT(이하 "회사")은 이용자의 개인정보를 중요하게 생각하며,
 ## 7. 개인정보 보호책임자
 
 - 담당 부서: PLAT 운영팀
-- 문의: privacy@plat.io
+- 문의: privacy@plat.so
 
 > 이 개인정보처리방침은 ${effectiveDate}부터 적용됩니다.
 `;

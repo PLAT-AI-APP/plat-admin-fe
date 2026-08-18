@@ -11,6 +11,8 @@ export interface LedgerListParams {
   /** YYYY-MM-DD */
   startDate?: string;
   endDate?: string;
+  /** 특정 유저의 장부만 조회한다. (유저 상세에서 사용) */
+  userId?: number;
 }
 
 export const getLedgerList = async (params: LedgerListParams) => {

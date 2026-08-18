@@ -5,7 +5,7 @@ import type { AppError } from "@/type/api";
 export type GlobalSearchType =
   | "USER"
   | "CHARACTER"
-  | "SCENARIO"
+  | "UNIVERSE"
   | "HASHTAG";
 
 export interface GlobalSearchItem {

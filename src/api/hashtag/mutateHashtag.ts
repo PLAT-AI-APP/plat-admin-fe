@@ -38,14 +38,6 @@ export const deleteHashtag = async (hashtagId: number) => {
   await adminAxios.delete(`/admin/hashtags/${hashtagId}`);
 };
 
-export const updateHashtagOrder = async (hashtagIds: number[]) => {
-  const response = await adminAxios.put<Hashtag[]>("/admin/hashtags/order", {
-    hashtagIds,
-  });
-
-  return response.data;
-};
-
 /** 해시태그 추가·수정·노출 변경·삭제 후 목록을 갱신합니다. */
 export const useHashtagMutation = () => {
   const queryClient = useQueryClient();

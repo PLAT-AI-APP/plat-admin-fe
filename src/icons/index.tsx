@@ -48,11 +48,13 @@ export { default as Dots } from "./Dots";
 export { default as Edit } from "./Edit";
 export { default as Filter } from "./Filter";
 export { default as Grip } from "./Grip";
+export { default as Key } from "./Key";
 export { default as Logout } from "./Logout";
 export { default as Plus } from "./Plus";
 export { default as Refresh } from "./Refresh";
 export { default as Search } from "./Search";
 export { default as Trash } from "./Trash";
+export { default as Unlock } from "./Unlock";
 export { default as Upload } from "./Upload";
 
 // 4. 상태 및 기타 UI 요소

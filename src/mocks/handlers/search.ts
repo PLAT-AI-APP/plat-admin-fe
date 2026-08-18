@@ -1,6 +1,6 @@
 import { HttpResponse, delay, http } from "msw";
 import type { GlobalSearchItem } from "@/api/search/getGlobalSearch";
-import { characters, scenarios } from "../db/character";
+import { characters, universes } from "../db/character";
 import { hashtags } from "../db/hashtag";
 import { users } from "../db/user";
 import { MOCK_DELAY_MS, matchesKeyword } from "../utils";
@@ -29,7 +29,7 @@ export const searchHandlers = [
         id: user.userId,
         title: user.nickname,
         description: user.email,
-        href: `/users?keyword=${encodeURIComponent(user.nickname)}`,
+        href: `/users/${user.userId}`,
       }));
 
     const characterItems: GlobalSearchItem[] = characters
@@ -47,25 +47,25 @@ export const searchHandlers = [
         id: character.characterId,
         title: character.name,
         description: `크리에이터 ${character.creatorNickname}`,
-        href: `/characters?keyword=${encodeURIComponent(character.name)}`,
+        href: `/universes/characters/${character.characterId}`,
       }));
 
-    const scenarioItems: GlobalSearchItem[] = scenarios
-      .filter((scenario) =>
+    const universeItems: GlobalSearchItem[] = universes
+      .filter((universe) =>
         matchesKeyword(
           keyword,
-          scenario.name,
-          scenario.characterName,
-          String(scenario.scenarioId),
+          universe.name,
+          ...universe.characters.map((character) => character.name),
+          String(universe.universeId),
         ),
       )
       .slice(0, LIMIT_PER_TYPE)
-      .map((scenario) => ({
-        type: "SCENARIO",
-        id: scenario.scenarioId,
-        title: scenario.name,
-        description: `캐릭터 ${scenario.characterName}`,
-        href: `/characters/scenarios?keyword=${encodeURIComponent(scenario.name)}`,
+      .map((universe) => ({
+        type: "UNIVERSE",
+        id: universe.universeId,
+        title: universe.name,
+        description: `캐릭터 ${universe.characters.map((character) => character.name).join(", ")}`,
+        href: `/universes/${universe.universeId}`,
       }));
 
     const hashtagItems: GlobalSearchItem[] = hashtags
@@ -78,7 +78,7 @@ export const searchHandlers = [
         id: hashtag.hashtagId,
         title: `#${hashtag.labels.KO}`,
         description: `${hashtag.usageCount}곳에서 사용 중`,
-        href: `/characters/hashtags?keyword=${encodeURIComponent(hashtag.labels.KO)}`,
+        href: `/universes/hashtags?keyword=${encodeURIComponent(hashtag.labels.KO)}`,
       }));
 
     await delay(MOCK_DELAY_MS);
@@ -87,7 +87,7 @@ export const searchHandlers = [
       items: [
         ...userItems,
         ...characterItems,
-        ...scenarioItems,
+        ...universeItems,
         ...hashtagItems,
       ],
     });

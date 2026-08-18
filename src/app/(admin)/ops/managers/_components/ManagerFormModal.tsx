@@ -4,14 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { managerSchema, type ManagerSchema } from "@/schema/manager.schema";
-import { ADMIN_ROLE_LABEL, type AdminRole } from "@/store/useAdminStore";
+import { useAdminRoleListQuery } from "@/api/ops/getAdminRoleList";
 import type { Manager, ManagerFormValues } from "@/type/ops";
 import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Select, { type SelectOption } from "@/components/ui/Select";
-import Switch from "@/components/ui/Switch";
 
 interface ManagerFormModalProps {
   isOpen: boolean;
@@ -22,22 +21,10 @@ interface ManagerFormModalProps {
   isSubmitting: boolean;
 }
 
-const ROLE_OPTIONS: SelectOption<AdminRole>[] = (
-  Object.keys(ADMIN_ROLE_LABEL) as AdminRole[]
-).map((role) => ({ label: ADMIN_ROLE_LABEL[role], value: role }));
-
-/** 권한별로 무엇을 할 수 있는지 폼에서 바로 알 수 있게 안내한다. */
-const ROLE_HINT: Record<AdminRole, string> = {
-  SUPER_ADMIN: "모든 기능과 관리자 관리까지 사용할 수 있습니다.",
-  ADMIN: "결제·크레딧을 제외한 운영 기능을 사용할 수 있습니다.",
-  BILLING_ADMIN: "결제·크레딧 관련 기능만 사용할 수 있습니다.",
-};
-
 const EMPTY_VALUES: ManagerSchema = {
   name: "",
   email: "",
-  role: "ADMIN",
-  isActive: true,
+  roleId: 0,
 };
 
 const ManagerFormModal = ({
@@ -68,14 +55,22 @@ const ManagerFormModal = ({
         ? {
             name: manager.name,
             email: manager.email,
-            role: manager.role,
-            isActive: manager.isActive,
+            roleId: manager.roleId,
           }
         : EMPTY_VALUES,
     );
   }, [isOpen, manager, reset]);
 
-  const selectedRole = watch("role");
+  const { data: roleData } = useAdminRoleListQuery();
+  const roles = roleData?.items ?? [];
+
+  const roleOptions: SelectOption[] = roles.map((role) => ({
+    label: role.name,
+    value: String(role.roleId),
+  }));
+
+  const selectedRoleId = watch("roleId");
+  const selectedRole = roles.find((role) => role.roleId === selectedRoleId);
 
   const submit = handleSubmit((formValues) => onSubmit(formValues));
 
@@ -83,8 +78,12 @@ const ManagerFormModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={manager ? "관리자 수정" : "관리자 추가"}
-      description="권한에 따라 접근할 수 있는 메뉴가 달라집니다."
+      title={manager ? "관리자 수정" : "관리자 초대"}
+      description={
+        manager
+          ? "직책을 바꾸면 이 계정이 할 수 있는 일이 함께 바뀝니다."
+          : "임시 비밀번호를 발급합니다. 본인이 비밀번호를 바꾼 뒤부터 콘솔을 사용할 수 있습니다."
+      }
       size="md"
       footer={
         <>
@@ -92,7 +91,7 @@ const ManagerFormModal = ({
             취소
           </Button>
           <Button variant="primary" onClick={submit} isLoading={isSubmitting}>
-            {manager ? "수정" : "추가"}
+            {manager ? "수정" : "초대"}
           </Button>
         </>
       }
@@ -122,49 +121,36 @@ const ManagerFormModal = ({
           <Input
             id="manager-email"
             type="email"
-            placeholder="name@plat.io"
+            placeholder="name@plat.so"
             hasError={Boolean(errors.email)}
             {...register("email")}
           />
         </FormField>
 
         <FormField
-          label="권한"
+          label="직책"
           htmlFor="manager-role"
           required
-          error={errors.role?.message}
-          hint={ROLE_HINT[selectedRole]}
-        >
-          <Select
-            id="manager-role"
-            options={ROLE_OPTIONS}
-            hasError={Boolean(errors.role)}
-            {...register("role")}
-          />
-        </FormField>
-
-        <FormField
-          label="활성 상태"
-          hint="비활성 계정은 로그인할 수 없습니다."
-          error={errors.isActive?.message}
+          error={errors.roleId?.message}
+          /* 권한은 직책이 갖는다. 어떤 직책인지 고르면 그 직책의 설명을 그대로 보여 준다. */
+          hint={selectedRole?.description || "권한은 직책에 따라 정해집니다."}
         >
           <Controller
             control={control}
-            name="isActive"
+            name="roleId"
             render={({ field }) => (
-              <div className="flex items-center gap-2">
-                <Switch
-                  label="관리자 활성 상태"
-                  checked={field.value}
-                  onChange={field.onChange}
-                />
-                <span className="text-[13px] text-font-2">
-                  {field.value ? "활성" : "비활성"}
-                </span>
-              </div>
+              <Select
+                id="manager-role"
+                options={roleOptions}
+                placeholder="직책을 선택해 주세요"
+                value={field.value ? String(field.value) : ""}
+                onChange={(event) => field.onChange(Number(event.target.value))}
+                hasError={Boolean(errors.roleId)}
+              />
             )}
           />
         </FormField>
+
       </form>
     </Modal>
   );

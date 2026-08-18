@@ -1,3 +1,10 @@
+import {
+  SERVICE_LANGUAGES,
+  SERVICE_LANGUAGE_LABEL,
+  countFilledLanguages,
+  type ServiceLanguage,
+} from "./language";
+
 /**
  * 해시태그.
  *
@@ -8,25 +15,11 @@
  * 라벨을 언어별로 관리한다.
  */
 
-export type HashtagLanguage = "KO" | "EN" | "JA" | "ZH" | "TH" | "VI";
+/** 해시태그 라벨도 서비스 공용 언어 목록을 그대로 쓴다. */
+export type HashtagLanguage = ServiceLanguage;
 
-export const HASHTAG_LANGUAGES: HashtagLanguage[] = [
-  "KO",
-  "EN",
-  "JA",
-  "ZH",
-  "TH",
-  "VI",
-];
-
-export const HASHTAG_LANGUAGE_LABEL: Record<HashtagLanguage, string> = {
-  KO: "한국어",
-  EN: "영어",
-  JA: "일본어",
-  ZH: "중국어",
-  TH: "태국어",
-  VI: "베트남어",
-};
+export const HASHTAG_LANGUAGES = SERVICE_LANGUAGES;
+export const HASHTAG_LANGUAGE_LABEL = SERVICE_LANGUAGE_LABEL;
 
 /**
  * 사용자가 태그를 고를 때 묶어서 보여주는 분류.
@@ -73,14 +66,12 @@ export interface Hashtag {
   /** 언어별 노출 라벨. KO는 필수, 나머지는 비어 있으면 KO로 대체된다. */
   labels: Record<HashtagLanguage, string>;
   category: HashtagCategory;
-  /** 성인 인증 유저에게만 노출되는 태그 */
+  /** 성인 태그. 성인 인증 유저에게만 노출된다. */
   isAdult: boolean;
-  /** 사용자 선택 목록에 노출할지 여부 */
+  /** 노출 여부. 끄면 사용자 선택 목록에서 사라진다. */
   isActive: boolean;
-  /** 이 태그를 사용 중인 캐릭터·세계관 수 (삭제 판단 근거) */
+  /** 이 태그를 사용 중인 세계관 수 (삭제 판단 근거) */
   usageCount: number;
-  /** 선택 목록 노출 순서 */
-  order: number;
   createdAt: string;
 }
 
@@ -98,5 +89,4 @@ export const resolveHashtagLabel = (
 ): string => hashtag.labels[language] || hashtag.labels.KO;
 
 /** 번역이 채워진 언어 수 */
-export const countTranslations = (labels: Record<HashtagLanguage, string>) =>
-  HASHTAG_LANGUAGES.filter((language) => labels[language]?.trim()).length;
+export const countTranslations = countFilledLanguages;

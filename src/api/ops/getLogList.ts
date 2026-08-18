@@ -9,6 +9,8 @@ export interface LogListParams {
   keyword?: string;
   level?: LogLevel | "";
   domain?: string;
+  /** 특정 관리자의 활동만 본다. 관리자 관리 화면에서 넘어올 때 쓴다. */
+  actorId?: string;
 }
 
 export const getLogList = async (params: LogListParams) => {

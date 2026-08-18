@@ -17,13 +17,11 @@ export const USER_STATUS_TONE: Record<UserStatus, BadgeTone> = {
 export const USER_ROLE_LABEL: Record<UserRole, string> = {
   USER: "일반 유저",
   CREATOR: "크리에이터",
-  DUMMY_CREATOR: "더미 크리에이터",
 };
 
 export const USER_ROLE_TONE: Record<UserRole, BadgeTone> = {
   USER: "neutral",
   CREATOR: "brand",
-  DUMMY_CREATOR: "info",
 };
 
 export const LOGIN_PROVIDER_LABEL: Record<LoginProvider, string> = {
@@ -44,14 +42,12 @@ export const USER_ROLE_FILTER_OPTIONS: SelectOption[] = [
   { label: "전체 역할", value: "" },
   { label: USER_ROLE_LABEL.USER, value: "USER" },
   { label: USER_ROLE_LABEL.CREATOR, value: "CREATOR" },
-  { label: USER_ROLE_LABEL.DUMMY_CREATOR, value: "DUMMY_CREATOR" },
 ];
 
 /** 역할 변경 모달에서 사용하는 선택지 (전체 옵션이 없다) */
 export const USER_ROLE_OPTIONS: SelectOption[] = [
   { label: USER_ROLE_LABEL.USER, value: "USER" },
   { label: USER_ROLE_LABEL.CREATOR, value: "CREATOR" },
-  { label: USER_ROLE_LABEL.DUMMY_CREATOR, value: "DUMMY_CREATOR" },
 ];
 
 export const SUSPEND_PERIOD_OPTIONS: SelectOption[] = [

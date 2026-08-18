@@ -1,5 +1,5 @@
 import PageHeader from "@/components/layout/PageHeader";
-import CurationSlotBoard from "@/components/scenario/CurationSlotBoard";
+import CurationSlotBoard from "@/components/universe/CurationSlotBoard";
 
 export default function AssetPickPage() {
   return (

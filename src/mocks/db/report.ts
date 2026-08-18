@@ -6,7 +6,7 @@ import type {
 } from "@/type/report";
 import { daysAgo, pickOne, randomInt } from "../utils";
 import { characters } from "./character";
-import { comments } from "./comment";
+import { comments, reportableCommentIds } from "./comment";
 import { users } from "./user";
 
 const REASONS: readonly ReportReason[] = [
@@ -74,16 +74,22 @@ const HANDLER_NOTES: Record<"RESOLVED" | "REJECTED", string[]> = {
   ],
 };
 
-/** 대상 타입에 맞는 실제 대상을 골라 이름과 본문 일부까지 맞춘다. */
+/**
+ * 대상 타입에 맞는 실제 대상을 골라 이름과 본문 일부까지 맞춘다.
+ * 누적 신고 수(targetReportCount)는 여기서 정하지 않는다.
+ * 같은 대상에 달린 신고가 건마다 다른 누적 수를 들고 있으면 안 되므로,
+ * 배열을 다 만든 뒤 실제 건수로 한 번에 채운다.
+ */
 const pickTarget = (seed: number, targetType: ReportTargetType) => {
   if (targetType === "COMMENT") {
-    const comment = comments[randomInt(seed, 0, comments.length - 1)];
+    // 신고성 내용을 가진 댓글만 신고 대상이 된다.
+    const commentId = pickOne(seed, reportableCommentIds);
+    const comment = comments.find((item) => item.commentId === commentId)!;
 
     return {
       targetId: comment.commentId,
       targetName: comment.authorNickname,
       targetSnippet: comment.content,
-      targetReportCount: Math.max(comment.reportCount, 1),
     };
   }
 
@@ -94,7 +100,6 @@ const pickTarget = (seed: number, targetType: ReportTargetType) => {
       targetId: user.userId,
       targetName: user.nickname,
       targetSnippet: user.email,
-      targetReportCount: Math.max(user.reportedCount, 1),
     };
   }
 
@@ -104,7 +109,6 @@ const pickTarget = (seed: number, targetType: ReportTargetType) => {
     targetId: character.characterId,
     targetName: character.name,
     targetSnippet: `크리에이터 ${character.creatorNickname}`,
-    targetReportCount: randomInt(seed * 3, 1, 12),
   };
 };
 
@@ -116,11 +120,13 @@ export const reports: Report[] = Array.from({ length: 38 }, (_, index) => {
   const reason = pickOne(seed * 7, REASONS);
   const status = pickOne(seed * 9, STATUSES);
   const isHandled = status === "RESOLVED" || status === "REJECTED";
+  const createdDaysAgo = Math.floor(index / 2) + 1;
 
   return {
     reportId: 38 - index,
     targetType,
     ...target,
+    targetReportCount: 0,
     reporterId: reporter.userId,
     reporterNickname: reporter.nickname,
     reason,
@@ -130,7 +136,39 @@ export const reports: Report[] = Array.from({ length: 38 }, (_, index) => {
     handlerNote: isHandled
       ? pickOne(seed * 13, HANDLER_NOTES[status])
       : undefined,
-    handledAt: isHandled ? daysAgo(index, 16) : undefined,
-    createdAt: daysAgo(Math.floor(index / 2) + 1, 20 - (index % 11)),
+    // 처리는 신고가 접수된 뒤에 이루어진다.
+    handledAt: isHandled
+      ? daysAgo(Math.max(0, createdDaysAgo - 1), 16)
+      : undefined,
+    createdAt: daysAgo(createdDaysAgo, 20 - (index % 11)),
   };
 });
+
+/**
+ * 신고에서 파생되는 집계값을 채운다.
+ * 신고가 접수·처리될 때마다 다시 불러 주면 누적 수가 계속 맞는다.
+ */
+export const syncReportDerivedCounts = () => {
+  const countFor = (targetType: ReportTargetType, targetId: number) =>
+    reports.filter(
+      (report) =>
+        report.targetType === targetType && report.targetId === targetId,
+    ).length;
+
+  // 같은 대상을 가리키는 신고는 모두 같은 누적 수를 들고 있어야 한다.
+  reports.forEach((report) => {
+    report.targetReportCount = countFor(report.targetType, report.targetId);
+  });
+
+  // 댓글의 "신고 N"과 신고 관리의 "누적 신고"는 같은 값이다.
+  comments.forEach((comment) => {
+    comment.reportCount = countFor("COMMENT", comment.commentId);
+  });
+
+  // 유저의 "누적 신고 접수"는 그 유저를 대상으로 접수된 신고의 수다.
+  users.forEach((user) => {
+    user.reportedCount = countFor("USER", user.userId);
+  });
+};
+
+syncReportDerivedCounts();

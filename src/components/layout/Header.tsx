@@ -1,12 +1,16 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useLogoutMutation } from "@/api/auth/logout";
 import { ADMIN_MENU, isMenuItemActive } from "@/constants/menu";
 import { useIsClient } from "@/hooks/useIsClient";
-import { ChevronRight, Moon, Search, Sun } from "@/icons";
-import { ADMIN_ROLE_LABEL, useAdminStore } from "@/store/useAdminStore";
+import { ChevronRight, Gear, Logout, Moon, Search, Sun } from "@/icons";
+import { useAdminStore } from "@/store/useAdminStore";
+import { openConfirm } from "@/store/useConfirmStore";
+import Dropdown from "@/components/ui/Dropdown";
 import IconButton from "@/components/ui/IconButton";
+import PendingBell from "./PendingBell";
 
 /** 현재 경로에 해당하는 [1뎁스, 2뎁스] 라벨을 찾는다. */
 const findBreadcrumb = (pathname: string): string[] => {
@@ -31,7 +35,9 @@ const findBreadcrumb = (pathname: string): string[] => {
 
 const Header = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const admin = useAdminStore((state) => state.admin);
+  const { mutate: submitLogout, isPending: isLoggingOut } = useLogoutMutation();
   const { resolvedTheme, setTheme } = useTheme();
 
   // 테마 아이콘은 하이드레이션 이후에만 렌더링해야 마크업 불일치가 없다.
@@ -39,6 +45,19 @@ const Header = () => {
 
   const breadcrumb = findBreadcrumb(pathname);
   const isDark = resolvedTheme === "dark";
+
+  /*
+    로그아웃은 되돌릴 수 없는 동작은 아니지만, 작성 중이던 폼이 통째로 사라진다.
+    한 번 묻는 편이 낫다.
+  */
+  const handleLogout = () =>
+    openConfirm({
+      title: "로그아웃할까요?",
+      description: "작성 중인 내용이 있다면 저장한 뒤 진행해 주세요.",
+      confirmText: "로그아웃",
+      onConfirm: () =>
+        submitLogout(undefined, { onSettled: () => router.replace("/login") }),
+    });
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border-main bg-surface px-6">
@@ -83,18 +102,45 @@ const Header = () => {
           />
         )}
 
-        {admin && (
-          <div className="flex items-center gap-2.5 border-l border-border-main pl-3">
-            <span className="flex size-8 items-center justify-center rounded-full bg-brand-opacity text-[13px] font-semibold text-brand">
-              {admin.name.slice(0, 1)}
-            </span>
+        <PendingBell />
 
-            <div className="leading-tight">
-              <p className="text-[13px] font-medium text-font-1">{admin.name}</p>
-              <p className="text-[12px] text-font-2">
-                {ADMIN_ROLE_LABEL[admin.role]}
-              </p>
-            </div>
+        {admin && (
+          <div className="border-l border-border-main pl-3">
+            <Dropdown
+              items={[
+                {
+                  label: "내 계정",
+                  icon: <Gear size={15} />,
+                  onSelect: () => router.push("/ops/my-account"),
+                },
+                {
+                  label: "로그아웃",
+                  icon: <Logout size={15} />,
+                  tone: "danger",
+                  disabled: isLoggingOut,
+                  onSelect: handleLogout,
+                },
+              ]}
+              trigger={
+                <button
+                  type="button"
+                  className="flex items-center gap-2.5 rounded-field py-1 pr-2 pl-1 transition hover:bg-surface-hover"
+                >
+                  <span className="flex size-8 items-center justify-center rounded-full bg-brand-opacity text-[13px] font-semibold text-brand">
+                    {admin.name.slice(0, 1)}
+                  </span>
+
+                  <span className="text-left leading-tight">
+                    <span className="block text-[13px] font-medium text-font-1">
+                      {admin.name}
+                    </span>
+                    <span className="block text-[12px] text-font-2">
+                      {admin.roleName}
+                    </span>
+                  </span>
+                </button>
+              }
+            />
           </div>
         )}
       </div>

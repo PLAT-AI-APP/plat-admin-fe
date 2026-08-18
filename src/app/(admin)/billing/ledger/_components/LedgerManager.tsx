@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { useLedgerListQuery } from "@/api/billing/getLedgerList";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond } from "@/lib/dayjs";
@@ -33,12 +33,19 @@ const LEDGER_CSV_COLUMNS: CsvColumn<LedgerEntry>[] = [
   { header: "일시", value: (row) => formatDateTimeSecond(row.createdAt) },
 ];
 
+/** 주소에 실리는 목록 조건. 기간을 포함해야 "이 기간 장부 좀 봐 달라"가 링크로 통한다. */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  type: "",
+  startDate: "",
+  endDate: "",
+};
+
 const LedgerManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [type, setType] = useState<LedgerType | "">("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword, startDate, endDate } = params;
+  const type = params.type as LedgerType | "";
 
   const { data, isLoading } = useLedgerListQuery({
     page,
@@ -51,26 +58,6 @@ const LedgerManager = () => {
 
   const entries = data?.content ?? [];
   const totalCount = data?.totalCount ?? 0;
-
-  const handleSearch = (nextKeyword: string) => {
-    setKeyword(nextKeyword);
-    setPage(1);
-  };
-
-  const handleChangeType = (nextType: LedgerType | "") => {
-    setType(nextType);
-    setPage(1);
-  };
-
-  /** 기간이 바뀌면 이전 페이지 번호가 의미를 잃으므로 1로 되돌린다. */
-  const handleChangeDateRange = (range: {
-    startDate: string;
-    endDate: string;
-  }) => {
-    setStartDate(range.startDate);
-    setEndDate(range.endDate);
-    setPage(1);
-  };
 
   const columns: TableColumn<LedgerEntry>[] = [
     {
@@ -177,7 +164,7 @@ const LedgerManager = () => {
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
           <SearchInput
             value={keyword}
-            onSearch={handleSearch}
+            onSearch={(next) => setParams({ keyword: next })}
             placeholder="닉네임, 유저 ID, 메모, 상품명 검색"
           />
 
@@ -186,16 +173,14 @@ const LedgerManager = () => {
               aria-label="장부 유형 필터"
               options={LEDGER_TYPE_FILTER_OPTIONS}
               value={type}
-              onChange={(event) =>
-                handleChangeType(event.target.value as LedgerType | "")
-              }
+              onChange={(event) => setParams({ type: event.target.value })}
               selectBoxClassName="w-36"
             />
 
             {/* 프리셋으로 대부분의 조회를 끝내고, 필요할 때만 날짜를 직접 고른다. */}
             <DateRangeFilter
               value={{ startDate, endDate }}
-              onChange={handleChangeDateRange}
+              onChange={(range) => setParams(range)}
             />
           </div>
         </div>
@@ -215,7 +200,7 @@ const LedgerManager = () => {
             page={page}
             totalCount={totalCount}
             pageSize={DEFAULT_PAGE_SIZE}
-            onChange={setPage}
+            onChange={(next) => setParams({ page: next })}
           />
         )}
       </Card>

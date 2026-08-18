@@ -11,6 +11,8 @@ export interface CharacterListParams {
   visibility?: CharacterVisibility | "";
   /** "true" | "false" | ""(전체). select 값을 그대로 넘기기 위해 문자열로 둔다. */
   isOfficial?: string;
+  /** 특정 크리에이터가 만든 캐릭터만 조회한다. (유저 상세에서 사용) */
+  creatorId?: number;
 }
 
 export const getCharacterList = async (params: CharacterListParams) => {

@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import PageHeader from "@/components/layout/PageHeader";
+import Skeleton from "@/components/ui/Skeleton";
 import ReportManager from "./_components/ReportManager";
 
 export default function ReportPage() {
@@ -9,7 +11,9 @@ export default function ReportPage() {
         description="캐릭터·댓글·유저에 접수된 신고를 확인하고 처리합니다."
       />
 
-      <ReportManager />
+      <Suspense fallback={<Skeleton className="h-64 w-full rounded-card" />}>
+        <ReportManager />
+      </Suspense>
     </>
   );
 }

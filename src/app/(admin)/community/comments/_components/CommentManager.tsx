@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useListParams } from "@/hooks/useListParams";
 import { useState } from "react";
 import { useCommentListQuery } from "@/api/comment/getCommentList";
 import { useCommentMutation } from "@/api/comment/mutateComment";
@@ -29,6 +31,7 @@ import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
+import CommentDetailModal from "./CommentDetailModal";
 import CommentHideModal from "./CommentHideModal";
 import {
   COMMENT_SORT_OPTIONS,
@@ -59,16 +62,32 @@ const COMMENT_CSV_COLUMNS: CsvColumn<Comment>[] = [
   { header: "작성일", value: (row) => formatDateTime(row.createdAt) },
 ];
 
+/** 주소에 실리는 목록 조건 */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  targetType: "",
+  status: "",
+  onlyReported: "",
+  sort: "RECENT",
+};
+
 const CommentManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [targetType, setTargetType] = useState<CommentTargetType | "">("");
-  const [status, setStatus] = useState<CommentStatus | "">("");
-  const [onlyReported, setOnlyReported] = useState(false);
-  const [sort, setSort] = useState<CommentSort>("RECENT");
+  // 신고 관리에서 신고된 댓글을 누르면 `?commentId=`를 달고 넘어온다. 그 댓글을 바로 연다.
+  const linkedCommentId = useSearchParams().get("commentId");
+
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const targetType = params.targetType as CommentTargetType | "";
+  const status = params.status as CommentStatus | "";
+  const onlyReported = params.onlyReported === "true";
+  const sort = params.sort as CommentSort;
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [hideTargets, setHideTargets] = useState<Comment[] | null>(null);
+  const [detailCommentId, setDetailCommentId] = useState<number | null>(
+    linkedCommentId ? Number(linkedCommentId) : null,
+  );
 
   const { data, isLoading } = useCommentListQuery({
     page,
@@ -84,9 +103,13 @@ const CommentManager = () => {
 
   const comments = data?.content ?? [];
 
-  /** 필터가 바뀌면 페이지와 선택을 함께 초기화한다. */
-  const resetView = () => {
-    setPage(1);
+  /**
+   * 필터가 바뀌면 선택을 비운다.
+   * 페이지 되돌림은 `useListParams`가 처리한다. 안 비우면 화면에 없는 댓글이
+   * 선택된 채로 일괄 처리에 끌려간다.
+   */
+  const applyFilter = (patch: Parameters<typeof setParams>[0]) => {
+    setParams(patch);
     setSelectedIds([]);
   };
 
@@ -169,32 +192,41 @@ const CommentManager = () => {
       ),
       width: "44px",
       render: (row) => (
-        <Checkbox
-          label=""
-          checked={selectedIds.includes(row.commentId)}
-          onChange={() => toggleSelect(row.commentId)}
-          disabled={row.status !== "VISIBLE"}
-        />
+        // 행 클릭(상세 모달)과 겹치지 않도록 선택 영역의 클릭은 여기서 멈춘다.
+        <div onClick={(event) => event.stopPropagation()}>
+          <Checkbox
+            label=""
+            checked={selectedIds.includes(row.commentId)}
+            onChange={() => toggleSelect(row.commentId)}
+            disabled={row.status !== "VISIBLE"}
+          />
+        </div>
+      ),
+    },
+    {
+      key: "targetType",
+      header: "분류",
+      width: "90px",
+      render: (row) => (
+        <Badge tone={COMMENT_TARGET_TYPE_TONE[row.targetType]}>
+          {COMMENT_TARGET_TYPE_LABEL[row.targetType]}
+        </Badge>
       ),
     },
     {
       key: "target",
       header: "대상",
-      width: "200px",
+      width: "180px",
       render: (row) => (
-        <div className="flex min-w-0 flex-col gap-1">
-          <Badge tone={COMMENT_TARGET_TYPE_TONE[row.targetType]}>
-            {COMMENT_TARGET_TYPE_LABEL[row.targetType]}
-          </Badge>
-
-          <Link
-            href={getCommentTargetHref(row)}
-            className="flex items-center gap-1 truncate text-[12px] text-font-2 transition hover:text-brand"
-          >
-            <span className="truncate">{row.targetName}</span>
-            <ExternalLink size={11} className="shrink-0" />
-          </Link>
-        </div>
+        // 대상 이름을 누르면 목록이 아니라 그 대상의 상세로 바로 이동한다.
+        <Link
+          href={getCommentTargetHref(row)}
+          onClick={(event) => event.stopPropagation()}
+          className="flex min-w-0 items-center gap-1 text-[13px] text-font-1 transition hover:text-brand"
+        >
+          <span className="truncate">{row.targetName}</span>
+          <ExternalLink size={11} className="shrink-0" />
+        </Link>
       ),
     },
     {
@@ -229,7 +261,8 @@ const CommentManager = () => {
       width: "140px",
       render: (row) => (
         <Link
-          href={`/users?keyword=${encodeURIComponent(row.authorNickname)}`}
+          href={`/users/${row.authorId}`}
+          onClick={(event) => event.stopPropagation()}
           className="text-font-2 transition hover:text-brand"
         >
           {truncate(row.authorNickname, 12)}
@@ -285,19 +318,27 @@ const CommentManager = () => {
           return <span className="text-[12px] text-font-disabled">-</span>;
         }
 
-        return row.status === "VISIBLE" ? (
-          <IconButton
-            label="숨김"
-            icon={<EyeOff size={16} />}
-            tone="danger"
-            onClick={() => setHideTargets([row])}
-          />
-        ) : (
-          <IconButton
-            label="다시 노출"
-            icon={<Eye size={16} />}
-            onClick={() => handleRestore(row)}
-          />
+        return (
+          // 행 클릭(상세 모달)과 겹치지 않도록 액션 영역의 클릭은 여기서 멈춘다.
+          <div
+            className="flex justify-end"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {row.status === "VISIBLE" ? (
+              <IconButton
+                label="숨김"
+                icon={<EyeOff size={16} />}
+                tone="danger"
+                onClick={() => setHideTargets([row])}
+              />
+            ) : (
+              <IconButton
+                label="다시 노출"
+                icon={<Eye size={16} />}
+                onClick={() => handleRestore(row)}
+              />
+            )}
+          </div>
         );
       },
     },
@@ -312,7 +353,7 @@ const CommentManager = () => {
 
       <Card
         title={`댓글 ${formatWithCommas(data?.totalCount ?? 0)}건`}
-        description="신고가 쌓인 댓글부터 확인하려면 정렬을 '신고 많은 순'으로 바꾸세요."
+        description="행을 클릭하면 댓글 상세가 열리고, 대상을 클릭하면 그 대상의 상세로 바로 이동합니다."
         action={
           <>
             {selectedIds.length > 0 && (
@@ -346,8 +387,7 @@ const CommentManager = () => {
           <SearchInput
             value={keyword}
             onSearch={(next) => {
-              setKeyword(next);
-              resetView();
+              applyFilter({ keyword: next });
             }}
             placeholder="내용 · 작성자 · 대상으로 검색"
           />
@@ -358,8 +398,7 @@ const CommentManager = () => {
               size="sm"
               leftIcon={<Flag size={15} />}
               onClick={() => {
-                setOnlyReported((prev) => !prev);
-                resetView();
+                applyFilter({ onlyReported: onlyReported ? "" : "true" });
               }}
             >
               신고된 댓글만
@@ -370,8 +409,7 @@ const CommentManager = () => {
               options={COMMENT_TARGET_TYPE_FILTER_OPTIONS}
               value={targetType}
               onChange={(event) => {
-                setTargetType(event.target.value as CommentTargetType | "");
-                resetView();
+                applyFilter({ targetType: event.target.value });
               }}
               selectBoxClassName="w-32"
             />
@@ -381,8 +419,7 @@ const CommentManager = () => {
               options={COMMENT_STATUS_FILTER_OPTIONS}
               value={status}
               onChange={(event) => {
-                setStatus(event.target.value as CommentStatus | "");
-                resetView();
+                applyFilter({ status: event.target.value });
               }}
               selectBoxClassName="w-32"
             />
@@ -392,8 +429,7 @@ const CommentManager = () => {
               options={COMMENT_SORT_OPTIONS}
               value={sort}
               onChange={(event) => {
-                setSort(event.target.value as CommentSort);
-                resetView();
+                applyFilter({ sort: event.target.value });
               }}
               selectBoxClassName="w-36"
             />
@@ -405,6 +441,7 @@ const CommentManager = () => {
           rows={comments}
           getRowKey={(row) => String(row.commentId)}
           isLoading={isLoading}
+          onRowClick={(row) => setDetailCommentId(row.commentId)}
           emptyTitle="조회된 댓글이 없습니다."
           emptyDescription="검색어나 필터를 바꿔서 다시 확인해 보세요."
         />
@@ -413,9 +450,14 @@ const CommentManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
+
+      <CommentDetailModal
+        commentId={detailCommentId}
+        onClose={() => setDetailCommentId(null)}
+      />
 
       <CommentHideModal
         targets={hideTargets}

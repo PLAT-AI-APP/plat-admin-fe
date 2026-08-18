@@ -180,9 +180,11 @@ export const billingHandlers = [
     const url = new URL(request.url);
     const keyword = url.searchParams.get("keyword") ?? "";
     const type = url.searchParams.get("type") as AdjustmentType | null;
+    const userId = url.searchParams.get("userId") ?? "";
 
     const filtered = creditAdjustments.filter((adjustment) => {
       if (type && adjustment.type !== type) return false;
+      if (userId && adjustment.userId !== Number(userId)) return false;
 
       return matchesKeyword(
         keyword,
@@ -260,9 +262,11 @@ export const billingHandlers = [
     const type = url.searchParams.get("type") as LedgerType | null;
     const startDate = url.searchParams.get("startDate") ?? "";
     const endDate = url.searchParams.get("endDate") ?? "";
+    const userId = url.searchParams.get("userId") ?? "";
 
     const filtered = ledgerEntries.filter((entry) => {
       if (type && entry.type !== type) return false;
+      if (userId && entry.userId !== Number(userId)) return false;
       if (!isInPeriod(entry.createdAt, startDate, endDate)) return false;
 
       return matchesKeyword(

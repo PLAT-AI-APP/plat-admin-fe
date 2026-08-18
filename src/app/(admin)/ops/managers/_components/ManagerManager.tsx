@@ -1,51 +1,93 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAdminRoleListQuery } from "@/api/ops/getAdminRoleList";
 import { useManagerListQuery } from "@/api/ops/getManagerList";
 import { useManagerMutation } from "@/api/ops/mutateManager";
-import { Edit, Plus, Trash } from "@/icons";
+import { Edit, Key, ListLines, Trash, Unlock, UserPlus } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { showErrorToast } from "@/lib/toast";
+import { useAdminStore, useHasPermission } from "@/store/useAdminStore";
 import { openConfirm } from "@/store/useConfirmStore";
-import { ADMIN_ROLE_LABEL, useAdminStore } from "@/store/useAdminStore";
-import type { Manager, ManagerFormValues } from "@/type/ops";
+import type {
+  Manager,
+  ManagerCredentialIssued,
+  ManagerFormValues,
+  ManagerStatus,
+} from "@/type/ops";
 import Alert from "@/components/ui/Alert";
 import Badge, { type BadgeTone } from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import Dropdown from "@/components/ui/Dropdown";
 import IconButton from "@/components/ui/IconButton";
 import SearchInput from "@/components/ui/SearchInput";
-import Switch from "@/components/ui/Switch";
+import Select from "@/components/ui/Select";
 import Table, { TableCellStack, type TableColumn } from "@/components/ui/Table";
+import {
+  MANAGER_STATUS_FILTER_OPTIONS,
+  MANAGER_STATUS_HINT,
+  MANAGER_STATUS_LABEL,
+  MANAGER_STATUS_TONE,
+} from "../_constants/manager";
+import CredentialResultModal from "./CredentialResultModal";
 import ManagerFormModal from "./ManagerFormModal";
 
-/** 권한별 뱃지 색. 최고관리자만 브랜드 색으로 구분한다. */
-const ROLE_TONE: Record<Manager["role"], BadgeTone> = {
-  SUPER_ADMIN: "brand",
-  ADMIN: "info",
-  BILLING_ADMIN: "neutral",
-};
+/**
+ * 직책 뱃지 색.
+ *
+ * 직책은 운영자가 자유롭게 만들 수 있어 이름으로 색을 정할 수 없다.
+ * 전권을 가진 직책만 눈에 띄게 하고 나머지는 같은 색으로 둔다.
+ */
+const roleTone = (isSuperAdminRole: boolean): BadgeTone =>
+  isSuperAdminRole ? "brand" : "neutral";
 
 const ManagerManager = () => {
+  const router = useRouter();
   const currentAdmin = useAdminStore((state) => state.admin);
-
-  const { data, isLoading } = useManagerListQuery();
-  const { createMutation, updateMutation, statusMutation, deleteMutation } =
-    useManagerMutation();
+  const canWrite = useHasPermission("manager:write");
+  const canDelete = useHasPermission("manager:delete");
 
   const [keyword, setKeyword] = useState("");
-  const [editingManager, setEditingManager] = useState<Manager | undefined>();
+  const [status, setStatus] = useState<ManagerStatus | "">("");
+  const [roleId, setRoleId] = useState("");
+  const [editingManager, setEditingManager] = useState<Manager>();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  /** 초대 · 초기화 직후 한 번만 보여 주는 임시 비밀번호 */
+  const [credential, setCredential] = useState<{
+    mode: "INVITE" | "RESET";
+    result: ManagerCredentialIssued;
+  }>();
+
+  // 전권 직책인지 판단해 뱃지 색을 정한다. 직책 이름으로 판단하지 않는다.
+  const { data: roleData } = useAdminRoleListQuery();
+  const roles = roleData?.items ?? [];
+  const isSuperAdminRole = (targetRoleId: number) =>
+    Boolean(roles.find((role) => role.roleId === targetRoleId)?.isSuperAdmin);
+
+  const { data, isLoading } = useManagerListQuery({ keyword, status, roleId });
+  const {
+    inviteMutation,
+    updateMutation,
+    statusMutation,
+    passwordResetMutation,
+    deleteMutation,
+  } = useManagerMutation();
 
   const managers = data ?? [];
-  const lowered = keyword.toLowerCase();
-  const filtered = keyword
-    ? managers.filter(
-        (manager) =>
-          manager.name.toLowerCase().includes(lowered) ||
-          manager.email.toLowerCase().includes(lowered),
-      )
-    : managers;
+  const lockedCount = managers.filter(
+    (manager) => manager.status === "LOCKED",
+  ).length;
+
+  const roleFilterOptions = [
+    { label: "직책 전체", value: "" },
+    ...roles.map((role) => ({ label: role.name, value: String(role.roleId) })),
+  ];
+
+  const isSelf = (manager: Manager) =>
+    manager.managerId === currentAdmin?.managerId;
 
   const handleOpenCreate = () => {
     setEditingManager(undefined);
@@ -69,24 +111,55 @@ const ManagerManager = () => {
       return;
     }
 
-    createMutation.mutate(values, {
-      onSuccess: () => setIsFormOpen(false),
+    inviteMutation.mutate(values, {
+      onSuccess: (result) => {
+        setIsFormOpen(false);
+        setCredential({ mode: "INVITE", result });
+      },
       onError: (error) => showErrorToast(error),
     });
   };
 
-  const handleToggleStatus = (manager: Manager, isActive: boolean) => {
+  const handleChangeStatus = (manager: Manager, next: ManagerStatus) => {
     statusMutation.mutate(
-      { managerId: manager.managerId, isActive },
+      { managerId: manager.managerId, status: next },
       { onError: (error) => showErrorToast(error) },
     );
+  };
+
+  const handleDeactivate = (manager: Manager) => {
+    openConfirm({
+      title: "계정을 비활성화할까요?",
+      description: `'${manager.name}(${manager.email})' 계정이 로그인할 수 없게 됩니다.`,
+      warning: "진행 중이던 작업은 저장되지 않습니다. 계정과 이력은 남습니다.",
+      confirmText: "비활성화",
+      tone: "danger",
+      onConfirm: () => handleChangeStatus(manager, "INACTIVE"),
+    });
+  };
+
+  const handleResetPassword = (manager: Manager) => {
+    openConfirm({
+      title: "비밀번호를 초기화할까요?",
+      description: `'${manager.name}' 계정의 비밀번호가 임시 비밀번호로 바뀝니다.`,
+      warning:
+        "지금 쓰는 비밀번호는 즉시 무효가 되고, 임시 비밀번호는 이번 한 번만 표시됩니다.",
+      confirmText: "초기화",
+      tone: "danger",
+      onConfirm: () =>
+        passwordResetMutation
+          .mutateAsync(manager.managerId)
+          .then((result) => setCredential({ mode: "RESET", result }))
+          .catch((error) => showErrorToast(error)),
+    });
   };
 
   const handleDelete = (manager: Manager) => {
     openConfirm({
       title: "관리자를 삭제할까요?",
       description: `'${manager.name}(${manager.email})' 계정이 즉시 삭제됩니다.`,
-      warning: "삭제한 계정은 되돌릴 수 없습니다.",
+      warning:
+        "삭제한 계정은 되돌릴 수 없습니다. 접속을 막기만 하려면 비활성화를 쓰세요.",
       confirmText: "삭제",
       tone: "danger",
       onConfirm: () =>
@@ -96,62 +169,135 @@ const ManagerManager = () => {
     });
   };
 
+  /** 행 액션. 상태에 따라 할 수 있는 일만 남긴다. */
+  const rowActions = (manager: Manager) => {
+    const items = [];
+
+    if (canWrite && manager.status === "LOCKED") {
+      items.push({
+        label: "잠금 해제",
+        icon: <Unlock size={15} />,
+        onSelect: () => handleChangeStatus(manager, "ACTIVE"),
+      });
+    }
+
+    if (canWrite && manager.status === "INACTIVE") {
+      items.push({
+        label: "활성화",
+        icon: <Unlock size={15} />,
+        onSelect: () => handleChangeStatus(manager, "ACTIVE"),
+      });
+    }
+
+    if (canWrite && (manager.status === "ACTIVE" || manager.status === "INVITED")) {
+      items.push({
+        label: "비활성화",
+        icon: <Key size={15} />,
+        tone: "danger" as const,
+        // 자기 계정과 마지막 최고관리자는 서버가 막는다. 눌러 볼 필요가 없다.
+        disabled: isSelf(manager),
+        onSelect: () => handleDeactivate(manager),
+      });
+    }
+
+    if (canWrite) {
+      items.push({
+        label: "비밀번호 초기화",
+        icon: <Key size={15} />,
+        onSelect: () => handleResetPassword(manager),
+      });
+    }
+
+    items.push({
+      label: "이 관리자의 활동 보기",
+      icon: <ListLines size={15} />,
+      onSelect: () => router.push(`/ops/logs?actorId=${manager.managerId}`),
+    });
+
+    if (canDelete) {
+      items.push({
+        label: "삭제",
+        icon: <Trash size={15} />,
+        tone: "danger" as const,
+        disabled: isSelf(manager),
+        onSelect: () => handleDelete(manager),
+      });
+    }
+
+    return items;
+  };
+
   const columns: TableColumn<Manager>[] = [
     {
       key: "name",
       header: "이름",
       width: "220px",
       render: (manager) => (
-        <TableCellStack primary={manager.name} secondary={manager.email} />
+        <TableCellStack
+          primary={
+            <span className="flex items-center gap-1.5">
+              {manager.name}
+              {isSelf(manager) && <Badge tone="info">나</Badge>}
+            </span>
+          }
+          secondary={manager.email}
+        />
       ),
     },
     {
       key: "role",
-      header: "권한",
+      header: "직책",
       width: "120px",
       render: (manager) => (
-        <Badge tone={ROLE_TONE[manager.role]}>
-          {ADMIN_ROLE_LABEL[manager.role]}
+        <Badge tone={roleTone(isSuperAdminRole(manager.roleId))}>
+          {manager.roleName}
         </Badge>
       ),
     },
     {
-      key: "isActive",
+      key: "status",
       header: "상태",
-      width: "140px",
+      width: "110px",
       render: (manager) => (
-        <div className="flex items-center gap-2">
-          <Switch
-            label={`${manager.name} 활성 상태`}
-            checked={manager.isActive}
-            disabled={statusMutation.isPending}
-            onChange={(checked) => handleToggleStatus(manager, checked)}
-          />
-          <span className="text-[13px] text-font-2">
-            {manager.isActive ? "활성" : "비활성"}
-          </span>
-        </div>
+        <span title={MANAGER_STATUS_HINT[manager.status]}>
+          <Badge tone={MANAGER_STATUS_TONE[manager.status]}>
+            {MANAGER_STATUS_LABEL[manager.status]}
+          </Badge>
+        </span>
       ),
     },
     {
       key: "lastLoginAt",
       header: "마지막 로그인",
-      width: "170px",
-      numeric: true,
+      width: "200px",
       render: (manager) => (
-        <span className="text-font-2">
-          {manager.lastLoginAt ? formatDateTime(manager.lastLoginAt) : "기록 없음"}
-        </span>
+        <TableCellStack
+          primary={
+            manager.lastLoginAt ? (
+              <span className="text-font-2 tabular-nums">
+                {formatDateTime(manager.lastLoginAt)}
+              </span>
+            ) : (
+              <span className="text-font-disabled">기록 없음</span>
+            )
+          }
+          secondary={manager.lastLoginIp}
+        />
       ),
     },
     {
-      key: "createdAt",
-      header: "생성일",
-      width: "170px",
-      numeric: true,
-      render: (manager) => (
-        <span className="text-font-2">{formatDateTime(manager.createdAt)}</span>
-      ),
+      key: "password",
+      header: "비밀번호",
+      width: "150px",
+      render: (manager) =>
+        manager.passwordUpdatedAt ? (
+          <span className="text-[13px] text-font-2 tabular-nums">
+            {formatDateTime(manager.passwordUpdatedAt)}
+          </span>
+        ) : (
+          /* 임시 비밀번호를 그대로 쓰는 계정은 눈에 띄어야 한다. */
+          <Badge tone="warning">임시 비밀번호</Badge>
+        ),
     },
     {
       key: "actions",
@@ -160,18 +306,15 @@ const ManagerManager = () => {
       align: "right",
       render: (manager) => (
         <div className="flex items-center justify-end gap-1">
-          <IconButton
-            label="수정"
-            icon={<Edit size={16} />}
-            onClick={() => handleOpenEdit(manager)}
-          />
-          <IconButton
-            label="삭제"
-            icon={<Trash size={16} />}
-            tone="danger"
-            disabled={manager.managerId === currentAdmin?.adminId}
-            onClick={() => handleDelete(manager)}
-          />
+          {canWrite && (
+            <IconButton
+              label="수정"
+              icon={<Edit size={16} />}
+              onClick={() => handleOpenEdit(manager)}
+            />
+          )}
+
+          <Dropdown items={rowActions(manager)} />
         </div>
       ),
     },
@@ -179,11 +322,21 @@ const ManagerManager = () => {
 
   return (
     <>
-      <Alert tone="warning" title="최고관리자 전용 화면">
-        관리자 계정과 권한은 최고관리자만 변경할 수 있습니다. 로그인이 붙기
-        전까지는 목업 계정({ADMIN_ROLE_LABEL.SUPER_ADMIN} ·{" "}
-        {currentAdmin?.email})으로 접근합니다.
+      <Alert tone="info" title="권한은 직책이 갖습니다.">
+        계정에는 직책만 배정합니다. 무엇을 할 수 있는지는{" "}
+        <Link href="/ops/roles" className="font-medium underline">
+          운영 &gt; 직책 · 권한
+        </Link>
+        에서 직책 단위로 정합니다. 관리자를 추가하면 임시 비밀번호가 발급되고,
+        본인이 비밀번호를 바꾼 뒤부터 콘솔을 사용할 수 있습니다.
       </Alert>
+
+      {lockedCount > 0 && (
+        <Alert tone="warning" title={`잠긴 계정이 ${lockedCount}건 있습니다.`}>
+          로그인 실패가 반복되면 계정이 자동으로 잠깁니다. 본인 확인 후 잠금을
+          해제해 주세요.
+        </Alert>
+      )}
 
       <Card noPadding>
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
@@ -194,39 +347,49 @@ const ManagerManager = () => {
           />
 
           <div className="flex items-center gap-2">
+            <Select
+              options={MANAGER_STATUS_FILTER_OPTIONS}
+              value={status}
+              onChange={(event) =>
+                setStatus(event.target.value as ManagerStatus | "")
+              }
+              selectBoxClassName="w-32"
+              aria-label="상태 필터"
+            />
+
+            <Select
+              options={roleFilterOptions}
+              value={roleId}
+              onChange={(event) => setRoleId(event.target.value)}
+              selectBoxClassName="w-36"
+              aria-label="직책 필터"
+            />
+
             <p className="text-[13px] text-font-2 tabular-nums">
-              총 {filtered.length}명
+              총 {managers.length}명
             </p>
 
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleOpenCreate}
-            >
-              관리자 추가
-            </Button>
+            {canWrite && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<UserPlus size={15} />}
+                onClick={handleOpenCreate}
+              >
+                관리자 초대
+              </Button>
+            )}
           </div>
         </div>
 
         <Table
           columns={columns}
-          rows={filtered}
+          rows={managers}
           getRowKey={(manager) => String(manager.managerId)}
           isLoading={isLoading}
           skeletonRows={5}
-          emptyTitle="관리자가 없습니다."
-          emptyDescription="관리자를 추가해 운영 권한을 부여해 보세요."
-          emptyAction={
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleOpenCreate}
-            >
-              관리자 추가
-            </Button>
-          }
+          emptyTitle="조건에 맞는 관리자가 없습니다."
+          emptyDescription="검색어나 필터를 지워 보세요."
         />
       </Card>
 
@@ -235,7 +398,13 @@ const ManagerManager = () => {
         onClose={() => setIsFormOpen(false)}
         manager={editingManager}
         onSubmit={handleSubmit}
-        isSubmitting={createMutation.isPending || updateMutation.isPending}
+        isSubmitting={inviteMutation.isPending || updateMutation.isPending}
+      />
+
+      <CredentialResultModal
+        result={credential?.result}
+        mode={credential?.mode ?? "INVITE"}
+        onClose={() => setCredential(undefined)}
       />
     </>
   );

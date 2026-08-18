@@ -1,6 +1,5 @@
 import type {
   DevicePlatform,
-  DummyCreator,
   Gender,
   LoginProvider,
   UserDetail,
@@ -56,6 +55,12 @@ const SUSPEND_REASONS = [
  * 유저 목업 45명.
  * 페이지네이션(20건/페이지) 동작을 확인할 수 있도록 3페이지 분량을 만든다.
  * 목록/상세를 한 배열로 관리하고, 목록 응답에서만 상세 필드를 제외한다.
+ *
+ * 아래 네 필드는 여기서 정하지 않고 **다른 도메인 시드가 채운다.**
+ * 화면에서 집계값 옆에 실제 목록이 함께 보이므로 따로 난수를 뿌리면 바로 어긋난다.
+ * - characterCount  → db/character
+ * - creditBalance, totalPaidAmount → db/billing (장부 합계)
+ * - reportedCount   → db/report
  */
 export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
   const seed = index + 1;
@@ -64,8 +69,7 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
   const status: UserStatus =
     index % 9 === 0 ? "SUSPENDED" : index % 13 === 0 ? "WITHDRAWN" : "ACTIVE";
 
-  const role: UserRole =
-    index % 11 === 0 ? "DUMMY_CREATOR" : index % 4 === 0 ? "CREATOR" : "USER";
+  const role: UserRole = index % 4 === 0 ? "CREATOR" : "USER";
 
   const isSuspended = status === "SUSPENDED";
   const isWithdrawn = status === "WITHDRAWN";
@@ -74,6 +78,21 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
   const isVerified = index % 5 !== 2;
   const birthYear = randomInt(seed * 15, 1985, 2008);
   const birthDate = `${birthYear}-${String(randomInt(seed * 16, 1, 12)).padStart(2, "0")}-${String(randomInt(seed * 17, 1, 28)).padStart(2, "0")}`;
+  const isAdultVerified =
+    isVerified && new Date().getFullYear() - birthYear >= 19;
+
+  /**
+   * 가입일 이후에 일어난 일들은 반드시 가입일보다 뒤여야 한다.
+   * daysAgo는 "며칠 전"이므로 값이 작을수록 최근이다. 즉 0 ~ 가입 경과일 사이에서 고른다.
+   */
+  const createdDaysAgo = index * 7 + 3;
+  const withdrawnDaysAgo = randomInt(seed * 22, 0, createdDaysAgo);
+  // 탈퇴 유저는 탈퇴한 뒤로 로그인할 수 없다.
+  const lastLoginDaysAgo = randomInt(
+    seed * 10,
+    isWithdrawn ? withdrawnDaysAgo : 0,
+    createdDaysAgo,
+  );
 
   return {
     userId: seed,
@@ -87,67 +106,42 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
     role,
     provider: pickOne(seed * 5, PROVIDERS),
     // 성인 인증은 본인인증을 마치고 만 19세 이상인 경우에만 가능하다.
-    isAdultVerified: isVerified && new Date().getFullYear() - birthYear >= 19,
-    adultVerifiedAt:
-      isVerified && new Date().getFullYear() - birthYear >= 19
-        ? daysAgo(randomInt(seed * 19, 5, 300), 14)
-        : undefined,
+    isAdultVerified,
+    adultVerifiedAt: isAdultVerified
+      ? daysAgo(randomInt(seed * 19, 0, createdDaysAgo), 14)
+      : undefined,
     birthDate: isVerified ? birthDate : undefined,
     gender: isVerified ? pickOne(seed * 20, GENDERS) : "UNKNOWN",
     isMarketingAgreed: index % 3 !== 0,
-    creditBalance: randomInt(seed * 2, 0, 12_000),
-    characterCount: randomInt(seed * 4, 0, 12),
+    creditBalance: 0,
+    characterCount: 0,
     chatCount: randomInt(seed * 6, 0, 4_800),
-    totalPaidAmount: randomInt(seed * 8, 0, 24) * 9_900,
-    lastLoginAt: daysAgo(randomInt(seed * 10, 0, 24), 21),
+    totalPaidAmount: 0,
+    lastLoginAt: daysAgo(lastLoginDaysAgo, 21),
     lastLoginPlatform: pickOne(seed * 21, DEVICE_PLATFORMS),
-    createdAt: daysAgo(index * 7 + 3, 10),
+    createdAt: daysAgo(createdDaysAgo, 10),
     suspendedReason: isSuspended
       ? pickOne(seed * 12, SUSPEND_REASONS)
       : undefined,
     // 정지 만료일은 미래 시점이어야 하므로 음수 일자를 넘긴다.
     suspendedUntil: isSuspended ? daysAgo(-randomInt(seed * 14, 3, 30)) : undefined,
-    withdrawnAt: isWithdrawn ? daysAgo(randomInt(seed * 22, 1, 90), 15) : undefined,
+    withdrawnAt: isWithdrawn ? daysAgo(withdrawnDaysAgo, 15) : undefined,
     withdrawnReason: isWithdrawn
       ? pickOne(seed * 23, WITHDRAW_REASONS)
       : undefined,
     followerCount: randomInt(seed * 9, 0, 1_800),
     followingCount: randomInt(seed * 11, 0, 320),
-    reportedCount: randomInt(seed * 24, 0, 6),
+    reportedCount: 0,
   };
 });
 
-const DUMMY_CREATOR_NICKNAMES = [
-  "PLAT공식",
-  "이야기공방",
-  "달빛작가",
-  "픽셀드림",
-  "은하수",
-  "무명작가",
-];
+/**
+ * 세계관을 만드는 크리에이터 후보.
+ *
+ * 공식 계정도 여기서 고른다. **운영이 쓰는 계정도 결국 크리에이터 계정**이라
+ * 따로 종류를 만들지 않는다.
+ */
+export const creatorUsers = users.filter((user) => user.role === "CREATOR");
 
-const DUMMY_CREATOR_BIOS = [
-  "PLAT이 직접 운영하는 공식 크리에이터입니다.",
-  "판타지 세계관을 주로 만듭니다.",
-  "잔잔한 일상 이야기를 좋아합니다.",
-  "SF와 미스터리를 오가며 씁니다.",
-  "로맨스 세계관 전문입니다.",
-  "초기 콘텐츠 확보용 운영 계정입니다.",
-];
-
-/** 초기 콘텐츠 운영용 더미 크리에이터 6명 */
-export const dummyCreators: DummyCreator[] = DUMMY_CREATOR_NICKNAMES.map(
-  (nickname, index) => {
-    const seed = index + 1;
-
-    return {
-      creatorId: seed,
-      nickname,
-      profileImageUrl: `https://picsum.photos/seed/plat-dummy-${seed}/96/96`,
-      bio: DUMMY_CREATOR_BIOS[index],
-      characterCount: randomInt(seed * 3, 0, 18),
-      isActive: index % 5 !== 4,
-      createdAt: daysAgo(index * 9 + 5, 14),
-    };
-  },
-);
+/** 공식 계정 후보. 콘텐츠를 많이 가진 크리에이터를 앞에서부터 쓴다. */
+export const officialCreatorUsers = creatorUsers.slice(0, 6);

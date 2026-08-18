@@ -1,9 +1,10 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useNoticeListQuery } from "@/api/notice/getNoticeList";
 import { useNoticeMutation } from "@/api/notice/mutateNotice";
-import { Edit, Eye, Plus, Star, Trash } from "@/icons";
+import { Ban, Edit, Eye, Megaphone, Plus, Star, Trash } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
 import { formatWithCommas, truncate } from "@/lib/utils";
@@ -21,7 +22,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import CsvExportButton from "@/components/ui/CsvExportButton";
-import IconButton from "@/components/ui/IconButton";
+import Dropdown, { type DropdownItem } from "@/components/ui/Dropdown";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
@@ -49,6 +50,9 @@ const NOTICE_CSV_COLUMNS: CsvColumn<Notice>[] = [
 ];
 
 const NoticeManager = () => {
+  // 댓글 관리에서 대상 공지를 누르면 `?noticeId=`를 달고 넘어온다. 그 공지를 바로 연다.
+  const linkedNoticeId = useSearchParams().get("noticeId");
+
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState<NoticeCategory | "">("");
@@ -56,7 +60,9 @@ const NoticeManager = () => {
 
   const [editingNotice, setEditingNotice] = useState<Notice | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [viewingNotice, setViewingNotice] = useState<Notice | null>(null);
+  const [viewingNoticeId, setViewingNoticeId] = useState<number | null>(
+    linkedNoticeId ? Number(linkedNoticeId) : null,
+  );
 
   const { data, isLoading } = useNoticeListQuery({
     page,
@@ -80,6 +86,8 @@ const NoticeManager = () => {
   };
 
   const handleOpenEdit = (notice: Notice) => {
+    // 상세에서 넘어온 경우 모달이 겹치지 않도록 상세를 먼저 닫는다.
+    setViewingNoticeId(null);
     setEditingNotice(notice);
     setIsFormOpen(true);
   };
@@ -125,6 +133,39 @@ const NoticeManager = () => {
       onConfirm: () => deleteMutation.mutateAsync(notice.noticeId),
     });
   };
+
+  /** 행 액션. 아이콘 버튼을 늘리지 않고 더보기 메뉴 하나로 모은다. */
+  const buildRowActions = (notice: Notice): DropdownItem[] => [
+    {
+      label: "상세 보기",
+      icon: <Eye size={15} />,
+      onSelect: () => setViewingNoticeId(notice.noticeId),
+    },
+    notice.status === "PUBLISHED"
+      ? {
+          label: "숨김",
+          icon: <Ban size={15} />,
+          disabled: statusMutation.isPending,
+          onSelect: () => handleHide(notice),
+        }
+      : {
+          label: "게시",
+          icon: <Megaphone size={15} />,
+          disabled: statusMutation.isPending,
+          onSelect: () => handlePublish(notice),
+        },
+    {
+      label: "수정",
+      icon: <Edit size={15} />,
+      onSelect: () => handleOpenEdit(notice),
+    },
+    {
+      label: "삭제",
+      icon: <Trash size={15} />,
+      tone: "danger",
+      onSelect: () => handleDelete(notice),
+    },
+  ];
 
   const columns: TableColumn<Notice>[] = [
     {
@@ -184,46 +225,16 @@ const NoticeManager = () => {
     },
     {
       key: "actions",
-      header: "관리",
-      align: "right",
-      width: "170px",
+      header: "",
+      width: "56px",
+      align: "center",
       render: (row) => (
-        <div className="flex items-center justify-end gap-1">
-          {row.status !== "PUBLISHED" ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => handlePublish(row)}
-            >
-              게시
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleHide(row)}
-              disabled={statusMutation.isPending}
-            >
-              숨김
-            </Button>
-          )}
-
-          <IconButton
-            label="본문 보기"
-            icon={<Eye size={16} />}
-            onClick={() => setViewingNotice(row)}
-          />
-          <IconButton
-            label="수정"
-            icon={<Edit size={16} />}
-            onClick={() => handleOpenEdit(row)}
-          />
-          <IconButton
-            label="삭제"
-            icon={<Trash size={16} />}
-            tone="danger"
-            onClick={() => handleDelete(row)}
-          />
+        // 행 클릭(상세 모달)과 겹치지 않도록 액션 영역의 클릭은 여기서 멈춘다.
+        <div
+          className="flex justify-center"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Dropdown items={buildRowActions(row)} />
         </div>
       ),
     },
@@ -233,7 +244,7 @@ const NoticeManager = () => {
     <>
       <Card
         title={`공지사항 ${formatWithCommas(data?.totalCount ?? 0)}건`}
-        description="고정 공지가 항상 위에 오고, 그 안에서는 최신순으로 정렬됩니다."
+        description="행을 클릭하면 본문을 확인할 수 있습니다. 고정 공지가 항상 위에 오고, 그 안에서는 최신순으로 정렬됩니다."
         action={
           <>
             <CsvExportButton
@@ -295,6 +306,7 @@ const NoticeManager = () => {
           rows={notices}
           getRowKey={(row) => String(row.noticeId)}
           isLoading={isLoading}
+          onRowClick={(row) => setViewingNoticeId(row.noticeId)}
           emptyTitle="등록된 공지사항이 없습니다."
           emptyDescription="점검·업데이트·이벤트 안내를 등록해 보세요."
           emptyAction={
@@ -326,8 +338,9 @@ const NoticeManager = () => {
       />
 
       <NoticeViewModal
-        notice={viewingNotice}
-        onClose={() => setViewingNotice(null)}
+        noticeId={viewingNoticeId}
+        onClose={() => setViewingNoticeId(null)}
+        onEdit={handleOpenEdit}
       />
     </>
   );

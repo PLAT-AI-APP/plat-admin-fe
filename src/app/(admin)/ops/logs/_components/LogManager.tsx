@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLogListQuery } from "@/api/ops/getLogList";
+import { useListParams } from "@/hooks/useListParams";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond } from "@/lib/dayjs";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
@@ -14,6 +15,7 @@ import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
+import LogDetailModal from "./LogDetailModal";
 import {
   LOG_DOMAIN_OPTIONS,
   LOG_LEVEL_LABEL,
@@ -32,11 +34,21 @@ const LOG_CSV_COLUMNS: CsvColumn<OperationLog>[] = [
   { header: "일시", value: (row) => formatDateTimeSecond(row.createdAt) },
 ];
 
+/** 주소에 실리는 목록 조건. 관리자 관리에서 `?actorId=`를 달고 넘어온다. */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  level: "",
+  domain: "",
+  actorId: "",
+};
+
 const LogManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [level, setLevel] = useState<LogLevel | "">("");
-  const [domain, setDomain] = useState("");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword, domain, actorId } = params;
+  const level = params.level as LogLevel | "";
+
+  const [detailLog, setDetailLog] = useState<OperationLog | null>(null);
 
   const { data, isLoading, isError } = useLogListQuery({
     page,
@@ -44,23 +56,14 @@ const LogManager = () => {
     keyword,
     level,
     domain,
+    actorId,
   });
 
-  /** 필터가 바뀌면 이전 페이지 번호가 의미를 잃으므로 항상 1페이지로 되돌린다. */
-  const handleSearch = (next: string) => {
-    setKeyword(next);
-    setPage(1);
-  };
-
-  const handleChangeLevel = (next: LogLevel | "") => {
-    setLevel(next);
-    setPage(1);
-  };
-
-  const handleChangeDomain = (next: string) => {
-    setDomain(next);
-    setPage(1);
-  };
+  // 특정 관리자의 활동만 보고 있을 때, 그 사실을 화면에 드러낸다.
+  const filteredActorName = actorId
+    ? (data?.content.find((log) => String(log.actorId) === actorId)?.actor ??
+      `#${actorId}`)
+    : null;
 
   const columns: TableColumn<OperationLog>[] = [
     {
@@ -94,10 +97,26 @@ const LogManager = () => {
       render: (row) => <span className="text-font-2">{row.actor}</span>,
     },
     {
+      key: "target",
+      header: "대상",
+      width: "150px",
+      render: (row) =>
+        row.targetType ? (
+          <span className="text-font-2">
+            {row.targetType}
+            {row.targetId && (
+              <span className="tabular-nums"> #{row.targetId}</span>
+            )}
+          </span>
+        ) : (
+          <span className="text-font-disabled">-</span>
+        ),
+    },
+    {
       key: "message",
       header: "메시지",
       render: (row) => (
-        <p className="max-w-140 truncate text-font-1">{row.message}</p>
+        <p className="max-w-120 truncate text-font-1">{row.message}</p>
       ),
     },
     {
@@ -115,6 +134,22 @@ const LogManager = () => {
 
   return (
     <>
+      {filteredActorName && (
+        <Alert
+          tone="info"
+          title={`'${filteredActorName}' 관리자의 활동만 보고 있습니다.`}
+          action={
+            <button
+              type="button"
+              onClick={() => setParams({ actorId: "" })}
+              className="shrink-0 text-[13px] font-medium underline"
+            >
+              전체 보기
+            </button>
+          }
+        />
+      )}
+
       {isError && (
         <Alert tone="danger" title="로그를 불러오지 못했습니다.">
           잠시 후 검색 조건을 다시 적용해 주세요. 계속 실패하면 관제 채널에
@@ -126,7 +161,7 @@ const LogManager = () => {
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
           <SearchInput
             value={keyword}
-            onSearch={handleSearch}
+            onSearch={(next) => setParams({ keyword: next })}
             placeholder="메시지 · 액션 · 실행자로 검색"
           />
 
@@ -140,16 +175,14 @@ const LogManager = () => {
             <Select
               options={LOG_LEVEL_OPTIONS}
               value={level}
-              onChange={(event) =>
-                handleChangeLevel(event.target.value as LogLevel | "")
-              }
+              onChange={(event) => setParams({ level: event.target.value })}
               selectBoxClassName="w-36"
             />
 
             <Select
               options={LOG_DOMAIN_OPTIONS}
               value={domain}
-              onChange={(event) => handleChangeDomain(event.target.value)}
+              onChange={(event) => setParams({ domain: event.target.value })}
               selectBoxClassName="w-44"
             />
           </div>
@@ -160,6 +193,7 @@ const LogManager = () => {
           rows={data?.content ?? []}
           getRowKey={(row) => String(row.logId)}
           isLoading={isLoading}
+          onRowClick={setDetailLog}
           emptyTitle="조회된 로그가 없습니다."
           emptyDescription="레벨 · 도메인 필터나 검색어를 바꿔서 다시 확인해 보세요."
         />
@@ -168,9 +202,11 @@ const LogManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
+
+      <LogDetailModal log={detailLog} onClose={() => setDetailLog(null)} />
     </>
   );
 };

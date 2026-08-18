@@ -1,58 +1,97 @@
 "use client";
 
+import { useNoticeDetailQuery } from "@/api/notice/getNoticeDetail";
+import { Edit } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { formatWithCommas } from "@/lib/utils";
 import { NOTICE_CATEGORY_LABEL, NOTICE_STATUS_LABEL } from "@/type/notice";
 import type { Notice } from "@/type/notice";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 import Modal from "@/components/ui/Modal";
+import Skeleton from "@/components/ui/Skeleton";
 import { NOTICE_CATEGORY_TONE, NOTICE_STATUS_TONE } from "./noticeOptions";
 
 interface NoticeViewModalProps {
   /** null이면 모달이 닫힌 상태다. */
-  notice: Notice | null;
+  noticeId: number | null;
   onClose: () => void;
+  /** 수정 버튼을 노출할 때만 전달한다. (댓글 관리 등에서 열면 수정은 제공하지 않는다) */
+  onEdit?: (notice: Notice) => void;
 }
 
-/** 앱에 노출되는 형태 그대로 본문을 확인한다. */
-const NoticeViewModal = ({ notice, onClose }: NoticeViewModalProps) => {
+/**
+ * 공지 상세 모달.
+ *
+ * 앱에 노출되는 형태 그대로 본문을 확인한다.
+ * 댓글 관리에서 대상 공지로 바로 넘어올 수 있어 목록 행이 아니라 ID로 조회한다.
+ */
+const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) => {
+  const { data, isLoading, isError } = useNoticeDetailQuery(noticeId);
+
   return (
     <Modal
-      isOpen={notice !== null}
+      isOpen={noticeId !== null}
       onClose={onClose}
-      title={notice?.title ?? ""}
+      title={data?.title ?? "공지사항 상세"}
       description={
-        notice
-          ? `#${notice.noticeId} · ${notice.createdBy} · ${formatDateTime(notice.updatedAt)}`
+        data
+          ? `#${data.noticeId} · ${data.createdBy} · ${formatDateTime(data.updatedAt)}`
           : undefined
       }
       size="lg"
       footer={
-        <Button variant="secondary" onClick={onClose}>
-          닫기
-        </Button>
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            닫기
+          </Button>
+          {onEdit && data && (
+            <Button
+              variant="primary"
+              leftIcon={<Edit size={15} />}
+              onClick={() => onEdit(data)}
+            >
+              수정
+            </Button>
+          )}
+        </>
       }
     >
-      {notice && (
+      {isLoading && (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-16 w-full rounded-field" />
+          ))}
+        </div>
+      )}
+
+      {isError && (
+        <EmptyState
+          title="공지사항을 찾을 수 없습니다."
+          description="이미 삭제되었을 수 있습니다."
+        />
+      )}
+
+      {!isLoading && data && (
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-1.5">
-            <Badge tone={NOTICE_CATEGORY_TONE[notice.category]}>
-              {NOTICE_CATEGORY_LABEL[notice.category]}
+            <Badge tone={NOTICE_CATEGORY_TONE[data.category]}>
+              {NOTICE_CATEGORY_LABEL[data.category]}
             </Badge>
-            <Badge tone={NOTICE_STATUS_TONE[notice.status]}>
-              {NOTICE_STATUS_LABEL[notice.status]}
+            <Badge tone={NOTICE_STATUS_TONE[data.status]}>
+              {NOTICE_STATUS_LABEL[data.status]}
             </Badge>
-            {notice.isPinned && <Badge tone="brand">상단 고정</Badge>}
+            {data.isPinned && <Badge tone="brand">상단 고정</Badge>}
 
             <span className="ml-auto text-[12px] text-font-2 tabular-nums">
-              조회 {formatWithCommas(notice.viewCount)}
+              조회 {formatWithCommas(data.viewCount)}
             </span>
           </div>
 
           <div className="rounded-field border border-border-main px-4 py-3 text-[14px]">
-            <MarkdownContent content={notice.content} />
+            <MarkdownContent content={data.content} />
           </div>
         </div>
       )}

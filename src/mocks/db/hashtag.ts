@@ -3,7 +3,7 @@ import type {
   HashtagCategory,
   HashtagLanguage,
 } from "@/type/hashtag";
-import { daysAgo, randomInt } from "../utils";
+import { daysAgo } from "../utils";
 
 /**
  * 실제 서비스에 등록된 해시태그 목록.
@@ -124,12 +124,17 @@ const buildLabels = (ko: string): Record<HashtagLanguage, string> => ({
   VI: "",
 });
 
-/** 분류 순서대로 펼쳐 노출 순서(order)를 매긴다. */
+/** 분류 순서대로 펼쳐 목록을 만든다. */
 const flatten = () =>
   (Object.keys(SEED_BY_CATEGORY) as HashtagCategory[]).flatMap((category) =>
     SEED_BY_CATEGORY[category].map((label) => ({ category, label })),
   );
 
+/**
+ * usageCount는 여기서 정하지 않는다.
+ * "이 태그를 쓰는 캐릭터·세계관 수"이므로 db/character가 실제 사용 수로 채운다.
+ * (난수를 뿌리면 사용 중이라던 태그가 실제로는 어디에도 안 붙어 있는 상태가 된다)
+ */
 export const hashtags: Hashtag[] = flatten().map((item, index) => ({
   hashtagId: index + 1,
   labels: buildLabels(item.label),
@@ -137,7 +142,21 @@ export const hashtags: Hashtag[] = flatten().map((item, index) => ({
   isAdult: ADULT_LABELS.has(item.label),
   // 일부는 비활성으로 두어 노출 토글을 확인할 수 있게 한다.
   isActive: index % 23 !== 7,
-  usageCount: randomInt(index + 3, 0, 1_800),
-  order: index + 1,
+  usageCount: 0,
   createdAt: daysAgo(Math.floor(index / 6) + 1, 10),
 }));
+
+/**
+ * 캐릭터·세계관이 붙일 수 있는 태그 풀.
+ *
+ * 사용자는 등록된 해시태그 중에서만 고를 수 있으므로, 목업 캐릭터의 태그도
+ * 반드시 이 목록에서 나와야 한다. 전체 200여 개를 다 쓰면 태그가 너무 흩어져
+ * 사용 수가 대부분 1이 되므로, 분류별 대표 태그만 추려 쓴다.
+ */
+export const CHARACTER_TAG_POOL: string[] = [
+  ...SEED_BY_CATEGORY.GENRE.slice(0, 10),
+  ...SEED_BY_CATEGORY.SPECIES.slice(0, 5),
+  ...SEED_BY_CATEGORY.PERSONALITY.slice(0, 6),
+  ...SEED_BY_CATEGORY.RELATION.slice(0, 5),
+  ...SEED_BY_CATEGORY.NARRATIVE.slice(0, 4),
+];

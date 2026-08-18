@@ -142,7 +142,7 @@ const DashboardOverview = () => {
         <PendingCard
           title="대기 중 캐릭터 신고"
           count={data.pendingReportCount}
-          href="/characters/reports"
+          href="/community/reports"
           icon={<Flag size={22} />}
         />
 

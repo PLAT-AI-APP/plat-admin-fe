@@ -8,6 +8,8 @@ export interface CreditAdjustmentListParams {
   size: number;
   keyword?: string;
   type?: AdjustmentType | "";
+  /** 특정 유저의 조정 이력만 조회한다. (유저 상세에서 사용) */
+  userId?: number;
 }
 
 export const getCreditAdjustmentList = async (

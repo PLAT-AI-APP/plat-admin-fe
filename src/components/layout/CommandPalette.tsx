@@ -8,6 +8,8 @@ import {
   type GlobalSearchType,
 } from "@/api/search/getGlobalSearch";
 import { ADMIN_MENU } from "@/constants/menu";
+import { useAdminStore } from "@/store/useAdminStore";
+import { hasPermission, type PermissionKey } from "@/type/permission";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useIsClient } from "@/hooks/useIsClient";
 import { ChevronRight, Search } from "@/icons";
@@ -18,6 +20,8 @@ import Spinner from "@/components/ui/Spinner";
 interface CommandItem {
   href: string;
   label: string;
+  /** 이 메뉴를 보려면 필요한 권한. 데이터 결과는 서버가 걸러서 비어 있다. */
+  permission?: PermissionKey;
   /** 1뎁스 라벨. 같은 이름의 2뎁스를 구분하기 위해 함께 보여준다. */
   groupLabel: string;
   isExcludedFromMvp: boolean;
@@ -31,7 +35,7 @@ interface CommandItem {
 const SEARCH_TYPE_LABEL: Record<GlobalSearchType, string> = {
   USER: "유저",
   CHARACTER: "캐릭터",
-  SCENARIO: "세계관",
+  UNIVERSE: "세계관",
   HASHTAG: "해시태그",
 };
 
@@ -44,6 +48,7 @@ const buildCommandItems = (): CommandItem[] =>
           href: group.href,
           label: group.label,
           groupLabel: group.label,
+          permission: group.permission,
           isExcludedFromMvp: false,
           keywords: `${group.label} ${group.href}`,
         },
@@ -54,6 +59,7 @@ const buildCommandItems = (): CommandItem[] =>
       href: child.href,
       label: child.label,
       groupLabel: group.label,
+      permission: child.permission,
       isExcludedFromMvp: Boolean(child.isExcludedFromMvp),
       keywords: `${child.label} ${group.label} ${child.href}`,
     }));
@@ -83,15 +89,24 @@ const CommandPalette = () => {
   const { data: searchData, isFetching } =
     useGlobalSearchQuery(debouncedKeyword);
 
+  const admin = useAdminStore((state) => state.admin);
+
   const menuResults = useMemo(() => {
     const lowered = keyword.trim().toLowerCase();
 
-    if (!lowered) return COMMAND_ITEMS;
+    // 사이드바에서 감춘 메뉴가 검색으로 다시 보이면 감춘 뜻이 없다.
+    const allowed = COMMAND_ITEMS.filter(
+      (item) =>
+        !item.permission ||
+        hasPermission(admin?.permissions, item.permission, admin?.isSuperAdmin),
+    );
 
-    return COMMAND_ITEMS.filter((item) =>
+    if (!lowered) return allowed;
+
+    return allowed.filter((item) =>
       item.keywords.toLowerCase().includes(lowered),
     );
-  }, [keyword]);
+  }, [keyword, admin]);
 
   const dataResults: CommandItem[] = useMemo(
     () =>

@@ -1,13 +1,11 @@
 import { HttpResponse, delay, http } from "msw";
 import type {
-  DummyCreator,
-  DummyCreatorFormValues,
   User,
   UserDetail,
   UserRole,
   UserStatus,
 } from "@/type/user";
-import { dummyCreators, users } from "../db/user";
+import { users } from "../db/user";
 import { MOCK_DELAY_MS, matchesKeyword, nextId, paginate } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
@@ -126,66 +124,4 @@ export const userHandlers = [
     },
   ),
 
-  http.get(`${BASE_URI}/admin/dummy-creators`, async ({ request }) => {
-    const url = new URL(request.url);
-    const keyword = url.searchParams.get("keyword") ?? "";
-
-    const filtered = dummyCreators.filter((creator) =>
-      matchesKeyword(keyword, creator.nickname, creator.bio),
-    );
-
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(
-      [...filtered].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    );
-  }),
-
-  http.post(`${BASE_URI}/admin/dummy-creators`, async ({ request }) => {
-    const body = (await request.json()) as DummyCreatorFormValues;
-
-    const isDuplicated = dummyCreators.some(
-      (creator) => creator.nickname === body.nickname,
-    );
-
-    if (isDuplicated) {
-      return HttpResponse.json(
-        {
-          code: "DUPLICATED_NICKNAME",
-          message: "이미 사용 중인 닉네임입니다.",
-        },
-        { status: 409 },
-      );
-    }
-
-    const created: DummyCreator = {
-      ...body,
-      creatorId: nextId(dummyCreators, "creatorId"),
-      characterCount: 0,
-      createdAt: new Date().toISOString(),
-    };
-
-    dummyCreators.push(created);
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(created, { status: 201 });
-  }),
-
-  http.put(
-    `${BASE_URI}/admin/dummy-creators/:creatorId`,
-    async ({ params, request }) => {
-      const creatorId = Number(params.creatorId);
-      const body = (await request.json()) as DummyCreatorFormValues;
-      const index = dummyCreators.findIndex(
-        (creator) => creator.creatorId === creatorId,
-      );
-
-      if (index < 0) return notFound("존재하지 않는 더미 크리에이터입니다.");
-
-      dummyCreators[index] = { ...dummyCreators[index], ...body };
-      await delay(MOCK_DELAY_MS);
-
-      return HttpResponse.json(dummyCreators[index]);
-    },
-  ),
 ];

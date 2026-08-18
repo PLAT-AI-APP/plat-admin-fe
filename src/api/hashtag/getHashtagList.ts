@@ -8,9 +8,11 @@ export interface HashtagListParams {
   size: number;
   keyword?: string;
   category?: HashtagCategory | "";
-  /** "true" | "false" | "" (전체) */
+  /** 노출 여부. "true" | "false" | "" (전체) */
   isActive?: string;
-  sort?: "ORDER" | "USAGE" | "RECENT";
+  /** 성인 태그 여부. "true" | "false" | "" (전체) */
+  isAdult?: string;
+  sort?: "RECENT" | "USAGE" | "LABEL";
 }
 
 export const getHashtagList = async (params: HashtagListParams) => {

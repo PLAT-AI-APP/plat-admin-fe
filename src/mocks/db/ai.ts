@@ -140,7 +140,7 @@ const PROMPT_SEEDS: { promptKey: string; label: string; description: string }[] 
       description: "모든 캐릭터 대화에 공통으로 주입되는 기본 지침입니다.",
     },
     {
-      promptKey: "SCENARIO_INTRO",
+      promptKey: "UNIVERSE_INTRO",
       label: "세계관 도입부 생성",
       description: "세계관 첫 진입 시 보여줄 도입 문장을 생성합니다.",
     },

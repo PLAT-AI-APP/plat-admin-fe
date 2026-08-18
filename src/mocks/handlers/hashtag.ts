@@ -22,7 +22,8 @@ export const hashtagHandlers = [
     const keyword = url.searchParams.get("keyword") ?? "";
     const category = url.searchParams.get("category") ?? "";
     const isActive = url.searchParams.get("isActive") ?? "";
-    const sort = url.searchParams.get("sort") ?? "ORDER";
+    const isAdult = url.searchParams.get("isAdult") ?? "";
+    const sort = url.searchParams.get("sort") ?? "RECENT";
 
     let filtered = hashtags.filter((hashtag) =>
       matchesKeyword(
@@ -42,11 +43,17 @@ export const hashtagHandlers = [
       );
     }
 
+    if (isAdult) {
+      filtered = filtered.filter(
+        (hashtag) => String(hashtag.isAdult) === isAdult,
+      );
+    }
+
     const sorted = [...filtered].sort((a, b) => {
       if (sort === "USAGE") return b.usageCount - a.usageCount;
-      if (sort === "RECENT") return b.createdAt.localeCompare(a.createdAt);
+      if (sort === "LABEL") return a.labels.KO.localeCompare(b.labels.KO);
 
-      return a.order - b.order;
+      return b.createdAt.localeCompare(a.createdAt);
     });
 
     await delay(MOCK_DELAY_MS);
@@ -68,7 +75,6 @@ export const hashtagHandlers = [
       ...body,
       hashtagId: nextId(hashtags, "hashtagId"),
       usageCount: 0,
-      order: hashtags.length + 1,
       createdAt: new Date().toISOString(),
     };
 
@@ -76,20 +82,6 @@ export const hashtagHandlers = [
     await delay(MOCK_DELAY_MS);
 
     return HttpResponse.json(created, { status: 201 });
-  }),
-
-  // `:hashtagId` 패턴보다 먼저 와야 `/order`가 ID로 해석되지 않는다.
-  http.put(`${BASE_URI}/admin/hashtags/order`, async ({ request }) => {
-    const { hashtagIds } = (await request.json()) as { hashtagIds: number[] };
-
-    hashtagIds.forEach((hashtagId, index) => {
-      const hashtag = hashtags.find((item) => item.hashtagId === hashtagId);
-      if (hashtag) hashtag.order = index + 1;
-    });
-
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json([...hashtags].sort((a, b) => a.order - b.order));
   }),
 
   http.put(
@@ -152,7 +144,7 @@ export const hashtagHandlers = [
       );
     }
 
-    // 사용 중인 태그를 지우면 기존 캐릭터의 태그가 깨지므로 서버가 막는다.
+    // 사용 중인 태그를 지우면 기존 세계관의 태그가 깨지므로 서버가 막는다.
     if (hashtags[index].usageCount > 0) {
       return HttpResponse.json(
         {
@@ -165,9 +157,6 @@ export const hashtagHandlers = [
     }
 
     hashtags.splice(index, 1);
-    hashtags.forEach((hashtag, hashtagIndex) => {
-      hashtag.order = hashtagIndex + 1;
-    });
 
     await delay(MOCK_DELAY_MS);
 

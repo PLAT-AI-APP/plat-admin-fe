@@ -1,5 +1,5 @@
 export type UserStatus = "ACTIVE" | "SUSPENDED" | "WITHDRAWN";
-export type UserRole = "USER" | "CREATOR" | "DUMMY_CREATOR";
+export type UserRole = "USER" | "CREATOR";
 export type LoginProvider = "GOOGLE" | "KAKAO" | "APPLE" | "EMAIL";
 export type Gender = "MALE" | "FEMALE" | "UNKNOWN";
 export type DevicePlatform = "IOS" | "AOS" | "WEB";
@@ -75,21 +75,3 @@ export const formatPhoneNumber = (phoneNumber?: string): string => {
 
   return phoneNumber.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
 };
-
-/** 더미 크리에이터 */
-export interface DummyCreator {
-  creatorId: number;
-  nickname: string;
-  profileImageUrl: string;
-  bio: string;
-  characterCount: number;
-  isActive: boolean;
-  createdAt: string;
-}
-
-export interface DummyCreatorFormValues {
-  nickname: string;
-  profileImageUrl: string;
-  bio: string;
-  isActive: boolean;
-}

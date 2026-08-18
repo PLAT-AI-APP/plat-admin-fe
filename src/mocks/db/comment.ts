@@ -4,7 +4,7 @@ import type {
   CommentTargetType,
 } from "@/type/comment";
 import { daysAgo, pickOne, randomInt } from "../utils";
-import { characters, scenarios } from "./character";
+import { characters, universes } from "./character";
 import { notices } from "./notice";
 import { users } from "./user";
 
@@ -37,9 +37,9 @@ const REPORTED_CONTENTS = [
 ];
 
 const TARGET_TYPES: readonly CommentTargetType[] = [
-  "SCENARIO",
-  "SCENARIO",
-  "SCENARIO",
+  "UNIVERSE",
+  "UNIVERSE",
+  "UNIVERSE",
   "CHARACTER",
   "NOTICE",
 ];
@@ -58,10 +58,18 @@ const pickTarget = (seed: number, targetType: CommentTargetType) => {
     return { targetId: notice.noticeId, targetName: notice.title };
   }
 
-  const scenario = scenarios[randomInt(seed, 0, scenarios.length - 1)];
+  const universe = universes[randomInt(seed, 0, universes.length - 1)];
 
-  return { targetId: scenario.scenarioId, targetName: scenario.name };
+  return { targetId: universe.universeId, targetName: universe.name };
 };
+
+/**
+ * 신고가 들어올 만한 댓글의 ID.
+ * 신고 시드(db/report)가 이 중에서 대상을 고르고, 실제 신고 건수를
+ * 각 댓글의 reportCount로 되돌려 준다. 그래야 댓글의 "신고 N"과
+ * 신고 관리의 "누적 신고"가 같은 수를 가리킨다.
+ */
+export const reportableCommentIds: number[] = [];
 
 export const comments: Comment[] = Array.from({ length: 64 }, (_, index) => {
   const seed = index + 1;
@@ -80,25 +88,33 @@ export const comments: Comment[] = Array.from({ length: 64 }, (_, index) => {
       : "VISIBLE";
 
   const isHandled = status === "HIDDEN";
+  const commentId = 64 - index;
+  const createdDaysAgo = Math.floor(index / 2);
+
+  if (isReported) reportableCommentIds.push(commentId);
 
   return {
-    commentId: 64 - index,
+    commentId,
     targetType,
     targetId: target.targetId,
     targetName: target.targetName,
     // 4건 중 1건은 대댓글로 만든다.
-    parentCommentId: index % 4 === 2 ? 64 - index + 1 : undefined,
+    parentCommentId: index % 4 === 2 ? commentId + 1 : undefined,
     content: isReported
       ? pickOne(seed * 7, REPORTED_CONTENTS)
       : pickOne(seed * 7, COMMENT_CONTENTS),
     authorId: author.userId,
     authorNickname: author.nickname,
     status,
-    reportCount: isReported ? randomInt(seed * 9, 1, 24) : 0,
+    // 실제 신고 건수는 db/report가 채운다.
+    reportCount: 0,
     likeCount: randomInt(seed * 11, 0, 320),
     hiddenReason: isHandled ? pickOne(seed * 13, HIDDEN_REASONS) : undefined,
     handledBy: isHandled ? "운영자" : undefined,
-    handledAt: isHandled ? daysAgo(index, 16) : undefined,
-    createdAt: daysAgo(Math.floor(index / 2), 22 - (index % 12)),
+    // 숨김 처리는 댓글이 작성된 뒤에 일어난다.
+    handledAt: isHandled
+      ? daysAgo(Math.max(0, createdDaysAgo - 1), 16)
+      : undefined,
+    createdAt: daysAgo(createdDaysAgo, 22 - (index % 12)),
   };
 });
