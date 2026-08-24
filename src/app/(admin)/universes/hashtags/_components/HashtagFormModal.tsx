@@ -3,11 +3,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useHashtagDetailQuery } from "@/api/hashtag/getHashtagDetail";
 import { hashtagSchema, type HashtagSchema } from "@/schema/hashtag.schema";
 import {
   HASHTAG_LANGUAGES,
   HASHTAG_LANGUAGE_LABEL,
-  type Hashtag,
   type HashtagFormValues,
 } from "@/type/hashtag";
 import Button from "@/components/ui/Button";
@@ -22,8 +22,8 @@ import { HASHTAG_CATEGORY_OPTIONS } from "./hashtagOptions";
 interface HashtagFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** 수정 대상. 없으면 신규 등록 모드다. */
-  hashtag?: Hashtag;
+  /** 수정 대상 ID. 없으면 신규 등록 모드다. */
+  hashtagId?: number;
   onSubmit: (values: HashtagFormValues) => void;
   isSubmitting: boolean;
 }
@@ -35,13 +35,23 @@ const EMPTY_VALUES: HashtagSchema = {
   isActive: true,
 };
 
+/**
+ * 해시태그 등록 · 수정 모달.
+ *
+ * 언어별 라벨은 목록 응답에 없으므로 **수정 모드에서는 상세를 받아 폼을 채운다.**
+ * 다 받기 전에 저장하면 번역이 빈 값으로 덮어써지므로 그때까지는 저장을 막는다.
+ */
 const HashtagFormModal = ({
   isOpen,
   onClose,
-  hashtag,
+  hashtagId,
   onSubmit,
   isSubmitting,
 }: HashtagFormModalProps) => {
+  const { data: hashtag, isLoading } = useHashtagDetailQuery(
+    isOpen && hashtagId !== undefined ? hashtagId : null,
+  );
+
   const {
     control,
     register,
@@ -71,19 +81,27 @@ const HashtagFormModal = ({
 
   const submit = handleSubmit((values) => onSubmit(values));
 
+  /* 수정 대상을 받아오는 중에는 폼이 빈 값이라 저장을 막는다. */
+  const isPending = isSubmitting || isLoading;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={hashtag ? "해시태그 수정" : "해시태그 추가"}
+      title={hashtagId !== undefined ? "해시태그 수정" : "해시태그 추가"}
       description="여기에 등록한 태그만 사용자가 캐릭터·세계관에 붙일 수 있습니다."
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
+          <Button variant="ghost" onClick={onClose} disabled={isPending}>
             취소
           </Button>
-          <Button variant="primary" onClick={submit} isLoading={isSubmitting}>
-            {hashtag ? "수정" : "추가"}
+          <Button
+            variant="primary"
+            onClick={submit}
+            isLoading={isPending}
+            disabled={isPending}
+          >
+            {hashtagId !== undefined ? "수정" : "추가"}
           </Button>
         </>
       }

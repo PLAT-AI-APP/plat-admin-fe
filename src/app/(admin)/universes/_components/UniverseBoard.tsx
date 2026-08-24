@@ -1,113 +1,95 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  useUniverseListQuery,
-  type UniverseListParams,
-} from "@/api/universe/getUniverseList";
+  useAdminUniverseListQuery,
+  type AdminUniverseListParams,
+  type UniverseOrder,
+} from "@/api/universe/getAdminUniverseList";
 import { useListParams } from "@/hooks/useListParams";
 import { formatDate } from "@/lib/dayjs";
 import { formatWithCommas } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
-import { mainCharacterOf, type Universe } from "@/type/character";
+import type { AdminUniverseListItem } from "@/type/character";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Switch from "@/components/ui/Switch";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import {
+  UNIVERSE_CATEGORY_FILTER_OPTIONS,
+  UNIVERSE_CATEGORY_LABEL,
+  UNIVERSE_ORDER_OPTIONS,
   UNIVERSE_REVIEW_FILTER_OPTIONS,
   UNIVERSE_REVIEW_LABEL,
   UNIVERSE_REVIEW_TONE,
-  UNIVERSE_SORT_OPTIONS,
   UNIVERSE_STATUS_FILTER_OPTIONS,
   UNIVERSE_STATUS_LABEL,
   UNIVERSE_STATUS_TONE,
+  UNIVERSE_TENDENCY_LABEL,
+  UNIVERSE_VISIBILITY_FILTER_OPTIONS,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
 } from "../_constants/character";
-
-type UniverseSort = NonNullable<UniverseListParams["sort"]>;
 
 /** 주소에 실리는 목록 조건. 전역 검색(⌘K)이 넘겨 주는 keyword도 여기로 들어온다. */
 const DEFAULT_PARAMS = {
   page: 1,
   keyword: "",
-  sort: "RECENT",
-  officialOnly: "",
+  order: "CREATED_DESC",
+  category: "",
+  visibility: "",
   status: "",
   reviewStatus: "",
 };
 
+/**
+ * 세계관 관리 보드(실서버 plat-admin).
+ *
+ * 큐레이션 후보 피커·공식 패널이 쓰는 목업 목록(`useUniverseListQuery`)과 달리
+ * 실서버 목록을 쓴다. 행을 누르면 같은 실 ID로 상세가 열린다.
+ */
 const UniverseBoard = () => {
   const router = useRouter();
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
   const { page, keyword } = params;
-  const sort = params.sort as UniverseSort;
-  const officialOnly = params.officialOnly === "true";
-  const status = params.status as NonNullable<UniverseListParams["status"]>;
-  const reviewStatus = params.reviewStatus as NonNullable<
-    UniverseListParams["reviewStatus"]
-  >;
+  const order = params.order as UniverseOrder;
+  const category = params.category as AdminUniverseListParams["category"];
+  const visibility = params.visibility as AdminUniverseListParams["visibility"];
+  const status = params.status as AdminUniverseListParams["status"];
+  const reviewStatus =
+    params.reviewStatus as AdminUniverseListParams["reviewStatus"];
 
-  // 메인 노출 큐레이션과 같은 훅을 쓴다. 후보 목록과 화면이 항상 같은 데이터를 본다.
-  const { data, isLoading } = useUniverseListQuery({
+  const { data, isLoading } = useAdminUniverseListQuery({
     page,
     size: DEFAULT_PAGE_SIZE,
     keyword,
-    sort,
-    officialOnly,
+    order,
+    category,
+    visibility,
     status,
     reviewStatus,
   });
 
-  const columns: TableColumn<Universe>[] = [
+  const columns: TableColumn<AdminUniverseListItem>[] = [
     {
       key: "universe",
       header: "세계관",
-      width: "280px",
+      width: "300px",
       render: (row) => (
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="relative h-10 w-16 shrink-0 overflow-hidden rounded-[8px] bg-subtle">
-            <Image
-              src={row.thumbnailUrl}
-              alt={row.name}
-              fill
-              sizes="64px"
-              className="object-cover"
-              unoptimized
-            />
-          </div>
-
-          <div className="min-w-0">
-            <p className="truncate text-[14px] font-medium text-font-1">
-              {row.name}
-            </p>
-            <p className="mt-0.5 text-[12px] text-font-2 tabular-nums">
-              #{row.universeId}
-            </p>
-          </div>
+        <div className="min-w-0">
+          <p className="truncate text-[14px] font-medium text-font-1">
+            {row.title}
+          </p>
+          <p className="mt-0.5 truncate text-[12px] text-font-2">
+            {row.introduce}
+          </p>
+          <p className="mt-0.5 text-[11px] text-font-disabled tabular-nums">
+            #{row.universeId}
+          </p>
         </div>
-      ),
-    },
-    {
-      key: "characters",
-      header: "캐릭터",
-      render: (row) => (
-        /* 같은 캐릭터가 여러 세계관에 나올 수 있어 목록에서는 대표 한 명만 적는다. */
-        <span className="text-[13px] text-font-2">
-          {mainCharacterOf(row)?.name ?? "-"}
-          {row.characters.length > 1 && (
-            <span className="text-font-disabled">
-              {" "}
-              외 {row.characters.length - 1}명
-            </span>
-          )}
-        </span>
       ),
     },
     {
@@ -118,15 +100,15 @@ const UniverseBoard = () => {
       ),
     },
     {
-      key: "official",
-      header: "공식 여부",
+      key: "category",
+      header: "장르",
       align: "center",
-      render: (row) =>
-        row.isOfficial ? (
-          <Badge tone="brand">공식</Badge>
-        ) : (
-          <Badge tone="neutral">일반</Badge>
-        ),
+      render: (row) => (
+        <span className="text-[13px] text-font-2">
+          {UNIVERSE_CATEGORY_LABEL[row.category]} ·{" "}
+          {UNIVERSE_TENDENCY_LABEL[row.tendency]}
+        </span>
+      ),
     },
     {
       key: "visibility",
@@ -157,7 +139,6 @@ const UniverseBoard = () => {
           <Badge tone={UNIVERSE_STATUS_TONE[row.status]}>
             {UNIVERSE_STATUS_LABEL[row.status]}
           </Badge>
-
           {/* 파기 전까지는 복구 문의를 받을 수 있으므로 남은 기한을 함께 보여 준다. */}
           {row.status === "DELETED" && row.purgeAt && (
             <span className="text-[11px] text-font-2 tabular-nums">
@@ -186,18 +167,18 @@ const UniverseBoard = () => {
       render: (row) => `${formatWithCommas(row.scenarioCount)}편`,
     },
     {
-      key: "assetCount",
-      header: "에셋",
-      align: "right",
-      numeric: true,
-      render: (row) => formatWithCommas(row.assetCount),
-    },
-    {
       key: "chatCount",
       header: "대화",
       align: "right",
       numeric: true,
       render: (row) => formatWithCommas(row.chatCount),
+    },
+    {
+      key: "likeCount",
+      header: "좋아요",
+      align: "right",
+      numeric: true,
+      render: (row) => formatWithCommas(row.likeCount),
     },
     {
       key: "createdAt",
@@ -215,16 +196,9 @@ const UniverseBoard = () => {
   return (
     <>
       <Alert tone="info" title="세계관은 캐릭터와 시나리오를 품는 단위입니다.">
-        세계관 하나에 <b>캐릭터</b>가 여러 명 등장할 수 있고, 같은 캐릭터가 다른
-        세계관에도 나올 수 있습니다. 유저는 세계관에 들어와 <b>시나리오</b>를 골라
-        대화를 시작합니다. 행을 클릭하면 캐릭터와 시나리오를 함께 볼 수 있습니다.
-      </Alert>
-
-      <Alert tone="info" title="메인 노출 큐레이션의 후보 목록입니다.">
-        배너 · 오늘의 PICK · 공식 캐릭터 맛보기 · 에셋 추천은 모두 이 목록에서
-        세계관을 선택합니다. 앱 홈에는 <b>승인 · 공개 상태인 세계관만</b> 실리므로
-        심사 대기나 비공개 세계관을 고르면 자리만 비게 됩니다. 공식 여부는 세계관이
-        아니라 <b>소유 계정</b>에 붙습니다(공식 계정 화면에서 지정).
+        세계관 하나에 <b>캐릭터</b>가 등장하고, 유저는 세계관에 들어와{" "}
+        <b>시나리오</b>를 골라 대화를 시작합니다. 행을 클릭하면 번역 · 에셋 ·
+        시나리오를 함께 검수하고 심사 · 상태를 조치할 수 있습니다.
       </Alert>
 
       <Card noPadding>
@@ -232,44 +206,47 @@ const UniverseBoard = () => {
           <SearchInput
             value={keyword}
             onSearch={(next) => setParams({ keyword: next })}
-            placeholder="세계관 ID, 제목, 캐릭터명, 태그 검색"
+            placeholder="세계관 제목, 소개 검색"
           />
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-[13px] text-font-2">공식만 보기</span>
-              <Switch
-                label="공식 세계관만 보기"
-                checked={officialOnly}
-                onChange={(checked) =>
-                  setParams({ officialOnly: checked ? "true" : "" })
-                }
-              />
-            </div>
-
+          <div className="flex items-center gap-2">
+            <Select
+              options={UNIVERSE_CATEGORY_FILTER_OPTIONS}
+              value={category}
+              onChange={(event) => setParams({ category: event.target.value })}
+              selectBoxClassName="w-32"
+              aria-label="장르 필터"
+            />
+            <Select
+              options={UNIVERSE_VISIBILITY_FILTER_OPTIONS}
+              value={visibility}
+              onChange={(event) =>
+                setParams({ visibility: event.target.value })
+              }
+              selectBoxClassName="w-32"
+              aria-label="공개 범위 필터"
+            />
             <Select
               options={UNIVERSE_REVIEW_FILTER_OPTIONS}
               value={reviewStatus}
               onChange={(event) =>
                 setParams({ reviewStatus: event.target.value })
               }
-              selectBoxClassName="w-36"
+              selectBoxClassName="w-28"
               aria-label="심사 상태 필터"
             />
-
             <Select
               options={UNIVERSE_STATUS_FILTER_OPTIONS}
               value={status}
               onChange={(event) => setParams({ status: event.target.value })}
-              selectBoxClassName="w-36"
+              selectBoxClassName="w-28"
               aria-label="운영 상태 필터"
             />
-
             <Select
-              options={UNIVERSE_SORT_OPTIONS}
-              value={sort}
-              onChange={(event) => setParams({ sort: event.target.value })}
-              selectBoxClassName="w-36"
+              options={UNIVERSE_ORDER_OPTIONS}
+              value={order}
+              onChange={(event) => setParams({ order: event.target.value })}
+              selectBoxClassName="w-32"
               aria-label="정렬 기준"
             />
           </div>
@@ -278,13 +255,11 @@ const UniverseBoard = () => {
         <Table
           columns={columns}
           rows={data?.content ?? []}
-          getRowKey={(row) => String(row.universeId)}
+          getRowKey={(row) => row.universeId}
           isLoading={isLoading}
-          onRowClick={(row) =>
-            router.push(`/universes/${row.universeId}`)
-          }
+          onRowClick={(row) => router.push(`/universes/${row.universeId}`)}
           emptyTitle="조건에 맞는 세계관이 없습니다."
-          emptyDescription="검색어를 지우거나 '공식만 보기'를 꺼 보세요."
+          emptyDescription="검색어나 필터를 바꿔 보세요."
         />
 
         <Pagination

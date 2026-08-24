@@ -1,10 +1,15 @@
 import { HttpResponse, delay, http } from "msw";
 import { isExposableUniverse } from "@/type/character";
-import { universeScenarios, universes } from "../db/character";
+import { universes } from "../db/character";
 import { MOCK_DELAY_MS, matchesKeyword, paginate } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
+/*
+ * 세계관 목록만 목업으로 둔다. **상세는 실서버(plat-be plat-admin)로 옮겨** liveAxios가
+ * 8081로 직접 부르므로 목업 상세 핸들러가 없다. 이 목록은 아직 목업인 큐레이션 후보
+ * 피커·공식 패널(`useUniverseListQuery`)이 쓴다. 보드는 실서버 목록을 따로 쓴다.
+ */
 export const universeHandlers = [
   http.get(`${BASE_URI}/admin/universes`, async ({ request }) => {
     const url = new URL(request.url);
@@ -65,24 +70,4 @@ export const universeHandlers = [
     return HttpResponse.json(paginate(sorted, url));
   }),
 
-  http.get(`${BASE_URI}/admin/universes/:universeId`, async ({ params }) => {
-    const universeId = Number(params.universeId);
-    const universe = universes.find((item) => item.universeId === universeId);
-
-    await delay(MOCK_DELAY_MS);
-
-    if (!universe) {
-      return HttpResponse.json(
-        { code: "UNIVERSE_NOT_FOUND", message: "존재하지 않는 세계관입니다." },
-        { status: 404 },
-      );
-    }
-
-    /* 상세에만 시나리오를 싣는다. 구버전은 회차 순서를 흐트러뜨리므로 뒤로 보낸다. */
-    const scenarios = universeScenarios
-      .filter((scenario) => scenario.universeId === universeId)
-      .sort((a, b) => a.episodeNo - b.episodeNo);
-
-    return HttpResponse.json({ ...universe, scenarios });
-  }),
 ];

@@ -4,8 +4,6 @@ import { useState } from "react";
 import { useHashtagListQuery } from "@/api/hashtag/getHashtagList";
 import { Check, Hash, Search } from "@/icons";
 import { cn } from "@/lib/utils";
-import { resolveHashtagLabel } from "@/type/hashtag";
-import type { ServiceLanguage } from "@/type/language";
 import Badge from "@/components/ui/Badge";
 import Input from "@/components/ui/Input";
 import Skeleton from "@/components/ui/Skeleton";
@@ -15,8 +13,6 @@ interface HashtagSelectFieldProps {
   onChange: (hashtagIds: number[]) => void;
   /** 고를 수 있는 최대 개수 */
   maxCount?: number;
-  /** 라벨을 보여줄 언어. 지금 편집 중인 언어와 맞춘다. */
-  language?: ServiceLanguage;
 }
 
 /** 후보 목록 크기. 검색으로 좁혀 쓰는 자리라 한 번에 많이 보여줄 이유가 없다. */
@@ -28,12 +24,13 @@ const CANDIDATE_SIZE = 40;
  * **자유 입력이 아니라 등록된 해시태그에서 고른다.** 문자열로 적게 두면
  * 앱에 없는 태그가 배너에만 뜨고, 나중에 태그 이름을 바꿔도 배너는 옛 이름을
  * 들고 있는다. 노출 중인 태그만 후보로 보여 준다.
+ *
+ * 라벨은 한국어만 보여 준다 — 서버 목록 응답에 언어별 번역이 오지 않는다.
  */
 const HashtagSelectField = ({
   value,
   onChange,
   maxCount = 5,
-  language = "KO",
 }: HashtagSelectFieldProps) => {
   const [keyword, setKeyword] = useState("");
 
@@ -42,7 +39,7 @@ const HashtagSelectField = ({
     size: CANDIDATE_SIZE,
     keyword,
     isActive: "true",
-    sort: "USAGE",
+    sort: "USAGE_DESC",
   });
 
   const candidates = data?.content ?? [];
@@ -85,7 +82,7 @@ const HashtagSelectField = ({
         <div className="flex flex-wrap gap-1.5">
           {selected.map((hashtag) => (
             <Badge key={hashtag.hashtagId} tone="brand">
-              #{resolveHashtagLabel(hashtag, language)}
+              #{hashtag.name}
             </Badge>
           ))}
         </div>
@@ -123,7 +120,7 @@ const HashtagSelectField = ({
                 )}
               >
                 {isChecked ? <Check size={12} /> : <Hash size={12} />}
-                {resolveHashtagLabel(hashtag, language)}
+                {hashtag.name}
                 {hashtag.isAdult && <span className="text-danger">19</span>}
               </button>
             );

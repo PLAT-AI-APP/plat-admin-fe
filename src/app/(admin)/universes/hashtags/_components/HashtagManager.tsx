@@ -10,15 +10,13 @@ import { formatDate } from "@/lib/dayjs";
 import { showErrorToast } from "@/lib/toast";
 import { formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
-import { DEFAULT_PAGE_SIZE } from "@/type/api";
+import { DEFAULT_PAGE_SIZE, type AppError } from "@/type/api";
 import {
   HASHTAG_CATEGORY_LABEL,
-  HASHTAG_LANGUAGES,
-  HASHTAG_LANGUAGE_LABEL,
-  countTranslations,
   type Hashtag,
   type HashtagCategory,
   type HashtagFormValues,
+  type HashtagSort,
 } from "@/type/hashtag";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
@@ -41,17 +39,19 @@ import {
   HASHTAG_STATUS_FILTER_OPTIONS,
 } from "./hashtagOptions";
 
-type HashtagSort = "RECENT" | "USAGE" | "LABEL";
-
-/** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
+/**
+ * CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다.
+ * 언어별 번역은 목록 응답에 없으므로 채워진 개수만 담는다.
+ */
 const HASHTAG_CSV_COLUMNS: CsvColumn<Hashtag>[] = [
   { header: "ID", value: (row) => row.hashtagId },
-  ...HASHTAG_LANGUAGES.map((language) => ({
-    header: HASHTAG_LANGUAGE_LABEL[language],
-    value: (row: Hashtag) => row.labels[language],
-  })),
+  { header: "해시태그", value: (row) => row.name },
   { header: "분류", value: (row) => HASHTAG_CATEGORY_LABEL[row.category] },
   { header: "성인 전용", value: (row) => (row.isAdult ? "Y" : "N") },
+  {
+    header: "번역",
+    value: (row) => `${row.translationCount}/${row.totalTranslationCount}`,
+  },
   { header: "사용 수", value: (row) => row.usageCount },
   { header: "등록일", value: (row) => formatDate(row.createdAt) },
   { header: "노출", value: (row) => (row.isActive ? "노출" : "중지") },
@@ -64,7 +64,7 @@ const DEFAULT_PARAMS = {
   category: "",
   isActive: "",
   isAdult: "",
-  sort: "RECENT",
+  sort: "CREATED_DESC",
 };
 
 const HashtagManager = () => {
@@ -73,7 +73,8 @@ const HashtagManager = () => {
   const category = params.category as HashtagCategory | "";
   const sort = params.sort as HashtagSort;
 
-  const [editingHashtag, setEditingHashtag] = useState<Hashtag | undefined>();
+  /** 수정 대상 ID. 언어별 라벨은 목록에 없어 모달이 상세를 따로 받아 온다. */
+  const [editingHashtagId, setEditingHashtagId] = useState<number>();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [detailHashtag, setDetailHashtag] = useState<Hashtag | null>(null);
 
@@ -93,25 +94,25 @@ const HashtagManager = () => {
   const hashtags = data?.content ?? [];
 
   const handleOpenCreate = () => {
-    setEditingHashtag(undefined);
+    setEditingHashtagId(undefined);
     setIsFormOpen(true);
   };
 
-  const handleOpenEdit = (hashtag: Hashtag) => {
+  const handleOpenEdit = (hashtagId: number) => {
     // 상세에서 넘어온 경우 모달이 겹치지 않도록 상세를 먼저 닫는다.
     setDetailHashtag(null);
-    setEditingHashtag(hashtag);
+    setEditingHashtagId(hashtagId);
     setIsFormOpen(true);
   };
 
   const handleSubmit = (values: HashtagFormValues) => {
-    const options = { onSuccess: () => setIsFormOpen(false) };
+    const options = {
+      onSuccess: () => setIsFormOpen(false),
+      onError: (error: AppError) => showErrorToast(error),
+    };
 
-    if (editingHashtag) {
-      updateMutation.mutate(
-        { hashtagId: editingHashtag.hashtagId, values },
-        options,
-      );
+    if (editingHashtagId !== undefined) {
+      updateMutation.mutate({ hashtagId: editingHashtagId, values }, options);
       return;
     }
 
@@ -119,10 +120,10 @@ const HashtagManager = () => {
   };
 
   const handleToggleActive = (hashtag: Hashtag, nextActive: boolean) => {
-    statusMutation.mutate({
-      hashtagId: hashtag.hashtagId,
-      isActive: nextActive,
-    });
+    statusMutation.mutate(
+      { hashtagId: hashtag.hashtagId, isActive: nextActive },
+      { onError: (error) => showErrorToast(error) },
+    );
   };
 
   const handleDelete = (hashtag: Hashtag) => {
@@ -130,7 +131,7 @@ const HashtagManager = () => {
     if (hashtag.usageCount > 0) {
       showErrorToast(
         new Error(
-          `'${hashtag.labels.KO}' 태그는 ${formatWithCommas(hashtag.usageCount)}곳에서 사용 중입니다. 노출을 끄는 방식으로 관리해 주세요.`,
+          `'${hashtag.name}' 태그는 ${formatWithCommas(hashtag.usageCount)}곳에서 사용 중입니다. 노출을 끄는 방식으로 관리해 주세요.`,
         ),
       );
       return;
@@ -138,11 +139,12 @@ const HashtagManager = () => {
 
     openConfirm({
       title: "해시태그를 삭제할까요?",
-      description: `'${hashtag.labels.KO}' 태그가 선택 목록에서 완전히 제거됩니다.`,
+      description: `'${hashtag.name}' 태그가 선택 목록에서 완전히 제거됩니다.`,
       warning: "삭제한 해시태그는 되돌릴 수 없습니다.",
       confirmText: "삭제",
       tone: "danger",
-      onConfirm: () => deleteMutation.mutateAsync(hashtag.hashtagId),
+      onConfirm: () =>
+        deleteMutation.mutateAsync(hashtag.hashtagId).catch(showErrorToast),
     });
   };
 
@@ -154,7 +156,7 @@ const HashtagManager = () => {
     {
       label: "수정",
       icon: <Edit size={15} />,
-      onSelect: () => handleOpenEdit(hashtag),
+      onSelect: () => handleOpenEdit(hashtag.hashtagId),
     },
     {
       label: "삭제",
@@ -166,11 +168,11 @@ const HashtagManager = () => {
 
   const columns: TableColumn<Hashtag>[] = [
     {
-      key: "label",
+      key: "name",
       header: "해시태그",
       render: (row) => (
         <div className="flex items-center gap-1.5">
-          <span className="text-font-1">#{row.labels.KO}</span>
+          <span className="text-font-1">#{row.name}</span>
           {row.isAdult && <Badge tone="danger">성인</Badge>}
         </div>
       ),
@@ -188,25 +190,18 @@ const HashtagManager = () => {
       key: "translations",
       header: "번역",
       align: "center",
-      render: (row) => {
-        const filled = countTranslations(row.labels);
-
-        return (
-          <span
-            className={
-              filled === HASHTAG_LANGUAGES.length
-                ? "text-font-2 tabular-nums"
-                : "text-warning tabular-nums"
-            }
-            title={HASHTAG_LANGUAGES.map(
-              (language) =>
-                `${HASHTAG_LANGUAGE_LABEL[language]}: ${row.labels[language] || "-"}`,
-            ).join("\n")}
-          >
-            {filled}/{HASHTAG_LANGUAGES.length}
-          </span>
-        );
-      },
+      render: (row) => (
+        <span
+          className={
+            row.translationCount === row.totalTranslationCount
+              ? "text-font-2 tabular-nums"
+              : "text-warning tabular-nums"
+          }
+          title="언어별 번역은 상세에서 확인할 수 있습니다."
+        >
+          {row.translationCount}/{row.totalTranslationCount}
+        </span>
+      ),
     },
     {
       key: "usageCount",
@@ -234,7 +229,7 @@ const HashtagManager = () => {
           onClick={(event) => event.stopPropagation()}
         >
           <Switch
-            label={`${row.labels.KO} 노출 여부`}
+            label={`${row.name} 노출 여부`}
             checked={row.isActive}
             onChange={(next) => handleToggleActive(row, next)}
             disabled={statusMutation.isPending}
@@ -372,7 +367,7 @@ const HashtagManager = () => {
       <HashtagFormModal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
-        hashtag={editingHashtag}
+        hashtagId={editingHashtagId}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
       />

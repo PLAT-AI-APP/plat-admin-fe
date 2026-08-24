@@ -9,7 +9,6 @@ import { Globe } from "@/icons";
 import { toDateInputValue } from "@/lib/dayjs";
 import { bannerSchema, type BannerSchema } from "@/schema/banner.schema";
 import type { Universe } from "@/type/character";
-import { resolveHashtagLabel } from "@/type/hashtag";
 import {
   EMPTY_LOCALIZED_TEXT,
   SERVICE_LANGUAGES,
@@ -130,10 +129,11 @@ const BannerFormModal = ({
     isActive: "true",
   });
 
+  /* 서버 목록에는 언어별 번역이 없어 태그 라벨은 한국어로만 보여 준다. */
   const hashtagLabels = new Map(
     (hashtagData?.content ?? []).map((hashtag) => [
       hashtag.hashtagId,
-      resolveHashtagLabel(hashtag, language),
+      hashtag.name,
     ]),
   );
 
@@ -327,7 +327,6 @@ const BannerFormModal = ({
                 <HashtagSelectField
                   value={field.value}
                   onChange={field.onChange}
-                  language={language}
                 />
               )}
             />

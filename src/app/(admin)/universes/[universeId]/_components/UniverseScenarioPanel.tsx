@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { MessageSquare } from "@/icons";
 import { cn } from "@/lib/utils";
-import type { UniverseScenario } from "@/type/character";
+import type { UniverseScenarioDetail } from "@/type/character";
+import { SERVICE_LANGUAGES, SERVICE_LANGUAGE_LABEL } from "@/type/language";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
@@ -15,28 +17,75 @@ import {
 } from "../../_constants/character";
 
 interface UniverseScenarioPanelProps {
-  scenarios: UniverseScenario[];
+  scenarios: UniverseScenarioDetail[];
 }
+
+/** 한 시나리오의 언어 탭 + 선택 언어 본문. */
+const ScenarioBody = ({ scenario }: { scenario: UniverseScenarioDetail }) => {
+  const filled = SERVICE_LANGUAGES.filter((language) =>
+    scenario.translations.some((t) => t.language === language),
+  );
+  const [language, setLanguage] = useState(filled[0] ?? "KO");
+  const current =
+    scenario.translations.find((t) => t.language === language) ??
+    scenario.translations[0];
+
+  if (!current) {
+    return (
+      <p className="mt-2 text-[13px] text-font-disabled">
+        등록된 본문이 없습니다.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-2.5">
+      {filled.length > 1 && (
+        <div className="mb-2 flex flex-wrap gap-1">
+          {filled.map((code) => (
+            <button
+              key={code}
+              type="button"
+              onClick={() => setLanguage(code)}
+              className={cn(
+                "rounded-field px-2 py-0.5 text-[12px] transition",
+                code === language
+                  ? "bg-surface-selected text-font-0"
+                  : "text-font-2 hover:bg-surface-hover",
+              )}
+            >
+              {SERVICE_LANGUAGE_LABEL[code]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {current.title && (
+        <p className="text-[13px] font-medium text-font-1">{current.title}</p>
+      )}
+
+      {/* 유저가 실제로 읽는 에피소드 본문 전체. 검수를 위해 자르지 않는다. */}
+      <p className="mt-1 rounded-field bg-subtle px-3 py-2 text-[13px] whitespace-pre-line text-font-1">
+        {current.content}
+      </p>
+    </div>
+  );
+};
 
 /**
  * 세계관에 실린 시나리오(에피소드) 목록.
  *
- * 세계관이 "무대"라면 시나리오는 **그 무대에서 시작하는 한 편의 이야기**다.
- * 유저는 세계관에 들어와 이 목록에서 하나를 골라 대화를 시작하므로,
- * 운영에서는 **시작 시나리오가 살아 있는지**를 가장 먼저 본다.
+ * 유저는 세계관에 들어와 이 중 하나를 골라 대화를 시작하므로, 운영에서는
+ * **시작 시나리오가 살아 있는지**를 가장 먼저 보고, 언어별 본문을 검수한다.
  */
 const UniverseScenarioPanel = ({ scenarios }: UniverseScenarioPanelProps) => {
-  const playable = scenarios.filter(
-    (scenario) => scenario.status === "ACTIVE",
+  const playable = scenarios.filter((scenario) => scenario.status === "ACTIVE");
+  const hasStart = playable.some(
+    (scenario) => scenario.scenarioType === "START",
   );
-  const hasStart = playable.some((scenario) => scenario.type === "START");
 
   return (
     <Card
-      /*
-        지표(세계관 목록의 "시나리오 N편")는 구버전을 뺀 수다.
-        여기서 총 편수만 적으면 두 숫자가 달라 보여, 둘 다 적는다.
-      */
       title={
         playable.length === scenarios.length
           ? `시나리오 ${scenarios.length}편`
@@ -79,13 +128,11 @@ const UniverseScenarioPanel = ({ scenarios }: UniverseScenarioPanelProps) => {
                   {scenario.episodeNo}화
                 </span>
 
-                <p className="min-w-0 flex-1 truncate text-[14px] font-medium text-font-1">
-                  {scenario.title}
-                </p>
+                <span className="min-w-0 flex-1" />
 
-                <span title={SCENARIO_TYPE_HINT[scenario.type]}>
-                  <Badge tone={SCENARIO_TYPE_TONE[scenario.type]}>
-                    {SCENARIO_TYPE_LABEL[scenario.type]}
+                <span title={SCENARIO_TYPE_HINT[scenario.scenarioType]}>
+                  <Badge tone={SCENARIO_TYPE_TONE[scenario.scenarioType]}>
+                    {SCENARIO_TYPE_LABEL[scenario.scenarioType]}
                   </Badge>
                 </span>
 
@@ -98,14 +145,7 @@ const UniverseScenarioPanel = ({ scenarios }: UniverseScenarioPanelProps) => {
                 </span>
               </div>
 
-              <p className="mt-2 text-[13px] text-font-2">
-                {scenario.situation}
-              </p>
-
-              {/* 첫 대사는 유저가 실제로 처음 보는 문장이라 그대로 보여 준다. */}
-              <p className="mt-2 rounded-field bg-subtle px-3 py-2 text-[13px] text-font-1">
-                “{scenario.firstDialogue}”
-              </p>
+              <ScenarioBody scenario={scenario} />
             </li>
           ))}
         </ul>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HASHTAG_CATEGORIES } from "@/type/hashtag";
 
 /** 라벨 공통 규칙. 태그는 짧게 유지해야 선택 UI에서 줄바꿈이 생기지 않는다. */
 const labelSchema = z
@@ -18,17 +19,8 @@ export const hashtagSchema = z.object({
     TH: labelSchema,
     VI: labelSchema,
   }),
-  category: z.enum([
-    "GENRE",
-    "SPECIES",
-    "CHARACTER",
-    "APPEARANCE",
-    "PERSONALITY",
-    "RELATION",
-    "NARRATIVE",
-    "OCCUPATION",
-    "SPECIAL",
-  ]),
+  // 분류는 서버 enum과 같아야 하므로 목록을 한 곳(type/hashtag)에서만 정의한다.
+  category: z.enum(HASHTAG_CATEGORIES),
   isAdult: z.boolean(),
   isActive: z.boolean(),
 });

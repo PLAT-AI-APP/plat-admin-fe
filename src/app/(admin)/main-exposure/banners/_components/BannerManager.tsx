@@ -19,7 +19,6 @@ import {
   mainCharacterOf,
   universeBlockReason,
 } from "@/type/character";
-import { resolveHashtagLabel } from "@/type/hashtag";
 import type { Banner, BannerFormValues } from "@/type/mainExposure";
 import { resolveBannerContent } from "@/type/mainExposure";
 import { openConfirm } from "@/store/useConfirmStore";
@@ -44,7 +43,7 @@ const BannerManager = () => {
   const hashtagLabels = new Map(
     (hashtagData?.content ?? []).map((hashtag) => [
       hashtag.hashtagId,
-      resolveHashtagLabel(hashtag),
+      hashtag.name,
     ]),
   );
   const { createMutation, updateMutation, deleteMutation, orderMutation } =

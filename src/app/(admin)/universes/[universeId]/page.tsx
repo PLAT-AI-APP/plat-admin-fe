@@ -9,5 +9,6 @@ export default async function UniverseDetailPage({
 }: UniverseDetailPageProps) {
   const { universeId } = await params;
 
-  return <UniverseDetailView universeId={Number(universeId)} />;
+  // Snowflake ID는 크므로 Number로 바꾸지 않고 문자열 그대로 넘긴다(정밀도 손실 방지).
+  return <UniverseDetailView universeId={universeId} />;
 }

@@ -4,18 +4,21 @@ import {
   HASHTAG_CATEGORIES,
   HASHTAG_CATEGORY_LABEL,
   type HashtagCategory,
+  type HashtagSort,
 } from "@/type/hashtag";
 
-/** 분류가 9개라 색이 반복된다. 인접한 분류끼리만 겹치지 않게 배치한다. */
+/** 분류가 11개라 색이 반복된다. 인접한 분류끼리만 겹치지 않게 배치한다. */
 export const HASHTAG_CATEGORY_TONE: Record<HashtagCategory, BadgeTone> = {
   GENRE: "brand",
-  SPECIES: "info",
-  CHARACTER: "success",
-  APPEARANCE: "warning",
-  PERSONALITY: "danger",
-  RELATION: "brand",
-  NARRATIVE: "info",
-  OCCUPATION: "success",
+  BACKGROUND: "info",
+  RACE: "success",
+  CHARACTER: "warning",
+  APPEARANCE: "danger",
+  PERSONALITY: "brand",
+  RELATIONSHIP: "info",
+  NARRATIVE: "success",
+  OCCUPATION: "warning",
+  MOOD: "danger",
   SPECIAL: "neutral",
 };
 
@@ -45,8 +48,12 @@ export const HASHTAG_ADULT_FILTER_OPTIONS: SelectOption[] = [
   { label: "일반 태그만", value: "false" },
 ];
 
-export const HASHTAG_SORT_OPTIONS: SelectOption[] = [
-  { label: "최근 등록순", value: "RECENT" },
-  { label: "사용 많은 순", value: "USAGE" },
-  { label: "이름순", value: "LABEL" },
+/** 정렬. 서버가 지원하는 값을 그대로 노출한다. */
+export const HASHTAG_SORT_OPTIONS: SelectOption<HashtagSort>[] = [
+  { label: "최근 등록순", value: "CREATED_DESC" },
+  { label: "오래된순", value: "CREATED_ASC" },
+  { label: "사용 많은 순", value: "USAGE_DESC" },
+  { label: "사용 적은 순", value: "USAGE_ASC" },
+  { label: "이름 오름차순", value: "NAME_ASC" },
+  { label: "이름 내림차순", value: "NAME_DESC" },
 ];

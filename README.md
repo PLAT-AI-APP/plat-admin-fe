@@ -31,11 +31,46 @@ npm run dev
 
 | 이름 | 설명 |
 |---|---|
-| `NEXT_PUBLIC_BASE_URI` | 관리자 API 베이스 URI |
+| `NEXT_PUBLIC_BASE_URI` | 목업 구간의 관리자 API 베이스 URI |
 | `NEXT_PUBLIC_API_MOCKING` | `enabled`일 때만 MSW 목업 워커가 뜬다 |
+| `NEXT_PUBLIC_LIVE_BASE_URI` | 실서버(`plat-be` `plat-admin`, 기본 `8081`) 베이스 URI |
+| `NEXT_PUBLIC_LIVE_ACCESS_TOKEN` | 개발용 실서버 ADMIN 토큰 (아래 참고) |
 
-서버가 아직 없으므로 **기본값은 목업 모드**다. 실제 서버에 붙일 때는
-`NEXT_PUBLIC_API_MOCKING`을 비우고 `NEXT_PUBLIC_BASE_URI`만 바꾸면 된다.
+**목업과 실서버가 함께 돈다.** 연동이 끝난 도메인은 `src/api/index.ts`의
+`liveAxios`로 `NEXT_PUBLIC_LIVE_BASE_URI`에 붙고, 나머지는 그대로
+`adminAxios` + MSW 목업을 쓴다. 두 베이스 URI의 **오리진이 달라야** MSW가
+실서버 요청을 가로채지 않는다.
+
+### 실서버 연동 현황
+
+**지금은 전부 목업으로 돈다.** 실서버 없이 화면을 돌릴 수 있게, 서버에 연동해 둔
+해시태그 · 세계관도 **목업 응답으로 받는다.** 다만 목업을 목업 베이스가 아니라
+**실서버 베이스(`NEXT_PUBLIC_LIVE_BASE_URI`)에 등록**해 두어, API 코드(`liveAxios`)와
+응답 DTO 모양은 실서버 계약 그대로다. 실서버를 붙일 때는 아래 두 핸들러의 등록만
+지우면 된다.
+
+| 도메인 | 호출 | 지금 응답하는 곳 |
+|---|---|---|
+| 해시태그 (`/admin/hashtags`) | `liveAxios` | 목업 `src/mocks/handlers/hashtag.ts` (실서버 DTO 모양) |
+| 세계관 운영 (`/admin/universes`) | `liveAxios` | 목업 `src/mocks/handlers/universeAdmin.ts` (실서버 DTO 모양) |
+| 세계관 큐레이션 후보 목록 | `adminAxios` | 목업 `src/mocks/handlers/universe.ts` |
+| 그 외 전체 | `adminAxios` | MSW 목업 |
+
+세계관 운영 목업은 큐레이션과 **같은 시드(`src/mocks/db/character.ts`)** 를 쓴다.
+보드에서 내린 조치가 큐레이션 후보 목록에도 그대로 반영된다. 이미지 URL은 실서버가
+만들지 못하는 것과 똑같이 늘 `null`이고, 화면은 함께 오는 `*FileId`로 자리표시를 둔다.
+
+관리자 서버에는 **로그인 엔드포인트가 없다.** 토큰은 서비스 서버가 발급하고
+관리자 서버는 `hasRole(ADMIN)`으로 검증만 한다. 관리자 로그인이 실연동될
+때까지는 서비스 서버에서 받은 ADMIN 토큰을 `.env.local`의
+`NEXT_PUBLIC_LIVE_ACCESS_TOKEN`에 넣어 쓴다.
+
+```bash
+curl -s -X POST http://localhost:8080/auth/login -H 'Content-Type: application/json' -d '{"username":"<admin-email>","password":"<password>"}'
+```
+
+목업 로그인 세션과 실서버 토큰은 별개이므로, 목업 구간에서는 실서버 401이
+콘솔 세션을 끊지 않는다(토큰만 잘못 넣었을 때 로그인 화면으로 튕기지 않는다).
 
 ## 스택
 
@@ -78,6 +113,13 @@ npx tsc --noEmit && npx eslint src
 
 - **로그인 / 권한 게이트.** 서버 인증이 붙으면 `src/app/(admin)/layout.tsx`와
   `src/api/index.ts`의 요청 인터셉터 두 곳만 수정하면 된다.
+- **해시태그 검색 · 페이징은 화면에서 처리한다.** 서버 목록 API가 조건 필터와
+  정렬만 지원하고 검색어 · 페이지를 받지 않아, 받아 온 목록을
+  `src/api/hashtag/getHashtagList.ts`에서 거르고 나눈다. 서버가 지원하게 되면
+  이 파일만 고치면 된다.
+- **해시태그 목록의 언어별 라벨.** 목록 응답에는 한국어 라벨과 번역 개수만
+  온다. 번역 내용이 필요한 상세 · 수정 모달은 상세 API를 따로 부른다. 배너의
+  태그 라벨도 그래서 한국어로만 보인다.
 
 ## 이미지 업로드
 

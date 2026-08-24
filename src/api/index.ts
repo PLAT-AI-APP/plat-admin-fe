@@ -11,10 +11,26 @@ import type {
   AppError,
 } from "@/type/api";
 
-const BASE_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_BASE_URI,
-  headers: { "Content-Type": "application/json" },
-};
+const IS_MOCKING = process.env.NEXT_PUBLIC_API_MOCKING === "enabled";
+
+/**
+ * 실서버(plat-be `plat-admin`, 기본 8081) 베이스 URI.
+ *
+ * 목업 베이스와 **오리진을 다르게 둔다.** MSW 핸들러는 목업 베이스 URI로
+ * 등록되어 있으므로, 오리진이 다르면 목업 구간을 켠 채로 연동이 끝난 도메인만
+ * 실서버에 보낼 수 있다(`onUnhandledRequest: "bypass"`).
+ */
+const LIVE_BASE_URI =
+  process.env.NEXT_PUBLIC_LIVE_BASE_URI ?? process.env.NEXT_PUBLIC_BASE_URI;
+
+/**
+ * 개발용 실서버 토큰.
+ *
+ * 관리자 서버에는 로그인 엔드포인트가 없다 — 토큰은 서비스 서버가 발급하고
+ * 관리자 서버는 검증만 한다(`hasRole(ADMIN)`). 관리자 로그인이 실연동될 때까지는
+ * 서비스 서버에서 받은 ADMIN 토큰을 `.env.local`에 두고 쓴다.
+ */
+const LIVE_ACCESS_TOKEN = process.env.NEXT_PUBLIC_LIVE_ACCESS_TOKEN;
 
 /** 기존 공통 응답 봉투만 골라내는 가드입니다. */
 const isLegacyApiSuccessEnvelope = <T>(
@@ -69,35 +85,76 @@ const handleUnauthorized = () => {
   );
 };
 
-/** 화면에서 그대로 노출할 수 있는 에러 객체로 정규화합니다. */
-const onResponseError = (error: AxiosError<ApiErrorResponse>) => {
-  const appError: AppError = {
-    code: error.response?.data?.code ?? "UNKNOWN",
-    fields: error.response?.data?.fields ?? {},
-    message: error.response?.data?.message ?? "요청 처리에 실패했습니다.",
+interface CreateAdminAxiosOptions {
+  baseURL?: string;
+  /** 요청에 실을 토큰. */
+  resolveAccessToken: () => string | null | undefined;
+  /** 401을 세션 만료로 보고 로그인 화면으로 보낼지. */
+  expiresSessionOn401: boolean;
+}
+
+const createAdminAxios = ({
+  baseURL,
+  resolveAccessToken,
+  expiresSessionOn401,
+}: CreateAdminAxiosOptions): AxiosInstance => {
+  const instance = axios.create({
+    baseURL,
+    headers: { "Content-Type": "application/json" },
+  });
+
+  /** 요청 인터셉터. 세션 토큰을 실어 보냅니다. */
+  const onRequest = (
+    config: InternalAxiosRequestConfig,
+  ): InternalAxiosRequestConfig => {
+    const accessToken = resolveAccessToken();
+
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    return config;
   };
 
-  if (error.response?.status === 401 && !isPublicPath(error.config?.url)) {
-    handleUnauthorized();
-  }
+  /** 화면에서 그대로 노출할 수 있는 에러 객체로 정규화합니다. */
+  const onResponseError = (error: AxiosError<ApiErrorResponse>) => {
+    const appError: AppError = {
+      code: error.response?.data?.code ?? "UNKNOWN",
+      fields: error.response?.data?.fields ?? {},
+      message: error.response?.data?.message ?? "요청 처리에 실패했습니다.",
+    };
 
-  return Promise.reject(Object.assign(new Error(appError.message), appError));
+    if (
+      expiresSessionOn401 &&
+      error.response?.status === 401 &&
+      !isPublicPath(error.config?.url)
+    ) {
+      handleUnauthorized();
+    }
+
+    return Promise.reject(Object.assign(new Error(appError.message), appError));
+  };
+
+  instance.interceptors.request.use(onRequest);
+  instance.interceptors.response.use(onResponseSuccess, onResponseError);
+
+  return instance;
 };
 
-/** 요청 인터셉터. 세션 토큰을 실어 보냅니다. */
-const onRequest = (
-  config: InternalAxiosRequestConfig,
-): InternalAxiosRequestConfig => {
-  const accessToken = getAccessToken();
+export const adminAxios: AxiosInstance = createAdminAxios({
+  baseURL: process.env.NEXT_PUBLIC_BASE_URI,
+  resolveAccessToken: getAccessToken,
+  expiresSessionOn401: true,
+});
 
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  return config;
-};
-
-export const adminAxios: AxiosInstance = axios.create(BASE_CONFIG);
-
-adminAxios.interceptors.request.use(onRequest);
-adminAxios.interceptors.response.use(onResponseSuccess, onResponseError);
+/**
+ * 실서버에 붙는 인스턴스. **연동이 끝난 도메인만** 이것을 쓴다.
+ *
+ * 목업 로그인 세션과 실서버 토큰은 별개다. 목업 구간에서 실서버 401로 세션을
+ * 끊으면 토큰을 잘못 넣은 것만으로 콘솔 전체에서 로그인 화면으로 튕긴다.
+ */
+export const liveAxios: AxiosInstance = createAdminAxios({
+  baseURL: LIVE_BASE_URI,
+  resolveAccessToken: () => LIVE_ACCESS_TOKEN || getAccessToken(),
+  expiresSessionOn401: !IS_MOCKING,
+});

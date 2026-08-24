@@ -95,8 +95,9 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
   },
   universe: {
     label: "세계관",
-    description: "캐릭터와 시나리오를 품는 콘텐츠 단위. 큐레이션 후보 목록이다.",
-    actions: ["read"],
+    description:
+      "캐릭터와 시나리오를 품는 콘텐츠 단위. 심사 · 상태 · 댓글을 운영에서 조치한다.",
+    actions: ["read", "write"],
   },
   hashtag: {
     label: "해시태그",
@@ -305,6 +306,7 @@ export const PERMISSION_CATEGORIES = [
       "creditPolicy",
       "notification",
       "appVersion",
+      "universe",
     ],
   },
   {
@@ -333,7 +335,7 @@ export const PERMISSION_CATEGORIES = [
     label: "보기만 하는 자료",
     description:
       "지표와 기록입니다. 고칠 수 있으면 기록이 아니라 조회만 둡니다.",
-    resources: ["dashboard", "universe", "ledger", "server", "log"],
+    resources: ["dashboard", "ledger", "server", "log"],
   },
 ] as const satisfies readonly PermissionCategoryDef[];
 

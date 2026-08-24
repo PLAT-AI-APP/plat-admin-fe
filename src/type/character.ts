@@ -1,3 +1,6 @@
+import type { HashtagCategory } from "./hashtag";
+import type { ServiceLanguage } from "./language";
+
 /** 캐릭터 노출 상태 */
 export type CharacterVisibility = "PUBLIC" | "PRIVATE" | "HIDDEN";
 
@@ -85,11 +88,14 @@ export type ScenarioType = "START" | "NORMAL" | "EVENT" | "ENDING";
 export type ScenarioLifecycle = "ACTIVE" | "HIDDEN" | "DEPRECATED";
 
 /**
- * 시나리오(에피소드).
+ * 시나리오(에피소드) — **목업 큐레이션 구간에서만 쓰는 모양**이다.
  *
  * 세계관이 "무대"라면 시나리오는 **그 무대에서 시작하는 한 편의 이야기**다.
  * 유저는 세계관에 들어가 시나리오를 고르고, 그 시나리오의 상황과 첫 대사로
  * 대화를 시작한다. (plat-fe의 캐릭터 상세 > 시나리오 선택)
+ *
+ * 실서버 상세는 상황·첫 대사를 따로 주지 않고 **언어별 본문(`content`)** 하나로 준다.
+ * 실연동된 상세 화면은 아래 `UniverseScenarioDetail`을 쓴다.
  */
 export interface UniverseScenario {
   scenarioId: number;
@@ -127,6 +133,14 @@ export interface UniverseCharacter {
   thumbnailUrl: string;
 }
 
+/**
+ * 세계관 — **목업 큐레이션 구간의 행 타입**이다.
+ *
+ * 메인 노출(배너 · 오늘의 PICK · 공식 맛보기 · 에셋 추천)과 세계관 선택 모달이
+ * 이 모양을 쓴다. 큐레이션은 아직 MSW 목업이고 슬롯도 목업 ID로 저장되어 있어
+ * **여기 타입을 실서버 DTO로 바꾸면 큐레이션 화면이 통째로 깨진다.**
+ * 실서버 목록 행은 `UniverseListRow`, 상세는 `UniverseDetail`이다.
+ */
 export interface Universe {
   universeId: number;
   /** 큐레이션에서 "제목"으로 노출된다. */
@@ -184,14 +198,21 @@ export interface Universe {
  * 목록에는 시나리오를 싣지 않는다. 한 세계관에 열 편이 넘게 달릴 수 있어
  * 목록 응답이 통째로 무거워진다.
  */
-export interface UniverseDetail extends Universe {
-  /** 회차 순으로 정렬되어 온다. */
-  scenarios: UniverseScenario[];
-}
-
 /** 세계관의 대표 캐릭터. 목록 카드·배너처럼 한 명만 보여 주는 자리에서 쓴다. */
 export const mainCharacterOf = (universe: Universe): UniverseCharacter | undefined =>
   universe.characters[0];
+
+/**
+ * 노출 가능 여부·차단 사유 판정에 필요한 최소 상태.
+ *
+ * 목록 타입(`Universe`)과 실서버 상세 타입(`UniverseDetail`)이 공통으로 가지는
+ * 세 값만 본다. 구조가 같으면 어느 쪽이든 그대로 넘길 수 있다.
+ */
+export interface UniverseExposureState {
+  status: UniverseStatus;
+  visibility: UniverseVisibility;
+  reviewStatus: UniverseReviewStatus;
+}
 
 /**
  * 앱에 노출될 수 있는 세계관인지.
@@ -200,7 +221,7 @@ export const mainCharacterOf = (universe: Universe): UniverseCharacter | undefin
  * 심사가 끝나지 않았거나 비공개거나 이미 삭제된 세계관을 골라 두면 앱에서는
  * 그 자리가 그냥 빈다. 골라 놓고 나중에 비는 것보다 고를 때 막는 편이 낫다.
  */
-export const isExposableUniverse = (universe: Universe) =>
+export const isExposableUniverse = (universe: UniverseExposureState) =>
   universe.status === "ACTIVE" &&
   universe.visibility === "PUBLIC" &&
   universe.reviewStatus === "APPROVED";
@@ -209,7 +230,9 @@ export const isExposableUniverse = (universe: Universe) =>
  * 노출될 수 없는 이유. 화면에 그대로 찍는다.
  * 노출 가능하면 `undefined`.
  */
-export const universeBlockReason = (universe: Universe): string | undefined => {
+export const universeBlockReason = (
+  universe: UniverseExposureState,
+): string | undefined => {
   if (universe.status === "PURGED") return "콘텐츠 파기";
   if (universe.status === "DELETED") return "삭제 대기";
   if (universe.status === "INACTIVE") return "비활성";
@@ -220,6 +243,138 @@ export const universeBlockReason = (universe: Universe): string | undefined => {
 
   return undefined;
 };
+
+/* ------------------------------------------------------------------ */
+/* 실서버(plat-admin) 세계관 계약                                        */
+/*                                                                    */
+/* 위 `Universe`/`UniverseScenario`(목업)와 달리 아래 타입은 실서버        */
+/* `/admin/universes`(liveAxios) 응답을 화면 용어로 옮긴 것이다.          */
+/* 서버 DTO ↔ 화면 타입 변환은 `src/api/universe/*`에서만 한다.           */
+/*                                                                    */
+/* 관리자 서버는 파일 저장소 어댑터를 스캔하지 않아 이미지 URL을 만들지 못한다.  */
+/* URL 필드는 대부분 비어 오고, 화면은 `*FileId`로 이미지를 얻거나 자리표시를    */
+/* 둔다. Snowflake ID는 정밀도 손실을 피해 문자열로 다룬다.                  */
+/* ------------------------------------------------------------------ */
+
+/** 실서버 세계관 목록 한 줄. 보드가 쓴다. */
+export interface AdminUniverseListItem {
+  universeId: string;
+  title: string;
+  introduce: string;
+  category: UniverseCategory;
+  tendency: UniverseTendency;
+  visibility: UniverseVisibility;
+  status: UniverseStatus;
+  reviewStatus: UniverseReviewStatus;
+  chatCount: number;
+  likeCount: number;
+  commentEnabled: boolean;
+  creatorId: string;
+  creatorNickname: string;
+  /** 대표 이미지 파일 ID. 관리자 서버가 URL을 만들지 못해 ID만 온다. */
+  profileImageFileId: string | null;
+  hashtagCount: number;
+  scenarioCount: number;
+  /** 번역이 채워진 언어 수 */
+  translationCount: number;
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
+  purgeAt: string | null;
+}
+
+/** 소유 크리에이터 요약. 공식 판정·계정 이동의 근거다. */
+export interface UniverseCreatorSummary {
+  creatorId: string;
+  userId: string | null;
+  nickname: string | null;
+  grade: string;
+  status: string;
+}
+
+/** 언어별 세계관 본문. detailSetting은 프롬프트성 원문이라 검수에 쓴다. */
+export interface UniverseTranslationView {
+  language: ServiceLanguage;
+  title: string;
+  introduce: string;
+  detailSetting: string;
+  description: string;
+}
+
+/** 세계관에 매핑된 해시태그. 성인·노출 상태를 함께 본다. */
+export interface UniverseHashtagView {
+  hashtagId: string;
+  category: HashtagCategory;
+  label: string;
+  isAdult: boolean;
+  isEnabled: boolean;
+}
+
+/** 세계관 대표 캐릭터(상세). */
+export interface UniverseCharacterView {
+  characterId: string;
+  name: string | null;
+  profileImageFileId: string | null;
+}
+
+/** 세계관 에셋 한 장. 신고 대응 시 실제 이미지를 확인하는 자리다. */
+export interface UniverseAssetView {
+  assetId: string;
+  fileId: string;
+  assetName: string;
+  assetSituation: string | null;
+  /** 관리자 서버가 URL을 만들지 못하면 null. 화면은 자리표시를 둔다. */
+  url: string | null;
+}
+
+/** 시나리오의 언어별 본문. 유저가 실제로 읽는 에피소드 원문이다. */
+export interface UniverseScenarioTranslationView {
+  language: ServiceLanguage;
+  title: string;
+  content: string;
+}
+
+/** 시나리오(상세). 상태로 거르지 않고 전부 온다. */
+export interface UniverseScenarioDetail {
+  scenarioId: string;
+  episodeNo: number;
+  scenarioType: ScenarioType;
+  status: ScenarioLifecycle;
+  versionNo: number;
+  translations: UniverseScenarioTranslationView[];
+}
+
+/**
+ * 세계관 상세(실서버).
+ *
+ * 서비스 경로가 status=ACTIVE만 보는 것과 달리 삭제·파기까지 전부 조회한다.
+ * 목록에 없는 번역·에셋·시나리오 본문을 담아 운영 검수에 쓴다.
+ */
+export interface UniverseDetail {
+  universeId: string;
+  creator: UniverseCreatorSummary;
+  category: UniverseCategory;
+  tendency: UniverseTendency;
+  visibility: UniverseVisibility;
+  status: UniverseStatus;
+  reviewStatus: UniverseReviewStatus;
+  reviewRejectionReason: string | null;
+  commentEnabled: boolean;
+  chatCount: number;
+  likeCount: number;
+  profileImageFileId: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
+  purgeAt: string | null;
+  purgedAt: string | null;
+  translations: UniverseTranslationView[];
+  hashtags: UniverseHashtagView[];
+  character: UniverseCharacterView | null;
+  assets: UniverseAssetView[];
+  /** 회차 오름차순으로 정렬되어 온다. */
+  scenarios: UniverseScenarioDetail[];
+}
 
 /** NSFW 키워드 */
 export type NsfwKeywordLevel = "BLOCK" | "WARN";

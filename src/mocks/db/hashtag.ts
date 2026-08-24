@@ -1,9 +1,20 @@
 import type {
-  Hashtag,
   HashtagCategory,
+  HashtagDetail,
   HashtagLanguage,
 } from "@/type/hashtag";
 import { daysAgo } from "../utils";
+
+/**
+ * 목업 해시태그.
+ *
+ * 해시태그 도메인은 실서버에 연동되어 있어 이 목록은 **전역 검색 목업과 목업
+ * 캐릭터의 태그 풀**만 쓴다. 사용 수는 실제 목업 캐릭터에서 세므로 상세 형태에
+ * 사용 수만 덧붙인 모양이다.
+ */
+export interface MockHashtag extends HashtagDetail {
+  usageCount: number;
+}
 
 /**
  * 실제 서비스에 등록된 해시태그 목록.
@@ -16,7 +27,11 @@ const SEED_BY_CATEGORY: Record<HashtagCategory, string[]> = {
     "액션", "추리", "헌터", "전쟁", "스포츠", "서바이벌", "시뮬레이션",
     "사극", "범죄", "게임", "RPG", "BL", "GL", "HL",
   ],
-  SPECIES: [
+  BACKGROUND: [
+    "학교", "직장", "이세계", "현대도시", "시골", "우주", "궁정", "던전",
+    "무대", "군대", "병원", "카페",
+  ],
+  RACE: [
     "뱀파이어", "엘프", "드래곤", "수인", "악마", "천사", "요괴", "안드로이드",
     "구미호", "외계인", "몬스터", "서큐버스", "인큐버스", "늑대인간", "유령",
     "인외",
@@ -36,7 +51,7 @@ const SEED_BY_CATEGORY: Record<HashtagCategory, string[]> = {
     "소시오패스", "집착", "광기", "음침", "도도", "애교", "대형견", "지배적",
     "피폐", "천연", "카리스마", "결핍", "무심", "소심", "플러팅",
   ],
-  RELATION: [
+  RELATIONSHIP: [
     "친구", "연인", "비밀연애", "가짜연애", "주인", "라이벌", "룸메이트",
     "상사", "부하", "동거", "부부", "스승", "제자", "선배", "후배", "사내연애",
     "연상", "연하",
@@ -52,6 +67,10 @@ const SEED_BY_CATEGORY: Record<HashtagCategory, string[]> = {
     "킬러", "마왕", "공주", "여왕", "성녀", "마녀", "CEO", "재벌", "조폭",
     "마피아", "회사원", "과학자", "퇴마사", "히어로", "간호사", "해적",
     "경호원", "빌런",
+  ],
+  MOOD: [
+    "로맨틱", "달콤", "힐링", "따뜻함", "개그", "유쾌", "진지", "어두움",
+    "신비", "강렬", "피폐", "설렘",
   ],
   SPECIAL: [
     "하렘", "역하렘", "이중인격", "초능력", "TS", "오메가버스", "세뇌", "최면",
@@ -135,7 +154,7 @@ const flatten = () =>
  * "이 태그를 쓰는 캐릭터·세계관 수"이므로 db/character가 실제 사용 수로 채운다.
  * (난수를 뿌리면 사용 중이라던 태그가 실제로는 어디에도 안 붙어 있는 상태가 된다)
  */
-export const hashtags: Hashtag[] = flatten().map((item, index) => ({
+export const hashtags: MockHashtag[] = flatten().map((item, index) => ({
   hashtagId: index + 1,
   labels: buildLabels(item.label),
   category: item.category,
@@ -155,8 +174,8 @@ export const hashtags: Hashtag[] = flatten().map((item, index) => ({
  */
 export const CHARACTER_TAG_POOL: string[] = [
   ...SEED_BY_CATEGORY.GENRE.slice(0, 10),
-  ...SEED_BY_CATEGORY.SPECIES.slice(0, 5),
+  ...SEED_BY_CATEGORY.RACE.slice(0, 5),
   ...SEED_BY_CATEGORY.PERSONALITY.slice(0, 6),
-  ...SEED_BY_CATEGORY.RELATION.slice(0, 5),
+  ...SEED_BY_CATEGORY.RELATIONSHIP.slice(0, 5),
   ...SEED_BY_CATEGORY.NARRATIVE.slice(0, 4),
 ];

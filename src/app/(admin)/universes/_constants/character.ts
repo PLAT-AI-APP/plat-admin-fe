@@ -126,6 +126,36 @@ export const UNIVERSE_TENDENCY_LABEL: Record<UniverseTendency, string> = {
   FEMALE_ORIENTED: "여성향",
 };
 
+/** 보드 필터/정렬 옵션. 서버 실목록(liveAxios)이 받는 값과 이름을 맞춘다. */
+export const UNIVERSE_CATEGORY_FILTER_OPTIONS: SelectOption[] = [
+  { label: "장르 전체", value: "" },
+  { label: UNIVERSE_CATEGORY_LABEL.ROMANCE, value: "ROMANCE" },
+  { label: UNIVERSE_CATEGORY_LABEL.FANTASY, value: "FANTASY" },
+  { label: UNIVERSE_CATEGORY_LABEL.DRAMA, value: "DRAMA" },
+  { label: UNIVERSE_CATEGORY_LABEL.MARTIAL_ARTS, value: "MARTIAL_ARTS" },
+  { label: UNIVERSE_CATEGORY_LABEL.GL, value: "GL" },
+  { label: UNIVERSE_CATEGORY_LABEL.BL, value: "BL" },
+  { label: UNIVERSE_CATEGORY_LABEL.HORROR, value: "HORROR" },
+  { label: UNIVERSE_CATEGORY_LABEL.MYSTERY, value: "MYSTERY" },
+];
+
+export const UNIVERSE_VISIBILITY_FILTER_OPTIONS: SelectOption[] = [
+  { label: "공개 범위 전체", value: "" },
+  { label: UNIVERSE_VISIBILITY_LABEL.PUBLIC, value: "PUBLIC" },
+  { label: UNIVERSE_VISIBILITY_LABEL.PRIVATE, value: "PRIVATE" },
+  { label: UNIVERSE_VISIBILITY_LABEL.UNLISTED, value: "UNLISTED" },
+];
+
+/** 정렬 기준. 값은 서버 `UniverseOrderBy` enum과 같다. */
+export const UNIVERSE_ORDER_OPTIONS: SelectOption[] = [
+  { label: "최근 등록순", value: "CREATED_DESC" },
+  { label: "오래된순", value: "CREATED_ASC" },
+  { label: "대화 많은순", value: "CHAT_DESC" },
+  { label: "좋아요 많은순", value: "LIKE_DESC" },
+  { label: "제목 오름차순", value: "TITLE_ASC" },
+  { label: "제목 내림차순", value: "TITLE_DESC" },
+];
+
 /* ------------------------------------------------------------------ */
 /* 시나리오 (세계관 안의 에피소드)                                        */
 /* ------------------------------------------------------------------ */
