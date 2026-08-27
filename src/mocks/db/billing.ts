@@ -20,64 +20,37 @@ import { users } from "./user";
  */
 export const creditUsers: User[] = users;
 
-/** 상품의 의미(금액·크레딧 구성)는 고정하고, 갱신 시점만 seed 난수로 흩뿌린다. */
-const PRODUCT_SEEDS: Omit<BillingProduct, "productId" | "order" | "updatedAt">[] =
-  [
-    {
-      name: "크레딧 100",
-      price: 1_200,
-      credit: 100,
-      bonusCredit: 0,
-      platform: "IOS",
-      status: "ON_SALE",
-    },
-    {
-      name: "크레딧 300",
-      price: 3_500,
-      credit: 300,
-      bonusCredit: 15,
-      platform: "IOS",
-      status: "ON_SALE",
-    },
-    {
-      name: "크레딧 550",
-      price: 6_500,
-      credit: 550,
-      bonusCredit: 50,
-      platform: "AOS",
-      status: "ON_SALE",
-    },
-    {
-      name: "크레딧 1,200",
-      price: 13_000,
-      credit: 1_200,
-      bonusCredit: 150,
-      platform: "AOS",
-      status: "HIDDEN",
-    },
-    {
-      name: "크레딧 3,000",
-      price: 32_000,
-      credit: 3_000,
-      bonusCredit: 450,
-      platform: "WEB",
-      status: "ON_SALE",
-    },
-    {
-      name: "웰컴 패키지",
-      price: 5_900,
-      credit: 500,
-      bonusCredit: 200,
-      platform: "WEB",
-      status: "ENDED",
-    },
-  ];
+/**
+ * 상품 카탈로그 목업.
+ *
+ * 실서버(`credit_products`)의 기준 카탈로그를 그대로 옮겨 둔다. 값이 갈리면 목업으로
+ * 보던 화면과 실서버를 붙인 화면이 달라져 목업으로 확인한 것이 근거가 되지 못한다.
+ *
+ * 같은 크레딧 구성이 플랫폼마다 한 줄씩 있는 것이 정상이다 — 스토어 등록 금액이 달라
+ * 상품 자체를 나눈다. iOS·Android 금액이 웹보다 높은 것은 스토어 수수료 때문이다.
+ */
+const PRODUCT_SEEDS: Omit<BillingProduct, "updatedAt">[] = [
+  { productId: 1001, code: "STARTER_WEB", name: "스타터", description: "1,000노트", platform: "WEB", currency: "KRW", amountMinor: 5_900, credit: 1_000, bonusCredit: 0, status: "ON_SALE", sortOrder: 10 },
+  { productId: 1002, code: "BASIC_WEB", name: "베이직", description: "2,500노트 + 보너스 100노트", platform: "WEB", currency: "KRW", amountMinor: 13_900, credit: 2_500, bonusCredit: 100, status: "ON_SALE", sortOrder: 20 },
+  { productId: 1003, code: "STANDARD_WEB", name: "스탠다드", description: "5,000노트 + 보너스 400노트", platform: "WEB", currency: "KRW", amountMinor: 27_900, credit: 5_000, bonusCredit: 400, status: "ON_SALE", sortOrder: 30 },
+  { productId: 1004, code: "PREMIUM_WEB", name: "프리미엄", description: "10,000노트 + 보너스 1,200노트", platform: "WEB", currency: "KRW", amountMinor: 54_900, credit: 10_000, bonusCredit: 1_200, status: "ON_SALE", sortOrder: 40 },
+  { productId: 1005, code: "MEGA_WEB", name: "메가", description: "20,000노트 + 보너스 3,000노트", platform: "WEB", currency: "KRW", amountMinor: 99_900, credit: 20_000, bonusCredit: 3_000, status: "ON_SALE", sortOrder: 50 },
+  { productId: 1006, code: "STARTER_IOS", name: "스타터", description: "1,000노트", platform: "IOS", currency: "KRW", amountMinor: 7_500, credit: 1_000, bonusCredit: 0, status: "ON_SALE", sortOrder: 60 },
+  { productId: 1007, code: "BASIC_IOS", name: "베이직", description: "2,500노트 + 보너스 100노트", platform: "IOS", currency: "KRW", amountMinor: 18_000, credit: 2_500, bonusCredit: 100, status: "ON_SALE", sortOrder: 70 },
+  { productId: 1008, code: "STANDARD_IOS", name: "스탠다드", description: "5,000노트 + 보너스 400노트", platform: "IOS", currency: "KRW", amountMinor: 36_000, credit: 5_000, bonusCredit: 400, status: "ON_SALE", sortOrder: 80 },
+  { productId: 1009, code: "PREMIUM_IOS", name: "프리미엄", description: "10,000노트 + 보너스 1,200노트", platform: "IOS", currency: "KRW", amountMinor: 71_000, credit: 10_000, bonusCredit: 1_200, status: "ON_SALE", sortOrder: 90 },
+  { productId: 1010, code: "MEGA_IOS", name: "메가", description: "20,000노트 + 보너스 3,000노트", platform: "IOS", currency: "KRW", amountMinor: 129_000, credit: 20_000, bonusCredit: 3_000, status: "ON_SALE", sortOrder: 100 },
+  { productId: 1011, code: "STARTER_AOS", name: "스타터", description: "1,000노트", platform: "AOS", currency: "KRW", amountMinor: 7_500, credit: 1_000, bonusCredit: 0, status: "ON_SALE", sortOrder: 110 },
+  { productId: 1012, code: "BASIC_AOS", name: "베이직", description: "2,500노트 + 보너스 100노트", platform: "AOS", currency: "KRW", amountMinor: 18_000, credit: 2_500, bonusCredit: 100, status: "ON_SALE", sortOrder: 120 },
+  { productId: 1013, code: "STANDARD_AOS", name: "스탠다드", description: "5,000노트 + 보너스 400노트", platform: "AOS", currency: "KRW", amountMinor: 36_000, credit: 5_000, bonusCredit: 400, status: "ON_SALE", sortOrder: 130 },
+  { productId: 1014, code: "PREMIUM_AOS", name: "프리미엄", description: "10,000노트 + 보너스 1,200노트", platform: "AOS", currency: "KRW", amountMinor: 71_000, credit: 10_000, bonusCredit: 1_200, status: "ON_SALE", sortOrder: 140 },
+  { productId: 1015, code: "MEGA_AOS", name: "메가", description: "20,000노트 + 보너스 3,000노트", platform: "AOS", currency: "KRW", amountMinor: 129_000, credit: 20_000, bonusCredit: 3_000, status: "ON_SALE", sortOrder: 150 },
+];
 
+/** 상품 구성은 고정하고, 갱신 시점만 seed 난수로 흩뿌린다. */
 export const billingProducts: BillingProduct[] = PRODUCT_SEEDS.map(
   (product, index) => ({
     ...product,
-    productId: index + 1,
-    order: index + 1,
     updatedAt: daysAgo(randomInt(index + 1, 1, 40), randomInt(index + 2, 9, 20)),
   }),
 );
@@ -219,7 +192,7 @@ const buildUserLedger = (user: User): DraftLedgerEntry[] => {
     entries.push({
       ...base,
       type: "PAYMENT",
-      amount: product.price,
+      amount: product.amountMinor,
       creditDelta: 0,
       productName: product.name,
       memo: `${product.platform} 인앱 결제 승인`,
@@ -243,7 +216,7 @@ const buildUserLedger = (user: User): DraftLedgerEntry[] => {
       entries.push({
         ...base,
         type: "REFUND",
-        amount: product.price,
+        amount: product.amountMinor,
         creditDelta: -credit,
         productName: product.name,
         memo: "고객 요청 환불 처리",

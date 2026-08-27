@@ -1,5 +1,20 @@
 import type { Notice, NoticeCategory, NoticeStatus } from "@/type/notice";
-import { daysAgo, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt } from "../utils";
+
+/**
+ * 공지를 등록한 관리자 스냅샷.
+ *
+ * 계정 목록(`managers`)을 참조하지 않고 이름을 복사해 둔다. 계정이 지워져도
+ * 누가 올린 공지인지는 남아야 하므로, 마지막 항목처럼 **지금은 없는 계정**도
+ * 하나 섞어 둔다(계정 ID 없이 이름만 남은 상태).
+ */
+const NOTICE_AUTHORS: { name: string; managerId?: number }[] = [
+  { name: "운영자", managerId: 1 },
+  { name: "김서연", managerId: 2 },
+  { name: "박지훈", managerId: 3 },
+  { name: "정수아", managerId: 6 },
+  { name: "한도윤" },
+];
 
 const SEED_NOTICES: {
   category: NoticeCategory;
@@ -146,6 +161,9 @@ const SEED_NOTICES: {
 
 export const notices: Notice[] = SEED_NOTICES.map((item, index) => {
   const seed = index + 1;
+  const author = pickOne(seed * 5, NOTICE_AUTHORS);
+  // 절반 정도만 수정 이력을 둬서 "등록만 된 공지"도 화면에서 확인할 수 있게 한다.
+  const editor = index % 2 === 0 ? undefined : pickOne(seed * 9, NOTICE_AUTHORS);
 
   return {
     noticeId: SEED_NOTICES.length - index,
@@ -154,11 +172,12 @@ export const notices: Notice[] = SEED_NOTICES.map((item, index) => {
     content: item.content,
     status: item.status,
     isPinned: Boolean(item.isPinned),
-    startAt: undefined,
-    endAt: undefined,
     viewCount:
       item.status === "PUBLISHED" ? randomInt(seed * 3, 120, 24_000) : 0,
-    createdBy: "운영자",
+    createdBy: author.name,
+    createdById: author.managerId,
+    updatedBy: editor?.name,
+    updatedById: editor?.managerId,
     createdAt: daysAgo(index * 4 + 1, 11),
     updatedAt: daysAgo(index * 4, 15),
   };

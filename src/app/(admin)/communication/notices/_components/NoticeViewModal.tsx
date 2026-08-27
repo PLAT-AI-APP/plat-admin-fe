@@ -36,11 +36,7 @@ const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) =>
       isOpen={noticeId !== null}
       onClose={onClose}
       title={data?.title ?? "공지사항 상세"}
-      description={
-        data
-          ? `#${data.noticeId} · ${data.createdBy} · ${formatDateTime(data.updatedAt)}`
-          : undefined
-      }
+      description={data ? `#${data.noticeId}` : undefined}
       size="lg"
       footer={
         <>
@@ -83,12 +79,45 @@ const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) =>
             <Badge tone={NOTICE_STATUS_TONE[data.status]}>
               {NOTICE_STATUS_LABEL[data.status]}
             </Badge>
-            {data.isPinned && <Badge tone="brand">상단 고정</Badge>}
+            {data.isPinned && <Badge tone="brand">고정</Badge>}
 
             <span className="ml-auto body-6 text-font-2 tabular-nums">
               조회 {formatWithCommas(data.viewCount)}
             </span>
           </div>
+
+          {/*
+            등록·수정 관리자 이력.
+            계정이 삭제돼도 남도록 이름을 스냅샷으로 들고 있는 값이며,
+            앱에 노출되는 공지에는 담기지 않는다(유저에게는 언제나 '운영자'다).
+          */}
+          <dl className="flex flex-col gap-1 rounded-field bg-subtle px-4 py-3 body-6 text-font-2">
+            <div className="flex gap-2">
+              <dt className="w-10 shrink-0 text-font-2">등록</dt>
+              <dd className="text-font-1">
+                {data.createdBy}
+                <span className="ml-2 tabular-nums text-font-2">
+                  {formatDateTime(data.createdAt)}
+                </span>
+              </dd>
+            </div>
+
+            <div className="flex gap-2">
+              <dt className="w-10 shrink-0 text-font-2">수정</dt>
+              <dd className={data.updatedBy ? "text-font-1" : "text-font-2"}>
+                {data.updatedBy ? (
+                  <>
+                    {data.updatedBy}
+                    <span className="ml-2 tabular-nums text-font-2">
+                      {formatDateTime(data.updatedAt)}
+                    </span>
+                  </>
+                ) : (
+                  "수정 이력 없음"
+                )}
+              </dd>
+            </div>
+          </dl>
 
           <div className="rounded-field border border-border-main px-4 py-3 body-4">
             <MarkdownContent content={data.content} />

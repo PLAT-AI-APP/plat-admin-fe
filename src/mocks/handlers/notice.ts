@@ -1,12 +1,38 @@
 import { HttpResponse, delay, http } from "msw";
 import type { Notice, NoticeFormValues } from "@/type/notice";
 import { notices } from "../db/notice";
+import { currentAdmin } from "../session";
 import { MOCK_DELAY_MS, matchesKeyword, nextId, paginate } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
 const findIndexById = (noticeId: number) =>
   notices.findIndex((notice) => notice.noticeId === noticeId);
+
+/**
+ * 지금 로그인한 관리자를 이름 스냅샷으로 굳힌다.
+ *
+ * 실서버도 같은 방식으로 토큰의 관리자를 스스로 찍는다. 누가 썼는지는 화면이
+ * 보내는 값이 아니라 **서버가 아는 값**이어야 위조되지 않는다.
+ */
+const stampAdmin = () => {
+  const admin = currentAdmin();
+
+  return { name: admin?.name ?? "운영자", managerId: admin?.managerId };
+};
+
+/**
+ * 공지 **내용**이 실제로 바뀌었는지.
+ *
+ * 게시·숨김 전환은 노출을 켜고 끈 것이지 글을 고친 게 아니므로 '수정됨'으로 세지
+ * 않는다. 저장만 누르고 아무것도 바꾸지 않은 경우도 마찬가지다.
+ * (누가 상태를 바꿨는지는 운영 로그가 따로 남긴다.)
+ */
+const hasContentChange = (before: Notice, next: NoticeFormValues) =>
+  before.category !== next.category ||
+  before.title !== next.title ||
+  before.content !== next.content ||
+  before.isPinned !== next.isPinned;
 
 export const noticeHandlers = [
   http.get(`${BASE_URI}/admin/notices`, async ({ request }) => {
@@ -64,12 +90,14 @@ export const noticeHandlers = [
   http.post(`${BASE_URI}/admin/notices`, async ({ request }) => {
     const body = (await request.json()) as NoticeFormValues;
     const now = new Date().toISOString();
+    const admin = stampAdmin();
 
     const created: Notice = {
       ...body,
       noticeId: nextId(notices, "noticeId"),
       viewCount: 0,
-      createdBy: "운영자",
+      createdBy: admin.name,
+      createdById: admin.managerId,
       createdAt: now,
       updatedAt: now,
     };
@@ -93,10 +121,16 @@ export const noticeHandlers = [
         );
       }
 
+      const before = notices[index];
+      const admin = stampAdmin();
+      const edited = hasContentChange(before, body);
+
       notices[index] = {
-        ...notices[index],
+        ...before,
         ...body,
-        updatedAt: new Date().toISOString(),
+        updatedBy: edited ? admin.name : before.updatedBy,
+        updatedById: edited ? admin.managerId : before.updatedById,
+        updatedAt: edited ? new Date().toISOString() : before.updatedAt,
       };
 
       await delay(MOCK_DELAY_MS);
@@ -120,11 +154,8 @@ export const noticeHandlers = [
         );
       }
 
-      notices[index] = {
-        ...notices[index],
-        status,
-        updatedAt: new Date().toISOString(),
-      };
+      // 상태 전환은 수정 이력을 건드리지 않는다.
+      notices[index] = { ...notices[index], status };
 
       await delay(MOCK_DELAY_MS);
 

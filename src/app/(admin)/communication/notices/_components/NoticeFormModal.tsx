@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { toDateInputValue } from "@/lib/dayjs";
 import { noticeSchema, type NoticeSchema } from "@/schema/notice.schema";
 import type { Notice, NoticeFormValues } from "@/type/notice";
 import Button from "@/components/ui/Button";
@@ -42,8 +41,6 @@ const EMPTY_VALUES: NoticeSchema = {
   content: "",
   status: "DRAFT",
   isPinned: false,
-  startAt: "",
-  endAt: "",
 };
 
 const NoticeFormModal = ({
@@ -80,8 +77,6 @@ const NoticeFormModal = ({
             content: notice.content,
             status: notice.status,
             isPinned: notice.isPinned,
-            startAt: toDateInputValue(notice.startAt),
-            endAt: toDateInputValue(notice.endAt),
           }
         : EMPTY_VALUES,
     );
@@ -89,13 +84,7 @@ const NoticeFormModal = ({
 
   const content = watch("content");
 
-  const submit = handleSubmit((values) =>
-    onSubmit({
-      ...values,
-      startAt: values.startAt || undefined,
-      endAt: values.endAt || undefined,
-    }),
-  );
+  const submit = handleSubmit((values) => onSubmit(values));
 
   return (
     <Modal
@@ -160,6 +149,20 @@ const NoticeFormModal = ({
           required
           error={errors.title?.message}
           hint="최대 60자"
+          labelSuffix={
+            <Controller
+              control={control}
+              name="isPinned"
+              render={({ field }) => (
+                <Checkbox
+                  label="고정"
+                  boxClassName="gap-1.5"
+                  checked={field.value}
+                  onChange={(event) => field.onChange(event.target.checked)}
+                />
+              )}
+            />
+          }
         >
           <Input
             id="notice-title"
@@ -195,41 +198,6 @@ const NoticeFormModal = ({
           </div>
         </FormField>
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            label="노출 시작일"
-            htmlFor="notice-start-at"
-            hint="비우면 즉시 노출"
-          >
-            <Input id="notice-start-at" type="date" {...register("startAt")} />
-          </FormField>
-
-          <FormField
-            label="노출 종료일"
-            htmlFor="notice-end-at"
-            error={errors.endAt?.message}
-            hint="비우면 기간 제한 없음"
-          >
-            <Input
-              id="notice-end-at"
-              type="date"
-              hasError={Boolean(errors.endAt)}
-              {...register("endAt")}
-            />
-          </FormField>
-        </div>
-
-        <Controller
-          control={control}
-          name="isPinned"
-          render={({ field }) => (
-            <Checkbox
-              label="목록 최상단에 고정"
-              checked={field.value}
-              onChange={(event) => field.onChange(event.target.checked)}
-            />
-          )}
-        />
       </form>
     </Modal>
   );

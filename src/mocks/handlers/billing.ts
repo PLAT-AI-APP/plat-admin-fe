@@ -1,8 +1,6 @@
 import { HttpResponse, delay, http } from "msw";
 import type {
   AdjustmentType,
-  BillingProduct,
-  BillingProductFormValues,
   CreditAdjustment,
   CreditAdjustmentFormValues,
   CreditPolicy,
@@ -10,10 +8,8 @@ import type {
   LedgerEntry,
   LedgerSummary,
   LedgerType,
-  ProductStatus,
 } from "@/type/billing";
 import {
-  billingProducts,
   creditAdjustments,
   creditPolicies,
   creditUsers,
@@ -41,86 +37,6 @@ const isInPeriod = (createdAt: string, startDate: string, endDate: string) => {
 };
 
 export const billingHandlers = [
-  http.get(`${BASE_URI}/admin/billing/products`, async () => {
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(
-      [...billingProducts].sort((a, b) => a.order - b.order),
-    );
-  }),
-
-  http.post(`${BASE_URI}/admin/billing/products`, async ({ request }) => {
-    const body = (await request.json()) as BillingProductFormValues;
-
-    const created: BillingProduct = {
-      ...body,
-      productId: nextId(billingProducts, "productId"),
-      order: billingProducts.length + 1,
-      updatedAt: new Date().toISOString(),
-    };
-
-    billingProducts.push(created);
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(created, { status: 201 });
-  }),
-
-  http.put(
-    `${BASE_URI}/admin/billing/products/:productId`,
-    async ({ params, request }) => {
-      const productId = Number(params.productId);
-      const body = (await request.json()) as BillingProductFormValues;
-      const index = billingProducts.findIndex(
-        (product) => product.productId === productId,
-      );
-
-      if (index < 0) {
-        return HttpResponse.json(
-          { code: "PRODUCT_NOT_FOUND", message: "존재하지 않는 상품입니다." },
-          { status: 404 },
-        );
-      }
-
-      billingProducts[index] = {
-        ...billingProducts[index],
-        ...body,
-        updatedAt: new Date().toISOString(),
-      };
-
-      await delay(MOCK_DELAY_MS);
-
-      return HttpResponse.json(billingProducts[index]);
-    },
-  ),
-
-  http.patch(
-    `${BASE_URI}/admin/billing/products/:productId/status`,
-    async ({ params, request }) => {
-      const productId = Number(params.productId);
-      const { status } = (await request.json()) as { status: ProductStatus };
-      const index = billingProducts.findIndex(
-        (product) => product.productId === productId,
-      );
-
-      if (index < 0) {
-        return HttpResponse.json(
-          { code: "PRODUCT_NOT_FOUND", message: "존재하지 않는 상품입니다." },
-          { status: 404 },
-        );
-      }
-
-      billingProducts[index] = {
-        ...billingProducts[index],
-        status,
-        updatedAt: new Date().toISOString(),
-      };
-
-      await delay(MOCK_DELAY_MS);
-
-      return HttpResponse.json(billingProducts[index]);
-    },
-  ),
-
   http.get(`${BASE_URI}/admin/credits/policies`, async () => {
     await delay(MOCK_DELAY_MS);
 

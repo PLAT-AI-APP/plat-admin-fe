@@ -97,8 +97,16 @@ const HashtagDetailModal = ({
             <DetailRow label="노출 여부">
               {hashtag.isActive ? "노출 중" : "노출 중지"}
             </DetailRow>
+            {/*
+              등록일은 상세 값으로 적는다. 목록 응답의 등록일은 날짜까지만 와서
+              그대로 시각을 붙이면 전부 00:00으로 보인다.
+            */}
             <DetailRow label="등록일">
-              {formatDateTime(hashtag.createdAt)}
+              {isLoading ? (
+                <Skeleton className="h-4 w-32 rounded-field" />
+              ) : (
+                formatDateTime(detail?.createdAt)
+              )}
             </DetailRow>
           </div>
 

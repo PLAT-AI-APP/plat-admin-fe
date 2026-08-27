@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useNoticeListQuery } from "@/api/notice/getNoticeList";
 import { useNoticeMutation } from "@/api/notice/mutateNotice";
-import { Ban, Edit, Eye, Megaphone, Plus, Star, Trash } from "@/icons";
+import { Ban, Edit, Megaphone, Plus, Star, Trash } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
 import { formatWithCommas, truncate } from "@/lib/utils";
@@ -44,8 +44,9 @@ const NOTICE_CSV_COLUMNS: CsvColumn<Notice>[] = [
   { header: "상태", value: (row) => NOTICE_STATUS_LABEL[row.status] },
   { header: "고정", value: (row) => (row.isPinned ? "Y" : "N") },
   { header: "조회 수", value: (row) => row.viewCount },
-  { header: "작성자", value: (row) => row.createdBy },
+  { header: "관리자", value: (row) => row.createdBy },
   { header: "등록일", value: (row) => formatDateTime(row.createdAt) },
+  { header: "최종 수정 관리자", value: (row) => row.updatedBy ?? "" },
   { header: "수정일", value: (row) => formatDateTime(row.updatedAt) },
 ];
 
@@ -134,13 +135,11 @@ const NoticeManager = () => {
     });
   };
 
-  /** 행 액션. 아이콘 버튼을 늘리지 않고 더보기 메뉴 하나로 모은다. */
+  /**
+   * 행 액션. 아이콘 버튼을 늘리지 않고 더보기 메뉴 하나로 모은다.
+   * 상세 보기는 행을 누르면 열리므로 메뉴에 두지 않는다.
+   */
   const buildRowActions = (notice: Notice): DropdownItem[] => [
-    {
-      label: "상세 보기",
-      icon: <Eye size={15} />,
-      onSelect: () => setViewingNoticeId(notice.noticeId),
-    },
     notice.status === "PUBLISHED"
       ? {
           label: "숨김",
@@ -190,9 +189,15 @@ const NoticeManager = () => {
           )}
           <TableCellStack
             primary={
-              <span className="max-w-120 truncate">{row.title}</span>
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="max-w-120 truncate">{row.title}</span>
+                {/* 누가 언제 고쳤는지는 상세에서 본다. 목록에는 고쳐졌다는 사실만 남긴다. */}
+                {row.updatedBy && (
+                  <span className="shrink-0 body-6 text-font-2">(수정됨)</span>
+                )}
+              </span>
             }
-            secondary={`#${row.noticeId} · ${row.createdBy}`}
+            secondary={`#${row.noticeId}`}
           />
         </div>
       ),
@@ -216,11 +221,18 @@ const NoticeManager = () => {
       render: (row) => formatWithCommas(row.viewCount),
     },
     {
-      key: "updatedAt",
-      header: "수정일",
+      key: "createdBy",
+      header: "관리자",
+      width: "140px",
+      // 계정이 삭제돼도 남는 등록자 이름 스냅샷.
+      render: (row) => <span className="text-font-1">{row.createdBy}</span>,
+    },
+    {
+      key: "createdAt",
+      header: "등록일",
       width: "150px",
       render: (row) => (
-        <span className="text-font-2">{formatDateTime(row.updatedAt)}</span>
+        <span className="text-font-2">{formatDateTime(row.createdAt)}</span>
       ),
     },
     {

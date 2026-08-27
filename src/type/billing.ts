@@ -1,29 +1,46 @@
 export type ProductStatus = "ON_SALE" | "HIDDEN" | "ENDED";
 export type ProductPlatform = "IOS" | "AOS" | "WEB";
+export type ProductCurrency = "KRW" | "JPY" | "USD" | "THB";
 
-/** 크레딧 상품. 모든 금액은 원 단위 정수다. */
+/**
+ * 크레딧 충전 상품.
+ *
+ * **한 건 = 플랫폼 하나 + 통화 하나 + 가격 하나**다. 같은 크레딧 구성이라도 스토어
+ * 등록 금액이 다르므로 플랫폼별로 상품을 따로 만든다.
+ */
 export interface BillingProduct {
   productId: number;
+  /** 스토어 등록과 대조하는 상품 코드. 영문 대문자·숫자·밑줄만 쓴다. */
+  code: string;
   name: string;
-  /** 결제 금액 (원) */
-  price: number;
+  /** 결제 화면에 그대로 나가는 문구. */
+  description: string;
+  platform: ProductPlatform;
+  currency: ProductCurrency;
+  /**
+   * 결제 금액. **통화의 최소 단위 정수다** — KRW는 minor unit이 0이라 5900이 곧 5,900원이다.
+   * `price`라고 부르지 않는 이유는 통화가 늘었을 때 최소 단위를 원 단위처럼 그리지 않기 위해서다.
+   */
+  amountMinor: number;
   /** 지급 크레딧 (정수) */
   credit: number;
   /** 보너스 크레딧 (정수) */
   bonusCredit: number;
-  platform: ProductPlatform;
   status: ProductStatus;
-  order: number;
+  sortOrder: number;
   updatedAt: string;
 }
 
 export interface BillingProductFormValues {
+  code: string;
   name: string;
-  price: number;
+  description: string;
+  platform: ProductPlatform;
+  amountMinor: number;
   credit: number;
   bonusCredit: number;
-  platform: ProductPlatform;
   status: ProductStatus;
+  sortOrder: number;
 }
 
 /** 크레딧 정책 */

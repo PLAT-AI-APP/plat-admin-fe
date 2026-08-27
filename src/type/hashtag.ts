@@ -99,6 +99,7 @@ export interface Hashtag {
   isAdult: boolean;
   /** 노출 여부. 끄면 사용자 선택 목록에서 사라진다. */
   isActive: boolean;
+  /** 등록일. 목록에는 **날짜까지만** 온다(`2026-08-27`). 시각은 상세에 있다. */
   createdAt: string;
 }
 
@@ -110,6 +111,7 @@ export interface HashtagDetail {
   category: HashtagCategory;
   isAdult: boolean;
   isActive: boolean;
+  /** 등록 일시(KST). 서버가 Asia/Seoul로 바꿔서 오프셋 없이 내려 준다. */
   createdAt: string;
 }
 

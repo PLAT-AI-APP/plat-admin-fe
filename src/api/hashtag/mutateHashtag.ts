@@ -5,12 +5,31 @@ import type { AppError } from "@/type/api";
 import type { HashtagFormValues } from "@/type/hashtag";
 
 /**
- * 서버 요청 본문. 언어별 라벨을 언어 코드 필드로 펼친다.
+ * 등록 본문. 언어별 라벨을 언어 코드 필드로 펼친다.
  *
- * 번역은 **빈 문자열을 보내면 지워진다.** 폼에서 지운 번역이 그대로 반영되어야
- * 하므로 비어 있어도 필드를 빼지 않는다.
+ * 미입력 번역은 **빈 문자열이 아니라 `null`로 보낸다.** 등록은 받은 값을 그대로
+ * 저장하므로 빈 문자열을 보내면 "번역이 있는 것"으로 세어져 목록의 번역 개수가
+ * 6/6으로 잡힌다(서버는 `null`인지로만 번역 유무를 센다).
  */
-const toRequestBody = (values: HashtagFormValues) => ({
+const toCreateBody = (values: HashtagFormValues) => ({
+  category: values.category,
+  ko: values.labels.KO.trim(),
+  en: values.labels.EN.trim() || null,
+  ja: values.labels.JA.trim() || null,
+  zh: values.labels.ZH.trim() || null,
+  th: values.labels.TH.trim() || null,
+  vi: values.labels.VI.trim() || null,
+  isAdult: values.isAdult,
+  isEnabled: values.isActive,
+});
+
+/**
+ * 수정 본문. 부분 갱신이라 **보내지 않은 필드는 그대로 남는다.**
+ *
+ * 번역만 예외로 **빈 문자열을 보내면 지워진다.** 폼에서 지운 번역이 그대로
+ * 반영되어야 하므로 비어 있어도 필드를 빼지 않는다.
+ */
+const toUpdateBody = (values: HashtagFormValues) => ({
   category: values.category,
   ko: values.labels.KO.trim(),
   en: values.labels.EN.trim(),
@@ -23,14 +42,14 @@ const toRequestBody = (values: HashtagFormValues) => ({
 });
 
 export const createHashtag = async (values: HashtagFormValues) => {
-  await liveAxios.post("/admin/hashtags", toRequestBody(values));
+  await liveAxios.post("/admin/hashtags", toCreateBody(values));
 };
 
 export const updateHashtag = async (
   hashtagId: number,
   values: HashtagFormValues,
 ) => {
-  await liveAxios.patch(`/admin/hashtags/${hashtagId}`, toRequestBody(values));
+  await liveAxios.patch(`/admin/hashtags/${hashtagId}`, toUpdateBody(values));
 };
 
 /**
