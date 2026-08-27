@@ -127,10 +127,10 @@ const CreditAdjustmentFormModal = ({
             {selectedUser ? (
               <div className="flex items-center gap-3 rounded-field border border-border-main p-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-medium text-font-1">
+                  <p className="truncate body-4 font-medium text-font-1">
                     {selectedUser.nickname}
                   </p>
-                  <p className="mt-0.5 truncate text-[12px] text-font-2">
+                  <p className="mt-0.5 truncate body-6 text-font-2">
                     #{selectedUser.userId} · 보유{" "}
                     {formatCredit(selectedUser.creditBalance)}
                   </p>
@@ -208,7 +208,7 @@ const CreditAdjustmentFormModal = ({
           </FormField>
 
           {/* 실행 전에 잔액이 어떻게 바뀌는지 숫자로 먼저 보여준다. */}
-          <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 text-[13px]">
+          <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 body-5">
             <div className="flex items-center gap-2">
               <dt className="text-font-2">조정 크레딧</dt>
               <dd
@@ -231,7 +231,7 @@ const CreditAdjustmentFormModal = ({
           </dl>
 
           {isOverDeduction && (
-            <p className="mt-2 text-[12px] text-font-error">
+            <p className="mt-2 body-6 text-font-error">
               보유 크레딧보다 많은 금액은 차감할 수 없습니다.
             </p>
           )}

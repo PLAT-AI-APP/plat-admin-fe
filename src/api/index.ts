@@ -4,33 +4,19 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from "axios";
-import { clearSession, getAccessToken } from "@/store/useAdminStore";
+import { LIVE_BASE_URI, MOCK_BASE_URI } from "./baseUri";
+import {
+  clearSession,
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+} from "@/store/useAdminStore";
 import type {
   ApiErrorResponse,
   ApiSuccessResponse,
   AppError,
 } from "@/type/api";
-
-const IS_MOCKING = process.env.NEXT_PUBLIC_API_MOCKING === "enabled";
-
-/**
- * 실서버(plat-be `plat-admin`, 기본 8081) 베이스 URI.
- *
- * 목업 베이스와 **오리진을 다르게 둔다.** MSW 핸들러는 목업 베이스 URI로
- * 등록되어 있으므로, 오리진이 다르면 목업 구간을 켠 채로 연동이 끝난 도메인만
- * 실서버에 보낼 수 있다(`onUnhandledRequest: "bypass"`).
- */
-const LIVE_BASE_URI =
-  process.env.NEXT_PUBLIC_LIVE_BASE_URI ?? process.env.NEXT_PUBLIC_BASE_URI;
-
-/**
- * 개발용 실서버 토큰.
- *
- * 관리자 서버에는 로그인 엔드포인트가 없다 — 토큰은 서비스 서버가 발급하고
- * 관리자 서버는 검증만 한다(`hasRole(ADMIN)`). 관리자 로그인이 실연동될 때까지는
- * 서비스 서버에서 받은 ADMIN 토큰을 `.env.local`에 두고 쓴다.
- */
-const LIVE_ACCESS_TOKEN = process.env.NEXT_PUBLIC_LIVE_ACCESS_TOKEN;
+import type { TokenResponse } from "@/type/auth";
 
 /** 기존 공통 응답 봉투만 골라내는 가드입니다. */
 const isLegacyApiSuccessEnvelope = <T>(
@@ -60,8 +46,15 @@ const onResponseSuccess = (response: AxiosResponse): AxiosResponse => {
 
 export const LOGIN_PATH = "/login";
 
-/** 인증 없이 부를 수 있는 경로. 이 경로의 401은 화면이 직접 문구로 처리한다. */
-const PUBLIC_PATHS = ["/admin/auth/login"];
+export const REFRESH_PATH = "/admin/auth/refresh";
+
+/**
+ * 인증 없이 부를 수 있는 경로. 이 경로의 401은 화면이 직접 문구로 처리한다.
+ *
+ * 재발급도 여기 있다. 재발급이 401로 끝났다는 것은 세션이 정말 끝났다는 뜻이라
+ * **다시 재발급을 시도하면 안 된다.** 아래 재시도 로직이 이 목록을 보고 멈춘다.
+ */
+const PUBLIC_PATHS = ["/admin/auth/login", REFRESH_PATH, "/admin/auth/logout"];
 
 const isPublicPath = (url?: string) =>
   Boolean(url && PUBLIC_PATHS.some((path) => url.startsWith(path)));
@@ -84,6 +77,51 @@ const handleUnauthorized = () => {
     `${LOGIN_PATH}?redirect=${encodeURIComponent(redirect)}&reason=expired`,
   );
 };
+
+/**
+ * 지금 진행 중인 재발급.
+ *
+ * 콘솔은 화면 하나가 조회를 여러 개 동시에 던진다. 토큰이 만료되면 그 요청들이
+ * **한꺼번에** 401로 돌아오는데, 각자 재발급을 부르면 서버가 회전(rotation)을
+ * 하므로 첫 번째만 성공하고 나머지는 이미 폐기된 토큰을 내밀어 로그아웃된다.
+ * 그래서 재발급은 한 번만 돌리고 나머지는 그 약속을 함께 기다린다.
+ */
+let refreshPromise: Promise<string> | null = null;
+
+/** 재발급 자체는 인터셉터가 없는 인스턴스로 부른다. 여기서 401이 나면 그대로 끝이다. */
+const refreshAxios = axios.create({
+  baseURL: LIVE_BASE_URI,
+  headers: { "Content-Type": "application/json" },
+});
+
+/** 새 accessToken을 돌려준다. 실패하면 세션이 끝난 것이다. */
+const refreshAccessToken = async (): Promise<string> => {
+  const refreshToken = getRefreshToken();
+
+  if (!refreshToken) throw new Error("no refresh token");
+
+  const response = await refreshAxios.post<TokenResponse>(REFRESH_PATH, {
+    refreshToken,
+  });
+
+  const tokens = unwrapApiData(response.data);
+
+  setTokens(tokens);
+
+  return tokens.accessToken;
+};
+
+/** 이미 돌고 있으면 그 약속을 그대로 준다. */
+const requestRefresh = (): Promise<string> => {
+  refreshPromise ??= refreshAccessToken().finally(() => {
+    refreshPromise = null;
+  });
+
+  return refreshPromise;
+};
+
+/** 한 요청에 재시도는 한 번만. 무한 루프를 막는다. */
+type RetriableConfig = InternalAxiosRequestConfig & { _isRetry?: boolean };
 
 interface CreateAdminAxiosOptions {
   baseURL?: string;
@@ -116,21 +154,46 @@ const createAdminAxios = ({
     return config;
   };
 
-  /** 화면에서 그대로 노출할 수 있는 에러 객체로 정규화합니다. */
-  const onResponseError = (error: AxiosError<ApiErrorResponse>) => {
+  /**
+   * 401이면 먼저 재발급을 시도하고, 그래도 안 되면 세션을 끝냅니다.
+   *
+   * 화면에서 그대로 노출할 수 있는 에러 객체로 정규화하는 것도 여기서 합니다.
+   */
+  const onResponseError = async (error: AxiosError<ApiErrorResponse>) => {
+    const config = error.config as RetriableConfig | undefined;
+
+    const canRetry =
+      expiresSessionOn401 &&
+      error.response?.status === 401 &&
+      Boolean(config) &&
+      !config?._isRetry &&
+      !isPublicPath(config?.url);
+
+    if (canRetry && config) {
+      try {
+        const accessToken = await requestRefresh();
+
+        config._isRetry = true;
+        config.headers.Authorization = `Bearer ${accessToken}`;
+
+        return await instance.request(config);
+      } catch {
+        /* 재발급이 실패하면 세션이 정말 끝난 것이다. 아래에서 로그인으로 보낸다. */
+        handleUnauthorized();
+      }
+    } else if (
+      expiresSessionOn401 &&
+      error.response?.status === 401 &&
+      !isPublicPath(config?.url)
+    ) {
+      handleUnauthorized();
+    }
+
     const appError: AppError = {
       code: error.response?.data?.code ?? "UNKNOWN",
       fields: error.response?.data?.fields ?? {},
       message: error.response?.data?.message ?? "요청 처리에 실패했습니다.",
     };
-
-    if (
-      expiresSessionOn401 &&
-      error.response?.status === 401 &&
-      !isPublicPath(error.config?.url)
-    ) {
-      handleUnauthorized();
-    }
 
     return Promise.reject(Object.assign(new Error(appError.message), appError));
   };
@@ -142,7 +205,7 @@ const createAdminAxios = ({
 };
 
 export const adminAxios: AxiosInstance = createAdminAxios({
-  baseURL: process.env.NEXT_PUBLIC_BASE_URI,
+  baseURL: MOCK_BASE_URI,
   resolveAccessToken: getAccessToken,
   expiresSessionOn401: true,
 });
@@ -150,11 +213,12 @@ export const adminAxios: AxiosInstance = createAdminAxios({
 /**
  * 실서버에 붙는 인스턴스. **연동이 끝난 도메인만** 이것을 쓴다.
  *
- * 목업 로그인 세션과 실서버 토큰은 별개다. 목업 구간에서 실서버 401로 세션을
- * 끊으면 토큰을 잘못 넣은 것만으로 콘솔 전체에서 로그인 화면으로 튕긴다.
+ * 세션의 출처가 여기다 — 로그인 · 관리자 계정 · 직책이 이 인스턴스로 나간다.
+ * 그래서 목업 구간이어도 401은 진짜 세션 만료다. 목업만 켜 두고 무시하면
+ * 토큰이 죽은 채로 화면이 계속 그려지고, 조회는 전부 조용히 비어 보인다.
  */
 export const liveAxios: AxiosInstance = createAdminAxios({
   baseURL: LIVE_BASE_URI,
-  resolveAccessToken: () => LIVE_ACCESS_TOKEN || getAccessToken(),
-  expiresSessionOn401: !IS_MOCKING,
+  resolveAccessToken: getAccessToken,
+  expiresSessionOn401: true,
 });

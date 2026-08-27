@@ -198,10 +198,10 @@ const ProactiveMessageManager = () => {
       <Card noPadding>
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
           <div>
-            <h2 className="text-[15px] font-semibold text-font-1">
+            <h2 className="body-3 font-semibold text-font-1">
               선제 메시지 {messages.length}건
             </h2>
-            <p className="mt-1 text-[13px] text-font-2">
+            <p className="mt-1 body-5 text-font-2">
               트리거 조건이 충족되면 캐릭터가 이용자에게 먼저 말을 겁니다.
             </p>
           </div>

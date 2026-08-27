@@ -1,21 +1,17 @@
 /**
- * 서비스가 지원하는 언어.
+ * 서비스가 지원하는 언어. **앱 노출 순서와 동일하게 유지한다.**
  *
- * 해시태그 · 배너처럼 **앱에 그대로 노출되는 문구**는 전부 언어별로 관리한다.
+ * 해시태그 · 배너처럼 앱에 그대로 노출되는 문구도, 메인 노출 목록(배너 ·
+ * 오늘의 PICK · 공식 맛보기 · 에셋 추천)도 전부 언어별로 관리한다.
  * plat-fe가 `?lang=KO` 형태로 언어를 지정해 가져가기 때문에, 한 곳에서만
  * 목록을 정의하고 각 도메인이 가져다 쓴다.
+ *
+ * 목록이 곧 타입이다(`ServiceLanguage`). 스키마(`z.enum`)도 이 상수를 그대로
+ * 받으므로 언어를 늘릴 때 고칠 곳이 여기 하나로 끝난다.
  */
-export type ServiceLanguage = "KO" | "EN" | "JA" | "ZH" | "TH" | "VI";
+export const SERVICE_LANGUAGES = ["KO", "EN", "JA", "ZH", "TH", "VI"] as const;
 
-/** 앱 노출 순서와 동일하게 유지한다. */
-export const SERVICE_LANGUAGES: ServiceLanguage[] = [
-  "KO",
-  "EN",
-  "JA",
-  "ZH",
-  "TH",
-  "VI",
-];
+export type ServiceLanguage = (typeof SERVICE_LANGUAGES)[number];
 
 export const SERVICE_LANGUAGE_LABEL: Record<ServiceLanguage, string> = {
   KO: "한국어",

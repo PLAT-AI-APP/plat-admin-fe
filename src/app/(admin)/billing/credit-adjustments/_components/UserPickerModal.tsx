@@ -93,15 +93,15 @@ const UserPickerModal = ({ isOpen, onClose, onSelect }: UserPickerModalProps) =>
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-medium text-font-1">
+                    <p className="truncate body-4 font-medium text-font-1">
                       {user.nickname}
                     </p>
-                    <p className="mt-0.5 truncate text-[12px] text-font-2">
+                    <p className="mt-0.5 truncate body-6 text-font-2">
                       #{user.userId} · {user.email}
                     </p>
                   </div>
 
-                  <span className="shrink-0 text-[13px] font-medium text-font-1 tabular-nums">
+                  <span className="shrink-0 body-5 font-medium text-font-1 tabular-nums">
                     {formatCredit(user.creditBalance)}
                   </span>
                 </button>

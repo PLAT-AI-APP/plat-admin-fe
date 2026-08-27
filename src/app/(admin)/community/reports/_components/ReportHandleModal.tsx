@@ -110,31 +110,31 @@ const ReportHandleModal = ({
                 {REPORT_REASON_LABEL[report.reason]}
               </Badge>
 
-              <span className="text-[13px] font-medium text-font-1">
+              <span className="body-5 font-medium text-font-1">
                 {report.targetName}
               </span>
 
-              <span className="ml-auto text-[12px] text-font-2 tabular-nums">
+              <span className="ml-auto body-6 text-font-2 tabular-nums">
                 이 대상 누적 신고 {report.targetReportCount}건
               </span>
             </div>
 
             {report.targetSnippet && (
-              <p className="rounded-[8px] bg-subtle px-3 py-2 text-[13px] text-font-2">
+              <p className="rounded-chip bg-subtle px-3 py-2 body-5 text-font-2">
                 {report.targetSnippet}
               </p>
             )}
 
-            <p className="text-[12px] text-font-2">
+            <p className="body-6 text-font-2">
               신고자 {report.reporterNickname}
             </p>
 
-            <p className="text-[13px] whitespace-pre-line text-font-1">
+            <p className="body-5 whitespace-pre-line text-font-1">
               {report.detail}
             </p>
 
             {report.handledAt && (
-              <p className="text-[12px] text-font-2">
+              <p className="body-6 text-font-2">
                 {report.handlerName} · {formatDateTime(report.handledAt)} 처리
               </p>
             )}

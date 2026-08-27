@@ -158,7 +158,7 @@ const AppVersionFormModal = ({
                   checked={field.value}
                   onChange={field.onChange}
                 />
-                <span className="text-[13px] text-font-2">
+                <span className="body-5 text-font-2">
                   {field.value ? "강제 업데이트" : "선택 업데이트"}
                 </span>
               </div>

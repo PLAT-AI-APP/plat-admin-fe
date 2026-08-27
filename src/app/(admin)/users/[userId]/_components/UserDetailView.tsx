@@ -43,8 +43,8 @@ interface UserDetailViewProps {
 /** 지표 한 칸 */
 const StatBox = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="rounded-field border border-border-main bg-subtle px-3 py-2.5">
-    <p className="text-[12px] text-font-2">{label}</p>
-    <p className="mt-1 text-[15px] font-semibold text-font-0 tabular-nums">
+    <p className="body-6 text-font-2">{label}</p>
+    <p className="mt-1 body-3 font-semibold text-font-0 tabular-nums">
       {value}
     </p>
   </div>
@@ -204,7 +204,7 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="truncate text-[17px] font-semibold text-font-0">
+                  <p className="truncate title-2 font-semibold text-font-0">
                     {user.nickname}
                   </p>
                   <Badge tone={USER_STATUS_TONE[user.status]}>
@@ -218,7 +218,7 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
                   )}
                 </div>
 
-                <p className="mt-1 truncate text-[13px] text-font-2">
+                <p className="mt-1 truncate body-5 text-font-2">
                   가입 {formatDate(user.createdAt)} · 마지막 로그인{" "}
                   {formatDateTime(user.lastLoginAt)}
                 </p>

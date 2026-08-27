@@ -100,7 +100,7 @@ const PushCampaignManager = () => {
       render: (row) => (
         <div className="max-w-100">
           <p className="truncate text-font-1">{row.title}</p>
-          <p className="mt-0.5 truncate text-[12px] text-font-2">{row.body}</p>
+          <p className="mt-0.5 truncate body-6 text-font-2">{row.body}</p>
         </div>
       ),
     },

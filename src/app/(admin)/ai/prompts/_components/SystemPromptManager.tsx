@@ -71,7 +71,7 @@ const SystemPromptManager = () => {
       header: "버전",
       width: "100px",
       render: (version) => (
-        <span className="text-[14px] font-medium tabular-nums text-font-1">
+        <span className="body-4 font-medium tabular-nums text-font-1">
           v{version.version}
         </span>
       ),
@@ -80,7 +80,7 @@ const SystemPromptManager = () => {
       key: "createdBy",
       header: "작성자",
       render: (version) => (
-        <span className="text-[13px] text-font-2">{version.createdBy}</span>
+        <span className="body-5 text-font-2">{version.createdBy}</span>
       ),
     },
     {
@@ -88,7 +88,7 @@ const SystemPromptManager = () => {
       header: "작성일",
       numeric: true,
       render: (version) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDateTime(version.createdAt)}
         </span>
       ),
@@ -169,12 +169,12 @@ const SystemPromptManager = () => {
                           : "text-font-1 hover:bg-surface-hover",
                       )}
                     >
-                      <span className="block text-[14px] font-medium">
+                      <span className="block body-4 font-medium">
                         {prompt.label}
                       </span>
                       <span
                         className={cn(
-                          "mt-0.5 block truncate text-[12px]",
+                          "mt-0.5 block truncate body-6",
                           isSelected ? "text-brand" : "text-font-2",
                         )}
                       >

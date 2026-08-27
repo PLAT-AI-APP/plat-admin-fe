@@ -52,9 +52,9 @@ const ConfirmDialogHost = () => {
       }
     >
       {options?.warning ? (
-        <p className="text-[13px] text-font-error">{options.warning}</p>
+        <p className="body-5 text-font-error">{options.warning}</p>
       ) : (
-        <p className="text-[13px] text-font-2">
+        <p className="body-5 text-font-2">
           이 작업을 진행하시겠습니까?
         </p>
       )}

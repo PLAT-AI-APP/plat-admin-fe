@@ -28,7 +28,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 
           <span
             className={cn(
-              "pointer-events-none flex size-[18px] items-center justify-center rounded-[6px] border border-border-strong bg-surface text-transparent transition",
+              "pointer-events-none flex size-[18px] items-center justify-center rounded-chip border border-border-strong bg-surface text-transparent transition",
               "peer-checked:border-brand peer-checked:bg-brand peer-checked:text-font-4",
               "group-hover:peer-enabled:border-brand",
             )}
@@ -37,7 +37,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           </span>
         </span>
 
-        {label && <span className="text-[14px] text-font-1">{label}</span>}
+        {label && <span className="body-4 text-font-1">{label}</span>}
       </label>
     );
   },

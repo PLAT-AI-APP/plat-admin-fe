@@ -76,15 +76,15 @@ const CreditUsageChart = ({ creditUsage }: CreditUsageChartProps) => {
               }}
             />
 
-            <span className="min-w-0 flex-1 truncate text-[13px] text-font-1">
+            <span className="min-w-0 flex-1 truncate body-5 text-font-1">
               {item.label}
             </span>
 
-            <span className="text-[13px] text-font-2 tabular-nums">
+            <span className="body-5 text-font-2 tabular-nums">
               {formatWithCommas(item.value)}
             </span>
 
-            <span className="w-11 text-right text-[12px] text-font-2 tabular-nums">
+            <span className="w-11 text-right body-6 text-font-2 tabular-nums">
               {total > 0 ? ((item.value / total) * 100).toFixed(1) : "0.0"}%
             </span>
           </li>

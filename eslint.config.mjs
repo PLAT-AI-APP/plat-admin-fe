@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 어드민 템플릿은 자체 tsconfig · eslint 설정을 가진 독립 프로젝트다.
+    // 여기서 함께 검사하면 `@/*` 별칭이 이 프로젝트의 src로 풀려 전부 깨진다.
+    "plat-admin-template/**",
   ]),
 ]);
 

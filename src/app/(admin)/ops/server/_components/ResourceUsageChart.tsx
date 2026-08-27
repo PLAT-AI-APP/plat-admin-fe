@@ -53,7 +53,7 @@ const ResourceUsageChart = ({ metrics }: ResourceUsageChartProps) => {
                     key === "cpuUsage" ? CPU_COLOR : MEMORY_COLOR,
                 }}
               />
-              <span className="text-[13px] text-font-2">
+              <span className="body-5 text-font-2">
                 {SERIES_LABEL[key]}
               </span>
             </span>
@@ -100,17 +100,25 @@ const ResourceUsageChart = ({ metrics }: ResourceUsageChartProps) => {
                 dayjs(String(value)).format("MM.DD HH:mm")
               }
               formatter={(value, name) => [
-                `${Number(value)}%`,
+                value === null || value === undefined
+                  ? "기록 없음"
+                  : `${Number(value)}%`,
                 SERIES_LABEL[String(name)] ?? String(name),
               ]}
             />
 
+            {/*
+              connectNulls를 켜지 않는다. 표본이 없는 시간대(대개 배포로 서버가
+              내려가 있던 구간)를 앞뒤 점으로 이어 버리면, 없었던 값을 그린 선이
+              측정한 선과 구분되지 않는다. 끊어서 "여기는 모른다"를 보여 준다.
+            */}
             <Line
               type="monotone"
               dataKey="cpuUsage"
               stroke={CPU_COLOR}
               strokeWidth={2}
               dot={false}
+              connectNulls={false}
               activeDot={{ r: 4, strokeWidth: 0 }}
             />
 
@@ -120,6 +128,7 @@ const ResourceUsageChart = ({ metrics }: ResourceUsageChartProps) => {
               stroke={MEMORY_COLOR}
               strokeWidth={2}
               dot={false}
+              connectNulls={false}
               activeDot={{ r: 4, strokeWidth: 0 }}
             />
           </LineChart>

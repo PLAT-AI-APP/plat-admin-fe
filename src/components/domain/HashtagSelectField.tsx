@@ -69,7 +69,7 @@ const HashtagSelectField = ({
           inputBoxClassName="h-9 flex-1"
         />
 
-        <span className="shrink-0 text-[12px] text-font-2 tabular-nums">
+        <span className="shrink-0 body-6 text-font-2 tabular-nums">
           {value.length}/{maxCount}
         </span>
       </div>
@@ -95,7 +95,7 @@ const HashtagSelectField = ({
           ))}
 
         {!isLoading && candidates.length === 0 && (
-          <p className="py-4 text-center text-[13px] text-font-2">
+          <p className="py-4 text-center body-5 text-font-2">
             조건에 맞는 해시태그가 없습니다.
           </p>
         )}
@@ -112,7 +112,7 @@ const HashtagSelectField = ({
                 disabled={isDisabled}
                 onClick={() => toggle(hashtag.hashtagId)}
                 className={cn(
-                  "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-[12px] transition",
+                  "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 body-6 transition",
                   isChecked
                     ? "border-brand bg-brand-opacity text-brand"
                     : "border-border-main text-font-2 hover:border-brand hover:text-font-1",

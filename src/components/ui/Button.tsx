@@ -25,14 +25,14 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
   secondary:
     "border border-border-main bg-surface text-font-1 hover:bg-surface-hover",
   ghost: "text-font-2 hover:bg-surface-hover hover:text-font-1",
-  danger: "bg-danger text-white hover:opacity-90",
+  danger: "bg-danger text-on-danger hover:opacity-90",
   dangerGhost: "text-danger hover:bg-danger-bg",
 };
 
 const SIZE_CLASS: Record<ButtonSize, string> = {
-  sm: "h-8 gap-1.5 px-3 text-[13px]",
-  md: "h-10 gap-2 px-4 text-[14px]",
-  lg: "h-12 gap-2 px-6 text-[15px]",
+  sm: "h-8 gap-1.5 px-3 body-5",
+  md: "h-10 gap-2 px-4 body-4",
+  lg: "h-12 gap-2 px-6 body-3",
 };
 
 const SPINNER_SIZE: Record<ButtonSize, number> = {

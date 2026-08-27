@@ -50,7 +50,7 @@ const NotificationTemplateManager = () => {
       header: "템플릿 키",
       width: "180px",
       render: (row) => (
-        <span className="text-[13px] text-font-2">{row.templateKey}</span>
+        <span className="body-5 text-font-2">{row.templateKey}</span>
       ),
     },
     {

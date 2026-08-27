@@ -90,9 +90,9 @@ const Modal = ({
       >
         <header className="flex items-start justify-between gap-4 border-b border-border-main px-6 py-4">
           <div className="min-w-0">
-            <h2 className="text-[17px] font-semibold text-font-0">{title}</h2>
+            <h2 className="title-2 font-semibold text-font-0">{title}</h2>
             {description && (
-              <p className="mt-1 text-[13px] text-font-2">{description}</p>
+              <p className="mt-1 body-5 text-font-2">{description}</p>
             )}
           </div>
 

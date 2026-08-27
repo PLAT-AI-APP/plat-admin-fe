@@ -43,6 +43,36 @@
   --info-bg: #eaf1fe;
   --neutral: #5a6072;
   --neutral-bg: #f0f1f4;
+
+  /*
+   * 반전 표면 위 글자.
+   * `--font-4`는 다크에서 어두운 색으로 뒤집히는데, 위험(danger) 버튼처럼
+   * 테마와 무관하게 붉은 배경이 유지되는 자리는 글자도 항상 밝아야 한다.
+   */
+  --on-brand: #ffffff;
+  --on-danger: #ffffff;
+
+  /* 컨트롤 손잡이(스위치 노브). 테마와 무관하게 밝은 면을 유지한다. */
+  --control-knob: #ffffff;
+
+  /*
+   * 앱 미리보기 전용.
+   * 배너 미리보기는 **관리자 화면이 아니라 모바일 앱 화면을 흉내 내는 자리**다.
+   * 앱은 다크 고정이라 관리자 테마를 따라가면 실제 노출 모습과 달라진다.
+   * 그래서 테마와 무관한 고정색을 쓰되, 리터럴 대신 토큰으로 둔다.
+   */
+  /*
+   * 이미지 확대 보기(라이트박스) 전용.
+   * 그림을 판별하는 자리라 뒤 화면이 비치면 안 되고, 겹쳐 놓는 글자는
+   * 테마와 무관하게 항상 밝아야 한다(`--font-4`는 다크에서 검게 뒤집힌다).
+   */
+  --overlay-strong: rgba(11, 13, 23, 0.88);
+  --overlay-font: #ffffff;
+
+  --preview-bg: #1a1a1a;
+  --preview-font: #ffffff;
+  --preview-scrim: rgba(0, 0, 0, 0.55);
+  --preview-accent: #e5484d;
 }
 
 .dark {
@@ -81,6 +111,16 @@
   --info-bg: rgba(96, 165, 250, 0.12);
   --neutral: #989db8;
   --neutral-bg: rgba(152, 157, 184, 0.12);
+
+  /* 반전 표면 위 글자와 노브는 다크에서도 밝은 쪽을 유지한다. */
+  --on-brand: #ffffff;
+  --on-danger: #ffffff;
+  --control-knob: #e8eaf2;
+
+  --overlay-strong: rgba(5, 6, 12, 0.92);
+  --overlay-font: #ffffff;
+
+  /* 앱 미리보기는 다크 고정이라 테마별 재정의가 없다. */
 }
 
 @theme inline {
@@ -93,7 +133,8 @@
   --shadow-popover: 0 8px 24px 0 rgba(16, 24, 40, 0.12);
   --shadow-modal: 0 24px 48px -12px rgba(16, 24, 40, 0.2);
 
-  /* 모서리 스케일 — field < card < modal */
+  /* 모서리 스케일 — chip < field < card < modal */
+  --radius-chip: 6px;
   --radius-field: 10px;
   --radius-card: 14px;
   --radius-modal: 18px;
@@ -105,6 +146,21 @@
   --color-font-4: var(--font-4);
   --color-font-error: var(--font-error);
   --color-font-accents: var(--font-accents);
+
+  /* 반전 표면 위 글자: text-on-brand / text-on-danger, 노브: bg-control-knob */
+  --color-on-brand: var(--on-brand);
+  --color-on-danger: var(--on-danger);
+  --color-control-knob: var(--control-knob);
+
+  /* 이미지 확대 보기: bg-overlay-strong / text-overlay-font */
+  --color-overlay-strong: var(--overlay-strong);
+  --color-overlay-font: var(--overlay-font);
+
+  /* 앱 미리보기 전용: bg-preview-bg / text-preview-font / bg-preview-scrim */
+  --color-preview-bg: var(--preview-bg);
+  --color-preview-font: var(--preview-font);
+  --color-preview-scrim: var(--preview-scrim);
+  --color-preview-accent: var(--preview-accent);
 
   --color-border-main: var(--border);
   --color-border-strong: var(--border-strong);
@@ -133,6 +189,147 @@
   --color-info-bg: var(--info-bg);
   --color-neutral: var(--neutral);
   --color-neutral-bg: var(--neutral-bg);
+}
+
+/* =========================================================================
+ * 타이포그래피 스케일
+ *
+ * plat-fe(서비스 프론트)와 **같은 이름·같은 값**을 쓴다. 두 앱을 오가며
+ * 작업할 때 스케일이 다르면 같은 위계의 글자가 화면마다 다른 크기로 나온다.
+ *
+ * 화면 코드에는 `text-[13px]` 같은 임의값을 쓰지 않는다. 필요한 위계가
+ * 없으면 여기에 단계를 추가한다. 임의값을 허용하면 10·11·12·13px이
+ * 근거 없이 섞이고, 나중에 본문 크기를 한 단계 올리는 일이 불가능해진다.
+ *
+ * 고르는 법
+ *   title-*   굵은 위계 (제목 · 라벨 · 강조된 값)
+ *   body-*    보통 굵기 (본문 · 표 셀 · 설명)
+ *   caption-* 가장 작은 보조 문구
+ * 숫자가 커질수록 작아진다.
+ * ========================================================================= */
+
+/* Display — 로그인 화면처럼 넓은 여백을 쓰는 자리 */
+@utility display-1 {
+  font-size: 2.5rem; /* 40px */
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.24px;
+}
+@utility display-2 {
+  font-size: 2.25rem; /* 36px */
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.216px;
+}
+
+/* Heading — 페이지 타이틀 · 대시보드 지표 숫자 */
+@utility heading-1 {
+  font-size: 1.625rem; /* 26px */
+  font-weight: 700;
+  line-height: 1.3;
+}
+@utility heading-2 {
+  font-size: 1.5rem; /* 24px */
+  font-weight: 700;
+  line-height: 1.3;
+}
+@utility heading-3 {
+  font-size: 1.375rem; /* 22px */
+  font-weight: 700;
+  line-height: 1.3;
+}
+@utility heading-3R {
+  font-size: 1.375rem; /* 22px */
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+/* Title — 섹션 · 카드 제목, 표에서 강조되는 값 */
+@utility title-1 {
+  font-size: 1.25rem; /* 20px */
+  font-weight: 600;
+  line-height: 1.35;
+}
+@utility title-2 {
+  font-size: 1.125rem; /* 18px */
+  font-weight: 600;
+  line-height: 1.35;
+}
+@utility title-3 {
+  font-size: 1rem; /* 16px */
+  font-weight: 600;
+  line-height: 1.5;
+}
+@utility title-4 {
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 600;
+  line-height: 1.5;
+}
+@utility title-5 {
+  font-size: 0.875rem; /* 14px */
+  font-weight: 600;
+  line-height: 1.5;
+}
+@utility title-6 {
+  font-size: 0.8125rem; /* 13px — 관리자 표에서 가장 많이 쓰는 라벨 */
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Body — 본문 · 표 셀 · 설명 */
+@utility body-1 {
+  font-size: 1.125rem; /* 18px */
+  font-weight: 400;
+  line-height: 1.5;
+}
+@utility body-2 {
+  font-size: 1rem; /* 16px */
+  font-weight: 400;
+  line-height: 1.5;
+}
+@utility body-3 {
+  font-size: 0.9375rem; /* 15px */
+  font-weight: 400;
+  line-height: 1.5;
+}
+@utility body-4 {
+  font-size: 0.875rem; /* 14px — 본문 기본 */
+  font-weight: 400;
+  line-height: 1.5;
+}
+@utility body-5 {
+  font-size: 0.8125rem; /* 13px — 표 셀 기본 */
+  font-weight: 400;
+  line-height: 1.5;
+}
+@utility body-6 {
+  font-size: 0.75rem; /* 12px */
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* Caption — 뱃지 · 보조 설명 · 에러 문구 */
+@utility caption-1 {
+  font-size: 0.75rem; /* 12px */
+  font-weight: 600;
+  line-height: 1.5;
+}
+@utility caption-2 {
+  font-size: 0.75rem; /* 12px */
+  font-weight: 500;
+  line-height: 1.5;
+}
+/*
+ * caption-3 은 plat-fe에 없는 관리자 전용 단계다.
+ * 표가 촘촘한 화면에서 순번·단위처럼 읽히기만 하면 되는 글자에 쓴다.
+ * 본문에는 쓰지 않는다 — 11px은 장시간 판독에 부담이 크다.
+ *
+ * body-* 와 같은 400을 쓴다. 굵게 할 자리는 호출부에서 `font-medium`을 붙인다.
+ */
+@utility caption-3 {
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 400;
+  line-height: 1.45;
 }
 
 html,

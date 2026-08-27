@@ -26,8 +26,8 @@ interface UserAccountPanelProps {
 /** 계정 정보 한 줄 */
 const InfoRow = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="flex items-center justify-between gap-4 border-b border-border-main py-2.5 last:border-b-0">
-    <span className="shrink-0 text-[13px] text-font-2">{label}</span>
-    <span className="min-w-0 text-right text-[13px] text-font-1">{value}</span>
+    <span className="shrink-0 body-5 text-font-2">{label}</span>
+    <span className="min-w-0 text-right body-5 text-font-1">{value}</span>
   </div>
 );
 

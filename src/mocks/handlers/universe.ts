@@ -1,5 +1,6 @@
 import { HttpResponse, delay, http } from "msw";
-import { isExposableUniverse } from "@/type/character";
+import { isExposableUniverse, supportsLanguage } from "@/type/character";
+import type { ServiceLanguage } from "@/type/language";
 import { universes } from "../db/character";
 import { MOCK_DELAY_MS, matchesKeyword, paginate } from "../utils";
 
@@ -7,7 +8,7 @@ const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
 /*
  * 세계관 목록만 목업으로 둔다. **상세는 실서버(plat-be plat-admin)로 옮겨** liveAxios가
- * 8081로 직접 부르므로 목업 상세 핸들러가 없다. 이 목록은 아직 목업인 큐레이션 후보
+ * 실서버로 직접 부르므로 목업 상세 핸들러가 없다. 이 목록은 아직 목업인 큐레이션 후보
  * 피커·공식 패널(`useUniverseListQuery`)이 쓴다. 보드는 실서버 목록을 따로 쓴다.
  */
 export const universeHandlers = [
@@ -16,6 +17,7 @@ export const universeHandlers = [
     const keyword = url.searchParams.get("keyword") ?? "";
     const officialOnly = url.searchParams.get("officialOnly") === "true";
     const exposableOnly = url.searchParams.get("exposableOnly") === "true";
+    const language = url.searchParams.get("language") as ServiceLanguage | null;
     const status = url.searchParams.get("status") ?? "";
     const reviewStatus = url.searchParams.get("reviewStatus") ?? "";
     const sort = url.searchParams.get("sort") ?? "RECENT";
@@ -37,6 +39,16 @@ export const universeHandlers = [
 
     if (exposableOnly) {
       filtered = filtered.filter(isExposableUniverse);
+    }
+
+    /*
+      언어별 메인 노출 후보. 그 언어 번역이 없는 세계관은 애초에 후보가 아니다.
+      실서버도 같은 자리에서 걸러 준다고 보고 화면은 결과만 그린다.
+    */
+    if (language) {
+      filtered = filtered.filter((universe) =>
+        supportsLanguage(universe, language),
+      );
     }
 
     if (status) {

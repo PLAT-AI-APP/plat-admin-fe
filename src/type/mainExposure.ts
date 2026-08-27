@@ -1,9 +1,5 @@
 import type { Universe } from "./character";
-import {
-  resolveLocalizedText,
-  type LocalizedText,
-  type ServiceLanguage,
-} from "./language";
+import type { ServiceLanguage } from "./language";
 
 /**
  * 큐레이션 슬롯 종류.
@@ -28,7 +24,7 @@ export interface CurationSlotConfig {
    * "저장하면 앱 어디가 바뀌나"를 화면에서 바로 알 수 있어야 해서 함께 둔다.
    */
   serverSection: {
-    /** 앱이 부르는 엔드포인트 */
+    /** 앱이 부르는 엔드포인트. 언어(`?lang=`)는 화면이 붙여 그린다. */
     path: string;
     /** 그 섹션이 화면에서 하는 일 */
     rule: string;
@@ -42,31 +38,58 @@ export interface CurationItem {
   universe: Universe;
 }
 
+/**
+ * 큐레이션 슬롯 1개 = **슬롯 × 언어** 한 칸.
+ *
+ * 같은 `TODAY_PICK`이라도 한국어 목록과 영어 목록은 서로 다른 자료다.
+ * 앱이 `?lang=EN`으로 가져가는 목록이 곧 이 칸이다.
+ */
 export interface CurationSlot {
   slotKey: CurationSlotKey;
+  language: ServiceLanguage;
   items: CurationItem[];
   updatedAt: string;
   updatedBy: string;
 }
 
-/** 큐레이션 저장 요청 */
+/** 큐레이션 저장 요청. 언어는 경로/쿼리로 따로 넘긴다. */
 export interface UpdateCurationRequest {
   universeIds: number[];
 }
 
-/** 메인 배너 */
+/**
+ * 언어별 등록 건수.
+ *
+ * 탭을 눌러 보기 전에는 **비어 있는 언어를 알 수 없다.** 목록은 한 번에 한
+ * 언어만 불러오므로, 어느 언어가 아직 비었는지는 이 요약으로 본다.
+ */
+export interface LanguageCount {
+  language: ServiceLanguage;
+  count: number;
+}
+
+/**
+ * 메인 배너.
+ *
+ * **배너 한 건은 언어 하나에만 속한다.** 이미지에 글자가 박혀 있는 데다
+ * 가리키는 세계관이 그 언어 번역을 갖췄는지도 언어마다 다르다. 한 건을 여러
+ * 언어가 나눠 쓰면 "영어 캐러셀 두 번째 자리"를 따로 정할 수 없다.
+ * 다른 언어에도 같은 배너를 걸려면 그 언어로 복제한다.
+ */
 export interface Banner {
   bannerId: number;
+  /** 이 배너가 나갈 언어. 캐러셀 순서도 언어별로 따로 매긴다. */
+  language: ServiceLanguage;
   imageUrl: string;
   universeId: number;
   /** 세계관 원본값. 조회 시 서버가 채워준다. */
   universe: Universe;
   /**
-   * 운영 문구 조정을 위한 오버라이드. **언어별로 관리한다.**
-   * 비어 있는 언어는 한국어로, 한국어까지 비어 있으면 세계관 원본값을 쓴다.
+   * 운영 문구 조정을 위한 오버라이드. 배너의 언어로 쓴 문구다.
+   * 비어 있으면 세계관 원본값을 쓴다.
    */
-  titleOverrides?: Partial<LocalizedText>;
-  descriptionOverrides?: Partial<LocalizedText>;
+  titleOverride?: string;
+  descriptionOverride?: string;
   /**
    * 배너에 표시할 해시태그.
    *
@@ -83,10 +106,11 @@ export interface Banner {
 }
 
 export interface BannerFormValues {
+  language: ServiceLanguage;
   imageUrl: string;
   universeId: number;
-  titleOverrides?: Partial<LocalizedText>;
-  descriptionOverrides?: Partial<LocalizedText>;
+  titleOverride?: string;
+  descriptionOverride?: string;
   hashtagIds?: number[];
   isActive: boolean;
   startAt?: string;
@@ -96,13 +120,12 @@ export interface BannerFormValues {
 /**
  * 배너에 실제로 노출될 문구를 계산한다.
  *
- * 우선순위는 **해당 언어 오버라이드 → 한국어 오버라이드 → 세계관 원본**이다.
- * 앱이 언어별로 배너를 받아가므로 화면 미리보기도 같은 규칙을 써야 한다.
+ * 우선순위는 **오버라이드 → 세계관 원본**이다. 배너가 이미 언어를 하나 물고
+ * 있으므로 여기서 언어를 다시 고르지 않는다.
  */
 export const resolveBannerContent = (
   banner: Banner,
-  language: ServiceLanguage = "KO",
-  /** 해시태그 ID → 해당 언어 라벨. 목록을 못 받았으면 세계관 태그로 떨어진다. */
+  /** 해시태그 ID → 라벨. 목록을 못 받았으면 세계관 태그로 떨어진다. */
   hashtagLabels?: Map<number, string>,
 ) => {
   const overriddenTags = (banner.hashtagIds ?? [])
@@ -110,12 +133,9 @@ export const resolveBannerContent = (
     .filter((label): label is string => Boolean(label));
 
   return {
-    title:
-      resolveLocalizedText(banner.titleOverrides, language) ||
-      banner.universe.name,
+    title: banner.titleOverride?.trim() || banner.universe.name,
     description:
-      resolveLocalizedText(banner.descriptionOverrides, language) ||
-      banner.universe.description,
+      banner.descriptionOverride?.trim() || banner.universe.description,
     tags: overriddenTags.length > 0 ? overriddenTags : banner.universe.tags,
   };
 };

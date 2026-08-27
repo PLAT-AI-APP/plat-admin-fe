@@ -128,7 +128,7 @@ const ReportManager = () => {
         <Link
           href={getReportTargetHref(row)}
           onClick={(event) => event.stopPropagation()}
-          className="flex min-w-0 items-center gap-1 text-[13px] text-font-1 transition hover:text-brand"
+          className="flex min-w-0 items-center gap-1 body-5 text-font-1 transition hover:text-brand"
         >
           <span className="truncate">{row.targetName}</span>
           <ExternalLink size={11} className="shrink-0" />
@@ -151,7 +151,7 @@ const ReportManager = () => {
       render: (row) => (
         <TableCellStack
           primary={
-            <span className="text-[13px]">{truncate(row.detail, 50)}</span>
+            <span className="body-5">{truncate(row.detail, 50)}</span>
           }
           secondary={
             row.targetSnippet ? truncate(row.targetSnippet, 40) : undefined

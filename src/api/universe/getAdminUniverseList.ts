@@ -19,7 +19,13 @@ import type { ServiceLanguage } from "@/type/language";
  * 같은 실 ID로 이어지게 한다.
  */
 
-/** 정렬 기준. 서버 `UniverseOrderBy` enum과 값이 같아야 한다. */
+/**
+ * 정렬 기준. 서버 `UniverseOrderBy` enum과 값이 같아야 한다.
+ *
+ * `TITLE_ASC` · `TITLE_DESC`도 서버가 받기는 하지만, **번역 테이블 조인을 피하려고
+ * 실제로는 ID로 정렬한다.** 값을 지우면 서버 enum과 어긋나므로 타입에는 남겨 두고,
+ * 화면 정렬 목록에서만 뺀다(`UniverseBoard`의 `ORDER_OPTIONS` 주석 참고).
+ */
 export type UniverseOrder =
   | "CREATED_DESC"
   | "CREATED_ASC"
@@ -36,6 +42,10 @@ export interface AdminUniverseFilterParams {
   reviewStatus?: UniverseReviewStatus | "";
   tendency?: UniverseTendency | "";
   commentEnabled?: "true" | "false" | "";
+  /** 크리에이터 드릴다운. 상세 화면의 "소유 계정"이 이 값으로 링크를 건다. */
+  creatorId?: string;
+  /** 해시태그 드릴다운. 태그가 실제로 어디에 붙어 있는지 확인할 때 쓴다. */
+  hashtagId?: string;
   order?: UniverseOrder;
   language?: ServiceLanguage;
 }
@@ -101,6 +111,7 @@ const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
   creatorId: item.creatorId,
   creatorNickname: item.creatorNickname ?? "-",
   profileImageFileId: item.profileImageFileId,
+  profileImageUrl: item.profileImageUrl,
   hashtagCount: item.hashtagCount,
   scenarioCount: item.scenarioCount,
   translationCount: item.translationCount,
@@ -123,6 +134,8 @@ const toRequestParams = (params: AdminUniverseListParams) => {
   if (params.reviewStatus) clean.reviewStatus = params.reviewStatus;
   if (params.tendency) clean.tendency = params.tendency;
   if (params.commentEnabled) clean.commentEnabled = params.commentEnabled;
+  if (params.creatorId) clean.creatorId = params.creatorId;
+  if (params.hashtagId) clean.hashtagId = params.hashtagId;
   if (params.order) clean.order = params.order;
   if (params.language) clean.language = params.language;
   return clean;

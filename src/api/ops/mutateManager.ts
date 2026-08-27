@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import { showAppToast } from "@/lib/toast";
 import type { AppError } from "@/type/api";
 import type {
@@ -9,8 +9,31 @@ import type {
   ManagerStatus,
 } from "@/type/ops";
 
+/**
+ * 관리자 수정 본문.
+ *
+ * 서버는 부분 수정이 아니라 **세 값을 통째로 받는다.** 하나만 보내면 나머지가
+ * 무엇이었는지 서버가 되짚어야 하고, 그 사이 다른 사람이 바꾼 값이 조용히
+ * 되돌아간다. 그래서 지금 화면이 알고 있는 관리자에서 나머지를 채워 보낸다.
+ */
+interface ManagerUpdateBody {
+  name: string;
+  roleId: number;
+  status: ManagerStatus;
+}
+
+const toUpdateBody = (
+  manager: Manager,
+  patch: Partial<ManagerUpdateBody>,
+): ManagerUpdateBody => ({
+  name: patch.name ?? manager.name,
+  roleId: patch.roleId ?? manager.roleId,
+  status: patch.status ?? manager.status,
+});
+
+/** 초대. 이메일은 이때만 정할 수 있고 이후에는 바꾸지 못한다(로그인 계정이다). */
 export const inviteManager = async (values: ManagerFormValues) => {
-  const response = await adminAxios.post<ManagerCredentialIssued>(
+  const response = await liveAxios.post<ManagerCredentialIssued>(
     "/admin/managers",
     values,
   );
@@ -19,39 +42,45 @@ export const inviteManager = async (values: ManagerFormValues) => {
 };
 
 export const updateManager = async (
-  managerId: number,
-  values: ManagerFormValues,
+  manager: Manager,
+  patch: Partial<ManagerUpdateBody>,
 ) => {
-  const response = await adminAxios.put<Manager>(
-    `/admin/managers/${managerId}`,
-    values,
+  const response = await liveAxios.patch<Manager>(
+    `/admin/managers/${manager.managerId}`,
+    toUpdateBody(manager, patch),
   );
 
   return response.data;
 };
 
-export const updateManagerStatus = async (
-  managerId: number,
-  status: ManagerStatus,
-) => {
-  const response = await adminAxios.patch<Manager>(
-    `/admin/managers/${managerId}/status`,
-    { status },
-  );
+/**
+ * 잠금 해제.
+ *
+ * 상태 변경(`PATCH`)으로 처리하지 않는다. 잠금은 상태 하나가 아니라
+ * **잠긴 시각과 실패 누적까지 함께 지워야** 풀리고, 그 판단은 서버가 한다.
+ * 상태만 ACTIVE로 바꾸면 실패 횟수가 남아 다음 오타 한 번에 다시 잠긴다.
+ */
+export const unlockManager = async (managerId: number) => {
+  await liveAxios.post(`/admin/managers/${managerId}/unlock`);
+};
 
-  return response.data;
+/**
+ * 관리자 삭제. 계정을 실제로 지운다.
+ *
+ * 이메일이 즉시 풀려 같은 주소로 다시 초대할 수 있다. 다만 새 계정은 다른 id를
+ * 받으므로 지운 계정이 남긴 활동 기록과는 이어지지 않는다 — 운영 로그는 실행자를
+ * id로만 적기 때문에 지운 뒤에는 이름으로 되짚을 수 없다.
+ */
+export const deleteManager = async (managerId: number) => {
+  await liveAxios.delete(`/admin/managers/${managerId}`);
 };
 
 export const resetManagerPassword = async (managerId: number) => {
-  const response = await adminAxios.post<ManagerCredentialIssued>(
-    `/admin/managers/${managerId}/password-reset`,
+  const response = await liveAxios.post<ManagerCredentialIssued>(
+    `/admin/managers/${managerId}/reset-password`,
   );
 
   return response.data;
-};
-
-export const deleteManager = async (managerId: number) => {
-  await adminAxios.delete(`/admin/managers/${managerId}`);
 };
 
 const STATUS_MESSAGE: Partial<Record<ManagerStatus, string>> = {
@@ -59,7 +88,7 @@ const STATUS_MESSAGE: Partial<Record<ManagerStatus, string>> = {
   INACTIVE: "계정을 비활성화했습니다.",
 };
 
-/** 관리자 초대·수정·상태 변경·비밀번호 초기화·삭제 후 목록을 갱신합니다. */
+/** 관리자 초대·수정·상태 변경·잠금 해제·비밀번호 초기화 후 목록을 갱신합니다. */
 export const useManagerMutation = () => {
   const queryClient = useQueryClient();
 
@@ -85,9 +114,10 @@ export const useManagerMutation = () => {
   const updateMutation = useMutation<
     Manager,
     AppError,
-    { managerId: number; values: ManagerFormValues }
+    { manager: Manager; values: ManagerFormValues }
   >({
-    mutationFn: ({ managerId, values }) => updateManager(managerId, values),
+    mutationFn: ({ manager, values }) =>
+      updateManager(manager, { name: values.name, roleId: values.roleId }),
     onSuccess: () => {
       showAppToast("success", "관리자 정보를 수정했습니다.");
       invalidateManagerList();
@@ -97,17 +127,35 @@ export const useManagerMutation = () => {
   const statusMutation = useMutation<
     Manager,
     AppError,
-    { managerId: number; status: ManagerStatus }
+    { manager: Manager; status: ManagerStatus }
   >({
-    mutationFn: ({ managerId, status }) =>
-      updateManagerStatus(managerId, status),
-    onSuccess: (manager, { status }) => {
+    mutationFn: ({ manager, status }) => updateManager(manager, { status }),
+    onSuccess: (_manager, { status }) => {
       showAppToast(
         "success",
-        // 잠금을 풀었는데 아직 임시 비밀번호라면 초대 상태로 돌아간다.
-        manager.status === "INVITED" && status === "ACTIVE"
-          ? "잠금을 해제했습니다. 임시 비밀번호를 다시 안내해 주세요."
-          : (STATUS_MESSAGE[status] ?? "계정 상태를 변경했습니다."),
+        STATUS_MESSAGE[status] ?? "계정 상태를 변경했습니다.",
+      );
+      invalidateManagerList();
+    },
+  });
+
+  const deleteMutation = useMutation<void, AppError, Manager>({
+    mutationFn: (manager) => deleteManager(manager.managerId),
+    onSuccess: () => {
+      showAppToast("success", "관리자 계정을 삭제했습니다.");
+      invalidateManagerList();
+    },
+  });
+
+  const unlockMutation = useMutation<void, AppError, Manager>({
+    mutationFn: (manager) => unlockManager(manager.managerId),
+    onSuccess: (_result, manager) => {
+      showAppToast(
+        "success",
+        // 잠금을 풀어도 임시 비밀번호를 아직 안 바꿨다면 그대로 막혀 있다.
+        manager.passwordUpdatedAt
+          ? "잠금을 해제했습니다."
+          : "잠금을 해제했습니다. 임시 비밀번호를 다시 안내해 주세요.",
       );
       invalidateManagerList();
     },
@@ -122,18 +170,11 @@ export const useManagerMutation = () => {
     onSuccess: invalidateManagerList,
   });
 
-  const deleteMutation = useMutation<void, AppError, number>({
-    mutationFn: deleteManager,
-    onSuccess: () => {
-      showAppToast("success", "관리자를 삭제했습니다.");
-      invalidateManagerList();
-    },
-  });
-
   return {
     inviteMutation,
     updateMutation,
     statusMutation,
+    unlockMutation,
     passwordResetMutation,
     deleteMutation,
   };

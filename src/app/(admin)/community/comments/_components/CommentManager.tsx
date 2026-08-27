@@ -222,7 +222,7 @@ const CommentManager = () => {
         <Link
           href={getCommentTargetHref(row)}
           onClick={(event) => event.stopPropagation()}
-          className="flex min-w-0 items-center gap-1 text-[13px] text-font-1 transition hover:text-brand"
+          className="flex min-w-0 items-center gap-1 body-5 text-font-1 transition hover:text-brand"
         >
           <span className="truncate">{row.targetName}</span>
           <ExternalLink size={11} className="shrink-0" />
@@ -235,7 +235,7 @@ const CommentManager = () => {
       render: (row) => (
         <div className="min-w-0">
           {row.parentCommentId && (
-            <span className="mr-1 text-[12px] text-font-disabled">↳ 대댓글</span>
+            <span className="mr-1 body-6 text-font-disabled">↳ 대댓글</span>
           )}
           <span
             className={
@@ -248,7 +248,7 @@ const CommentManager = () => {
           </span>
 
           {row.hiddenReason && (
-            <p className="mt-1 text-[12px] text-warning">
+            <p className="mt-1 body-6 text-warning">
               사유: {row.hiddenReason}
             </p>
           )}
@@ -315,7 +315,7 @@ const CommentManager = () => {
       width: "80px",
       render: (row) => {
         if (row.status === "DELETED") {
-          return <span className="text-[12px] text-font-disabled">-</span>;
+          return <span className="body-6 text-font-disabled">-</span>;
         }
 
         return (

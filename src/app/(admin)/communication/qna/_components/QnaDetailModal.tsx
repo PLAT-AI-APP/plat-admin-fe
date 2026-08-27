@@ -121,17 +121,17 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
               </Badge>
             </div>
 
-            <h3 className="text-[17px] font-semibold text-font-0">
+            <h3 className="title-2 font-semibold text-font-0">
               {qna.title}
             </h3>
 
-            <p className="text-[13px] text-font-2">
+            <p className="body-5 text-font-2">
               {qna.userNickname} (#{qna.userId}) ·{" "}
               {formatDateTime(qna.createdAt)}
             </p>
           </div>
 
-          <div className="rounded-field border border-border-main bg-subtle p-4 text-[14px] whitespace-pre-wrap text-font-1">
+          <div className="rounded-field border border-border-main bg-subtle p-4 body-4 whitespace-pre-wrap text-font-1">
             {qna.content}
           </div>
 

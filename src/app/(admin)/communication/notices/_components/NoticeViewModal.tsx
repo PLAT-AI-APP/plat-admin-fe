@@ -85,12 +85,12 @@ const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) =>
             </Badge>
             {data.isPinned && <Badge tone="brand">상단 고정</Badge>}
 
-            <span className="ml-auto text-[12px] text-font-2 tabular-nums">
+            <span className="ml-auto body-6 text-font-2 tabular-nums">
               조회 {formatWithCommas(data.viewCount)}
             </span>
           </div>
 
-          <div className="rounded-field border border-border-main px-4 py-3 text-[14px]">
+          <div className="rounded-field border border-border-main px-4 py-3 body-4">
             <MarkdownContent content={data.content} />
           </div>
         </div>

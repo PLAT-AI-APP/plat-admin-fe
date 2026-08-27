@@ -292,7 +292,7 @@ const HashtagManager = () => {
           <SearchInput
             value={keyword}
             onSearch={(next) => setParams({ keyword: next })}
-            placeholder="해시태그 이름 · ID 검색"
+            placeholder="이름 · 번역 · ID 검색"
           />
 
           <div className="flex items-center gap-2">

@@ -73,7 +73,7 @@ const TrendChart = ({ trend, className }: TrendChartProps) => {
             setMetricKey(event.target.value as TrendMetricKey)
           }
           selectBoxClassName="h-8 w-[132px]"
-          className="text-[13px]"
+          className="body-5"
           aria-label="추이 지표 선택"
         />
       }

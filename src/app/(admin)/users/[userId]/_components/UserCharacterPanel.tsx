@@ -72,7 +72,7 @@ const UserCharacterPanel = ({ userId, nickname }: UserCharacterPanelProps) => {
         row.isNsfw ? (
           <Badge tone="danger">NSFW</Badge>
         ) : (
-          <span className="text-[13px] text-font-disabled">-</span>
+          <span className="body-5 text-font-disabled">-</span>
         ),
     },
     {
@@ -106,7 +106,7 @@ const UserCharacterPanel = ({ userId, nickname }: UserCharacterPanelProps) => {
       numeric: true,
       width: "110px",
       render: (row) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDate(row.createdAt)}
         </span>
       ),

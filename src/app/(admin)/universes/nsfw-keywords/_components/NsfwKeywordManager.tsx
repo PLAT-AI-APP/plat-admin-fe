@@ -68,7 +68,7 @@ const NsfwKeywordManager = () => {
       key: "keyword",
       header: "키워드",
       render: (row) => (
-        <span className="text-[14px] font-medium text-font-1">
+        <span className="body-4 font-medium text-font-1">
           {row.keyword}
         </span>
       ),
@@ -99,7 +99,7 @@ const NsfwKeywordManager = () => {
       width: "130px",
       numeric: true,
       render: (row) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDate(row.createdAt)}
         </span>
       ),

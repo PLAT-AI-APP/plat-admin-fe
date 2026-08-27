@@ -1,5 +1,8 @@
 import type { HashtagCategory } from "./hashtag";
-import type { ServiceLanguage } from "./language";
+import {
+  SERVICE_LANGUAGE_LABEL,
+  type ServiceLanguage,
+} from "./language";
 
 /** 캐릭터 노출 상태 */
 export type CharacterVisibility = "PUBLIC" | "PRIVATE" | "HIDDEN";
@@ -157,6 +160,14 @@ export interface Universe {
   characters: UniverseCharacter[];
   tags: string[];
   /**
+   * 이 세계관이 **번역을 갖춘 언어**. 한국어는 항상 포함된다.
+   *
+   * 메인 노출(배너 · 오늘의 PICK · 공식 맛보기 · 에셋 추천)은 언어별로 목록을
+   * 따로 관리하는데, 그 후보를 거르는 기준이 이 값이다. 영어 번역이 없는
+   * 세계관을 영어 목록에 실으면 앱에서는 한국어 원문이 그대로 나간다.
+   */
+  supportedLanguages: ServiceLanguage[];
+  /**
    * 공식 여부.
    *
    * **저장된 값이 아니라 조회 시점에 계산된 값이다.**
@@ -226,6 +237,24 @@ export const isExposableUniverse = (universe: UniverseExposureState) =>
   universe.visibility === "PUBLIC" &&
   universe.reviewStatus === "APPROVED";
 
+/** 해당 언어 번역을 갖춘 세계관인지. 언어별 큐레이션 후보를 거를 때 쓴다. */
+export const supportsLanguage = (
+  universe: Pick<Universe, "supportedLanguages">,
+  language: ServiceLanguage,
+) => universe.supportedLanguages.includes(language);
+
+/**
+ * 그 언어 화면에 나갈 수 있는 세계관인지.
+ *
+ * 노출 가능 상태(승인 · 공개 · 활성)만으로는 부족하다. **번역이 없는 언어의
+ * 목록에 실리면 앱에서는 그 자리에 한국어 원문이 나간다.** 언어별 목록은
+ * 상태와 번역을 함께 본다.
+ */
+export const isExposableInLanguage = (
+  universe: Universe,
+  language: ServiceLanguage,
+) => isExposableUniverse(universe) && supportsLanguage(universe, language);
+
 /**
  * 노출될 수 없는 이유. 화면에 그대로 찍는다.
  * 노출 가능하면 `undefined`.
@@ -243,6 +272,21 @@ export const universeBlockReason = (
 
   return undefined;
 };
+
+/**
+ * 그 언어 목록에 실을 수 없는 이유.
+ *
+ * 상태 문제(`universeBlockReason`)를 먼저 보고, 상태가 멀쩡하면 번역 여부를 본다.
+ * 번역이 없는 쪽이 더 흔한데 화면에 안 적어 두면 "왜 후보에 없지"를 매번 다시 찾는다.
+ */
+export const universeLanguageBlockReason = (
+  universe: Universe,
+  language: ServiceLanguage,
+): string | undefined =>
+  universeBlockReason(universe) ??
+  (supportsLanguage(universe, language)
+    ? undefined
+    : `${SERVICE_LANGUAGE_LABEL[language]} 번역 없음`);
 
 /* ------------------------------------------------------------------ */
 /* 실서버(plat-admin) 세계관 계약                                        */
@@ -271,8 +315,16 @@ export interface AdminUniverseListItem {
   commentEnabled: boolean;
   creatorId: string;
   creatorNickname: string;
-  /** 대표 이미지 파일 ID. 관리자 서버가 URL을 만들지 못해 ID만 온다. */
+  /** 대표 이미지 파일 ID. 관리자 서버가 URL을 만들지 못해 보통 ID만 온다. */
   profileImageFileId: string | null;
+  /**
+   * 서버가 만들어 준 이미지 URL. 관리자 서버는 대개 null을 준다.
+   *
+   * null이어도 화면은 `profileImageFileId`로 공개 이미지 경로를 조립해
+   * 실제 이미지를 그린다(`src/lib/imageUrl.ts`). 이 필드를 남겨 두는 이유는
+   * **서버가 URL을 채워 주기 시작하는 날 화면을 고치지 않기 위해서**다.
+   */
+  profileImageUrl: string | null;
   hashtagCount: number;
   scenarioCount: number;
   /** 번역이 채워진 언어 수 */
@@ -315,6 +367,8 @@ export interface UniverseCharacterView {
   characterId: string;
   name: string | null;
   profileImageFileId: string | null;
+  /** 서버가 만들어 준 URL. 보통 null이며 fileId로 조립한다. */
+  profileImageUrl: string | null;
 }
 
 /** 세계관 에셋 한 장. 신고 대응 시 실제 이미지를 확인하는 자리다. */
@@ -363,6 +417,8 @@ export interface UniverseDetail {
   chatCount: number;
   likeCount: number;
   profileImageFileId: string | null;
+  /** 서버가 만들어 준 URL. 보통 null이며 fileId로 조립한다. */
+  profileImageUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
   deletedAt: string | null;

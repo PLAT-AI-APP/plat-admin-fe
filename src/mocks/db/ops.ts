@@ -304,30 +304,6 @@ export const buildServerHealth = () => {
   };
 };
 
-/** 최근 24시간 자원 사용률 추이 (1시간 단위) */
-export const serverMetrics: ServerMetricPoint[] = Array.from(
-  { length: 24 },
-  (_, index) => {
-    const seed = index + 1;
-    const capturedAt = new Date();
-    capturedAt.setMinutes(0, 0, 0);
-    capturedAt.setHours(capturedAt.getHours() - (23 - index));
-
-    return {
-      capturedAt: capturedAt.toISOString(),
-      cpuUsage: randomInt(seed * 3, 16, 68),
-      memoryUsage: randomInt(seed * 6, 40, 82),
-      requestCount: randomInt(seed * 9, 8_400, 42_000),
-      errorCount: randomInt(seed * 12, 0, 46),
-    };
-  },
-);
-
-/* -------------------------------------------------------------------------
- * 운영 로그
- * ---------------------------------------------------------------------- */
-
-/** 로그 도메인. 필터 옵션과 목업 생성에 함께 쓴다. */
 export const LOG_DOMAINS = [
   "USER",
   "CHARACTER",

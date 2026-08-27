@@ -55,7 +55,7 @@ const UserCommentPanel = ({ userId, nickname }: UserCommentPanelProps) => {
       render: (row) => (
         <Link
           href={getCommentTargetHref(row)}
-          className="flex min-w-0 items-center gap-1 text-[13px] text-font-1 transition hover:text-brand"
+          className="flex min-w-0 items-center gap-1 body-5 text-font-1 transition hover:text-brand"
         >
           <span className="truncate">{row.targetName}</span>
           <ExternalLink size={11} className="shrink-0" />
@@ -68,7 +68,7 @@ const UserCommentPanel = ({ userId, nickname }: UserCommentPanelProps) => {
       render: (row) => (
         <div className="min-w-0">
           {row.parentCommentId && (
-            <span className="mr-1 text-[12px] text-font-disabled">↳ 대댓글</span>
+            <span className="mr-1 body-6 text-font-disabled">↳ 대댓글</span>
           )}
           <span
             className={
@@ -81,7 +81,7 @@ const UserCommentPanel = ({ userId, nickname }: UserCommentPanelProps) => {
           </span>
 
           {row.hiddenReason && (
-            <p className="mt-1 text-[12px] text-warning">
+            <p className="mt-1 body-6 text-warning">
               사유: {row.hiddenReason}
             </p>
           )}
@@ -136,7 +136,7 @@ const UserCommentPanel = ({ userId, nickname }: UserCommentPanelProps) => {
       action={
         <Link
           href={`/community/comments?keyword=${encodeURIComponent(nickname)}`}
-          className="flex items-center gap-1 text-[13px] text-font-2 transition hover:text-brand"
+          className="flex items-center gap-1 body-5 text-font-2 transition hover:text-brand"
         >
           댓글 관리에서 보기
           <ExternalLink size={12} />

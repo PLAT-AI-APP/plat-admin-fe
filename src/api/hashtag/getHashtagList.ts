@@ -3,20 +3,21 @@ import { liveAxios } from "..";
 import type { AppError, PageResponse } from "@/type/api";
 import type { Hashtag, HashtagCategory, HashtagSort } from "@/type/hashtag";
 
-/** 서버가 실제로 받는 조건. 검색어·페이지는 여기에 없다. */
+/** 서버가 실제로 받는 조건. 페이지만 여기에 없다. */
 export interface HashtagFilterParams {
   category?: HashtagCategory | "";
   /** 노출 여부. "true" | "false" | "" (전체) */
   isActive?: string;
   /** 성인 태그 여부. "true" | "false" | "" (전체) */
   isAdult?: string;
+  /** 검색어. 서버가 언어별 라벨 전체와 ID를 훑는다. */
+  keyword?: string;
   sort?: HashtagSort;
 }
 
 export interface HashtagListParams extends HashtagFilterParams {
   page: number;
   size: number;
-  keyword?: string;
 }
 
 /** 서버 목록 항목. ID는 API 경계에서 문자열로 온다(Snowflake 규약). */
@@ -54,24 +55,9 @@ const toRequestParams = (filters: HashtagFilterParams) => ({
   category: filters.category || undefined,
   isEnabled: filters.isActive || undefined,
   isAdult: filters.isAdult || undefined,
+  keyword: filters.keyword?.trim() || undefined,
   sort: filters.sort || undefined,
 });
-
-/**
- * 서버는 검색어를 받지 않으므로 받아 온 목록에서 직접 걸러낸다.
- * 목록에는 한국어 라벨만 오기 때문에 검색 대상도 한국어 라벨과 ID뿐이다.
- */
-const filterByKeyword = (hashtags: Hashtag[], keyword?: string) => {
-  const trimmed = keyword?.trim().toLowerCase();
-
-  if (!trimmed) return hashtags;
-
-  return hashtags.filter(
-    (hashtag) =>
-      hashtag.name.toLowerCase().includes(trimmed) ||
-      String(hashtag.hashtagId) === trimmed,
-  );
-};
 
 /** 서버가 조건에 맞는 전체를 한 번에 주므로 페이지 분할도 화면에서 한다. */
 const paginate = (
@@ -104,19 +90,19 @@ export const getHashtagList = async (
 /**
  * 관리자가 등록해 둔 해시태그 목록을 조회합니다. 사용자는 이 목록에서만 태그를 고를 수 있습니다.
  *
- * 서버가 검색어·페이징을 지원하지 않아 두 가지는 받아 온 뒤 화면에서 처리합니다.
- * 캐시는 **서버에 실제로 보내는 조건**으로만 잡으므로 검색어를 고치거나 페이지를
- * 넘겨도 다시 요청하지 않습니다.
+ * 검색은 서버가 합니다. 목록 응답에는 한국어 라벨만 실려서 화면에서 거르면
+ * **번역만 아는 태그를 찾을 수 없기** 때문입니다. 페이징만 서버에 없어 받아 온
+ * 뒤 화면에서 자릅니다 — 캐시 키에 페이지를 넣지 않으므로 페이지를 넘겨도
+ * 다시 요청하지 않습니다.
  */
 export const useHashtagListQuery = ({
   page,
   size,
-  keyword,
   ...filters
 }: HashtagListParams) => {
   return useQuery<Hashtag[], AppError, PageResponse<Hashtag>>({
     queryKey: ["get-hashtag-list", filters],
     queryFn: () => getHashtagList(filters),
-    select: (hashtags) => paginate(filterByKeyword(hashtags, keyword), page, size),
+    select: (hashtags) => paginate(hashtags, page, size),
   });
 };

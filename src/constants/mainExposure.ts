@@ -5,6 +5,9 @@ import type { CurationSlotConfig, CurationSlotKey } from "@/type/mainExposure";
  *
  * 세 화면(오늘의 PICK / 공식 캐릭터 맛보기 / 에셋 추천)은
  * 동일한 "세계관 선택" 화면이며 아래 설정값만 다르다.
+ *
+ * **최대 개수는 언어 하나당 개수다.** 목록 자체가 언어별로 따로 있어,
+ * 한국어 10개와 영어 10개는 서로 다른 자리를 차지한다.
  */
 export const CURATION_SLOT_CONFIG: Record<CurationSlotKey, CurationSlotConfig> =
   {

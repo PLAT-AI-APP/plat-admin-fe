@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { LOGIN_PATH } from "@/api";
+import { useSyncMyProfile } from "@/api/auth/getMe";
 import { useAdminStore } from "@/store/useAdminStore";
 import Spinner from "@/components/ui/Spinner";
 import PasswordChangeModal from "./PasswordChangeModal";
@@ -28,6 +29,13 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     hydrate();
   }, [hydrate]);
 
+  /*
+    저장해 둔 세션은 로그인 시점의 사본이다. 그 사이 직책이나 권한이 바뀌었을 수
+    있으므로 콘솔을 열 때 서버에 한 번 물어 맞춘다. 토큰이 죽었으면 여기서 401이
+    나고 인터셉터가 로그인 화면으로 보낸다.
+  */
+  useSyncMyProfile();
+
   useEffect(() => {
     if (!isHydrated || admin) return;
 
@@ -47,18 +55,26 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  return (
-    <>
-      {children}
+  /*
+    임시 비밀번호를 쓰는 계정은 **콘솔을 아예 그리지 않는다.**
 
-      {/* 임시 비밀번호를 쓰는 계정은 바꾸기 전까지 아무것도 할 수 없다. */}
-      <PasswordChangeModal
-        isOpen={mustChangePassword}
-        onClose={() => {}}
-        isForced
-      />
-    </>
-  );
+    서버가 이 계정에 주는 권한은 PASSWORD_CHANGE_REQUIRED 하나뿐이라
+    `/admin/auth/**` 밖은 전부 403이다. 모달만 덮고 뒤에서 화면을 그리면
+    사이드바 뱃지부터 목록 조회까지 전부 403으로 끝나고, 비밀번호를 바꾸는
+    순간 오류로 뒤덮인 콘솔이 드러난다. 서버가 닫아 둔 것은 화면도 열지 않는다.
+
+    바꾸고 나면 같은 토큰이 곧바로 직책의 전체 권한을 받는다 — 권한은 토큰이
+    아니라 요청마다 직책에서 읽기 때문이다. 그래서 다시 로그인할 필요가 없다.
+  */
+  if (mustChangePassword) {
+    return (
+      <div className="h-dvh w-full bg-bg-base">
+        <PasswordChangeModal isOpen onClose={() => {}} isForced />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 };
 
 export default AuthGuard;

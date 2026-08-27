@@ -61,7 +61,7 @@ const Header = () => {
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border-main bg-surface px-6">
-      <nav className="flex min-w-0 items-center gap-1.5 text-[13px] text-font-2">
+      <nav className="flex min-w-0 items-center gap-1.5 body-5 text-font-2">
         {breadcrumb.map((label, index) => (
           <span key={label} className="flex items-center gap-1.5">
             {index > 0 && <ChevronRight size={13} />}
@@ -85,11 +85,11 @@ const Header = () => {
               new KeyboardEvent("keydown", { key: "k", metaKey: true }),
             )
           }
-          className="flex h-8 items-center gap-2 rounded-field border border-border-main px-2.5 text-[13px] text-font-2 transition hover:bg-surface-hover hover:text-font-1"
+          className="flex h-8 items-center gap-2 rounded-field border border-border-main px-2.5 body-5 text-font-2 transition hover:bg-surface-hover hover:text-font-1"
         >
           <Search size={15} />
           메뉴 검색
-          <kbd className="rounded-[5px] bg-subtle px-1.5 py-0.5 text-[11px]">
+          <kbd className="rounded-chip bg-subtle px-1.5 py-0.5 caption-3">
             ⌘K
           </kbd>
         </button>
@@ -126,15 +126,15 @@ const Header = () => {
                   type="button"
                   className="flex items-center gap-2.5 rounded-field py-1 pr-2 pl-1 transition hover:bg-surface-hover"
                 >
-                  <span className="flex size-8 items-center justify-center rounded-full bg-brand-opacity text-[13px] font-semibold text-brand">
+                  <span className="flex size-8 items-center justify-center rounded-full bg-brand-opacity body-5 font-semibold text-brand">
                     {admin.name.slice(0, 1)}
                   </span>
 
                   <span className="text-left leading-tight">
-                    <span className="block text-[13px] font-medium text-font-1">
+                    <span className="block body-5 font-medium text-font-1">
                       {admin.name}
                     </span>
-                    <span className="block text-[12px] text-font-2">
+                    <span className="block body-6 text-font-2">
                       {admin.roleName}
                     </span>
                   </span>

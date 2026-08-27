@@ -11,6 +11,7 @@ import type {
   UniverseStatus,
   UniverseTendency,
 } from "@/type/character";
+import type { ServiceLanguage } from "@/type/language";
 import { daysAgo, pickOne, randomInt } from "../utils";
 import { CHARACTER_TAG_POOL, hashtags } from "./hashtag";
 import { creatorUsers, officialCreatorUsers, users } from "./user";
@@ -73,6 +74,31 @@ const buildTags = (seed: number): string[] => {
   ).filter((tag, index, tags) => tags.indexOf(tag) === index);
 };
 
+/**
+ * 언어별 번역 보유율(%).
+ *
+ * **모든 세계관이 6개 언어를 다 갖춘 시드를 넣으면 안 된다.** 그러면 언어별
+ * 후보 목록이 전부 똑같아져서, 언어를 나눈 이유(영어 번역이 없는 세계관은
+ * 영어 목록에 못 오른다)가 화면에서 확인되지 않는다.
+ */
+const TRANSLATION_RATE: Record<Exclude<ServiceLanguage, "KO">, number> = {
+  EN: 62,
+  JA: 45,
+  ZH: 30,
+  TH: 20,
+  VI: 14,
+};
+
+/** seed 기반 번역 보유 언어. 한국어는 원문이라 항상 있다. */
+const buildSupportedLanguages = (seed: number): ServiceLanguage[] => [
+  "KO",
+  ...Object.entries(TRANSLATION_RATE)
+    .filter(
+      ([, rate], index) => randomInt(seed * 13 + index * 7, 0, 99) < rate,
+    )
+    .map(([language]) => language as ServiceLanguage),
+];
+
 /** 캐릭터가 만들어진 날. 세계관 등록일이 이보다 앞서지 않도록 여기서 한 번만 계산한다. */
 const characterCreatedDaysAgo = (index: number) => index * 3 + 2;
 
@@ -133,8 +159,15 @@ const REVIEW_REJECTION_REASONS = [
   "제목과 내용이 서로 맞지 않습니다.",
 ];
 
-/** 서버 파일 설정(`file.temp.release-expiration: P1D`)과 같은 파기 유예 기간 */
-const PURGE_GRACE_DAYS = 1;
+/**
+ * 삭제 후 콘텐츠가 실제로 파기되기까지의 유예 기간(일).
+ *
+ * 서버 설정에서 확인된 `P1D`는 **임시 업로드 파일**의 해제 주기이지 세계관
+ * 파기 주기가 아니다. 세계관 파기 주기는 설정에서 확인하지 못했으므로
+ * 복구 문의를 받을 수 있는 현실적인 길이로 30일을 가정한다.
+ * 실제 값이 확인되면 여기만 고친다.
+ */
+const PURGE_GRACE_DAYS = 30;
 
 /**
  * 세계관 ↔ 캐릭터 매핑. 서버 `universe_character_mappings`에 해당한다.
@@ -181,7 +214,18 @@ export const universes: Universe[] = characterBases.flatMap(
               : "ACTIVE";
       const isDeleted = status === "DELETED" || status === "PURGED";
       // 삭제는 등록 이후, 오늘 사이에 일어난다.
-      const deletedDaysAgo = randomInt(seed * 3, 0, createdDaysAgo);
+      /*
+        삭제 시점.
+
+        파기 대기(`DELETED`) 세계관은 **유예 기간 안에 삭제된 것**이어야 한다.
+        유예를 넘긴 것은 정리 스케줄이 이미 `PURGED`로 바꿨을 것이므로,
+        오래전에 지워졌는데 아직 대기 중인 자료는 실제로 생길 수 없다.
+        그런 시드를 두면 화면의 파기 D-day가 전부 "기한 초과"로만 나온다.
+      */
+      const deletedDaysAgo =
+        status === "DELETED"
+          ? randomInt(seed * 3, 0, PURGE_GRACE_DAYS - 1)
+          : randomInt(seed * 3, 0, createdDaysAgo);
 
       return {
         universeId: seed,
@@ -204,6 +248,7 @@ export const universes: Universe[] = characterBases.flatMap(
           "오래전 봉인된 기억을 따라가며, 당신과 함께 잃어버린 조각을 되찾는 이야기입니다.",
         thumbnailUrl: `https://picsum.photos/seed/plat-universe-${seed}/1200/440`,
         tags: buildTags(seed * 2),
+        supportedLanguages: buildSupportedLanguages(seed),
         /* 공식 여부는 공식 계정 목록에서 파생된다. db/official의 syncOfficialFlags가 채운다. */
         isOfficial: false,
         visibility:
@@ -437,6 +482,63 @@ export const nsfwKeywords: NsfwKeyword[] = [
   hitCount: randomInt(index + 20, 0, 320),
   createdAt: daysAgo(index * 4 + 3),
 }));
+
+/**
+ * 캐릭터 검수 부가 정보.
+ *
+ * **`Character`에 필드를 더하지 않고 옆 테이블로 둔다.** 캐릭터 시드는
+ * 신고 · 공식 계정 · 댓글 · 전역 검색이 함께 읽는 공용 데이터라, 여기에
+ * 화면 하나가 필요한 필드를 얹으면 그 도메인들이 모두 영향을 받는다.
+ * 실서버에도 캐릭터 검수 API가 아직 없어(`CharacterController`는 빈 껍데기)
+ * 어차피 별도 응답으로 붙을 값들이다.
+ */
+export interface CharacterModeration {
+  characterId: number;
+  /**
+   * NSFW 판정에 걸린 키워드. `Character.isNsfw`가 참인 근거다.
+   *
+   * 뱃지만 있고 근거가 없으면 운영자가 오탐을 판단할 수 없다.
+   * 값은 `nsfwKeywords`(= `/universes/nsfw-keywords` 화면)에서만 고른다.
+   * 등록된 키워드 목록과 어긋나면 "이 키워드로 걸렸다"는 말이 성립하지 않는다.
+   */
+  nsfwMatchedKeywordIds: number[];
+  /** 차단 사유. `status`가 `BLOCKED`일 때만 있다. */
+  blockedReason?: string;
+  blockedAt?: string;
+}
+
+const CHARACTER_BLOCK_REASONS = [
+  "타 IP 캐릭터를 그대로 옮긴 것으로 확인되어 차단했습니다.",
+  "미성년으로 읽히는 설정과 선정적 묘사가 함께 있어 차단했습니다.",
+  "신고 누적으로 검수 전까지 노출을 중단했습니다.",
+];
+
+export const characterModerations: CharacterModeration[] = characters.map(
+  (character, index) => {
+    const seed = index + 1;
+    /*
+      NSFW로 걸린 캐릭터만 매칭 키워드를 갖는다. 1~2개를 고른다.
+      걸리지 않은 캐릭터에 키워드를 붙이면 뱃지와 근거가 어긋난다.
+    */
+    const matchCount = character.isNsfw ? randomInt(seed * 31, 1, 2) : 0;
+    const nsfwMatchedKeywordIds = Array.from(
+      { length: matchCount },
+      (_, matchIndex) =>
+        pickOne(seed * 37 + matchIndex * 13, nsfwKeywords).keywordId,
+    ).filter((id, idx, ids) => ids.indexOf(id) === idx);
+
+    const isBlocked = character.status === "BLOCKED";
+
+    return {
+      characterId: character.characterId,
+      nsfwMatchedKeywordIds,
+      blockedReason: isBlocked
+        ? pickOne(seed * 41, CHARACTER_BLOCK_REASONS)
+        : undefined,
+      blockedAt: isBlocked ? daysAgo(index + 2, 16) : undefined,
+    };
+  },
+);
 
 export const chatExportJobs: ChatExportJob[] = Array.from(
   { length: 6 },

@@ -1,5 +1,4 @@
 import { aiHandlers } from "./ai";
-import { authHandlers } from "./auth";
 import { auditLogHandlers } from "./auditLog";
 import { billingHandlers } from "./billing";
 import { characterHandlers } from "./character";
@@ -31,8 +30,6 @@ import { userHandlers } from "./user";
 export const handlers = [
   // 감사 로그는 모든 변경 요청을 먼저 가로채야 하므로 항상 맨 앞에 둔다.
   ...auditLogHandlers,
-  // 인증은 감사 대상이 아니고(비밀번호가 본문에 있다) 다른 핸들러보다 앞선다.
-  ...authHandlers,
   ...fileHandlers,
   ...searchHandlers,
   ...dashboardHandlers,

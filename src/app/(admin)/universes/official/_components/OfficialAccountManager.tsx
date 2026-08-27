@@ -115,10 +115,10 @@ const OfficialAccountManager = () => {
           </div>
 
           <div className="min-w-0">
-            <p className="truncate text-[14px] font-medium text-font-1">
+            <p className="truncate body-4 font-medium text-font-1">
               {row.nickname}
             </p>
-            <p className="mt-0.5 text-[12px] text-font-2 tabular-nums">
+            <p className="mt-0.5 body-6 text-font-2 tabular-nums">
               #{row.userId}
             </p>
           </div>
@@ -154,7 +154,7 @@ const OfficialAccountManager = () => {
       key: "registeredBy",
       header: "등록자",
       render: (row) => (
-        <span className="text-[13px] text-font-2">{row.registeredBy}</span>
+        <span className="body-5 text-font-2">{row.registeredBy}</span>
       ),
     },
     {
@@ -163,7 +163,7 @@ const OfficialAccountManager = () => {
       align: "right",
       numeric: true,
       render: (row) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDate(row.registeredAt)}
         </span>
       ),
@@ -240,7 +240,7 @@ const OfficialAccountManager = () => {
           emptyTitle="공식으로 지정된 계정이 없습니다."
           emptyDescription="유저 ID를 등록하면 그 계정의 세계관이 공식으로 표시됩니다."
           emptyAction={
-            <span className="inline-flex items-center gap-1.5 text-[13px] text-font-2">
+            <span className="inline-flex items-center gap-1.5 body-5 text-font-2">
               <Crown size={15} />
               PLAT이 직접 운영하는 크리에이터 계정을 등록합니다.
             </span>

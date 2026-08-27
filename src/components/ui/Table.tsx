@@ -54,7 +54,7 @@ const Table = <T,>({
 
   return (
     <div className={cn("w-full overflow-x-auto scrollbar-thin", className)}>
-      <table className="w-full min-w-max text-[14px]">
+      <table className="w-full min-w-max body-4">
         <thead>
           <tr className="bg-subtle">
             {columns.map(({ key, header, width, align = "left" }) => (
@@ -62,7 +62,7 @@ const Table = <T,>({
                 key={key}
                 style={{ width }}
                 className={cn(
-                  "px-4 py-3 text-[13px] font-medium whitespace-nowrap text-font-2",
+                  "px-4 py-3 body-5 font-medium whitespace-nowrap text-font-2",
                   ALIGN_CLASS[align],
                 )}
               >
@@ -134,6 +134,6 @@ export const TableCellStack = ({
 }) => (
   <Fragment>
     <p className="text-font-1">{primary}</p>
-    {secondary && <p className="mt-0.5 text-[12px] text-font-2">{secondary}</p>}
+    {secondary && <p className="mt-0.5 body-6 text-font-2">{secondary}</p>}
   </Fragment>
 );

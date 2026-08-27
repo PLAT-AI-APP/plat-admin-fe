@@ -30,18 +30,18 @@ const FormField = ({
       <div className="flex items-center justify-between gap-2">
         <label
           htmlFor={htmlFor}
-          className="text-[13px] font-medium text-font-1"
+          className="body-5 font-medium text-font-1"
         >
           {label}
           {required && <span className="ml-0.5 text-font-error">*</span>}
         </label>
 
-        {hint && <span className="text-[12px] text-font-2">{hint}</span>}
+        {hint && <span className="body-6 text-font-2">{hint}</span>}
       </div>
 
       {children}
 
-      <p className="min-h-4 text-[12px] text-font-error">{error}</p>
+      <p className="min-h-4 body-6 text-font-error">{error}</p>
     </div>
   );
 };

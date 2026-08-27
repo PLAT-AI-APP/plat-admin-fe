@@ -71,7 +71,7 @@ const LegalDocumentViewModal = ({
             <Badge tone="neutral">비활성</Badge>
           )}
 
-          <span className="text-[13px] text-font-2">
+          <span className="body-5 text-font-2">
             문서 ID #{target.documentId}
           </span>
         </div>

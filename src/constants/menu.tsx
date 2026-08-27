@@ -335,6 +335,8 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/ops/app-versions",
         permission: "appVersion:read",
         icon: <Smartphone size={SUB_ICON_SIZE} />,
+        /* 강제 업데이트 정책을 아직 앱이 읽지 않는다. 화면은 붙일 때를 위해 남겨 둔다. */
+        isMock: true,
       },
       {
         label: "서버 상태",

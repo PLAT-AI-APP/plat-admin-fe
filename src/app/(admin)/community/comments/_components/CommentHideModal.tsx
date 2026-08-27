@@ -70,10 +70,10 @@ const CommentHideModal = ({
       <div className="flex flex-col gap-4">
         {!isBulk && targets?.[0] && (
           <div className="rounded-field border border-border-main bg-subtle p-3">
-            <p className="text-[12px] text-font-2">
+            <p className="body-6 text-font-2">
               {targets[0].authorNickname} · #{targets[0].commentId}
             </p>
-            <p className="mt-1 text-[13px] text-font-1">
+            <p className="mt-1 body-5 text-font-1">
               {truncate(targets[0].content, 120)}
             </p>
           </div>
@@ -92,7 +92,7 @@ const CommentHideModal = ({
                   key={preset}
                   type="button"
                   onClick={() => setReason(preset)}
-                  className="rounded-full border border-border-main px-2.5 py-1 text-[12px] text-font-2 transition hover:border-brand hover:text-brand"
+                  className="rounded-full border border-border-main px-2.5 py-1 body-6 text-font-2 transition hover:border-brand hover:text-brand"
                 >
                   {truncate(preset, 18)}
                 </button>

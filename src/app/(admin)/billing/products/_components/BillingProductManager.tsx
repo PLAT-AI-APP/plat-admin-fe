@@ -227,7 +227,7 @@ const BillingProductManager = () => {
       </Card>
 
       <Card title="상품 구성 안내">
-        <div className="flex items-start gap-2.5 text-[13px] text-font-2">
+        <div className="flex items-start gap-2.5 body-5 text-font-2">
           <Package size={18} className="mt-px shrink-0 text-font-disabled" />
           <p>
             총 크레딧은 지급 크레딧과 보너스 크레딧의 합입니다. 스토어 심사 정책상

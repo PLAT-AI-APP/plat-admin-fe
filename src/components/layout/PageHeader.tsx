@@ -21,9 +21,9 @@ const PageHeader = ({
       className={cn("flex items-start justify-between gap-6", className)}
     >
       <div className="min-w-0">
-        <h1 className="text-[28px] font-bold text-font-0">{title}</h1>
+        <h1 className="heading-1 font-bold text-font-0">{title}</h1>
         {description && (
-          <p className="mt-1.5 text-[14px] text-font-2">{description}</p>
+          <p className="mt-1.5 body-4 text-font-2">{description}</p>
         )}
       </div>
 

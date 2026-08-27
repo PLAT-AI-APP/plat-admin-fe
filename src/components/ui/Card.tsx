@@ -33,11 +33,11 @@ const Card = ({
       {title && (
         <header className="flex items-start justify-between gap-4 border-b border-border-main px-5 py-4">
           <div className="min-w-0">
-            <h2 className="text-[15px] font-semibold whitespace-nowrap text-font-1">
+            <h2 className="body-3 font-semibold whitespace-nowrap text-font-1">
               {title}
             </h2>
             {description && (
-              <p className="mt-1 text-[13px] text-font-2">{description}</p>
+              <p className="mt-1 body-5 text-font-2">{description}</p>
             )}
           </div>
 

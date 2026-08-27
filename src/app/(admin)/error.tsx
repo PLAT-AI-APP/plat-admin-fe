@@ -28,16 +28,16 @@ export default function AdminError({
           <Warning size={40} />
         </span>
 
-        <p className="text-[16px] font-semibold text-font-0">
+        <p className="body-2 font-semibold text-font-0">
           화면을 불러오지 못했습니다.
         </p>
-        <p className="text-[13px] text-font-2">
+        <p className="body-5 text-font-2">
           일시적인 문제일 수 있습니다. 다시 시도해도 같은 화면이 보이면
           개발팀에 아래 오류 코드를 전달해 주세요.
         </p>
 
         {error.digest && (
-          <code className="mt-1 rounded-field bg-subtle px-2.5 py-1 text-[12px] text-font-2">
+          <code className="mt-1 rounded-field bg-subtle px-2.5 py-1 body-6 text-font-2">
             {error.digest}
           </code>
         )}

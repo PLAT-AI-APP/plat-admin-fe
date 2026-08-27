@@ -163,7 +163,7 @@ const AiModelManager = () => {
       key: "memo",
       header: "메모",
       render: (model) => (
-        <p className="max-w-80 truncate text-[13px] text-font-2">
+        <p className="max-w-80 truncate body-5 text-font-2">
           {model.memo || "-"}
         </p>
       ),
@@ -173,7 +173,7 @@ const AiModelManager = () => {
       header: "수정일",
       numeric: true,
       render: (model) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDateTime(model.updatedAt)}
         </span>
       ),
@@ -204,13 +204,13 @@ const AiModelManager = () => {
 
       <Card noPadding>
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
-          <p className="text-[13px] text-font-2">
+          <p className="body-5 text-font-2">
             총 {formatWithCommas(models.length)}개 · 사용 중{" "}
             {formatWithCommas(models.filter((model) => model.isEnabled).length)}
             개
           </p>
 
-          <p className="text-[13px] text-font-2">
+          <p className="body-5 text-font-2">
             현재 기본 모델{" "}
             <span className="font-medium text-font-1">
               {defaultModel?.displayName ?? "미지정"}

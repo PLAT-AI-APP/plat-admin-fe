@@ -61,8 +61,7 @@ const ManagerFormModal = ({
     );
   }, [isOpen, manager, reset]);
 
-  const { data: roleData } = useAdminRoleListQuery();
-  const roles = roleData?.items ?? [];
+  const { data: roles = [] } = useAdminRoleListQuery();
 
   const roleOptions: SelectOption[] = roles.map((role) => ({
     label: role.name,
@@ -116,12 +115,19 @@ const ManagerFormModal = ({
           htmlFor="manager-email"
           required
           error={errors.email?.message}
-          hint="로그인 계정으로 사용됩니다."
+          /* 로그인 계정이라 바꾸지 못한다. 바꿀 수 있으면 그 시점부터 운영 로그의
+             실행자와 실제 로그인 계정이 어긋난다. */
+          hint={
+            manager
+              ? "로그인 계정이라 바꿀 수 없습니다."
+              : "로그인 계정으로 사용됩니다."
+          }
         >
           <Input
             id="manager-email"
             type="email"
             placeholder="name@plat.so"
+            disabled={Boolean(manager)}
             hasError={Boolean(errors.email)}
             {...register("email")}
           />

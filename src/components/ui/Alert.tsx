@@ -47,7 +47,7 @@ const Alert = ({
     >
       <span className="mt-px shrink-0">{TONE_ICON[tone]}</span>
 
-      <div className="min-w-0 flex-1 text-[13px]">
+      <div className="min-w-0 flex-1 body-5">
         {title && <p className="font-semibold">{title}</p>}
         {children && (
           <div className={cn("text-font-2", title && "mt-1")}>{children}</div>

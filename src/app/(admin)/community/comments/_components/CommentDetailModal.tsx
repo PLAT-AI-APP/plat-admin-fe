@@ -33,8 +33,8 @@ const DetailRow = ({
   children: ReactNode;
 }) => (
   <div className="flex items-start gap-4 py-2">
-    <p className="w-20 shrink-0 text-[13px] text-font-2">{label}</p>
-    <div className="min-w-0 flex-1 text-[13px] text-font-1">{children}</div>
+    <p className="w-20 shrink-0 body-5 text-font-2">{label}</p>
+    <div className="min-w-0 flex-1 body-5 text-font-1">{children}</div>
   </div>
 );
 
@@ -88,18 +88,18 @@ const CommentDetailModal = ({
             )}
           </div>
 
-          <div className="rounded-field border border-border-main px-4 py-3 text-[14px] whitespace-pre-line text-font-1">
+          <div className="rounded-field border border-border-main px-4 py-3 body-4 whitespace-pre-line text-font-1">
             {data.content}
           </div>
 
           {data.hiddenReason && (
             <div className="rounded-field border border-border-main bg-subtle px-4 py-3">
-              <p className="text-[13px] font-medium text-warning">숨김 사유</p>
-              <p className="mt-1 text-[13px] text-font-2">
+              <p className="body-5 font-medium text-warning">숨김 사유</p>
+              <p className="mt-1 body-5 text-font-2">
                 {data.hiddenReason}
               </p>
               {data.handledBy && (
-                <p className="mt-1 text-[12px] text-font-2">
+                <p className="mt-1 body-6 text-font-2">
                   {data.handledBy} · {formatDateTime(data.handledAt)}
                 </p>
               )}

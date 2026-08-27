@@ -80,7 +80,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
       header: "상품",
       width: "160px",
       render: (row) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {row.productName ?? "-"}
         </span>
       ),
@@ -88,7 +88,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
     {
       key: "memo",
       header: "메모",
-      render: (row) => <span className="text-[13px]">{row.memo}</span>,
+      render: (row) => <span className="body-5">{row.memo}</span>,
     },
     {
       key: "amount",
@@ -118,7 +118,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
       numeric: true,
       width: "150px",
       render: (row) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDateTime(row.createdAt)}
         </span>
       ),
@@ -158,7 +158,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
     {
       key: "reason",
       header: "사유",
-      render: (row) => <span className="text-[13px]">{row.reason}</span>,
+      render: (row) => <span className="body-5">{row.reason}</span>,
     },
     {
       key: "balanceAfter",
@@ -173,7 +173,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
       header: "처리자",
       width: "100px",
       render: (row) => (
-        <span className="text-[13px] text-font-2">{row.processedBy}</span>
+        <span className="body-5 text-font-2">{row.processedBy}</span>
       ),
     },
     {
@@ -183,7 +183,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
       numeric: true,
       width: "150px",
       render: (row) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDateTime(row.createdAt)}
         </span>
       ),

@@ -1,4 +1,5 @@
 import { HttpResponse, delay, http } from "msw";
+import { LIVE_BASE_URI } from "@/api/baseUri";
 import type { HashtagCategory, HashtagLanguage } from "@/type/hashtag";
 import { hashtags, type MockHashtag } from "../db/hashtag";
 import { MOCK_DELAY_MS, nextId } from "../utils";
@@ -7,15 +8,13 @@ import { MOCK_DELAY_MS, nextId } from "../utils";
  * 해시태그 목업.
  *
  * 이 도메인은 실서버(plat-be `plat-admin`)에 연동해 두었지만, 서버를 띄우지 않고도
- * 화면을 돌릴 수 있도록 **다시 목업으로 세운다.** 그래서 목업 베이스(8080)가 아니라
- * **실서버 베이스(8081)에 등록한다** — `src/api/hashtag/*`가 `liveAxios`로 그대로
+ * 화면을 돌릴 수 있도록 **다시 목업으로 세운다.** 그래서 목업 베이스가 아니라
+ * **실서버 베이스에 등록한다** — `src/api/hashtag/*`가 `liveAxios`로 그대로
  * 부르고, 실서버를 다시 붙일 때는 이 파일과 handlers/index.ts의 등록 줄만 지우면 된다.
  *
  * 응답 모양은 화면 타입이 아니라 **서버 DTO를 그대로 흉내 낸다.** 그래야
  * `src/api/hashtag/*`의 DTO → 화면 타입 변환이 실제와 같은 경로로 검증된다.
  */
-const LIVE_BASE_URI =
-  process.env.NEXT_PUBLIC_LIVE_BASE_URI ?? process.env.NEXT_PUBLIC_BASE_URI;
 
 /** 서버는 언어별 라벨을 언어 코드 필드로 내려준다. 비어 있으면 null이다. */
 const labelOf = (hashtag: MockHashtag, language: HashtagLanguage) =>

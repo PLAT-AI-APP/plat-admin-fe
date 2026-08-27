@@ -43,7 +43,7 @@ const OfficialUniversePanel = () => {
       width: "260px",
       render: (row) => (
         <div className="flex min-w-0 items-center gap-3">
-          <div className="relative h-10 w-16 shrink-0 overflow-hidden rounded-[8px] bg-subtle">
+          <div className="relative h-10 w-16 shrink-0 overflow-hidden rounded-chip bg-subtle">
             <Image
               src={row.thumbnailUrl}
               alt={row.name}
@@ -55,10 +55,10 @@ const OfficialUniversePanel = () => {
           </div>
 
           <div className="min-w-0">
-            <p className="truncate text-[14px] font-medium text-font-1">
+            <p className="truncate body-4 font-medium text-font-1">
               {row.name}
             </p>
-            <p className="mt-0.5 text-[12px] text-font-2 tabular-nums">
+            <p className="mt-0.5 body-6 text-font-2 tabular-nums">
               #{row.universeId}
             </p>
           </div>
@@ -69,7 +69,7 @@ const OfficialUniversePanel = () => {
       key: "creator",
       header: "소유 계정",
       render: (row) => (
-        <span className="text-[13px] text-font-2">{row.creatorNickname}</span>
+        <span className="body-5 text-font-2">{row.creatorNickname}</span>
       ),
     },
     {

@@ -96,7 +96,7 @@ const ModelCatalogManager = () => {
         const result = pingResults[item.model];
 
         if (!result) {
-          return <span className="text-[13px] text-font-disabled">-</span>;
+          return <span className="body-5 text-font-disabled">-</span>;
         }
 
         return (
@@ -114,7 +114,7 @@ const ModelCatalogManager = () => {
               {result.isSuccess ? "성공" : "실패"}
             </Badge>
 
-            <span className="text-[13px] tabular-nums text-font-2">
+            <span className="body-5 tabular-nums text-font-2">
               {formatWithCommas(result.latencyMs)}ms
             </span>
           </div>
@@ -152,7 +152,7 @@ const ModelCatalogManager = () => {
 
       <Card noPadding>
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
-          <p className="text-[13px] text-font-2">
+          <p className="body-5 text-font-2">
             총 {formatWithCommas(data?.length ?? 0)}개 모델
           </p>
 

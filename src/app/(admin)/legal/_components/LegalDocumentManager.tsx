@@ -91,7 +91,7 @@ const LegalDocumentManager = () => {
       width: "100px",
       render: (legalDocument) =>
         legalDocument.isActive ? (
-          <span className="inline-flex items-center gap-1 text-[13px] font-medium text-success">
+          <span className="inline-flex items-center gap-1 body-5 font-medium text-success">
             <CheckCircle size={16} />
             활성
           </span>
@@ -114,7 +114,7 @@ const LegalDocumentManager = () => {
       render: (legalDocument) => (
         <div className="max-w-150">
           {toContentPreviewLines(legalDocument.content).map((line, index) => (
-            <p key={index} className="truncate text-[13px] text-font-2">
+            <p key={index} className="truncate body-5 text-font-2">
               {line}
             </p>
           ))}
@@ -160,7 +160,7 @@ const LegalDocumentManager = () => {
         />
 
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
-          <p className="text-[13px] text-font-2 tabular-nums">
+          <p className="body-5 text-font-2 tabular-nums">
             총 {documents.length}건 (이 탭 기준)
           </p>
 

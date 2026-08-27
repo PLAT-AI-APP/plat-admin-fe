@@ -1,7 +1,7 @@
 import { http } from "msw";
 import type { OperationLog } from "@/type/ops";
 import { operationLogs } from "../db/ops";
-import { resolveManager } from "./auth";
+import { currentAdmin } from "../session";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
@@ -147,7 +147,7 @@ export const auditLogHandlers = [
       payload = undefined;
     }
 
-    const actor = resolveManager(request);
+    const actor = currentAdmin();
     const { targetType, targetId } = resolveTarget(pathname);
 
     operationLogs.unshift({

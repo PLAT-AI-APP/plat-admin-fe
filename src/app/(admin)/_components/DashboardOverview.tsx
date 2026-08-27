@@ -47,8 +47,8 @@ const PendingCard = ({
   <Card>
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <p className="text-[13px] text-font-2">{title}</p>
-        <p className="mt-2 text-[26px] font-bold text-font-0 tabular-nums">
+        <p className="body-5 text-font-2">{title}</p>
+        <p className="mt-2 heading-1 font-bold text-font-0 tabular-nums">
           {formatWithCommas(count)}건
         </p>
       </div>
@@ -58,7 +58,7 @@ const PendingCard = ({
 
     <Link
       href={href}
-      className="mt-3 inline-flex text-[13px] font-medium text-brand transition hover:underline"
+      className="mt-3 inline-flex body-5 font-medium text-brand transition hover:underline"
     >
       바로 가기
     </Link>
@@ -110,10 +110,10 @@ const DashboardOverview = () => {
         <Card>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[13px] text-font-2">서버 상태</p>
+              <p className="body-5 text-font-2">서버 상태</p>
 
               <div className="mt-2 flex items-center gap-2">
-                <span className="text-[26px] font-bold text-font-0">
+                <span className="heading-1 font-bold text-font-0">
                   {HEALTH_LABEL[data.serverStatus]}
                 </span>
                 <Badge tone={HEALTH_TONE[data.serverStatus]}>
@@ -127,13 +127,13 @@ const DashboardOverview = () => {
             </span>
           </div>
 
-          <p className="mt-2 text-[13px] text-font-2">
+          <p className="mt-2 body-5 text-font-2">
             {HEALTH_DESCRIPTION[data.serverStatus]}
           </p>
 
           <Link
             href="/ops/server"
-            className="mt-3 inline-flex text-[13px] font-medium text-brand transition hover:underline"
+            className="mt-3 inline-flex body-5 font-medium text-brand transition hover:underline"
           >
             상세 보기
           </Link>

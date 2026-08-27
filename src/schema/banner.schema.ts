@@ -1,33 +1,28 @@
 import { z } from "zod";
-
-/** 언어별 문구. 어떤 언어도 필수가 아니다 — 비우면 세계관 원본을 그대로 쓴다. */
-const localizedTextSchema = (max: number, message: string) =>
-  z.object({
-    KO: z.string().max(max, message),
-    EN: z.string().max(max, message),
-    JA: z.string().max(max, message),
-    ZH: z.string().max(max, message),
-    TH: z.string().max(max, message),
-    VI: z.string().max(max, message),
-  });
+import { SERVICE_LANGUAGES } from "@/type/language";
 
 export const bannerSchema = z
   .object({
+    /**
+     * 배너가 나갈 언어.
+     *
+     * 배너 한 건은 언어 하나에만 속한다. 목록·순서가 언어별로 나뉘어 있어
+     * 저장 대상 언어를 값으로 들고 있어야 한다.
+     */
+    language: z.enum(SERVICE_LANGUAGES, {
+      error: "언어를 선택해 주세요.",
+    }),
     // 업로드 API가 발급한 URL이 들어오므로 형식 검증은 하지 않고 존재 여부만 본다.
     imageUrl: z.string().min(1, "배너 이미지를 업로드해 주세요."),
     universeId: z
       .number({ error: "세계관을 선택해 주세요." })
       .int()
       .positive("세계관을 선택해 주세요."),
-    /* 언어별 오버라이드. 비운 언어는 한국어로, 한국어까지 비우면 세계관 원본으로 떨어진다. */
-    titleOverrides: localizedTextSchema(
-      40,
-      "제목은 40자 이내로 입력해 주세요.",
-    ),
-    descriptionOverrides: localizedTextSchema(
-      120,
-      "설명은 120자 이내로 입력해 주세요.",
-    ),
+    /* 비우면 세계관 원본을 그대로 쓴다. 그래서 어느 쪽도 필수가 아니다. */
+    titleOverride: z.string().max(40, "제목은 40자 이내로 입력해 주세요."),
+    descriptionOverride: z
+      .string()
+      .max(120, "설명은 120자 이내로 입력해 주세요."),
     /* 등록된 해시태그에서 고른 ID. 문자열을 직접 적게 두지 않는다. */
     hashtagIds: z
       .array(z.number())

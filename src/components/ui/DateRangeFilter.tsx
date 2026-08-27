@@ -62,7 +62,7 @@ const DateRangeFilter = ({
           type="button"
           onClick={() => onChange({ startDate: "", endDate: "" })}
           className={cn(
-            "rounded-[7px] px-2.5 py-1 text-[13px] transition",
+            "rounded-chip px-2.5 py-1 body-5 transition",
             isEmpty
               ? "bg-surface-selected font-medium text-brand"
               : "text-font-2 hover:bg-surface-hover hover:text-font-1",
@@ -77,7 +77,7 @@ const DateRangeFilter = ({
             type="button"
             onClick={() => onChange(toRange(preset))}
             className={cn(
-              "rounded-[7px] px-2.5 py-1 text-[13px] transition",
+              "rounded-chip px-2.5 py-1 body-5 transition",
               activePreset?.label === preset.label
                 ? "bg-surface-selected font-medium text-brand"
                 : "text-font-2 hover:bg-surface-hover hover:text-font-1",

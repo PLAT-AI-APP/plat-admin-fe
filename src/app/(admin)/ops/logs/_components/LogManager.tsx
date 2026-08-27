@@ -142,7 +142,7 @@ const LogManager = () => {
             <button
               type="button"
               onClick={() => setParams({ actorId: "" })}
-              className="shrink-0 text-[13px] font-medium underline"
+              className="shrink-0 body-5 font-medium underline"
             >
               전체 보기
             </button>

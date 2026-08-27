@@ -69,7 +69,7 @@ const ChatExportManager = () => {
       header: "추출 기간",
       width: "220px",
       render: (row) => (
-        <span className="text-[13px] text-font-2 tabular-nums">
+        <span className="body-5 text-font-2 tabular-nums">
           {formatDate(row.startDate)} ~ {formatDate(row.endDate)}
         </span>
       ),
@@ -93,7 +93,7 @@ const ChatExportManager = () => {
       numeric: true,
       render: (row) =>
         row.rowCount === undefined ? (
-          <span className="text-[13px] text-font-disabled">-</span>
+          <span className="body-5 text-font-disabled">-</span>
         ) : (
           formatWithCommas(row.rowCount)
         ),
@@ -104,7 +104,7 @@ const ChatExportManager = () => {
       align: "center",
       width: "100px",
       render: (row) => (
-        <span className="text-[13px] text-font-2">{row.requestedBy}</span>
+        <span className="body-5 text-font-2">{row.requestedBy}</span>
       ),
     },
     {
@@ -114,7 +114,7 @@ const ChatExportManager = () => {
       width: "150px",
       numeric: true,
       render: (row) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDateTime(row.createdAt)}
         </span>
       ),
@@ -135,7 +135,7 @@ const ChatExportManager = () => {
             다운로드
           </Button>
         ) : (
-          <span className="text-[13px] text-font-disabled">-</span>
+          <span className="body-5 text-font-disabled">-</span>
         ),
     },
   ];

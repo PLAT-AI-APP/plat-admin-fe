@@ -219,7 +219,7 @@ const UserManager = () => {
       render: (user) => (
         <TableCellStack
           primary={
-            <span className="text-[13px] text-font-2">{user.email}</span>
+            <span className="body-5 text-font-2">{user.email}</span>
           }
           secondary={
             <span className="tabular-nums">
@@ -292,7 +292,7 @@ const UserManager = () => {
       header: "마지막 로그인",
       numeric: true,
       render: (user) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDateTime(user.lastLoginAt)}
         </span>
       ),
@@ -302,7 +302,7 @@ const UserManager = () => {
       header: "가입일",
       numeric: true,
       render: (user) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDate(user.createdAt)}
         </span>
       ),

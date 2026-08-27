@@ -85,10 +85,10 @@ const NotificationTemplateModal = ({
       <form onSubmit={submit} className="flex flex-col gap-4">
         {template && (
           <div className="flex items-center gap-2 rounded-field border border-border-main bg-subtle px-4 py-3">
-            <span className="text-[13px] font-medium text-font-1">
+            <span className="body-5 font-medium text-font-1">
               {template.label}
             </span>
-            <span className="text-[12px] text-font-2">
+            <span className="body-6 text-font-2">
               {template.templateKey}
             </span>
             <Badge tone={NOTIFICATION_CHANNEL_TONE[template.channel]}>
@@ -128,7 +128,7 @@ const NotificationTemplateModal = ({
           />
         </FormField>
 
-        <p className="text-[12px] text-font-2">
+        <p className="body-6 text-font-2">
           중괄호로 감싼 변수는 발송 시점에 실제 값으로 치환됩니다. 정의되지 않은
           변수를 쓰면 문구가 그대로 노출되니 주의해 주세요.
         </p>

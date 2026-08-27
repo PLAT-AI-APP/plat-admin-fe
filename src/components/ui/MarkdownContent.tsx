@@ -11,17 +11,17 @@ import { cn } from "@/lib/utils";
  */
 const MARKDOWN_COMPONENTS: Components = {
   h1: ({ children }) => (
-    <h1 className="mt-6 mb-3 text-[20px] font-bold text-font-0 first:mt-0">
+    <h1 className="mt-6 mb-3 title-1 font-bold text-font-0 first:mt-0">
       {children}
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="mt-6 mb-2 border-b border-border-main pb-2 text-[17px] font-semibold text-font-0 first:mt-0">
+    <h2 className="mt-6 mb-2 border-b border-border-main pb-2 title-2 font-semibold text-font-0 first:mt-0">
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="mt-5 mb-2 text-[15px] font-semibold text-font-1 first:mt-0">
+    <h3 className="mt-5 mb-2 body-3 font-semibold text-font-1 first:mt-0">
       {children}
     </h3>
   ),
@@ -54,14 +54,14 @@ const MARKDOWN_COMPONENTS: Components = {
   ),
   hr: () => <hr className="my-5 border-border-main" />,
   code: ({ children }) => (
-    <code className="rounded-field bg-subtle px-1.5 py-0.5 text-[13px] text-font-1">
+    <code className="rounded-field bg-subtle px-1.5 py-0.5 body-5 text-font-1">
       {children}
     </code>
   ),
   // 표는 좁은 모달에서 넘칠 수 있어 자체 가로 스크롤 영역을 갖는다.
   table: ({ children }) => (
     <div className="my-3 w-full overflow-x-auto scrollbar-thin">
-      <table className="w-full min-w-max border-collapse text-[13px]">
+      <table className="w-full min-w-max border-collapse body-5">
         {children}
       </table>
     </div>
@@ -87,7 +87,7 @@ interface MarkdownContentProps {
 /** 법적 문서 본문(마크다운)을 화면에 렌더링한다. */
 const MarkdownContent = ({ content, className }: MarkdownContentProps) => {
   return (
-    <div className={cn("text-[14px] leading-relaxed text-font-1", className)}>
+    <div className={cn("body-4 leading-relaxed text-font-1", className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkBreaks]}
         components={MARKDOWN_COMPONENTS}

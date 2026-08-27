@@ -44,7 +44,7 @@ const commonColumns: TableColumn<Report>[] = [
     key: "detail",
     header: "신고 내용",
     render: (row) => (
-      <span className="text-[13px]">{truncate(row.detail, 50)}</span>
+      <span className="body-5">{truncate(row.detail, 50)}</span>
     ),
   },
   {
@@ -64,7 +64,7 @@ const commonColumns: TableColumn<Report>[] = [
     numeric: true,
     width: "150px",
     render: (row) => (
-      <span className="text-[13px] text-font-2">
+      <span className="body-5 text-font-2">
         {formatDateTime(row.createdAt)}
       </span>
     ),
@@ -111,7 +111,7 @@ const UserReportPanel = ({ userId }: UserReportPanelProps) => {
       render: (row) => (
         <Link
           href={getReportTargetHref(row)}
-          className="flex min-w-0 items-center gap-1 text-[13px] text-font-1 transition hover:text-brand"
+          className="flex min-w-0 items-center gap-1 body-5 text-font-1 transition hover:text-brand"
         >
           <span className="truncate">{row.targetName}</span>
           <ExternalLink size={11} className="shrink-0" />

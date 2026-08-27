@@ -205,19 +205,19 @@ const CommandPalette = () => {
             }}
             onKeyDown={handleInputKeyDown}
             placeholder="메뉴 · 유저 · 캐릭터 · 세계관 · 해시태그 검색"
-            className="h-12 flex-1 bg-transparent text-[14px] text-font-1 outline-none placeholder:text-font-disabled"
+            className="h-12 flex-1 bg-transparent body-4 text-font-1 outline-none placeholder:text-font-disabled"
           />
 
           {isFetching && <Spinner size={15} className="text-font-disabled" />}
 
-          <kbd className="shrink-0 rounded-[6px] bg-subtle px-1.5 py-0.5 text-[11px] text-font-2">
+          <kbd className="shrink-0 rounded-chip bg-subtle px-1.5 py-0.5 caption-3 text-font-2">
             ESC
           </kbd>
         </div>
 
         <ul className="flex-1 overflow-y-auto p-2 scrollbar-thin">
           {results.length === 0 && (
-            <li className="px-3 py-8 text-center text-[13px] text-font-2">
+            <li className="px-3 py-8 text-center body-5 text-font-2">
               {keyword.trim().length < 2
                 ? "두 글자 이상 입력하면 유저·캐릭터도 함께 찾습니다."
                 : "검색 결과가 없습니다."}
@@ -228,7 +228,7 @@ const CommandPalette = () => {
             <li key={`${item.groupLabel}-${item.href}`}>
               {/* 메뉴 목록과 데이터 목록 사이에 구분선을 넣는다. */}
               {index === menuResults.length && menuResults.length > 0 && (
-                <p className="mt-2 border-t border-border-main px-3 pt-3 pb-1 text-[12px] font-medium text-font-2">
+                <p className="mt-2 border-t border-border-main px-3 pt-3 pb-1 body-6 font-medium text-font-2">
                   검색 결과
                 </p>
               )}
@@ -244,22 +244,22 @@ const CommandPalette = () => {
                     : "text-font-1 hover:bg-surface-hover",
                 )}
               >
-                <span className="shrink-0 text-[12px] text-font-2">
+                <span className="shrink-0 body-6 text-font-2">
                   {item.groupLabel}
                 </span>
                 <ChevronRight size={13} className="shrink-0 text-font-disabled" />
-                <span className="min-w-0 flex-1 truncate text-[14px] font-medium">
+                <span className="min-w-0 flex-1 truncate body-4 font-medium">
                   {item.label}
                 </span>
 
                 {item.description && (
-                  <span className="shrink-0 truncate text-[12px] text-font-2">
+                  <span className="shrink-0 truncate body-6 text-font-2">
                     {item.description}
                   </span>
                 )}
 
                 {item.isExcludedFromMvp && (
-                  <Badge tone="neutral" className="px-1.5 py-0.5 text-[11px]">
+                  <Badge tone="neutral" className="px-1.5 py-0.5 caption-3">
                     MVP 제외
                   </Badge>
                 )}

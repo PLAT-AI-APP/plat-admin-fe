@@ -88,10 +88,10 @@ const AiModelFormModal = ({
         <form onSubmit={submit} className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3 rounded-field border border-border-main bg-subtle px-4 py-3">
             <div className="min-w-0">
-              <p className="text-[14px] font-medium text-font-1">
+              <p className="body-4 font-medium text-font-1">
                 {model.displayName}
               </p>
-              <p className="mt-0.5 text-[12px] text-font-2">{model.model}</p>
+              <p className="mt-0.5 body-6 text-font-2">{model.model}</p>
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
@@ -108,10 +108,10 @@ const AiModelFormModal = ({
             render={({ field }) => (
               <div className="flex items-center justify-between gap-4 rounded-field border border-border-main px-4 py-3">
                 <div className="min-w-0">
-                  <p className="text-[13px] font-medium text-font-1">
+                  <p className="body-5 font-medium text-font-1">
                     사용 여부
                   </p>
-                  <p className="mt-0.5 text-[12px] text-font-2">
+                  <p className="mt-0.5 body-6 text-font-2">
                     {model.isDefault
                       ? "기본 모델은 사용 중지할 수 없습니다. 먼저 다른 모델을 기본으로 지정하세요."
                       : "사용 중지하면 신규 대화에서 이 모델이 선택되지 않습니다."}

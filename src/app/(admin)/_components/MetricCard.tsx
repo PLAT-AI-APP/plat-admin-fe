@@ -27,9 +27,9 @@ const MetricCard = ({ metric }: MetricCardProps) => {
 
   return (
     <Card bodyClassName="p-4">
-      <p className="text-[13px] text-font-2">{metric.label}</p>
+      <p className="body-5 text-font-2">{metric.label}</p>
 
-      <p className="mt-2 truncate text-[26px] font-bold text-font-0 tabular-nums">
+      <p className="mt-2 truncate heading-1 font-bold text-font-0 tabular-nums">
         {formatMetricValue(metric)}
       </p>
 
@@ -39,7 +39,7 @@ const MetricCard = ({ metric }: MetricCardProps) => {
 
         <span
           className={cn(
-            "text-[13px] font-medium tabular-nums",
+            "body-5 font-medium tabular-nums",
             isIncreased && "text-success",
             isDecreased && "text-danger",
             !isIncreased && !isDecreased && "text-font-2",
@@ -48,7 +48,7 @@ const MetricCard = ({ metric }: MetricCardProps) => {
           {formatDelta(metric.deltaRate)}
         </span>
 
-        <span className="text-[12px] text-font-2">전일 대비</span>
+        <span className="body-6 text-font-2">전일 대비</span>
       </div>
     </Card>
   );

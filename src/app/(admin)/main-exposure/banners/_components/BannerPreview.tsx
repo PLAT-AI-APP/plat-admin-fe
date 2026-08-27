@@ -33,7 +33,7 @@ const BannerPreview = ({
     <div
       style={{ aspectRatio: BANNER_ASPECT_RATIO }}
       className={cn(
-        "relative w-full overflow-hidden rounded-card bg-[#1a1a1a] select-none",
+        "relative w-full overflow-hidden rounded-card bg-preview-bg select-none",
         className,
       )}
     >
@@ -53,16 +53,16 @@ const BannerPreview = ({
 
       <div className="absolute inset-y-0 left-0 flex w-[52%] flex-col justify-center gap-2 pl-[6%]">
         {index !== undefined && totalCount !== undefined && (
-          <span className="w-fit rounded-[4px] bg-black/55 px-1.5 py-0.5 text-[11px] font-medium text-white/90 tabular-nums">
+          <span className="w-fit rounded-chip bg-preview-scrim px-1.5 py-0.5 caption-3 font-medium text-preview-font/90 tabular-nums">
             {index}/{totalCount}
           </span>
         )}
 
-        <p className="truncate text-[clamp(16px,1.6vw,26px)] font-bold text-white">
+        <p className="truncate text-[clamp(16px,1.6vw,26px)] font-bold text-preview-font">
           {title || "제목을 입력해 주세요"}
         </p>
 
-        <p className="line-clamp-2 text-[clamp(10px,0.85vw,14px)] leading-relaxed text-white/70">
+        <p className="line-clamp-2 text-[clamp(10px,0.85vw,14px)] leading-relaxed text-preview-font/70">
           {description || "설명이 여기에 노출됩니다."}
         </p>
 
@@ -71,7 +71,7 @@ const BannerPreview = ({
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-[4px] bg-[#e5484d]/85 px-1.5 py-0.5 text-[clamp(9px,0.7vw,12px)] font-medium text-white"
+                className="rounded-chip bg-preview-accent/85 px-1.5 py-0.5 text-[clamp(9px,0.7vw,12px)] font-medium text-preview-font"
               >
                 #{tag}
               </span>
@@ -81,10 +81,10 @@ const BannerPreview = ({
       </div>
 
       {/* 캐러셀 좌우 이동 아이콘. 미리보기 전용이라 동작하지 않는다. */}
-      <span className="absolute top-1/2 left-3 -translate-y-1/2 text-white/50">
+      <span className="absolute top-1/2 left-3 -translate-y-1/2 text-preview-font/50">
         <ChevronLeft size={22} />
       </span>
-      <span className="absolute top-1/2 right-3 -translate-y-1/2 text-white/50">
+      <span className="absolute top-1/2 right-3 -translate-y-1/2 text-preview-font/50">
         <ChevronRight size={22} />
       </span>
     </div>

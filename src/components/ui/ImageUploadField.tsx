@@ -171,15 +171,15 @@ const ImageUploadField = ({
           {isPending ? (
             <>
               <Spinner size={22} className="text-brand" />
-              <p className="text-[13px] text-font-2">업로드 중…</p>
+              <p className="body-5 text-font-2">업로드 중…</p>
             </>
           ) : (
             <>
               <ImageIcon size={28} className="text-font-disabled" />
-              <p className="text-[13px] font-medium text-font-1">
+              <p className="body-5 font-medium text-font-1">
                 클릭하거나 이미지를 끌어다 놓으세요
               </p>
-              <p className="text-[12px] text-font-2">
+              <p className="body-6 text-font-2">
                 JPG · PNG · WEBP / 10MB 이하
               </p>
             </>

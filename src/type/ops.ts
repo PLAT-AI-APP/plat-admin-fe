@@ -82,9 +82,13 @@ export interface ManagerFormValues {
  *
  * 임시 비밀번호는 **이 응답에서 한 번만** 내려온다. 저장해 두고 다시 보여 주면
  * 어딘가에 평문으로 남는다는 뜻이고, 그러면 초기화 기능이 있는 의미가 없다.
+ *
+ * 계정 전체가 아니라 누구의 비밀번호인지 알아볼 값만 온다. 목록은 어차피
+ * 이어서 다시 읽으므로 같은 자료를 두 경로로 받을 이유가 없다.
  */
 export interface ManagerCredentialIssued {
-  manager: Manager;
+  managerId: number;
+  email: string;
   temporaryPassword: string;
 }
 
@@ -116,15 +120,36 @@ export type HealthStatus = "UP" | "DEGRADED" | "DOWN";
 export interface DependencyHealth {
   name: string;
   status: HealthStatus;
+  /** 응답 시간(ms). 같은 서버의 Redis는 1ms가 안 되므로 소수점이 올 수 있다. */
   latencyMs: number;
   message?: string;
 }
 
+/**
+ * 서버 상태.
+ *
+ * 사용률과 절대량이 함께 온다. "메모리 75%"만으로는 조치를 정할 수 없다 —
+ * 2GB 중 75%와 64GB 중 75%는 남은 여유가 다르다.
+ */
 export interface ServerHealth {
   status: HealthStatus;
   uptimeSeconds: number;
   cpuUsage: number;
+  /** 이 서버에 주어진 코어 수 */
+  cpuCores: number;
   memoryUsage: number;
+  memoryUsedBytes: number;
+  /** 머신(컨테이너)에 주어진 전체 메모리 */
+  memoryTotalBytes: number;
+  /**
+   * JVM 힙 사용률.
+   *
+   * 머신 메모리와 따로 본다. 머신에 여유가 있어도 힙이 차면 GC가 돌기 시작하고,
+   * 응답이 느려지는 원인은 그쪽인 경우가 많다.
+   */
+  heapUsage: number;
+  heapUsedBytes: number;
+  heapMaxBytes: number;
   dependencies: DependencyHealth[];
   checkedAt: string;
 }

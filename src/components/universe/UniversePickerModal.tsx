@@ -6,6 +6,7 @@ import { Check, Globe } from "@/icons";
 import { cn } from "@/lib/utils";
 import { showAppToast } from "@/lib/toast";
 import type { Universe } from "@/type/character";
+import { SERVICE_LANGUAGE_LABEL, type ServiceLanguage } from "@/type/language";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Modal from "@/components/ui/Modal";
@@ -26,6 +27,13 @@ interface UniversePickerModalProps {
   /** 공식 세계관만 후보로 노출할지 여부 */
   officialOnly?: boolean;
   defaultSort?: "RECENT" | "ASSET_COUNT" | "CHAT_COUNT";
+  /**
+   * 어느 언어 목록에 넣을 세계관을 고르는지.
+   *
+   * 후보를 그 언어 번역이 있는 세계관으로 제한한다. 번역이 없는 세계관을
+   * 고를 수 있게 두면, 앱에서는 그 자리에 한국어 원문이 그대로 나간다.
+   */
+  language: ServiceLanguage;
 }
 
 const PAGE_SIZE = 8;
@@ -33,7 +41,7 @@ const PAGE_SIZE = 8;
 /**
  * 세계관 선택 모달.
  * 배너 · 오늘의 PICK · 공식 캐릭터 맛보기 · 에셋 추천이 모두 이 모달을 공유하고,
- * selectableCount와 officialOnly만 다르게 넘긴다.
+ * selectableCount · officialOnly · language만 다르게 넘긴다.
  */
 const UniversePickerModal = ({
   isOpen,
@@ -43,6 +51,7 @@ const UniversePickerModal = ({
   selectableCount,
   officialOnly = false,
   defaultSort = "RECENT",
+  language,
 }: UniversePickerModalProps) => {
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
@@ -55,6 +64,8 @@ const UniversePickerModal = ({
     officialOnly,
     // 앱에 못 나가는 세계관은 애초에 고를 수 없게 한다. 고른 뒤에 비면 원인을 늦게 안다.
     exposableOnly: true,
+    // 그 언어 번역이 있는 세계관만 후보가 된다.
+    language,
     sort: defaultSort,
   });
 
@@ -100,7 +111,7 @@ const UniversePickerModal = ({
       isOpen={isOpen}
       onClose={handleClose}
       title="세계관 선택"
-      description={`승인 · 공개 상태라 앱에 노출될 수 있는 세계관만 보입니다. (${checkedUniverses.length}/${selectableCount} 선택)`}
+      description={`${SERVICE_LANGUAGE_LABEL[language]} 번역이 있고, 승인 · 공개 상태라 앱에 노출될 수 있는 세계관만 보입니다. (${checkedUniverses.length}/${selectableCount} 선택)`}
       size="lg"
       footer={
         <>
@@ -139,8 +150,8 @@ const UniversePickerModal = ({
             title="선택할 수 있는 세계관이 없습니다."
             description={
               officialOnly
-                ? "공식 계정으로 지정된 크리에이터의 승인 · 공개 세계관만 후보가 됩니다."
-                : "심사 대기 · 비공개 · 삭제된 세계관은 앱에 나갈 수 없어 후보에서 빠집니다."
+                ? `공식 계정으로 지정된 크리에이터의 승인 · 공개 세계관 중 ${SERVICE_LANGUAGE_LABEL[language]} 번역이 있는 것만 후보가 됩니다.`
+                : `${SERVICE_LANGUAGE_LABEL[language]} 번역이 없거나, 심사 대기 · 비공개 · 삭제된 세계관은 그 언어 화면에 나갈 수 없어 후보에서 빠집니다.`
             }
           />
         )}
@@ -173,7 +184,7 @@ const UniversePickerModal = ({
 
                     <span
                       className={cn(
-                        "flex size-5 shrink-0 items-center justify-center rounded-[6px] border transition",
+                        "flex size-5 shrink-0 items-center justify-center rounded-chip border transition",
                         isChecked
                           ? "border-brand bg-brand text-font-4"
                           : "border-border-strong text-transparent",
@@ -184,7 +195,7 @@ const UniversePickerModal = ({
                   </button>
 
                   {isAlreadySelected && (
-                    <p className="mt-1 pl-3 text-[12px] text-font-2">
+                    <p className="mt-1 pl-3 body-6 text-font-2">
                       이미 선택된 세계관입니다.
                     </p>
                   )}

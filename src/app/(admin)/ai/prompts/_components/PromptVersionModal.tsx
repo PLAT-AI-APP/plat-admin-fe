@@ -108,7 +108,7 @@ const PromptVersionModal = ({
               rows={16}
               placeholder="마크다운으로 작성할 수 있습니다."
               hasError={Boolean(errors.content)}
-              className="font-mono text-[13px]"
+              className="font-mono body-5"
               {...register("content")}
             />
           </FormField>

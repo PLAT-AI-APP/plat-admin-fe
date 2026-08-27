@@ -17,8 +17,8 @@ interface LogDetailModalProps {
 
 const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="flex items-start justify-between gap-4 border-b border-border-main py-2.5 last:border-b-0">
-    <span className="shrink-0 text-[13px] text-font-2">{label}</span>
-    <span className="min-w-0 text-right text-[13px] break-all text-font-1">
+    <span className="shrink-0 body-5 text-font-2">{label}</span>
+    <span className="min-w-0 text-right body-5 break-all text-font-1">
       {value}
     </span>
   </div>
@@ -73,10 +73,10 @@ const LogDetailModal = ({ log, onClose }: LogDetailModalProps) => {
           </div>
 
           <div>
-            <p className="mb-2 text-[13px] font-medium text-font-1">변경 내용</p>
+            <p className="mb-2 body-5 font-medium text-font-1">변경 내용</p>
 
             {payloadEntries.length === 0 ? (
-              <p className="rounded-field border border-border-main bg-subtle px-3.5 py-3 text-[13px] text-font-2">
+              <p className="rounded-field border border-border-main bg-subtle px-3.5 py-3 body-5 text-font-2">
                 본문 없이 실행된 요청입니다. (삭제 · 상태 변경 등)
               </p>
             ) : (
@@ -86,10 +86,10 @@ const LogDetailModal = ({ log, onClose }: LogDetailModalProps) => {
                     key={key}
                     className="flex items-start justify-between gap-4 border-b border-border-main py-2.5 last:border-b-0"
                   >
-                    <code className="shrink-0 text-[12px] text-font-2">
+                    <code className="shrink-0 body-6 text-font-2">
                       {key}
                     </code>
-                    <span className="min-w-0 text-right text-[13px] break-all text-font-1">
+                    <span className="min-w-0 text-right body-5 break-all text-font-1">
                       {typeof value === "object"
                         ? JSON.stringify(value)
                         : String(value)}

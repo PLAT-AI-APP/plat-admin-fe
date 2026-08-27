@@ -120,6 +120,7 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
   chatCount: response.chatCount,
   likeCount: response.likeCount,
   profileImageFileId: response.profileImageFileId,
+  profileImageUrl: response.profileImageUrl,
   createdAt: response.createdAt,
   updatedAt: response.updatedAt,
   deletedAt: response.deletedAt,
@@ -144,6 +145,7 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
         characterId: response.character.characterId,
         name: response.character.name,
         profileImageFileId: response.character.profileImageFileId,
+        profileImageUrl: response.character.profileImageUrl,
       }
     : null,
   assets: response.assets.map((a) => ({

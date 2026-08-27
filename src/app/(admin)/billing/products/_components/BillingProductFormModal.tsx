@@ -200,7 +200,7 @@ const BillingProductFormModal = ({
         </FormField>
 
         {/* 저장 전에 최종 지급 구성을 한 번 더 확인할 수 있게 요약을 둔다. */}
-        <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 text-[13px]">
+        <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 body-5">
           <div className="flex items-center gap-2">
             <dt className="text-font-2">총 지급 크레딧</dt>
             <dd className="font-semibold text-font-1 tabular-nums">

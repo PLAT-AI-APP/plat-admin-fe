@@ -40,7 +40,7 @@ const Tabs = <T extends string>({
             aria-selected={isActive}
             onClick={() => onChange(item.value)}
             className={cn(
-              "-mb-px border-b-2 px-4 py-2.5 text-[14px] transition",
+              "-mb-px border-b-2 px-4 py-2.5 body-4 transition",
               isActive
                 ? "border-brand font-semibold text-brand"
                 : "border-transparent text-font-2 hover:text-font-1",

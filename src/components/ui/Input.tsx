@@ -31,7 +31,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={cn(
-            "min-w-0 flex-1 bg-transparent text-[14px] text-font-1 outline-none",
+            "min-w-0 flex-1 bg-transparent body-4 text-font-1 outline-none",
             "placeholder:text-font-disabled disabled:cursor-not-allowed",
             className,
           )}

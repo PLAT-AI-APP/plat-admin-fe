@@ -1,14 +1,20 @@
 import { HttpResponse, delay, http } from "msw";
+import type {
+  CharacterDetailResponse,
+  CharacterNsfwMatch,
+} from "@/api/character/getCharacterDetail";
+import type { CharacterSort } from "@/api/character/getCharacterList";
+import type { CharacterStatusBody } from "@/api/character/mutateCharacter";
 import type { ChatExportSchema } from "@/schema/chatExport.schema";
 import type { NsfwKeywordSchema } from "@/schema/nsfwKeyword.schema";
 import type {
   Character,
-  CharacterDetail,
   CharacterVisibility,
   ChatExportJob,
   NsfwKeyword,
 } from "@/type/character";
 import {
+  characterModerations,
   characterProfiles,
   characters,
   chatExportJobs,
@@ -35,15 +41,48 @@ const findCharacter = (characterId: number) =>
 const findProfile = (characterId: number) =>
   characterProfiles.find((profile) => profile.characterId === characterId);
 
+const findModeration = (characterId: number) =>
+  characterModerations.find((item) => item.characterId === characterId);
+
 /** 삭제 처리된 캐릭터는 목록에서 제외한다. (실제 서버도 soft delete를 쓴다) */
 const isListed = (character: Character) => character.status !== "DELETED";
+
+/**
+ * 목록 정렬.
+ *
+ * 어느 기준으로 정렬하든 **동점일 때의 순서가 흔들리면 안 된다.** 페이지를
+ * 넘길 때 같은 행이 두 번 나오거나 빠지기 때문에, 마지막에는 항상 ID로 한 번
+ * 더 갈라 준다.
+ */
+const SORT_COMPARATORS: Record<
+  CharacterSort,
+  (a: Character, b: Character) => number
+> = {
+  CREATED_DESC: (a, b) => b.createdAt.localeCompare(a.createdAt),
+  CREATED_ASC: (a, b) => a.createdAt.localeCompare(b.createdAt),
+  CHAT_DESC: (a, b) => b.chatCount - a.chatCount,
+  LIKE_DESC: (a, b) => b.likeCount - a.likeCount,
+  UNIVERSE_DESC: (a, b) => b.universeCount - a.universeCount,
+  NAME_ASC: (a, b) => a.name.localeCompare(b.name, "ko"),
+};
+
+const sortCharacters = (rows: Character[], sort: string): Character[] => {
+  const comparator =
+    SORT_COMPARATORS[sort as CharacterSort] ?? SORT_COMPARATORS.CREATED_DESC;
+
+  return [...rows].sort(
+    (a, b) => comparator(a, b) || a.characterId - b.characterId,
+  );
+};
 
 /** 캐릭터 목록 필터. 공식 여부는 공식 계정 지정에서 파생된 값을 그대로 본다. */
 const filterCharacters = (url: URL): Character[] => {
   const keyword = url.searchParams.get("keyword") ?? "";
   const visibility = url.searchParams.get("visibility") ?? "";
+  const status = url.searchParams.get("status") ?? "";
   const isOfficial = url.searchParams.get("isOfficial") ?? "";
   const creatorId = url.searchParams.get("creatorId") ?? "";
+  const sort = url.searchParams.get("sort") ?? "";
 
   const filtered = characters.filter((character) => {
     if (!isListed(character)) return false;
@@ -64,23 +103,58 @@ const filterCharacters = (url: URL): Character[] => {
 
     if (visibility && character.visibility !== visibility) return false;
 
+    // 노출 상태와 다른 축이다. 차단은 운영 조치라 따로 걸러 볼 수 있어야 한다.
+    if (status && character.status !== status) return false;
+
     if (isOfficial) return character.isOfficial === (isOfficial === "true");
 
     return true;
   });
 
-  return filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return sortCharacters(filtered, sort);
+};
+
+/**
+ * NSFW 판정 근거.
+ *
+ * 매칭 키워드 ID를 등록된 키워드 목록에서 다시 찾아 붙인다.
+ * 키워드가 삭제되면 근거에서도 사라져야 `/universes/nsfw-keywords` 화면과
+ * 어긋나지 않는다.
+ */
+const buildNsfwMatches = (characterId: number): CharacterNsfwMatch[] => {
+  const ids = findModeration(characterId)?.nsfwMatchedKeywordIds ?? [];
+
+  return ids.flatMap((keywordId) => {
+    const found = nsfwKeywords.find((item) => item.keywordId === keywordId);
+
+    return found
+      ? [{ keywordId, keyword: found.keyword, level: found.level }]
+      : [];
+  });
 };
 
 /** 상세 응답은 프로필 시드와 세계관 목록을 합쳐 만든다. */
-const buildCharacterDetail = (character: Character): CharacterDetail => {
+const buildCharacterDetail = (
+  character: Character,
+): CharacterDetailResponse => {
   const profile = findProfile(character.characterId);
+  const moderation = findModeration(character.characterId);
 
   return {
     ...character,
     description: profile?.description ?? "",
     greeting: profile?.greeting ?? "",
     personality: profile?.personality ?? "",
+    nsfwMatches: buildNsfwMatches(character.characterId),
+    blockedReason:
+      character.status === "BLOCKED" ? moderation?.blockedReason : undefined,
+    blockedAt:
+      character.status === "BLOCKED" ? moderation?.blockedAt : undefined,
+    /*
+      목업은 URL을 주고 fileId는 주지 않는다. 실서버는 반대다.
+      화면이 두 경우를 모두 그리는지 확인하려고 필드를 명시적으로 남겨 둔다.
+    */
+    profileImageFileId: null,
     /*
       이 캐릭터가 **등장하는** 세계관. 소유가 아니라 등장 기준이라, 다른 크리에이터의
       세계관에 초대된 경우도 함께 나온다.
@@ -131,6 +205,53 @@ export const characterHandlers = [
       if (!character) return notFound("존재하지 않는 캐릭터입니다.");
 
       character.visibility = visibility;
+      await delay(MOCK_DELAY_MS);
+
+      return HttpResponse.json(character);
+    },
+  ),
+
+  /*
+    차단 · 차단 해제.
+
+    차단은 앱에서 즉시 내리는 조치라 노출 상태도 함께 숨김으로 내린다.
+    해제할 때 공개로 되돌리지 않는 이유는, 차단 전에 크리에이터가 스스로
+    숨김으로 두었을 수도 있기 때문이다. 노출은 운영자가 따로 판단해 올린다.
+  */
+  http.patch(
+    `${BASE_URI}/admin/characters/:characterId/status`,
+    async ({ params, request }) => {
+      const character = findCharacter(Number(params.characterId));
+      const body = (await request.json()) as CharacterStatusBody;
+
+      if (!character) return notFound("존재하지 않는 캐릭터입니다.");
+
+      if (character.status === "DELETED") {
+        return HttpResponse.json(
+          {
+            code: "CHARACTER_DELETED",
+            message: "이미 삭제된 캐릭터는 상태를 바꿀 수 없습니다.",
+          },
+          { status: 409 },
+        );
+      }
+
+      const moderation = findModeration(character.characterId);
+
+      character.status = body.status;
+
+      if (body.status === "BLOCKED") {
+        character.visibility = "HIDDEN";
+
+        if (moderation) {
+          moderation.blockedReason = body.reason;
+          moderation.blockedAt = new Date().toISOString();
+        }
+      } else if (moderation) {
+        moderation.blockedReason = undefined;
+        moderation.blockedAt = undefined;
+      }
+
       await delay(MOCK_DELAY_MS);
 
       return HttpResponse.json(character);

@@ -12,7 +12,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         ref={ref}
         rows={rows}
         className={cn(
-          "w-full rounded-field border bg-surface px-3 py-2.5 text-[14px] text-font-1 transition outline-none",
+          "w-full rounded-field border bg-surface px-3 py-2.5 body-4 text-font-1 transition outline-none",
           "placeholder:text-font-disabled",
           "focus:border-brand focus:ring-2 focus:ring-brand-opacity",
           "disabled:cursor-not-allowed disabled:bg-subtle disabled:opacity-60",

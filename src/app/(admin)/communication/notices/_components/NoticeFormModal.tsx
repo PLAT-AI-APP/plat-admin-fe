@@ -178,15 +178,15 @@ const NoticeFormModal = ({
                 rows={16}
                 placeholder={"# 제목\n\n내용을 입력하세요."}
                 hasError={Boolean(errors.content)}
-                className="font-mono text-[13px]"
+                className="font-mono body-5"
                 {...register("content")}
               />
             ) : (
-              <div className="min-h-100 rounded-field border border-border-main px-4 py-3 text-[14px]">
+              <div className="min-h-100 rounded-field border border-border-main px-4 py-3 body-4">
                 {content ? (
                   <MarkdownContent content={content} />
                 ) : (
-                  <p className="text-[13px] text-font-2">
+                  <p className="body-5 text-font-2">
                     작성 탭에서 본문을 입력하면 여기에서 미리 볼 수 있습니다.
                   </p>
                 )}

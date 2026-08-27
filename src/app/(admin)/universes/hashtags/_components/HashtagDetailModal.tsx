@@ -33,8 +33,8 @@ const DetailRow = ({
   children: ReactNode;
 }) => (
   <div className="flex items-start gap-4 py-2">
-    <p className="w-24 shrink-0 text-[13px] text-font-2">{label}</p>
-    <div className="min-w-0 flex-1 text-[13px] text-font-1">{children}</div>
+    <p className="w-24 shrink-0 body-5 text-font-2">{label}</p>
+    <div className="min-w-0 flex-1 body-5 text-font-1">{children}</div>
   </div>
 );
 
@@ -103,7 +103,7 @@ const HashtagDetailModal = ({
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-[13px] font-medium text-font-1">
+            <p className="body-5 font-medium text-font-1">
               번역 {hashtag.translationCount}/{hashtag.totalTranslationCount}
             </p>
 
