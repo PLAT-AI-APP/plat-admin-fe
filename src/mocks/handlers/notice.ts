@@ -1,25 +1,13 @@
 import { HttpResponse, delay, http } from "msw";
 import type { Notice, NoticeFormValues } from "@/type/notice";
 import { notices } from "../db/notice";
-import { currentAdmin } from "../session";
+import { stampAdmin } from "../session";
 import { MOCK_DELAY_MS, matchesKeyword, nextId, paginate } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
 const findIndexById = (noticeId: number) =>
   notices.findIndex((notice) => notice.noticeId === noticeId);
-
-/**
- * 지금 로그인한 관리자를 이름 스냅샷으로 굳힌다.
- *
- * 실서버도 같은 방식으로 토큰의 관리자를 스스로 찍는다. 누가 썼는지는 화면이
- * 보내는 값이 아니라 **서버가 아는 값**이어야 위조되지 않는다.
- */
-const stampAdmin = () => {
-  const admin = currentAdmin();
-
-  return { name: admin?.name ?? "운영자", managerId: admin?.managerId };
-};
 
 /**
  * 공지 **내용**이 실제로 바뀌었는지.

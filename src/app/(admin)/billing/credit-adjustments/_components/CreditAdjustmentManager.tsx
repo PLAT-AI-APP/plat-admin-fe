@@ -6,7 +6,7 @@ import { useCreditAdjustmentMutation } from "@/api/billing/mutateCreditAdjustmen
 import { Coin, Plus } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
-import { cn, formatCredit, formatWithCommas } from "@/lib/utils";
+import { cn, formatAdmin, formatCredit, formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type {
@@ -14,7 +14,7 @@ import type {
   CreditAdjustment,
   CreditAdjustmentFormValues,
 } from "@/type/billing";
-import type { User } from "@/type/user";
+import type { AdjustableUser } from "@/type/user";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -50,7 +50,10 @@ const ADJUSTMENT_CSV_COLUMNS: CsvColumn<CreditAdjustment>[] = [
   },
   { header: "사유", value: (row) => row.reason },
   { header: "조정 후 잔액", value: (row) => row.balanceAfter },
-  { header: "처리자", value: (row) => row.processedBy },
+  {
+    header: "처리자",
+    value: (row) => formatAdmin(row.processedBy, row.processedById),
+  },
   { header: "일시", value: (row) => formatDateTime(row.createdAt) },
 ];
 
@@ -85,7 +88,10 @@ const CreditAdjustmentManager = () => {
    * 조정은 실행 즉시 잔액이 바뀌고 되돌릴 수 없으므로,
    * 대상 닉네임과 금액을 다시 보여 주는 확인 단계를 반드시 거친다.
    */
-  const handleSubmit = (values: CreditAdjustmentFormValues, user: User) => {
+  const handleSubmit = (
+    values: CreditAdjustmentFormValues,
+    user: AdjustableUser,
+  ) => {
     const typeLabel = ADJUSTMENT_TYPE_LABEL[values.type];
 
     openConfirm({
@@ -161,7 +167,11 @@ const CreditAdjustmentManager = () => {
       key: "processedBy",
       header: "처리자",
       width: "110px",
-      render: (adjustment) => <Badge tone="neutral">{adjustment.processedBy}</Badge>,
+      render: (adjustment) => (
+        <Badge tone="neutral">
+          {formatAdmin(adjustment.processedBy, adjustment.processedById)}
+        </Badge>
+      ),
     },
     {
       key: "createdAt",

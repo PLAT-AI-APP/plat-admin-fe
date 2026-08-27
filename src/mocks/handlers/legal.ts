@@ -5,6 +5,7 @@ import type {
   LegalDocumentType,
 } from "@/type/legal";
 import { legalDocuments } from "../db/legal";
+import { stampAdmin } from "../session";
 import { MOCK_DELAY_MS, nextId } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
@@ -66,11 +67,14 @@ export const legalHandlers = [
     }
 
     // 새 버전은 항상 비활성으로 등록하고, 활성화는 별도 액션으로만 처리한다.
+    const author = stampAdmin();
+
     const created: LegalDocument = {
       ...body,
       documentId: nextId(legalDocuments, "documentId"),
       isActive: false,
-      createdBy: "운영자",
+      createdBy: author.name,
+      createdById: author.managerId,
       createdAt: new Date().toISOString(),
     };
 

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useAdjustableUserListQuery } from "@/api/billing/getAdjustableUserList";
 import { Users } from "@/icons";
 import { formatCredit } from "@/lib/utils";
-import type { User } from "@/type/user";
+import type { AdjustableUser } from "@/type/user";
 import EmptyState from "@/components/ui/EmptyState";
 import Modal from "@/components/ui/Modal";
 import Pagination from "@/components/ui/Pagination";
@@ -16,7 +16,7 @@ interface UserPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   /** 유저를 고르면 즉시 닫힌다. 조정 대상은 항상 1명이다. */
-  onSelect: (user: User) => void;
+  onSelect: (user: AdjustableUser) => void;
 }
 
 const PAGE_SIZE = 6;
@@ -35,7 +35,7 @@ const UserPickerModal = ({ isOpen, onClose, onSelect }: UserPickerModalProps) =>
     setPage(1);
   };
 
-  const handleSelect = (user: User) => {
+  const handleSelect = (user: AdjustableUser) => {
     onSelect(user);
     onClose();
   };

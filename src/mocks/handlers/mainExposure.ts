@@ -8,6 +8,7 @@ import type {
   UpdateCurationRequest,
 } from "@/type/mainExposure";
 import { banners, curationSlots } from "../db/mainExposure";
+import { stampAdmin } from "../session";
 import { universes } from "../db/character";
 import { MOCK_DELAY_MS, nextId } from "../utils";
 
@@ -177,6 +178,7 @@ export const mainExposureHandlers = [
       const slotKey = params.slotKey as CurationSlotKey;
       const language = languageOf(new URL(request.url));
       const { universeIds } = (await request.json()) as UpdateCurationRequest;
+      const editor = stampAdmin();
 
       curationSlots[slotKey][language] = {
         slotKey,
@@ -191,7 +193,8 @@ export const mainExposureHandlers = [
           })
           .filter((item) => item !== undefined),
         updatedAt: new Date().toISOString(),
-        updatedBy: "운영자",
+        updatedBy: editor.name,
+        updatedById: editor.managerId,
       };
 
       await delay(MOCK_DELAY_MS);

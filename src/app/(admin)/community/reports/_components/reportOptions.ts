@@ -8,9 +8,18 @@ import {
   type ReportTargetType,
 } from "@/type/report";
 
+/**
+ * 분류 색.
+ *
+ * brand(남보라)와 info(파랑)는 색상환에서 너무 가까워 나란히 놓으면 한 덩어리로
+ * 보인다. 남보라 / 주황 / 회색으로 벌려 한눈에 갈라지게 한다.
+ *
+ * 캐릭터는 **댓글 관리와 같은 주황**을 쓴다. 두 화면을 오갈 때 같은 대상이
+ * 다른 색이면 색으로 훑는 것 자체가 성립하지 않는다.
+ */
 export const REPORT_TARGET_TYPE_TONE: Record<ReportTargetType, BadgeTone> = {
-  CHARACTER: "brand",
-  COMMENT: "info",
+  CHARACTER: "warning",
+  COMMENT: "brand",
   USER: "neutral",
 };
 

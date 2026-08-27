@@ -178,6 +178,14 @@ export const managers: Manager[] = [
 });
 
 /**
+ * 시드에서 처리자를 고른다.
+ *
+ * 다른 도메인 시드가 이름 문자열 배열을 따로 들고 있으면 화면의 `#ID`가 실제
+ * 관리자와 어긋난다. 처리자는 **언제나 여기서** 고른다.
+ */
+export const pickManager = (seed: number) => pickOne(seed, managers);
+
+/**
  * 관리자 비밀번호.
  *
  * 목업이라 평문으로 둔다. 실제 서버는 해시를 저장하며, 화면과 API 계약은
@@ -315,7 +323,7 @@ export const LOG_DOMAINS = [
 ] as const;
 
 const LOG_ACTIONS: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
-  USER: ["USER_BLOCK", "USER_RESTORE", "USER_WITHDRAW", "USER_ROLE_CHANGE"],
+  USER: ["USER_BLOCK", "USER_RESTORE", "USER_WITHDRAW"],
   COMMUNITY: [
     "COMMENT_HIDE",
     "COMMENT_RESTORE",
@@ -377,14 +385,18 @@ const LOG_MESSAGES: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
   ],
 };
 
-const LOG_ACTORS = [
-  "운영자",
-  "김서연",
-  "박지훈",
-  "이하늘",
-  "system",
-  "batch-scheduler",
-] as const;
+/**
+ * 로그 실행자 후보.
+ *
+ * 관리자는 실제 계정에서 골라 이름과 ID가 맞도록 한다. `system`·`batch-scheduler`는
+ * 사람이 아니라 서버가 스스로 남긴 것이라 계정 ID가 없다 — 그래서 화면에도
+ * 이름만 찍힌다.
+ */
+const LOG_ACTORS: { name: string; managerId?: number }[] = [
+  ...managers.slice(0, 4).map(({ name, managerId }) => ({ name, managerId })),
+  { name: "system" },
+  { name: "batch-scheduler" },
+];
 
 /**
  * 최근 운영 로그 72건.
@@ -405,12 +417,15 @@ export const operationLogs: OperationLog[] = Array.from(
       "ERROR",
     ] as const);
 
+    const actor = pickOne(seed * 7, LOG_ACTORS);
+
     return {
       logId: 72 - index,
       level,
       domain,
       action: pickOne(seed * 3, LOG_ACTIONS[domain]),
-      actor: pickOne(seed * 7, LOG_ACTORS),
+      actor: actor.name,
+      actorId: actor.managerId,
       message: pickOne(seed * 11, LOG_MESSAGES[domain]),
       createdAt: daysAgo(Math.floor(index / 3), 23 - (index % 24)),
     };

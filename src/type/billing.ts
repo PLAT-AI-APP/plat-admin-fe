@@ -43,14 +43,23 @@ export interface BillingProductFormValues {
   sortOrder: number;
 }
 
-/** 크레딧 정책 */
+/**
+ * 크레딧 정책 키.
+ *
+ * **금액이 고정된 정책만** 여기서 다룬다. 채팅 메시지·이미지 생성처럼 모델과 옵션
+ * (이미지 크기·화질 등)에 따라 차감액이 달라지는 사용 요금은 고정값으로 묶을 수 없어
+ * AI 모델 설정에서 모델별로 관리한다.
+ */
 export type CreditPolicyKey =
   | "SIGN_UP_BONUS"
+  | "PROFILE_COMPLETE_BONUS"
+  | "ADULT_VERIFICATION_BONUS"
   | "DAILY_ATTENDANCE"
-  | "CHAT_MESSAGE_COST"
-  | "IMAGE_GENERATION_COST"
-  | "CHARACTER_CREATE_REWARD"
-  | "REFERRAL_BONUS";
+  | "ATTENDANCE_STREAK_7DAYS"
+  | "DORMANT_RETURN_BONUS"
+  | "REFERRAL_BONUS"
+  | "INVITEE_BONUS"
+  | "FIRST_PURCHASE_BONUS";
 
 export interface CreditPolicy {
   policyKey: CreditPolicyKey;
@@ -61,6 +70,8 @@ export interface CreditPolicy {
   isEnabled: boolean;
   updatedAt: string;
   updatedBy: string;
+  /** 수정 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  updatedById?: number;
 }
 
 /** 크레딧 수동 조정 */
@@ -76,6 +87,8 @@ export interface CreditAdjustment {
   reason: string;
   balanceAfter: number;
   processedBy: string;
+  /** 처리 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  processedById?: number;
   createdAt: string;
 }
 

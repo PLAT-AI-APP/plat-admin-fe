@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminAxios } from "..";
 import type { AppError } from "@/type/api";
-import type { UserDetail, UserRole, UserStatus } from "@/type/user";
+import type { UserDetail, UserStatus } from "@/type/user";
 import { showAppToast } from "@/lib/toast";
 
 export interface UpdateUserStatusRequest {
@@ -24,16 +24,7 @@ export const updateUserStatus = async (
   return response.data;
 };
 
-export const updateUserRole = async (userId: number, role: UserRole) => {
-  const response = await adminAxios.patch<UserDetail>(
-    `/admin/users/${userId}/role`,
-    { role },
-  );
-
-  return response.data;
-};
-
-/** 유저 상태·역할 변경 후 목록과 상세를 함께 갱신합니다. */
+/** 유저 상태 변경 후 목록과 상세를 함께 갱신합니다. */
 export const useUserMutation = () => {
   const queryClient = useQueryClient();
 
@@ -59,17 +50,5 @@ export const useUserMutation = () => {
     },
   });
 
-  const roleMutation = useMutation<
-    UserDetail,
-    AppError,
-    { userId: number; role: UserRole }
-  >({
-    mutationFn: ({ userId, role }) => updateUserRole(userId, role),
-    onSuccess: () => {
-      showAppToast("success", "유저 역할을 변경했습니다.");
-      invalidateUser();
-    },
-  });
-
-  return { statusMutation, roleMutation };
+  return { statusMutation };
 };

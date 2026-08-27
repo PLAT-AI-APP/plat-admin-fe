@@ -1,6 +1,7 @@
 import { HttpResponse, delay, http } from "msw";
 import type { CommentStatus } from "@/type/comment";
 import { comments } from "../db/comment";
+import { stampAdmin } from "../session";
 import { MOCK_DELAY_MS, matchesKeyword, paginate } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
@@ -93,13 +94,15 @@ export const commentHandlers = [
       }
 
       const isHidden = status === "HIDDEN";
+      const handler = stampAdmin();
 
       comments[index] = {
         ...comments[index],
         status,
         // 노출로 되돌리면 처리 이력을 지운다.
         hiddenReason: isHidden ? reason : undefined,
-        handledBy: status === "VISIBLE" ? undefined : "운영자",
+        handledBy: status === "VISIBLE" ? undefined : handler.name,
+        handledById: status === "VISIBLE" ? undefined : handler.managerId,
         handledAt:
           status === "VISIBLE" ? undefined : new Date().toISOString(),
       };
@@ -118,6 +121,8 @@ export const commentHandlers = [
       reason?: string;
     };
 
+    const handler = stampAdmin();
+
     commentIds.forEach((commentId) => {
       const index = findIndexById(commentId);
       if (index < 0) return;
@@ -126,7 +131,8 @@ export const commentHandlers = [
         ...comments[index],
         status,
         hiddenReason: status === "HIDDEN" ? reason : undefined,
-        handledBy: status === "VISIBLE" ? undefined : "운영자",
+        handledBy: status === "VISIBLE" ? undefined : handler.name,
+        handledById: status === "VISIBLE" ? undefined : handler.managerId,
         handledAt:
           status === "VISIBLE" ? undefined : new Date().toISOString(),
       };

@@ -1,34 +1,29 @@
 import { HttpResponse, delay, http } from "msw";
-import type {
-  User,
-  UserDetail,
-  UserRole,
-  UserStatus,
-} from "@/type/user";
+import type { User, UserDetail, UserStatus } from "@/type/user";
 import { users } from "../db/user";
 import { MOCK_DELAY_MS, matchesKeyword, nextId, paginate } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
-/** 목록 응답에는 상세 전용 필드(정지 사유·팔로우 수)를 내려주지 않는다. */
+/**
+ * 목록 응답에는 상세 전용 필드를 내려주지 않는다.
+ *
+ * 정지 사유·팔로우 수뿐 아니라 **집계값(크레딧·결제금액·캐릭터/대화 수)과
+ * 휴대폰번호**도 뺀다. 집계는 유저 한 명마다 장부와 캐릭터를 훑어야 나오는 값이라
+ * 목록에 담으면 한 페이지를 그릴 때마다 그 일을 20번 한다.
+ */
 const toUserSummary = (user: UserDetail): User => ({
   userId: user.userId,
   nickname: user.nickname,
   email: user.email,
   profileImageUrl: user.profileImageUrl,
-  phoneNumber: user.phoneNumber,
   status: user.status,
-  role: user.role,
   provider: user.provider,
   isAdultVerified: user.isAdultVerified,
   adultVerifiedAt: user.adultVerifiedAt,
   birthDate: user.birthDate,
   gender: user.gender,
   isMarketingAgreed: user.isMarketingAgreed,
-  creditBalance: user.creditBalance,
-  characterCount: user.characterCount,
-  chatCount: user.chatCount,
-  totalPaidAmount: user.totalPaidAmount,
   lastLoginAt: user.lastLoginAt,
   lastLoginPlatform: user.lastLoginPlatform,
   createdAt: user.createdAt,
@@ -45,12 +40,10 @@ export const userHandlers = [
     const url = new URL(request.url);
     const keyword = url.searchParams.get("keyword") ?? "";
     const status = url.searchParams.get("status") as UserStatus | null;
-    const role = url.searchParams.get("role") as UserRole | null;
     const isAdultVerified = url.searchParams.get("isAdultVerified") ?? "";
 
     const filtered = users.filter((user) => {
       if (status && user.status !== status) return false;
-      if (role && user.role !== role) return false;
       if (
         isAdultVerified &&
         String(user.isAdultVerified) !== isAdultVerified
@@ -107,21 +100,4 @@ export const userHandlers = [
       return HttpResponse.json(user);
     },
   ),
-
-  http.patch(
-    `${BASE_URI}/admin/users/:userId/role`,
-    async ({ params, request }) => {
-      const user = findUser(Number(params.userId));
-      const { role } = (await request.json()) as { role: UserRole };
-
-      if (!user) return notFound("존재하지 않는 유저입니다.");
-
-      user.role = role;
-
-      await delay(MOCK_DELAY_MS);
-
-      return HttpResponse.json(user);
-    },
-  ),
-
 ];

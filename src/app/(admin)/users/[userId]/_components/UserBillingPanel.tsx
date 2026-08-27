@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useCreditAdjustmentListQuery } from "@/api/billing/getCreditAdjustmentList";
 import { useLedgerListQuery } from "@/api/billing/getLedgerList";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatCurrency, formatWithCommas } from "@/lib/utils";
+import { formatAdmin, formatCurrency, formatWithCommas } from "@/lib/utils";
 import type { CreditAdjustment, LedgerEntry } from "@/type/billing";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
@@ -173,7 +173,9 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
       header: "처리자",
       width: "100px",
       render: (row) => (
-        <span className="body-5 text-font-2">{row.processedBy}</span>
+        <span className="body-5 text-font-2">
+          {formatAdmin(row.processedBy, row.processedById)}
+        </span>
       ),
     },
     {

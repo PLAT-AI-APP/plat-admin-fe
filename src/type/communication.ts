@@ -17,6 +17,8 @@ export interface QnaItem {
   userNickname: string;
   answer?: string;
   answeredBy?: string;
+  /** 답변 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  answeredById?: number;
   answeredAt?: string;
   createdAt: string;
 }
@@ -68,5 +70,7 @@ export interface PushCampaign {
   targetCount: number;
   successCount: number;
   createdBy: string;
+  /** 등록 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  createdById?: number;
   createdAt: string;
 }

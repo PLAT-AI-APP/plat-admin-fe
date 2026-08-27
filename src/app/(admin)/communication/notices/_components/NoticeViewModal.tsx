@@ -3,7 +3,7 @@
 import { useNoticeDetailQuery } from "@/api/notice/getNoticeDetail";
 import { Edit } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatWithCommas } from "@/lib/utils";
+import { formatAdmin, formatWithCommas } from "@/lib/utils";
 import { NOTICE_CATEGORY_LABEL, NOTICE_STATUS_LABEL } from "@/type/notice";
 import type { NoticeDetail } from "@/type/notice";
 import Badge from "@/components/ui/Badge";
@@ -95,7 +95,7 @@ const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) =>
             <div className="flex gap-2">
               <dt className="w-10 shrink-0 text-font-2">등록</dt>
               <dd className="text-font-1">
-                {data.createdBy}
+                {formatAdmin(data.createdBy, data.createdById)}
                 <span className="ml-2 tabular-nums text-font-2">
                   {formatDateTime(data.createdAt)}
                 </span>
@@ -107,7 +107,7 @@ const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) =>
               <dd className={data.updatedBy ? "text-font-1" : "text-font-2"}>
                 {data.updatedBy ? (
                   <>
-                    {data.updatedBy}
+                    {formatAdmin(data.updatedBy, data.updatedById)}
                     <span className="ml-2 tabular-nums text-font-2">
                       {formatDateTime(data.updatedAt)}
                     </span>

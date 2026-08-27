@@ -89,6 +89,23 @@ export const formatDelta = (rate: number): string => {
   return `${sign}${rate.toFixed(1)}%`;
 };
 
+/**
+ * 처리한 관리자를 화면에 적는다. **관리자 이름을 그리는 자리는 전부 이 함수를 쓴다.**
+ *
+ * 이름만 남기면 누가 했는지 되짚을 수 없다. 동명이인이 들어올 수 있고, 이름은
+ * 바뀌며, 퇴사한 계정과 새로 들어온 같은 이름이 화면에서 구분되지 않는다.
+ * 콘솔에서 실제로 필요한 식별자는 계정 ID이므로 이름 옆에 항상 함께 적는다.
+ *
+ * 계정이 지워져 ID가 남지 않은 옛 기록은 이름만 적는다 — 그때는 그 이름이
+ * 남은 전부다. 반대로 ID만 아는 자리(목록에서 이름을 아직 못 찾은 필터 등)는
+ * ID만 적는다. 둘 다 없을 때만 '-'다.
+ */
+export const formatAdmin = (name?: string, adminId?: number): string => {
+  if (!name) return adminId ? `#${adminId}` : "-";
+
+  return adminId ? `${name} (#${adminId})` : name;
+};
+
 /** 긴 문자열을 말줄임 처리한다. 표 셀에서 주로 사용한다. */
 export const truncate = (value: string, maxLength: number): string =>
   value.length > maxLength ? `${value.slice(0, maxLength)}…` : value;

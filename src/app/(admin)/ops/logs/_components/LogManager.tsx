@@ -5,6 +5,7 @@ import { useLogListQuery } from "@/api/ops/getLogList";
 import { useListParams } from "@/hooks/useListParams";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond } from "@/lib/dayjs";
+import { formatAdmin } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { LogLevel, OperationLog } from "@/type/ops";
 import Alert from "@/components/ui/Alert";
@@ -29,7 +30,7 @@ const LOG_CSV_COLUMNS: CsvColumn<OperationLog>[] = [
   { header: "레벨", value: (row) => LOG_LEVEL_LABEL[row.level] },
   { header: "도메인", value: (row) => getLogDomainLabel(row.domain) },
   { header: "액션", value: (row) => row.action },
-  { header: "실행자", value: (row) => row.actor },
+  { header: "실행자", value: (row) => formatAdmin(row.actor, row.actorId) },
   { header: "메시지", value: (row) => row.message },
   { header: "일시", value: (row) => formatDateTimeSecond(row.createdAt) },
 ];
@@ -61,8 +62,10 @@ const LogManager = () => {
 
   // 특정 관리자의 활동만 보고 있을 때, 그 사실을 화면에 드러낸다.
   const filteredActorName = actorId
-    ? (data?.content.find((log) => String(log.actorId) === actorId)?.actor ??
-      `#${actorId}`)
+    ? formatAdmin(
+        data?.content.find((log) => String(log.actorId) === actorId)?.actor,
+        Number(actorId),
+      )
     : null;
 
   const columns: TableColumn<OperationLog>[] = [
@@ -94,7 +97,9 @@ const LogManager = () => {
       key: "actor",
       header: "실행자",
       width: "130px",
-      render: (row) => <span className="text-font-2">{row.actor}</span>,
+      render: (row) => (
+        <span className="text-font-2">{formatAdmin(row.actor, row.actorId)}</span>
+      ),
     },
     {
       key: "target",

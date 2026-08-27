@@ -7,6 +7,7 @@ import type {
 import { daysAgo, pickOne, randomInt } from "../utils";
 import { characters } from "./character";
 import { comments, reportableCommentIds } from "./comment";
+import { pickManager } from "./ops";
 import { users } from "./user";
 
 const REASONS: readonly ReportReason[] = [
@@ -121,6 +122,7 @@ export const reports: Report[] = Array.from({ length: 38 }, (_, index) => {
   const status = pickOne(seed * 9, STATUSES);
   const isHandled = status === "RESOLVED" || status === "REJECTED";
   const createdDaysAgo = Math.floor(index / 2) + 1;
+  const handler = pickManager(seed * 17);
 
   return {
     reportId: 38 - index,
@@ -132,7 +134,8 @@ export const reports: Report[] = Array.from({ length: 38 }, (_, index) => {
     reason,
     detail: pickOne(seed * 11, DETAIL_BY_REASON[reason]),
     status,
-    handlerName: isHandled ? "운영자" : undefined,
+    handlerName: isHandled ? handler.name : undefined,
+    handlerId: isHandled ? handler.managerId : undefined,
     handlerNote: isHandled
       ? pickOne(seed * 13, HANDLER_NOTES[status])
       : undefined,

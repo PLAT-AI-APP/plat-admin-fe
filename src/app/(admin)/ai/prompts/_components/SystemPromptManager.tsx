@@ -6,7 +6,7 @@ import { useSystemPromptListQuery } from "@/api/ai/getSystemPromptList";
 import { useSystemPromptMutation } from "@/api/ai/mutateSystemPrompt";
 import { FileText, Plus } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
-import { cn } from "@/lib/utils";
+import { cn, formatAdmin } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
 import type { SystemPromptVersion } from "@/type/ai";
 import Alert from "@/components/ui/Alert";
@@ -80,7 +80,9 @@ const SystemPromptManager = () => {
       key: "createdBy",
       header: "작성자",
       render: (version) => (
-        <span className="body-5 text-font-2">{version.createdBy}</span>
+        <span className="body-5 text-font-2">
+          {formatAdmin(version.createdBy, version.createdById)}
+        </span>
       ),
     },
     {

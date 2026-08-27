@@ -5,7 +5,7 @@ import type {
 } from "@/type/comment";
 import { daysAgo, pickOne, randomInt } from "../utils";
 import { characters, universes } from "./character";
-import { notices } from "./notice";
+import { pickManager } from "./ops";
 import { users } from "./user";
 
 const COMMENT_CONTENTS = [
@@ -41,7 +41,6 @@ const TARGET_TYPES: readonly CommentTargetType[] = [
   "UNIVERSE",
   "UNIVERSE",
   "CHARACTER",
-  "NOTICE",
 ];
 
 /** 대상 타입에 맞는 실제 대상을 골라 이름까지 맞춘다. */
@@ -50,12 +49,6 @@ const pickTarget = (seed: number, targetType: CommentTargetType) => {
     const character = characters[randomInt(seed, 0, characters.length - 1)];
 
     return { targetId: character.characterId, targetName: character.name };
-  }
-
-  if (targetType === "NOTICE") {
-    const notice = notices[randomInt(seed, 0, notices.length - 1)];
-
-    return { targetId: notice.noticeId, targetName: notice.title };
   }
 
   const universe = universes[randomInt(seed, 0, universes.length - 1)];
@@ -90,6 +83,7 @@ export const comments: Comment[] = Array.from({ length: 64 }, (_, index) => {
   const isHandled = status === "HIDDEN";
   const commentId = 64 - index;
   const createdDaysAgo = Math.floor(index / 2);
+  const handler = pickManager(seed * 17);
 
   if (isReported) reportableCommentIds.push(commentId);
 
@@ -110,7 +104,8 @@ export const comments: Comment[] = Array.from({ length: 64 }, (_, index) => {
     reportCount: 0,
     likeCount: randomInt(seed * 11, 0, 320),
     hiddenReason: isHandled ? pickOne(seed * 13, HIDDEN_REASONS) : undefined,
-    handledBy: isHandled ? "운영자" : undefined,
+    handledBy: isHandled ? handler.name : undefined,
+    handledById: isHandled ? handler.managerId : undefined,
     // 숨김 처리는 댓글이 작성된 뒤에 일어난다.
     handledAt: isHandled
       ? daysAgo(Math.max(0, createdDaysAgo - 1), 16)

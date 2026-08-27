@@ -1,5 +1,5 @@
 import type { BadgeTone, SelectOption } from "@/components/ui";
-import type { LoginProvider, UserRole, UserStatus } from "@/type/user";
+import type { LoginProvider, UserStatus } from "@/type/user";
 
 /** 유저 화면 전용 라벨·옵션. 표·모달·필터가 같은 문구를 공유한다. */
 export const USER_STATUS_LABEL: Record<UserStatus, string> = {
@@ -14,21 +14,23 @@ export const USER_STATUS_TONE: Record<UserStatus, BadgeTone> = {
   WITHDRAWN: "neutral",
 };
 
-export const USER_ROLE_LABEL: Record<UserRole, string> = {
-  USER: "일반 유저",
-  CREATOR: "크리에이터",
-};
-
-export const USER_ROLE_TONE: Record<UserRole, BadgeTone> = {
-  USER: "neutral",
-  CREATOR: "brand",
-};
-
 export const LOGIN_PROVIDER_LABEL: Record<LoginProvider, string> = {
   GOOGLE: "구글",
   KAKAO: "카카오",
-  APPLE: "애플",
   EMAIL: "이메일",
+};
+
+/**
+ * 로그인 수단 뱃지 색.
+ *
+ * 가입 경로는 상태가 아니라 **출처**라, 상태색(success/warning…)을 빌려 쓰면
+ * 같은 줄의 상태 뱃지와 뜻이 섞인다. 소셜은 각자 브랜드색이 곧 식별 기호이므로
+ * 전용 토큰을 쓰고, 브랜드가 없는 이메일만 기본 회색(neutral)을 쓴다.
+ */
+export const LOGIN_PROVIDER_BADGE_CLASS: Record<LoginProvider, string> = {
+  GOOGLE: "bg-provider-google-bg text-provider-google",
+  KAKAO: "bg-provider-kakao-bg text-provider-kakao",
+  EMAIL: "bg-neutral-bg text-neutral",
 };
 
 export const USER_STATUS_FILTER_OPTIONS: SelectOption[] = [
@@ -36,18 +38,6 @@ export const USER_STATUS_FILTER_OPTIONS: SelectOption[] = [
   { label: USER_STATUS_LABEL.ACTIVE, value: "ACTIVE" },
   { label: USER_STATUS_LABEL.SUSPENDED, value: "SUSPENDED" },
   { label: USER_STATUS_LABEL.WITHDRAWN, value: "WITHDRAWN" },
-];
-
-export const USER_ROLE_FILTER_OPTIONS: SelectOption[] = [
-  { label: "전체 역할", value: "" },
-  { label: USER_ROLE_LABEL.USER, value: "USER" },
-  { label: USER_ROLE_LABEL.CREATOR, value: "CREATOR" },
-];
-
-/** 역할 변경 모달에서 사용하는 선택지 (전체 옵션이 없다) */
-export const USER_ROLE_OPTIONS: SelectOption[] = [
-  { label: USER_ROLE_LABEL.USER, value: "USER" },
-  { label: USER_ROLE_LABEL.CREATOR, value: "CREATOR" },
 ];
 
 export const SUSPEND_PERIOD_OPTIONS: SelectOption[] = [

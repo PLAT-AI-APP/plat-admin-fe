@@ -4,11 +4,11 @@ import Image from "next/image";
 import { ReactNode, useState } from "react";
 import { useUserDetailQuery } from "@/api/user/getUserDetail";
 import { useUserMutation } from "@/api/user/mutateUser";
-import { Ban, CheckCircle, Gear } from "@/icons";
+import { Ban, CheckCircle } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
 import { formatCurrency, formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
-import type { UserDetail, UserRole } from "@/type/user";
+import type { UserDetail } from "@/type/user";
 import BackLink from "@/components/layout/BackLink";
 import PageHeader from "@/components/layout/PageHeader";
 import Alert from "@/components/ui/Alert";
@@ -19,12 +19,9 @@ import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
 import Tabs from "@/components/ui/Tabs";
 import {
-  USER_ROLE_LABEL,
-  USER_ROLE_TONE,
   USER_STATUS_LABEL,
   USER_STATUS_TONE,
 } from "../../_constants/userOptions";
-import UserRoleModal from "../../_components/UserRoleModal";
 import UserSuspendModal from "../../_components/UserSuspendModal";
 import UserAccountPanel from "./UserAccountPanel";
 import UserBillingPanel from "./UserBillingPanel";
@@ -59,10 +56,9 @@ const StatBox = ({ label, value }: { label: string; value: ReactNode }) => (
 const UserDetailView = ({ userId }: UserDetailViewProps) => {
   const [tab, setTab] = useState<UserDetailTab>("ACCOUNT");
   const [isSuspendOpen, setIsSuspendOpen] = useState(false);
-  const [isRoleOpen, setIsRoleOpen] = useState(false);
 
   const { data: user, isLoading, isError, error } = useUserDetailQuery(userId);
-  const { statusMutation, roleMutation } = useUserMutation();
+  const { statusMutation } = useUserMutation();
 
   const handleUnsuspend = (target: UserDetail) => {
     openConfirm({
@@ -97,21 +93,7 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
     });
   };
 
-  const handleChangeRole = (nextRole: UserRole) => {
-    if (!user) return;
-
-    openConfirm({
-      title: "역할을 변경할까요?",
-      description: `'${user.nickname}' 계정의 역할을 '${USER_ROLE_LABEL[nextRole]}'(으)로 변경합니다.`,
-      confirmText: "변경",
-      onConfirm: () =>
-        roleMutation
-          .mutateAsync({ userId, role: nextRole })
-          .then(() => setIsRoleOpen(false)),
-    });
-  };
-
-  /** 상단 액션. 탈퇴 유저는 상태·역할을 바꾸지 않는다. */
+  /** 상단 액션. 탈퇴 유저는 상태를 바꾸지 않는다. */
   const buildActions = (target: UserDetail): DropdownItem[] => {
     const items: DropdownItem[] = [];
 
@@ -131,13 +113,6 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
         onSelect: () => handleUnsuspend(target),
       });
     }
-
-    items.push({
-      label: "역할 변경",
-      icon: <Gear size={15} />,
-      disabled: target.status === "WITHDRAWN",
-      onSelect: () => setIsRoleOpen(true),
-    });
 
     return items;
   };
@@ -209,9 +184,6 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
                   </p>
                   <Badge tone={USER_STATUS_TONE[user.status]}>
                     {USER_STATUS_LABEL[user.status]}
-                  </Badge>
-                  <Badge tone={USER_ROLE_TONE[user.role]}>
-                    {USER_ROLE_LABEL[user.role]}
                   </Badge>
                   {user.isAdultVerified && (
                     <Badge tone="info">성인 인증</Badge>
@@ -285,13 +257,6 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
             onClose={() => setIsSuspendOpen(false)}
             onSubmit={handleSuspend}
             isSubmitting={statusMutation.isPending}
-          />
-
-          <UserRoleModal
-            user={isRoleOpen ? user : null}
-            onClose={() => setIsRoleOpen(false)}
-            onSubmit={handleChangeRole}
-            isSubmitting={roleMutation.isPending}
           />
         </>
       )}

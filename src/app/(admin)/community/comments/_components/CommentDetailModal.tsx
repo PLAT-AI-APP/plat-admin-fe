@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 import { useCommentDetailQuery } from "@/api/comment/getCommentDetail";
 import { ExternalLink } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatWithCommas } from "@/lib/utils";
+import { formatAdmin, formatWithCommas } from "@/lib/utils";
 import {
   COMMENT_STATUS_LABEL,
   COMMENT_TARGET_TYPE_LABEL,
@@ -100,7 +100,8 @@ const CommentDetailModal = ({
               </p>
               {data.handledBy && (
                 <p className="mt-1 body-6 text-font-2">
-                  {data.handledBy} · {formatDateTime(data.handledAt)}
+                  {formatAdmin(data.handledBy, data.handledById)} ·{" "}
+                  {formatDateTime(data.handledAt)}
                 </p>
               )}
             </div>

@@ -12,9 +12,8 @@ import {
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import {
+  LOGIN_PROVIDER_BADGE_CLASS,
   LOGIN_PROVIDER_LABEL,
-  USER_ROLE_LABEL,
-  USER_ROLE_TONE,
   USER_STATUS_LABEL,
   USER_STATUS_TONE,
 } from "../../_constants/userOptions";
@@ -61,7 +60,11 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
         <InfoRow label="성별" value={GENDER_LABEL[user.gender]} />
         <InfoRow
           label="로그인 수단"
-          value={LOGIN_PROVIDER_LABEL[user.provider]}
+          value={
+            <Badge className={LOGIN_PROVIDER_BADGE_CLASS[user.provider]}>
+              {LOGIN_PROVIDER_LABEL[user.provider]}
+            </Badge>
+          }
         />
         <InfoRow label="가입일" value={formatDate(user.createdAt)} />
       </Card>
@@ -101,14 +104,6 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
             value={
               <Badge tone={USER_STATUS_TONE[user.status]}>
                 {USER_STATUS_LABEL[user.status]}
-              </Badge>
-            }
-          />
-          <InfoRow
-            label="역할"
-            value={
-              <Badge tone={USER_ROLE_TONE[user.role]}>
-                {USER_ROLE_LABEL[user.role]}
               </Badge>
             }
           />

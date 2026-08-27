@@ -8,7 +8,7 @@ import { useReportMutation } from "@/api/report/mutateReport";
 import { ExternalLink } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatWithCommas, truncate } from "@/lib/utils";
+import { formatAdmin, formatWithCommas, truncate } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import {
   REPORT_REASON_LABEL,
@@ -56,7 +56,10 @@ const REPORT_CSV_COLUMNS: CsvColumn<Report>[] = [
   { header: "신고 내용", value: (row) => row.detail },
   { header: "상태", value: (row) => REPORT_STATUS_LABEL[row.status] },
   { header: "누적 신고", value: (row) => row.targetReportCount },
-  { header: "처리자", value: (row) => row.handlerName ?? "" },
+  {
+    header: "처리자",
+    value: (row) => (row.handlerName ? formatAdmin(row.handlerName, row.handlerId) : ""),
+  },
   { header: "처리 메모", value: (row) => row.handlerNote ?? "" },
   { header: "신고일", value: (row) => formatDateTime(row.createdAt) },
   { header: "처리일", value: (row) => formatDateTime(row.handledAt) },
@@ -211,7 +214,9 @@ const ReportManager = () => {
       header: "처리자",
       width: "110px",
       render: (row) => (
-        <span className="text-font-2">{row.handlerName ?? "-"}</span>
+        <span className="text-font-2">
+          {formatAdmin(row.handlerName, row.handlerId)}
+        </span>
       ),
     },
   ];

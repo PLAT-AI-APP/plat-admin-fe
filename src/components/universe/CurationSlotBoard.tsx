@@ -14,7 +14,7 @@ import {
 } from "@/api/main-exposure/getCurationSlot";
 import { CURATION_SLOT_CONFIG } from "@/constants/mainExposure";
 import { Grip, Plus, Star, Trash } from "@/icons";
-import { cn, reorder } from "@/lib/utils";
+import { cn, formatAdmin, reorder } from "@/lib/utils";
 import { formatDateTime } from "@/lib/dayjs";
 import {
   universeLanguageBlockReason,
@@ -195,7 +195,7 @@ const CurationSlotBoard = ({ slotKey, guide }: CurationSlotBoardProps) => {
         title={`${SERVICE_LANGUAGE_LABEL[language]} · 선택된 세계관 ${universes.length}/${config.maxCount}`}
         description={
           data
-            ? `마지막 저장 ${formatDateTime(data.updatedAt)} · ${data.updatedBy}`
+            ? `마지막 저장 ${formatDateTime(data.updatedAt)} · ${formatAdmin(data.updatedBy, data.updatedById)}`
             : undefined
         }
         action={

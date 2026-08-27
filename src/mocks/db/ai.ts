@@ -7,6 +7,7 @@ import type {
   SystemPromptVersion,
 } from "@/type/ai";
 import { daysAgo, pickOne, randomInt } from "../utils";
+import { pickManager } from "./ops";
 
 /** 카탈로그 원본 메타. 단가만 seed 난수로 채운다. */
 const CATALOG_SEEDS: {
@@ -207,6 +208,7 @@ PROMPT_SEEDS.forEach((promptSeed, promptIndex) => {
 
   Array.from({ length: versionCount }).forEach((_, versionIndex) => {
     const version = versionIndex + 1;
+    const author = pickManager(seed * version);
 
     systemPromptVersions.push({
       versionId: promptIndex * 10 + version,
@@ -214,7 +216,8 @@ PROMPT_SEEDS.forEach((promptSeed, promptIndex) => {
       version,
       content: buildPromptContent(promptSeed.label, version, seed * version),
       isActive: version === activeVersion,
-      createdBy: pickOne(seed * version, ["운영자", "기획팀", "AI팀"]),
+      createdBy: author.name,
+      createdById: author.managerId,
       createdAt: daysAgo((versionCount - versionIndex) * 9 + promptIndex, 11),
     });
   });

@@ -3,6 +3,7 @@ import { SERVICE_LANGUAGES, type ServiceLanguage } from "@/type/language";
 import type { Banner, CurationSlot, CurationSlotKey } from "@/type/mainExposure";
 import { daysAgo } from "../utils";
 import { universes } from "./character";
+import { managers } from "./ops";
 /*
   공식 여부는 공식 계정 지정에서 파생된다. 아래 OFFICIAL_TASTE 초기값이 그 값을
   읽으므로, 판정이 끝난 뒤에 이 파일이 평가되도록 여기서 명시적으로 부른다.
@@ -133,7 +134,8 @@ const buildSlot = (
     universe: universes.find((item) => item.universeId === universeId)!,
   })),
   updatedAt: daysAgo(1, 16),
-  updatedBy: "운영자",
+  updatedBy: managers[0].name,
+  updatedById: managers[0].managerId,
 });
 
 const buildSlotByLanguage = (slotKey: CurationSlotKey) =>

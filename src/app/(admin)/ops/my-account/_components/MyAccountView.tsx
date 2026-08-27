@@ -67,6 +67,9 @@ const MyAccountView = () => {
           <div className="min-w-0">
             <p className="truncate body-2 font-semibold text-font-0">
               {admin.name}
+              <span className="ml-1.5 body-6 font-normal text-font-2 tabular-nums">
+                #{admin.managerId}
+              </span>
             </p>
             <p className="truncate body-5 text-font-2">{admin.email}</p>
           </div>

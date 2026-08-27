@@ -255,7 +255,7 @@ const ManagerManager = () => {
               {isSelf(manager) && <Badge tone="info">나</Badge>}
             </span>
           }
-          secondary={manager.email}
+          secondary={`#${manager.managerId} · ${manager.email}`}
         />
       ),
     },

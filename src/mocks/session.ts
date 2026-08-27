@@ -9,3 +9,16 @@ import { useAdminStore } from "@/store/useAdminStore";
  * 새로고침 한 번에 실행자만 조용히 비는 상태가 만들어진다.
  */
 export const currentAdmin = () => useAdminStore.getState().admin;
+
+/**
+ * 지금 로그인한 관리자를 **이름 + 계정 ID 스냅샷**으로 굳힌다.
+ *
+ * 실서버도 같은 방식으로 토큰의 관리자를 스스로 찍는다. 누가 했는지는 화면이
+ * 보내는 값이 아니라 **서버가 아는 값**이어야 위조되지 않는다.
+ * 이름만 남기면 나중에 동명이인·개명 계정을 구분할 수 없어 ID를 함께 굳힌다.
+ */
+export const stampAdmin = () => {
+  const admin = currentAdmin();
+
+  return { name: admin?.name ?? "운영자", managerId: admin?.managerId };
+};

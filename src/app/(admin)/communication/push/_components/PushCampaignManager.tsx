@@ -9,7 +9,7 @@ import {
 import { Megaphone, Plus, Trash } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { showErrorToast } from "@/lib/toast";
-import { formatWithCommas, truncate } from "@/lib/utils";
+import { formatAdmin, formatWithCommas, truncate } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { PushCampaign, PushStatus } from "@/type/communication";
@@ -164,7 +164,11 @@ const PushCampaignManager = () => {
       key: "createdBy",
       header: "작성자",
       width: "100px",
-      render: (row) => <span className="text-font-2">{row.createdBy}</span>,
+      render: (row) => (
+        <span className="text-font-2">
+          {formatAdmin(row.createdBy, row.createdById)}
+        </span>
+      ),
     },
     {
       key: "actions",

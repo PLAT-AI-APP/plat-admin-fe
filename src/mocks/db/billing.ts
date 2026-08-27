@@ -7,8 +7,9 @@ import type {
   LedgerEntry,
   LedgerType,
 } from "@/type/billing";
-import type { User } from "@/type/user";
+import type { UserDetail } from "@/type/user";
 import { daysAgo, pickOne, randomInt } from "../utils";
+import { pickManager } from "./ops";
 import { users } from "./user";
 
 /**
@@ -18,7 +19,7 @@ import { users } from "./user";
  * 화면마다 다른 사람이 되어 장부에서 유저 관리로 넘어갈 때 값이 어긋난다.
  * 수동 조정 시 creditBalance를 실제로 변경해 조정 후 잔액을 계산한다.
  */
-export const creditUsers: User[] = users;
+export const creditUsers: UserDetail[] = users;
 
 /**
  * 상품 카탈로그 목업.
@@ -66,50 +67,68 @@ const POLICY_SEEDS: Record<
     amount: 300,
     isEnabled: true,
   },
+  PROFILE_COMPLETE_BONUS: {
+    label: "프로필 완성 보상",
+    description: "닉네임과 프로필 이미지를 모두 채우면 계정당 1회 지급합니다.",
+    amount: 50,
+    isEnabled: true,
+  },
+  ADULT_VERIFICATION_BONUS: {
+    label: "성인 인증 완료 보상",
+    description: "본인·성인 인증을 마치면 계정당 1회 지급합니다.",
+    amount: 100,
+    isEnabled: true,
+  },
   DAILY_ATTENDANCE: {
     label: "일일 출석 보상",
     description: "하루 첫 접속 시 자동으로 지급합니다.",
     amount: 20,
     isEnabled: true,
   },
-  CHAT_MESSAGE_COST: {
-    label: "채팅 메시지 차감",
-    description: "캐릭터에게 메시지를 1건 보낼 때마다 차감합니다.",
-    amount: -2,
-    isEnabled: true,
-  },
-  IMAGE_GENERATION_COST: {
-    label: "이미지 생성 차감",
-    description: "대화 중 이미지를 1장 생성할 때마다 차감합니다.",
-    amount: -15,
-    isEnabled: true,
-  },
-  CHARACTER_CREATE_REWARD: {
-    label: "캐릭터 생성 보상",
-    description: "캐릭터를 공개로 등록하면 지급합니다.",
+  ATTENDANCE_STREAK_7DAYS: {
+    label: "7일 연속 출석 보상",
+    description: "출석이 7일 연속으로 이어질 때마다 추가로 지급합니다.",
     amount: 100,
+    isEnabled: true,
+  },
+  DORMANT_RETURN_BONUS: {
+    label: "휴면 복귀 보상",
+    description: "30일 이상 미접속한 유저가 다시 접속하면 1회 지급합니다.",
+    amount: 150,
     isEnabled: false,
   },
   REFERRAL_BONUS: {
     label: "친구 초대 보상",
-    description: "초대 링크로 가입한 친구가 첫 대화를 마치면 지급합니다.",
+    description: "초대 링크로 가입한 친구가 첫 대화를 마치면 초대한 유저에게 지급합니다.",
     amount: 200,
     isEnabled: true,
   },
+  INVITEE_BONUS: {
+    label: "초대 가입 보상",
+    description: "초대 링크로 가입한 유저 본인에게 가입 즉시 지급합니다.",
+    amount: 100,
+    isEnabled: true,
+  },
+  FIRST_PURCHASE_BONUS: {
+    label: "첫 결제 보너스",
+    description: "첫 크레딧 결제가 완료되면 구매 크레딧과 별도로 1회 지급합니다.",
+    amount: 500,
+    isEnabled: true,
+  },
 };
-
-const POLICY_EDITORS = ["운영자", "결제관리자", "최고관리자"] as const;
 
 export const creditPolicies: CreditPolicy[] = (
   Object.keys(POLICY_SEEDS) as CreditPolicyKey[]
 ).map((policyKey, index) => {
   const seed = index + 1;
+  const editor = pickManager(seed * 5);
 
   return {
     policyKey,
     ...POLICY_SEEDS[policyKey],
     updatedAt: daysAgo(randomInt(seed * 3, 2, 60), randomInt(seed * 4, 9, 19)),
-    updatedBy: pickOne(seed * 5, POLICY_EDITORS),
+    updatedBy: editor.name,
+    updatedById: editor.managerId,
   };
 });
 
@@ -129,8 +148,6 @@ const ADJUSTMENT_REASONS: Record<AdjustmentType, string[]> = {
   ],
 };
 
-const ADJUSTMENT_PROCESSORS = ["운영자", "결제관리자"] as const;
-
 const USE_MEMOS = [
   "채팅 메시지 사용",
   "이미지 생성 사용",
@@ -145,7 +162,7 @@ const SIGN_UP_BONUS = POLICY_SEEDS.SIGN_UP_BONUS.amount;
 type DraftLedgerEntry = Omit<LedgerEntry, "ledgerId">;
 
 /** 가입일로부터 며칠이 지났는지. 장부 기록이 가입일보다 앞서지 않도록 한다. */
-const daysSinceJoin = (user: User) =>
+const daysSinceJoin = (user: UserDetail) =>
   Math.max(
     0,
     Math.round(
@@ -160,7 +177,7 @@ const daysSinceJoin = (user: User) =>
  * 사용(USE)은 보유 크레딧 안에서만 일어나게 한다.
  * 이렇게 해야 유저의 보유 크레딧·누적 결제금액을 장부에서 그대로 계산할 수 있다.
  */
-const buildUserLedger = (user: User): DraftLedgerEntry[] => {
+const buildUserLedger = (user: UserDetail): DraftLedgerEntry[] => {
   const seed = user.userId;
   const joinedDaysAgo = daysSinceJoin(user);
   const entries: DraftLedgerEntry[] = [];
@@ -286,6 +303,8 @@ const adjustmentDrafts = Array.from({ length: 15 }, (_, index) => {
     available + (type === "GRANT" ? amount : -amount),
   );
 
+  const processor = pickManager(seed * 11);
+
   return {
     adjustmentId: 15 - index,
     userId: user.userId,
@@ -293,7 +312,8 @@ const adjustmentDrafts = Array.from({ length: 15 }, (_, index) => {
     type,
     amount,
     reason: pickOne(seed * 9, ADJUSTMENT_REASONS[type]),
-    processedBy: pickOne(seed * 11, ADJUSTMENT_PROCESSORS),
+    processedBy: processor.name,
+    processedById: processor.managerId,
     createdAt: daysAgo(
       Math.min(index * 2 + 1, daysSinceJoin(user)),
       randomInt(seed * 13, 9, 19),

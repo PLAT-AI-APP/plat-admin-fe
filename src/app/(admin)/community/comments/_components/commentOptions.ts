@@ -6,10 +6,16 @@ import {
   type CommentTargetType,
 } from "@/type/comment";
 
+/**
+ * 분류 색.
+ *
+ * 대상이 무엇인지는 목록을 훑을 때 **색으로 먼저** 읽힌다. brand(남보라)와
+ * info(파랑)는 색상환에서 너무 가까워 나란히 놓으면 한 덩어리로 보인다.
+ * 그래서 보색에 가까운 남보라 / 주황 짝으로 벌려 둔다.
+ */
 export const COMMENT_TARGET_TYPE_TONE: Record<CommentTargetType, BadgeTone> = {
   UNIVERSE: "brand",
-  CHARACTER: "info",
-  NOTICE: "neutral",
+  CHARACTER: "warning",
 };
 
 export const COMMENT_STATUS_TONE: Record<CommentStatus, BadgeTone> = {

@@ -56,6 +56,8 @@ export interface Report {
   /** 같은 대상에 누적된 신고 수. 높을수록 먼저 확인해야 한다. */
   targetReportCount: number;
   handlerName?: string;
+  /** 처리 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  handlerId?: number;
   handlerNote?: string;
   handledAt?: string;
   createdAt: string;

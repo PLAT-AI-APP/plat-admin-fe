@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatDateTime } from "@/lib/dayjs";
+import { formatAdmin } from "@/lib/utils";
 import {
   REPORT_REASON_LABEL,
   REPORT_STATUS_LABEL,
@@ -135,7 +136,8 @@ const ReportHandleModal = ({
 
             {report.handledAt && (
               <p className="body-6 text-font-2">
-                {report.handlerName} · {formatDateTime(report.handledAt)} 처리
+                {formatAdmin(report.handlerName, report.handlerId)} ·{" "}
+                {formatDateTime(report.handledAt)} 처리
               </p>
             )}
           </div>

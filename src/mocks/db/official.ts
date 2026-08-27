@@ -43,16 +43,14 @@ export const isOfficialUserId = (userId: number) =>
  * 크리에이터 전환 여부.
  *
  * 서버는 유저 ID를 크리에이터 ID로 바꿔 공식 판정을 하고, 크리에이터가 없으면
- * 경고 로그만 남기고 건너뛴다. 목업에서는 `CREATOR` 역할을 가진 유저만
- * 크리에이터가 있다고 본다.
+ * 경고 로그만 남기고 건너뛴다. **모든 유저가 곧 크리에이터**이므로 유저가
+ * 존재하는지만 확인하면 된다.
  */
 const findCreatorId = (userId: number): string | undefined => {
   const user = users.find((item) => item.userId === userId);
 
-  if (!user) return undefined;
-
   // 목업은 크리에이터 ID를 따로 두지 않으므로 유저 ID를 그대로 쓴다.
-  return user.role === "CREATOR" ? String(userId) : undefined;
+  return user ? String(userId) : undefined;
 };
 
 /**

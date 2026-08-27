@@ -53,6 +53,14 @@ export interface NoticeSummary {
   createdById?: number;
   /** 마지막으로 수정한 관리자. 등록 이후 손댄 적이 없으면 비어 있다. */
   updatedBy?: string;
+  /**
+   * 최종 수정 관리자 계정 ID.
+   *
+   * **목록 응답에는 아직 담기지 않는다**(상세 응답에만 있다). 그동안 화면은
+   * 이름만 적는다 — `formatAdmin`이 ID 없는 경우를 그대로 처리한다.
+   * 서버가 목록에도 실어 주면 여기 값이 채워지고 화면은 손댈 것이 없다.
+   */
+  updatedById?: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -61,7 +69,6 @@ export interface NoticeSummary {
 export interface NoticeDetail extends NoticeSummary {
   /** 마크다운 본문 */
   content: string;
-  updatedById?: number;
 }
 
 /** @deprecated 새 코드에서는 목록은 NoticeSummary, 상세는 NoticeDetail을 사용한다. */

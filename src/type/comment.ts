@@ -1,18 +1,19 @@
 /**
  * 댓글.
  *
- * 지금은 세계관에만 달리지만 캐릭터·공지 등 다른 영역에도 붙을 예정이다.
+ * 지금은 세계관·캐릭터에 달리지만 다른 영역에도 붙을 예정이다.
  * 그래서 특정 도메인에 종속시키지 않고 `targetType` + `targetId`로 대상을 가리키는
  * **다형(polymorphic) 구조**로 관리한다.
  * 새 영역에 댓글이 생기면 `CommentTargetType`에 값을 하나 추가하면 화면은 그대로 쓴다.
+ *
+ * 공지사항은 운영자가 일방적으로 알리는 글이라 댓글 기능 자체가 없다. 그래서 대상에 넣지 않는다.
  */
 
-export type CommentTargetType = "UNIVERSE" | "CHARACTER" | "NOTICE";
+export type CommentTargetType = "UNIVERSE" | "CHARACTER";
 
 export const COMMENT_TARGET_TYPE_LABEL: Record<CommentTargetType, string> = {
   UNIVERSE: "세계관",
   CHARACTER: "캐릭터",
-  NOTICE: "공지사항",
 };
 
 /**
@@ -45,21 +46,19 @@ export interface Comment {
   /** 숨김 처리 사유와 처리자 */
   hiddenReason?: string;
   handledBy?: string;
+  /** 처리 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  handledById?: number;
   handledAt?: string;
   createdAt: string;
 }
 
 /**
  * 대상의 **상세 화면**으로 바로 가는 경로를 만든다. 대상 타입이 늘면 여기만 고친다.
- *
- * 캐릭터·세계관은 상세 페이지가 있어 그대로 이동하고,
- * 공지사항은 상세 페이지가 없으므로 목록에서 상세 모달이 열리도록 ID를 실어 보낸다.
  */
 export const getCommentTargetHref = (comment: Comment): string => {
   const hrefByType: Record<CommentTargetType, string> = {
     UNIVERSE: `/universes/${comment.targetId}`,
     CHARACTER: `/universes/characters/${comment.targetId}`,
-    NOTICE: `/communication/notices?noticeId=${comment.targetId}`,
   };
 
   return hrefByType[comment.targetType];

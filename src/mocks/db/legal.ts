@@ -1,7 +1,6 @@
 import type { LegalDocument, LegalDocumentType } from "@/type/legal";
-import { daysAgo, pickOne } from "../utils";
-
-const DOCUMENT_AUTHORS = ["운영자", "법무담당", "최고관리자"] as const;
+import { daysAgo } from "../utils";
+import { pickManager } from "./ops";
 
 /** 이용약관 본문. 실제 문서처럼 장·조 구조를 갖춘 마크다운으로 만든다. */
 const buildTermsContent = (version: string, effectiveDate: string) => `# 서비스 이용약관
@@ -172,6 +171,7 @@ export const legalDocuments: LegalDocument[] = LEGAL_SEEDS.map((seed, index) => 
     seed.documentType === "TERMS_OF_SERVICE"
       ? buildTermsContent(seed.version, effectiveLabel)
       : buildPrivacyContent(seed.version, effectiveLabel);
+  const author = pickManager(index + 1);
 
   return {
     documentId: index + 1,
@@ -182,6 +182,7 @@ export const legalDocuments: LegalDocument[] = LEGAL_SEEDS.map((seed, index) => 
     effectiveAt,
     // 문서는 시행일보다 며칠 앞서 등록한다.
     createdAt: daysAgo(seed.daysBefore + 7, 14),
-    createdBy: pickOne(index + 1, DOCUMENT_AUTHORS),
+    createdBy: author.name,
+    createdById: author.managerId,
   };
 });

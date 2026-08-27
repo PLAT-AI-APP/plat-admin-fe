@@ -73,6 +73,18 @@
   --preview-font: #ffffff;
   --preview-scrim: rgba(0, 0, 0, 0.55);
   --preview-accent: #e5484d;
+
+  /*
+   * 로그인 수단 뱃지 전용.
+   * 유저 목록에서 가입 경로를 색으로 먼저 읽는 자리다. 소셜 제공자는 각자
+   * **고유 브랜드색**이 곧 식별 기호라, 의미 토큰(success/info…)으로 대체하면
+   * 오히려 못 알아본다. 그래서 상태색과 분리해 별도 토큰으로 둔다.
+   * 이메일은 브랜드가 없으므로 토큰을 두지 않고 기존 neutral(회색)을 그대로 쓴다.
+   */
+  --provider-google: #1a73e8;
+  --provider-google-bg: #e8f0fe;
+  --provider-kakao: #3c1e1e; /* 카카오 심볼의 갈검정 */
+  --provider-kakao-bg: #fff6cc; /* 카카오 옐로(#FEE500)를 옅게 깐 색 */
 }
 
 .dark {
@@ -121,6 +133,12 @@
   --overlay-font: #ffffff;
 
   /* 앱 미리보기는 다크 고정이라 테마별 재정의가 없다. */
+
+  /* 어두운 표면에서는 옅은 배경이 묻히므로, 배경은 반투명하게 깔고 글자를 브랜드색으로 세운다. */
+  --provider-kakao: #fee500;
+  --provider-kakao-bg: rgba(254, 229, 0, 0.16);
+  --provider-google: #8ab4f8;
+  --provider-google-bg: rgba(138, 180, 248, 0.14);
 }
 
 @theme inline {
@@ -161,6 +179,12 @@
   --color-preview-font: var(--preview-font);
   --color-preview-scrim: var(--preview-scrim);
   --color-preview-accent: var(--preview-accent);
+
+  /* 로그인 수단 뱃지: bg-provider-*-bg / text-provider-* */
+  --color-provider-google: var(--provider-google);
+  --color-provider-google-bg: var(--provider-google-bg);
+  --color-provider-kakao: var(--provider-kakao);
+  --color-provider-kakao-bg: var(--provider-kakao-bg);
 
   --color-border-main: var(--border);
   --color-border-strong: var(--border-strong);

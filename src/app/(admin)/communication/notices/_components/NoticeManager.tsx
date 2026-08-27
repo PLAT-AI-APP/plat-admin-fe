@@ -1,13 +1,12 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useNoticeListQuery } from "@/api/notice/getNoticeList";
 import { useNoticeMutation } from "@/api/notice/mutateNotice";
 import { Ban, Edit, Megaphone, Plus, Star, Trash } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatWithCommas, truncate } from "@/lib/utils";
+import { formatAdmin, formatWithCommas, truncate } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import {
@@ -45,16 +44,19 @@ const NOTICE_CSV_COLUMNS: CsvColumn<NoticeSummary>[] = [
   { header: "상태", value: (row) => NOTICE_STATUS_LABEL[row.status] },
   { header: "고정", value: (row) => (row.isPinned ? "Y" : "N") },
   { header: "조회 수", value: (row) => row.viewCount },
-  { header: "관리자", value: (row) => row.createdBy },
+  {
+    header: "관리자",
+    value: (row) => formatAdmin(row.createdBy, row.createdById),
+  },
   { header: "등록일", value: (row) => formatDateTime(row.createdAt) },
-  { header: "최종 수정 관리자", value: (row) => row.updatedBy ?? "" },
+  {
+    header: "최종 수정 관리자",
+    value: (row) => (row.updatedBy ? formatAdmin(row.updatedBy, row.updatedById) : ""),
+  },
   { header: "수정일", value: (row) => formatDateTime(row.updatedAt) },
 ];
 
 const NoticeManager = () => {
-  // 댓글 관리에서 대상 공지를 누르면 `?noticeId=`를 달고 넘어온다. 그 공지를 바로 연다.
-  const linkedNoticeId = useSearchParams().get("noticeId");
-
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState<NoticeCategory | "">("");
@@ -62,9 +64,7 @@ const NoticeManager = () => {
 
   const [editingNoticeId, setEditingNoticeId] = useState<number | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [viewingNoticeId, setViewingNoticeId] = useState<number | null>(
-    linkedNoticeId ? Number(linkedNoticeId) : null,
-  );
+  const [viewingNoticeId, setViewingNoticeId] = useState<number | null>(null);
 
   const { data, isLoading } = useNoticeListQuery({
     page,
@@ -226,7 +226,11 @@ const NoticeManager = () => {
       header: "관리자",
       width: "140px",
       // 계정이 삭제돼도 남는 등록자 이름 스냅샷.
-      render: (row) => <span className="text-font-1">{row.createdBy}</span>,
+      render: (row) => (
+        <span className="text-font-1">
+          {formatAdmin(row.createdBy, row.createdById)}
+        </span>
+      ),
     },
     {
       key: "createdAt",

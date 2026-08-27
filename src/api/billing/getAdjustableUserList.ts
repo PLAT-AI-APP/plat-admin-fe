@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { adminAxios } from "..";
 import type { AppError, PageResponse } from "@/type/api";
-import type { User } from "@/type/user";
+import type { AdjustableUser } from "@/type/user";
 
 export interface AdjustableUserListParams {
   page: number;
@@ -10,7 +10,7 @@ export interface AdjustableUserListParams {
 }
 
 export const getAdjustableUserList = async (params: AdjustableUserListParams) => {
-  const response = await adminAxios.get<PageResponse<User>>(
+  const response = await adminAxios.get<PageResponse<AdjustableUser>>(
     "/admin/credits/users",
     { params },
   );
@@ -26,7 +26,7 @@ export const useAdjustableUserListQuery = (
   params: AdjustableUserListParams,
   isEnabled = true,
 ) => {
-  return useQuery<PageResponse<User>, AppError>({
+  return useQuery<PageResponse<AdjustableUser>, AppError>({
     queryKey: ["get-adjustable-user-list", params],
     queryFn: () => getAdjustableUserList(params),
     enabled: isEnabled,

@@ -15,12 +15,10 @@ import {
   creditUsers,
   ledgerEntries,
 } from "../db/billing";
+import { stampAdmin } from "../session";
 import { MOCK_DELAY_MS, matchesKeyword, nextId, paginate } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
-
-/** 목업에서 변경 이력을 남길 때 사용하는 현재 관리자 이름 */
-const CURRENT_ADMIN = "운영자";
 
 /** 최신순 정렬. 장부·조정 이력은 항상 최근 건이 위로 온다. */
 const byRecent = <T extends { createdAt: string }>(items: T[]) =>
@@ -62,11 +60,14 @@ export const billingHandlers = [
         );
       }
 
+      const editor = stampAdmin();
+
       creditPolicies[index] = {
         ...creditPolicies[index],
         ...body,
         updatedAt: new Date().toISOString(),
-        updatedBy: CURRENT_ADMIN,
+        updatedBy: editor.name,
+        updatedById: editor.managerId,
       };
 
       await delay(MOCK_DELAY_MS);
@@ -141,6 +142,8 @@ export const billingHandlers = [
     // 잔액을 실제로 변경해 다음 조정에서도 이어지도록 한다.
     user.creditBalance += delta;
 
+    const processor = stampAdmin();
+
     const created: CreditAdjustment = {
       adjustmentId: nextId(creditAdjustments, "adjustmentId"),
       userId: user.userId,
@@ -149,7 +152,8 @@ export const billingHandlers = [
       amount: body.amount,
       reason: body.reason,
       balanceAfter: user.creditBalance,
-      processedBy: CURRENT_ADMIN,
+      processedBy: processor.name,
+      processedById: processor.managerId,
       createdAt: new Date().toISOString(),
     };
 

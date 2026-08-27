@@ -50,6 +50,8 @@ export interface CurationSlot {
   items: CurationItem[];
   updatedAt: string;
   updatedBy: string;
+  /** 수정 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  updatedById?: number;
 }
 
 /** 큐레이션 저장 요청. 언어는 경로/쿼리로 따로 넘긴다. */

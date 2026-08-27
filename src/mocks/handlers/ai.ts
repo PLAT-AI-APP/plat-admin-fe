@@ -6,6 +6,7 @@ import {
   systemPromptVersions,
   systemPrompts,
 } from "../db/ai";
+import { stampAdmin } from "../session";
 import { MOCK_DELAY_MS, pickOne, randomInt } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
@@ -147,6 +148,8 @@ export const aiHandlers = [
         versions.reduce((max, item) => Math.max(max, item.version), 0) + 1;
 
       // 새 버전은 비활성 상태로 쌓이고, 활성화는 별도 API로 처리한다.
+      const author = stampAdmin();
+
       const created = {
         versionId:
           systemPromptVersions.reduce(
@@ -157,7 +160,8 @@ export const aiHandlers = [
         version: nextVersion,
         content,
         isActive: false,
-        createdBy: "운영자",
+        createdBy: author.name,
+        createdById: author.managerId,
         createdAt: new Date().toISOString(),
       };
 

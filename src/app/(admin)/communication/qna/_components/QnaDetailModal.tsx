@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { useQnaDetailQuery } from "@/api/communication/getQnaDetail";
 import { useQnaMutation } from "@/api/communication/mutateQna";
 import { formatDateTime } from "@/lib/dayjs";
+import { formatAdmin } from "@/lib/utils";
 import { qnaAnswerSchema, type QnaAnswerSchema } from "@/schema/qnaAnswer.schema";
 import { openConfirm } from "@/store/useConfirmStore";
 import Badge from "@/components/ui/Badge";
@@ -16,6 +17,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import Textarea from "@/components/ui/Textarea";
 import {
   QNA_CATEGORY_LABEL,
+  QNA_CATEGORY_TONE,
   QNA_STATUS_LABEL,
   QNA_STATUS_TONE,
 } from "../../_constants/labels";
@@ -115,7 +117,9 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge tone="brand">{QNA_CATEGORY_LABEL[qna.category]}</Badge>
+              <Badge tone={QNA_CATEGORY_TONE[qna.category]}>
+                {QNA_CATEGORY_LABEL[qna.category]}
+              </Badge>
               <Badge tone={QNA_STATUS_TONE[qna.status]}>
                 {QNA_STATUS_LABEL[qna.status]}
               </Badge>
@@ -142,7 +146,7 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
             error={errors.answer?.message}
             hint={
               qna.answeredAt
-                ? `최종 답변 ${formatDateTime(qna.answeredAt)} · ${qna.answeredBy ?? "-"}`
+                ? `최종 답변 ${formatDateTime(qna.answeredAt)} · 답변자 ${formatAdmin(qna.answeredBy, qna.answeredById)}`
                 : "아직 답변이 등록되지 않았습니다."
             }
           >

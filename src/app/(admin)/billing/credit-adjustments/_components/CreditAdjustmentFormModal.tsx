@@ -10,7 +10,7 @@ import {
   type CreditAdjustmentSchema,
 } from "@/schema/creditAdjustment.schema";
 import type { CreditAdjustmentFormValues } from "@/type/billing";
-import type { User } from "@/type/user";
+import type { AdjustableUser } from "@/type/user";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
@@ -25,7 +25,7 @@ interface CreditAdjustmentFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   /** 확인 다이얼로그 문구에 닉네임이 필요해 대상 유저를 함께 넘긴다. */
-  onSubmit: (values: CreditAdjustmentFormValues, user: User) => void;
+  onSubmit: (values: CreditAdjustmentFormValues, user: AdjustableUser) => void;
   isSubmitting: boolean;
 }
 
@@ -42,7 +42,7 @@ const CreditAdjustmentFormModal = ({
   onSubmit,
   isSubmitting,
 }: CreditAdjustmentFormModalProps) => {
-  const [selectedUser, setSelectedUser] = useState<User | undefined>();
+  const [selectedUser, setSelectedUser] = useState<AdjustableUser | undefined>();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   const {
@@ -75,7 +75,7 @@ const CreditAdjustmentFormModal = ({
     selectedUser && selectedUser.creditBalance + delta < 0,
   );
 
-  const handleSelectUser = (user: User) => {
+  const handleSelectUser = (user: AdjustableUser) => {
     setSelectedUser(user);
     setValue("userId", user.userId, { shouldValidate: true });
   };

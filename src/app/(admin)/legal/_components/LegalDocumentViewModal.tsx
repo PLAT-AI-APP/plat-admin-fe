@@ -3,6 +3,7 @@
 import { useLegalDocumentQuery } from "@/api/legal/getLegalDocument";
 import { CheckCircle } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
+import { formatAdmin } from "@/lib/utils";
 import type { LegalDocument } from "@/type/legal";
 import { LEGAL_DOCUMENT_LABEL } from "@/type/legal";
 import Badge from "@/components/ui/Badge";
@@ -43,7 +44,7 @@ const LegalDocumentViewModal = ({
       }
       description={
         target
-          ? `시행일 ${formatDate(target.effectiveAt)} · 등록 ${formatDateTime(target.createdAt)} · ${target.createdBy}`
+          ? `시행일 ${formatDate(target.effectiveAt)} · 등록 ${formatDateTime(target.createdAt)} · ${formatAdmin(target.createdBy, target.createdById)}`
           : undefined
       }
       size="lg"

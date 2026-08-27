@@ -14,6 +14,7 @@ import {
   pushCampaigns,
   qnaItems,
 } from "../db/communication";
+import { stampAdmin } from "../session";
 import {
   MOCK_DELAY_MS,
   matchesKeyword,
@@ -30,9 +31,6 @@ const notFound = () =>
     { code: "NOT_FOUND", message: "대상을 찾을 수 없습니다." },
     { status: 404 },
   );
-
-/** 목업에서는 로그인이 없으므로 처리자 이름을 고정한다. */
-const OPERATOR_NAME = "운영자";
 
 /**
  * 대상 그룹별 발송 대상 수.
@@ -89,8 +87,11 @@ export const communicationHandlers = [
 
       if (!item) return notFound();
 
+      const answerer = stampAdmin();
+
       item.answer = answer;
-      item.answeredBy = OPERATOR_NAME;
+      item.answeredBy = answerer.name;
+      item.answeredById = answerer.managerId;
       item.answeredAt = new Date().toISOString();
 
       // 답변을 저장하면 상태를 자동으로 올린다. 이미 종료된 문의는 종료 상태를 유지한다.
@@ -309,6 +310,7 @@ export const communicationHandlers = [
       target: PushTarget;
       scheduledAt?: string;
     };
+    const creator = stampAdmin();
 
     const created: PushCampaign = {
       campaignId: nextId(pushCampaigns, "campaignId"),
@@ -321,7 +323,8 @@ export const communicationHandlers = [
       sentAt: undefined,
       targetCount: PUSH_TARGET_COUNT[body.target],
       successCount: 0,
-      createdBy: OPERATOR_NAME,
+      createdBy: creator.name,
+      createdById: creator.managerId,
       createdAt: new Date().toISOString(),
     };
 

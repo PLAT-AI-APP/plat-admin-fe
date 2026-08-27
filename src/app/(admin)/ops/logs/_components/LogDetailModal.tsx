@@ -1,6 +1,7 @@
 "use client";
 
 import { formatDateTimeSecond } from "@/lib/dayjs";
+import { formatAdmin } from "@/lib/utils";
 import type { OperationLog } from "@/type/ops";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
@@ -55,12 +56,7 @@ const LogDetailModal = ({ log, onClose }: LogDetailModalProps) => {
             />
             <Row label="도메인" value={getLogDomainLabel(log.domain)} />
             <Row label="액션" value={log.action} />
-            <Row
-              label="실행자"
-              value={
-                log.actorId ? `${log.actor} (#${log.actorId})` : log.actor
-              }
-            />
+            <Row label="실행자" value={formatAdmin(log.actor, log.actorId)} />
             <Row
               label="대상"
               value={
