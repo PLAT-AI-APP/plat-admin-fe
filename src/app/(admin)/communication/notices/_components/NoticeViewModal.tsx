@@ -5,7 +5,7 @@ import { Edit } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { formatWithCommas } from "@/lib/utils";
 import { NOTICE_CATEGORY_LABEL, NOTICE_STATUS_LABEL } from "@/type/notice";
-import type { Notice } from "@/type/notice";
+import type { NoticeDetail } from "@/type/notice";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
@@ -19,7 +19,7 @@ interface NoticeViewModalProps {
   noticeId: number | null;
   onClose: () => void;
   /** 수정 버튼을 노출할 때만 전달한다. (댓글 관리 등에서 열면 수정은 제공하지 않는다) */
-  onEdit?: (notice: Notice) => void;
+  onEdit?: (notice: NoticeDetail) => void;
 }
 
 /**

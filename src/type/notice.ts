@@ -29,12 +29,12 @@ export const NOTICE_STATUS_LABEL: Record<NoticeStatus, string> = {
   HIDDEN: "숨김",
 };
 
-export interface Notice {
+/** 공지 목록 한 행. 목록 API에는 마크다운 본문과 수정자 ID가 오지 않는다. */
+export interface NoticeSummary {
+  /** 서버에서는 Snowflake ID가 문자열로 오고, API 레이어에서 숫자로 바꾼다. */
   noticeId: number;
   category: NoticeCategory;
   title: string;
-  /** 마크다운 본문 */
-  content: string;
   status: NoticeStatus;
   /** 목록 최상단 고정 여부 */
   isPinned: boolean;
@@ -53,10 +53,19 @@ export interface Notice {
   createdById?: number;
   /** 마지막으로 수정한 관리자. 등록 이후 손댄 적이 없으면 비어 있다. */
   updatedBy?: string;
-  updatedById?: number;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
+
+/** 공지 상세. 수정 폼과 상세 모달은 이 응답으로 본문까지 조회한다. */
+export interface NoticeDetail extends NoticeSummary {
+  /** 마크다운 본문 */
+  content: string;
+  updatedById?: number;
+}
+
+/** @deprecated 새 코드에서는 목록은 NoticeSummary, 상세는 NoticeDetail을 사용한다. */
+export type Notice = NoticeDetail;
 
 export interface NoticeFormValues {
   category: NoticeCategory;

@@ -3,8 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useNoticeDetailQuery } from "@/api/notice/getNoticeDetail";
 import { noticeSchema, type NoticeSchema } from "@/schema/notice.schema";
-import type { Notice, NoticeFormValues } from "@/type/notice";
+import type { NoticeFormValues } from "@/type/notice";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import FormField from "@/components/ui/FormField";
@@ -22,8 +23,8 @@ import {
 interface NoticeFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** 수정 대상. 없으면 신규 등록 모드다. */
-  notice?: Notice;
+  /** 수정 대상 ID. 목록 응답에는 본문이 없으므로 모달에서 상세를 조회한다. */
+  noticeId?: number;
   onSubmit: (values: NoticeFormValues) => void;
   isSubmitting: boolean;
 }
@@ -46,11 +47,14 @@ const EMPTY_VALUES: NoticeSchema = {
 const NoticeFormModal = ({
   isOpen,
   onClose,
-  notice,
+  noticeId,
   onSubmit,
   isSubmitting,
 }: NoticeFormModalProps) => {
   const [tab, setTab] = useState<EditorTab>("WRITE");
+  const { data: notice, isLoading } = useNoticeDetailQuery(
+    isOpen && noticeId !== undefined ? noticeId : null,
+  );
 
   const {
     control,
@@ -85,22 +89,28 @@ const NoticeFormModal = ({
   const content = watch("content");
 
   const submit = handleSubmit((values) => onSubmit(values));
+  const isPending = isSubmitting || isLoading;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={notice ? "공지사항 수정" : "공지사항 등록"}
+      title={noticeId !== undefined ? "공지사항 수정" : "공지사항 등록"}
       description="본문은 마크다운으로 작성합니다. 앱에서는 렌더링된 형태로 노출됩니다."
       size="xl"
       closeOnOverlayClick={false}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
+          <Button variant="ghost" onClick={onClose} disabled={isPending}>
             취소
           </Button>
-          <Button variant="primary" onClick={submit} isLoading={isSubmitting}>
-            {notice ? "수정" : "등록"}
+          <Button
+            variant="primary"
+            onClick={submit}
+            isLoading={isPending}
+            disabled={isPending}
+          >
+            {noticeId !== undefined ? "수정" : "등록"}
           </Button>
         </>
       }

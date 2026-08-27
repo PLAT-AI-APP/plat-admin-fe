@@ -13,10 +13,11 @@ import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import {
   NOTICE_CATEGORY_LABEL,
   NOTICE_STATUS_LABEL,
-  type Notice,
+  type NoticeDetail,
   type NoticeCategory,
   type NoticeFormValues,
   type NoticeStatus,
+  type NoticeSummary,
 } from "@/type/notice";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -37,7 +38,7 @@ import {
 } from "./noticeOptions";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
-const NOTICE_CSV_COLUMNS: CsvColumn<Notice>[] = [
+const NOTICE_CSV_COLUMNS: CsvColumn<NoticeSummary>[] = [
   { header: "ID", value: (row) => row.noticeId },
   { header: "분류", value: (row) => NOTICE_CATEGORY_LABEL[row.category] },
   { header: "제목", value: (row) => row.title },
@@ -59,7 +60,7 @@ const NoticeManager = () => {
   const [category, setCategory] = useState<NoticeCategory | "">("");
   const [status, setStatus] = useState<NoticeStatus | "">("");
 
-  const [editingNotice, setEditingNotice] = useState<Notice | undefined>();
+  const [editingNoticeId, setEditingNoticeId] = useState<number | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [viewingNoticeId, setViewingNoticeId] = useState<number | null>(
     linkedNoticeId ? Number(linkedNoticeId) : null,
@@ -82,23 +83,23 @@ const NoticeManager = () => {
   const resetPage = () => setPage(1);
 
   const handleOpenCreate = () => {
-    setEditingNotice(undefined);
+    setEditingNoticeId(undefined);
     setIsFormOpen(true);
   };
 
-  const handleOpenEdit = (notice: Notice) => {
+  const handleOpenEdit = (notice: NoticeSummary | NoticeDetail) => {
     // 상세에서 넘어온 경우 모달이 겹치지 않도록 상세를 먼저 닫는다.
     setViewingNoticeId(null);
-    setEditingNotice(notice);
+    setEditingNoticeId(notice.noticeId);
     setIsFormOpen(true);
   };
 
   const handleSubmit = (values: NoticeFormValues) => {
     const options = { onSuccess: () => setIsFormOpen(false) };
 
-    if (editingNotice) {
+    if (editingNoticeId !== undefined) {
       updateMutation.mutate(
-        { noticeId: editingNotice.noticeId, values },
+        { noticeId: editingNoticeId, values },
         options,
       );
       return;
@@ -107,7 +108,7 @@ const NoticeManager = () => {
     createMutation.mutate(values, options);
   };
 
-  const handlePublish = (notice: Notice) => {
+  const handlePublish = (notice: NoticeSummary) => {
     openConfirm({
       title: "공지를 게시할까요?",
       description: `'${truncate(notice.title, 30)}' 공지가 앱에 즉시 노출됩니다.`,
@@ -120,11 +121,11 @@ const NoticeManager = () => {
     });
   };
 
-  const handleHide = (notice: Notice) => {
+  const handleHide = (notice: NoticeSummary) => {
     statusMutation.mutate({ noticeId: notice.noticeId, status: "HIDDEN" });
   };
 
-  const handleDelete = (notice: Notice) => {
+  const handleDelete = (notice: NoticeSummary) => {
     openConfirm({
       title: "공지를 삭제할까요?",
       description: `'${truncate(notice.title, 30)}' 공지가 완전히 제거됩니다.`,
@@ -139,7 +140,7 @@ const NoticeManager = () => {
    * 행 액션. 아이콘 버튼을 늘리지 않고 더보기 메뉴 하나로 모은다.
    * 상세 보기는 행을 누르면 열리므로 메뉴에 두지 않는다.
    */
-  const buildRowActions = (notice: Notice): DropdownItem[] => [
+  const buildRowActions = (notice: NoticeSummary): DropdownItem[] => [
     notice.status === "PUBLISHED"
       ? {
           label: "숨김",
@@ -166,7 +167,7 @@ const NoticeManager = () => {
     },
   ];
 
-  const columns: TableColumn<Notice>[] = [
+  const columns: TableColumn<NoticeSummary>[] = [
     {
       key: "category",
       header: "분류",
@@ -344,7 +345,7 @@ const NoticeManager = () => {
       <NoticeFormModal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
-        notice={editingNotice}
+        noticeId={editingNoticeId}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
       />
