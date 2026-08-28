@@ -6,8 +6,6 @@ import type {
 import type { CharacterSort } from "@/api/character/getCharacterList";
 import type { CharacterStatusBody } from "@/api/character/mutateCharacter";
 import type { ChatExportSchema } from "@/schema/chatExport.schema";
-import type { BannedWordSchema } from "@/schema/bannedWord.schema";
-import type { BannedWord } from "@/type/bannedWord";
 import type {
   Character,
   CharacterVisibility,
@@ -22,7 +20,6 @@ import {
   universes,
   syncCharacterDerivedCounts,
 } from "../db/character";
-import { stampAdmin } from "../session";
 import {
   MOCK_DELAY_MS,
   matchesKeyword,
@@ -118,8 +115,8 @@ const filterCharacters = (url: URL): Character[] => {
 /**
  * NSFW 판정 근거.
  *
- * 매칭 ID를 등록된 금지어 사전에서 다시 찾아 붙인다.
- * 단어가 삭제되면 근거에서도 사라져야 `/universes/banned-words` 화면과 어긋나지 않는다.
+ * 매칭 ID를 목업 금지어 사전에서 다시 찾아 붙인다. 이 사전은 캐릭터 목업 전용이다 —
+ * 금지어 화면은 실서버를 보므로 두 곳의 단어가 같을 이유가 없다.
  */
 const buildNsfwMatches = (characterId: number): CharacterNsfwMatch[] => {
   const ids = findModeration(characterId)?.nsfwMatchedKeywordIds ?? [];
@@ -269,74 +266,6 @@ export const characterHandlers = [
 
       // 목록에서 빠지므로 크리에이터의 보유 캐릭터 수·해시태그 사용 수도 함께 줄인다.
       syncCharacterDerivedCounts();
-
-      await delay(MOCK_DELAY_MS);
-
-      return new HttpResponse(null, { status: 204 });
-    },
-  ),
-
-  http.get(`${BASE_URI}/admin/banned-words`, async ({ request }) => {
-    const url = new URL(request.url);
-    const keyword = url.searchParams.get("keyword") ?? "";
-    const type = url.searchParams.get("type") ?? "";
-
-    const filtered = bannedWords.filter((item) => {
-      if (type && item.type !== type) return false;
-
-      return matchesKeyword(keyword, item.word);
-    });
-
-    // 최근에 넣은 것부터. 방금 추가한 단어를 확인하는 것이 가장 잦은 용도다.
-    const sorted = [...filtered].sort((a, b) =>
-      b.createdAt.localeCompare(a.createdAt),
-    );
-
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(paginate(sorted, url));
-  }),
-
-  http.post(`${BASE_URI}/admin/banned-words`, async ({ request }) => {
-    const body = (await request.json()) as BannedWordSchema;
-    const word = body.word.trim();
-    // 한 단어가 금지어이면서 예외어일 수는 없으므로 유형과 무관하게 단어 자체가 유일하다.
-    const isDuplicated = bannedWords.some((item) => item.word === word);
-
-    await delay(MOCK_DELAY_MS);
-
-    if (isDuplicated) {
-      return HttpResponse.json(
-        { code: "BANNED_WORD_DUPLICATED", message: "이미 등록된 단어입니다." },
-        { status: 409 },
-      );
-    }
-
-    const registrar = stampAdmin();
-    const created: BannedWord = {
-      bannedWordId: nextId(bannedWords, "bannedWordId"),
-      word,
-      type: body.type,
-      createdBy: registrar.name,
-      createdById: registrar.managerId,
-      createdAt: new Date().toISOString(),
-    };
-
-    bannedWords.push(created);
-
-    return HttpResponse.json(created, { status: 201 });
-  }),
-
-
-  http.delete(
-    `${BASE_URI}/admin/banned-words/:bannedWordId`,
-    async ({ params }) => {
-      const bannedWordId = Number(params.bannedWordId);
-      const index = bannedWords.findIndex(
-        (item) => item.bannedWordId === bannedWordId,
-      );
-
-      if (index >= 0) bannedWords.splice(index, 1);
 
       await delay(MOCK_DELAY_MS);
 

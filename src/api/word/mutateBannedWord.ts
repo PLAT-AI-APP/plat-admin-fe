@@ -1,25 +1,40 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import { showAppToast } from "@/lib/toast";
 import type { BannedWordSchema } from "@/schema/bannedWord.schema";
 import type { AppError } from "@/type/api";
-import type { BannedWord } from "@/type/bannedWord";
+import type { BannedWord, BannedWordType } from "@/type/bannedWord";
+
+/** 서버 응답. 목록과 같은 형태로 내려오므로 ID도 문자열이다. */
+interface BannedWordResponse {
+  bannedWordId: string;
+  word: string;
+  type: BannedWordType;
+  createdBy: string;
+  createdById: number | null;
+  createdAt: string;
+}
+
+const toBannedWord = (word: BannedWordResponse): BannedWord => ({
+  ...word,
+  bannedWordId: Number(word.bannedWordId),
+  createdById: word.createdById ?? undefined,
+});
 
 export const createBannedWord = async (values: BannedWordSchema) => {
-  const response = await adminAxios.post<BannedWord>(
+  const response = await liveAxios.post<BannedWordResponse>(
     "/admin/banned-words",
     values,
   );
 
-  return response.data;
+  return toBannedWord(response.data);
 };
-
 
 export const deleteBannedWord = async (bannedWordId: number) => {
-  await adminAxios.delete(`/admin/banned-words/${bannedWordId}`);
+  await liveAxios.delete(`/admin/banned-words/${bannedWordId}`);
 };
 
-/** 금지어 추가·수정·삭제 후 목록을 갱신합니다. */
+/** 금지어 추가·삭제 후 목록을 갱신합니다. */
 export const useBannedWordMutation = () => {
   const queryClient = useQueryClient();
 
@@ -38,7 +53,6 @@ export const useBannedWordMutation = () => {
       invalidateBannedWordList();
     },
   });
-
 
   const deleteMutation = useMutation<void, AppError, number>({
     mutationFn: deleteBannedWord,
