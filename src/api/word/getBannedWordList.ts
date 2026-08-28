@@ -21,8 +21,8 @@ export interface BannedWordListParams {
   sort?: BannedWordSort;
 }
 
-/** 서버 목록 항목. BannedWordId는 JSON에서 문자열로 내려온다. */
-interface BannedWordResponse {
+/** 서버 응답 한 줄. BannedWordId는 JSON에서 문자열로 내려온다. */
+export interface BannedWordResponse {
   bannedWordId: string;
   word: string;
   type: BannedWordType;
@@ -37,7 +37,7 @@ interface BannedWordResponse {
  * 기동 시 사전에 실린 단어는 사람이 넣은 것이 아니라 `createdById`가 없다.
  * 화면은 그 자리를 이름만으로 채운다.
  */
-const toBannedWord = (word: BannedWordResponse): BannedWord => ({
+export const toBannedWord = (word: BannedWordResponse): BannedWord => ({
   ...word,
   bannedWordId: Number(word.bannedWordId),
   createdById: word.createdById ?? undefined,

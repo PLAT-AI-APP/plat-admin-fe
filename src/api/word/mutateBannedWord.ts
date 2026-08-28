@@ -3,23 +3,8 @@ import { liveAxios } from "..";
 import { showAppToast } from "@/lib/toast";
 import type { BannedWordSchema } from "@/schema/bannedWord.schema";
 import type { AppError } from "@/type/api";
-import type { BannedWord, BannedWordType } from "@/type/bannedWord";
-
-/** 서버 응답. 목록과 같은 형태로 내려오므로 ID도 문자열이다. */
-interface BannedWordResponse {
-  bannedWordId: string;
-  word: string;
-  type: BannedWordType;
-  createdBy: string;
-  createdById: number | null;
-  createdAt: string;
-}
-
-const toBannedWord = (word: BannedWordResponse): BannedWord => ({
-  ...word,
-  bannedWordId: Number(word.bannedWordId),
-  createdById: word.createdById ?? undefined,
-});
+import type { BannedWord } from "@/type/bannedWord";
+import { toBannedWord, type BannedWordResponse } from "./getBannedWordList";
 
 export const createBannedWord = async (values: BannedWordSchema) => {
   const response = await liveAxios.post<BannedWordResponse>(
