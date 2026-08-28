@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { adminAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { CharacterDetail } from "@/type/character";
-import type { BannedWordLevel } from "@/type/bannedWord";
 
 /**
  * NSFW 판정에 걸린 금지어 한 건.
@@ -13,7 +12,6 @@ import type { BannedWordLevel } from "@/type/bannedWord";
 export interface CharacterNsfwMatch {
   keywordId: number;
   keyword: string;
-  level: BannedWordLevel;
 }
 
 /**

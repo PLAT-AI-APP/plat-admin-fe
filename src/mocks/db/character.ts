@@ -11,7 +11,7 @@ import type {
   UniverseTendency,
 } from "@/type/character";
 import type { ServiceLanguage } from "@/type/language";
-import type { BannedWord, BannedWordLevel, BannedWordType } from "@/type/bannedWord";
+import type { BannedWord, BannedWordType } from "@/type/bannedWord";
 import { daysAgo, pickOne, randomInt } from "../utils";
 import { pickManager } from "./ops";
 import { CHARACTER_TAG_POOL, hashtags } from "./hashtag";
@@ -474,19 +474,15 @@ export const characterProfiles: CharacterProfile[] = characters.map(
  * 금지어와 예외어를 함께 둔다. '졸라'를 막고 '고르곤졸라'를 풀어 주는 짝이 실제로
  * 어떻게 동작하는지는 두 종류가 같이 있어야만 화면에서 확인할 수 있다.
  */
-const BANNED_WORD_SEEDS: {
-  word: string;
-  type: BannedWordType;
-  level?: BannedWordLevel;
-}[] = [
-  { word: "노출", type: "BAN", level: "WARN" },
-  { word: "폭력묘사", type: "BAN", level: "BLOCK" },
-  { word: "자해", type: "BAN", level: "BLOCK" },
-  { word: "미성년", type: "BAN", level: "BLOCK" },
-  { word: "혐오표현", type: "BAN", level: "BLOCK" },
-  { word: "선정적", type: "BAN", level: "WARN" },
-  { word: "약물", type: "BAN", level: "WARN" },
-  { word: "졸라", type: "BAN", level: "BLOCK" },
+const BANNED_WORD_SEEDS: { word: string; type: BannedWordType }[] = [
+  { word: "노출", type: "BAN" },
+  { word: "폭력묘사", type: "BAN" },
+  { word: "자해", type: "BAN" },
+  { word: "미성년", type: "BAN" },
+  { word: "혐오표현", type: "BAN" },
+  { word: "선정적", type: "BAN" },
+  { word: "약물", type: "BAN" },
+  { word: "졸라", type: "BAN" },
   { word: "고르곤졸라", type: "EXCEPT" },
   { word: "노출 콘크리트", type: "EXCEPT" },
 ];
@@ -499,7 +495,6 @@ export const bannedWords: BannedWord[] = BANNED_WORD_SEEDS.map(
       bannedWordId: index + 1,
       word: seed.word,
       type: seed.type,
-      level: seed.level,
       createdBy: registrar.name,
       createdById: registrar.managerId,
       createdAt: daysAgo(index * 4 + 3),

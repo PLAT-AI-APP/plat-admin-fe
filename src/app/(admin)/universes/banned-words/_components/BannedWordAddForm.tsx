@@ -13,8 +13,6 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
-import { BANNED_WORD_LEVEL_OPTIONS } from "../../_constants/bannedWord";
 
 interface BannedWordAddFormProps {
   /** 지금 보고 있는 탭. 무엇을 등록하는지는 탭이 정한다. */
@@ -23,18 +21,17 @@ interface BannedWordAddFormProps {
   isSubmitting: boolean;
 }
 
-/** 차단이 기본값이다. 실수로 경고만 걸리는 것보다 과하게 막는 편이 안전하다. */
-const emptyValues = (type: BannedWordType): BannedWordSchema =>
-  type === "BAN"
-    ? { word: "", type, level: "BLOCK" }
-    : { word: "", type, level: undefined };
+const emptyValues = (type: BannedWordType): BannedWordSchema => ({
+  word: "",
+  type,
+});
 
 const FORM_COPY: Record<BannedWordType, { title: string; description: string }> =
   {
     BAN: {
       title: "금지어 추가",
       description:
-        "등록 즉시 검사에 반영됩니다. 차단은 등록 자체를 막고, 경고는 통과시키되 걸린 기록만 남깁니다.",
+        "등록 즉시 검사에 반영됩니다. 이 단어가 들어간 글은 등록되지 않습니다.",
     },
     EXCEPT: {
       title: "예외어 추가",
@@ -46,8 +43,8 @@ const FORM_COPY: Record<BannedWordType, { title: string; description: string }> 
 /**
  * 목록 상단 인라인 추가 폼.
  *
- * 유형을 고르는 칸이 없다. 지금 보고 있는 탭이 곧 등록할 유형이라, 칸을 하나 더 두면
- * 탭과 어긋난 값을 고를 수 있게 되고 그때 무엇이 맞는지는 아무도 모른다.
+ * 고를 것이 없다. 유형은 지금 보고 있는 탭이 정하고, 걸렸을 때 무엇을 할지는 하나뿐이다.
+ * 칸을 하나 더 두면 탭과 어긋난 값을 고를 수 있게 되고 그때 무엇이 맞는지는 아무도 모른다.
  */
 const BannedWordAddForm = ({
   type,
@@ -95,24 +92,6 @@ const BannedWordAddForm = ({
             {...register("word")}
           />
         </FormField>
-
-        {/* 예외어는 무엇도 막지 않아 고를 레벨이 없다. */}
-        {isBan && (
-          <FormField
-            label="처리 레벨"
-            htmlFor="banned-word-level"
-            required
-            error={errors.level?.message}
-            className="w-48"
-          >
-            <Select
-              id="banned-word-level"
-              options={BANNED_WORD_LEVEL_OPTIONS}
-              hasError={Boolean(errors.level)}
-              {...register("level")}
-            />
-          </FormField>
-        )}
 
         {/* 라벨 한 줄 높이만큼 내려 입력 칸과 같은 줄에 맞춘다. */}
         <Button

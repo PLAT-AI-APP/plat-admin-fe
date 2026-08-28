@@ -3,7 +3,7 @@ import { adminAxios } from "..";
 import { showAppToast } from "@/lib/toast";
 import type { BannedWordSchema } from "@/schema/bannedWord.schema";
 import type { AppError } from "@/type/api";
-import type { BannedWord, BannedWordLevel } from "@/type/bannedWord";
+import type { BannedWord } from "@/type/bannedWord";
 
 export const createBannedWord = async (values: BannedWordSchema) => {
   const response = await adminAxios.post<BannedWord>(
@@ -14,23 +14,6 @@ export const createBannedWord = async (values: BannedWordSchema) => {
   return response.data;
 };
 
-/**
- * 처리 레벨만 바꾼다.
- *
- * 단어와 유형을 고치는 길은 두지 않는다. 그것은 수정이 아니라 다른 규칙이고,
- * 그 단어가 지금까지 몇 번 걸렸는지가 뜻을 잃는다. 바꾸려면 지우고 다시 넣는다.
- */
-export const updateBannedWordLevel = async (
-  bannedWordId: number,
-  level: BannedWordLevel,
-) => {
-  const response = await adminAxios.patch<BannedWord>(
-    `/admin/banned-words/${bannedWordId}/level`,
-    { level },
-  );
-
-  return response.data;
-};
 
 export const deleteBannedWord = async (bannedWordId: number) => {
   await adminAxios.delete(`/admin/banned-words/${bannedWordId}`);
@@ -56,18 +39,6 @@ export const useBannedWordMutation = () => {
     },
   });
 
-  const levelMutation = useMutation<
-    BannedWord,
-    AppError,
-    { bannedWordId: number; level: BannedWordLevel }
-  >({
-    mutationFn: ({ bannedWordId, level }) =>
-      updateBannedWordLevel(bannedWordId, level),
-    onSuccess: () => {
-      showAppToast("success", "처리 레벨을 변경했습니다.");
-      invalidateBannedWordList();
-    },
-  });
 
   const deleteMutation = useMutation<void, AppError, number>({
     mutationFn: deleteBannedWord,
@@ -77,5 +48,5 @@ export const useBannedWordMutation = () => {
     },
   });
 
-  return { createMutation, levelMutation, deleteMutation };
+  return { createMutation, deleteMutation };
 };

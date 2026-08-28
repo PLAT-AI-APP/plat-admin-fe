@@ -41,10 +41,7 @@ import {
   VISIBILITY_LABEL,
   VISIBILITY_TONE,
 } from "../../../_constants/character";
-import {
-  BANNED_WORD_LEVEL_TONE,
-} from "../../../_constants/bannedWord";
-import { BANNED_WORD_LEVEL_LABEL } from "@/type/bannedWord";
+
 
 interface CharacterDetailViewProps {
   characterId: number;
@@ -481,9 +478,6 @@ const BasicInfoPanel = ({
               <span className="body-5 flex-1 text-font-1">
                 #{match.keyword}
               </span>
-              <Badge tone={BANNED_WORD_LEVEL_TONE[match.level]}>
-                {BANNED_WORD_LEVEL_LABEL[match.level]}
-              </Badge>
             </li>
           ))}
         </ul>

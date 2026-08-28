@@ -10,24 +10,15 @@ import { formatAdmin } from "@/lib/utils";
 import type { BannedWordSchema } from "@/schema/bannedWord.schema";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
-import type {
-  BannedWord,
-  BannedWordLevel,
-  BannedWordType,
-} from "@/type/bannedWord";
+import type { BannedWord, BannedWordType } from "@/type/bannedWord";
 import Alert from "@/components/ui/Alert";
 import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
-import Select from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import Tabs from "@/components/ui/Tabs";
-import {
-  BANNED_WORD_LEVEL_CELL_OPTIONS,
-  BANNED_WORD_LEVEL_FILTER_OPTIONS,
-  BANNED_WORD_TYPE_TABS,
-} from "../../_constants/bannedWord";
+import { BANNED_WORD_TYPE_TABS } from "../../_constants/bannedWord";
 import BannedWordAddForm from "./BannedWordAddForm";
 
 /** 탭마다 안내가 다르다. 두 표에서 운영자가 하는 일이 다르기 때문이다. */
@@ -46,7 +37,6 @@ const BannedWordManager = () => {
   const [type, setType] = useState<BannedWordType>("BAN");
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
-  const [level, setLevel] = useState<BannedWordLevel | "">("");
 
   const isBan = type === "BAN";
 
@@ -55,16 +45,12 @@ const BannedWordManager = () => {
     size: DEFAULT_PAGE_SIZE,
     keyword,
     type,
-    // 예외어에는 레벨이 없다. 이전 탭의 필터가 따라가면 목록이 통째로 빈다.
-    level: isBan ? level : "",
   });
-  const { createMutation, levelMutation, deleteMutation } =
-    useBannedWordMutation();
+  const { createMutation, deleteMutation } = useBannedWordMutation();
 
   /** 탭·필터가 바뀌면 이전 페이지 번호가 의미를 잃으므로 항상 1페이지로 되돌린다. */
   const handleChangeType = (next: BannedWordType) => {
     setType(next);
-    setLevel("");
     setPage(1);
   };
 
@@ -102,33 +88,6 @@ const BannedWordManager = () => {
     ),
   };
 
-  /** 금지어에만 있는 열. 예외어는 무엇도 막지 않아 고를 레벨이 없다. */
-  const banColumns: TableColumn<BannedWord>[] = [
-    {
-      key: "level",
-      header: "처리 레벨",
-      align: "center",
-      width: "120px",
-      render: (row) =>
-        row.level ? (
-          <Select
-            options={BANNED_WORD_LEVEL_CELL_OPTIONS}
-            value={row.level}
-            disabled={levelMutation.isPending}
-            aria-label={`${row.word} 처리 레벨`}
-            selectBoxClassName="h-9"
-            onChange={(event) =>
-              levelMutation.mutate({
-                bannedWordId: row.bannedWordId,
-                level: event.target.value as BannedWordLevel,
-              })
-            }
-          />
-        ) : (
-          <span className="body-5 text-font-2">-</span>
-        ),
-    },
-  ];
 
   const tailColumns: TableColumn<BannedWord>[] = [
     {
@@ -169,11 +128,7 @@ const BannedWordManager = () => {
     },
   ];
 
-  const columns: TableColumn<BannedWord>[] = [
-    wordColumn,
-    ...(isBan ? banColumns : []),
-    ...tailColumns,
-  ];
+  const columns: TableColumn<BannedWord>[] = [wordColumn, ...tailColumns];
 
   return (
     <>
@@ -202,18 +157,6 @@ const BannedWordManager = () => {
             placeholder="단어 검색"
           />
 
-          {isBan && (
-            <Select
-              options={BANNED_WORD_LEVEL_FILTER_OPTIONS}
-              value={level}
-              onChange={(event) => {
-                setLevel(event.target.value as BannedWordLevel | "");
-                setPage(1);
-              }}
-              selectBoxClassName="w-36"
-              aria-label="레벨 필터"
-            />
-          )}
         </div>
 
         <Table
