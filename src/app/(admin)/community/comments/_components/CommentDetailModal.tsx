@@ -55,6 +55,8 @@ const CommentDetailModal = ({
       title="댓글 상세"
       description={data ? `#${data.commentId}` : undefined}
       size="lg"
+      // 스켈레톤 → 본문으로 바뀔 때 높이가 튀지 않게 한다.
+      minHeight="md"
       footer={
         <Button variant="secondary" onClick={onClose}>
           닫기

@@ -50,6 +50,9 @@ export const BATCH_TRIGGER_OPTIONS: SelectOption[] = [
  * 크론식만 보여 주면 운영자는 이 잡이 하루에 한 번 도는지 30분마다 도는지
  * 알 수 없다. 아는 모양만 옮기고, 모르면 크론식을 그대로 보여 준다 —
  * 틀린 설명을 지어내는 것보다 원문이 낫다.
+ *
+ * 크론은 서버가 한국 시간 기준으로 돌린다. 표의 다른 시각(최근 실행 · 다음 예정)과
+ * 같은 기준이라 그대로 옮겨 적으면 된다.
  */
 export const describeCron = (expression: string): string | undefined => {
   const [, minute, hour, dayOfMonth, month, dayOfWeek] = expression.split(" ");
@@ -58,6 +61,11 @@ export const describeCron = (expression: string): string | undefined => {
 
   if (hour === "*" && minute?.startsWith("*/")) {
     return `${minute.slice(2)}분마다`;
+  }
+
+  /* 정각에만 도는 N시간 주기. 분이 0이 아니면 설명이 그 분을 잃으므로 옮기지 않는다. */
+  if (hour?.startsWith("*/") && minute === "0") {
+    return `${hour.slice(2)}시간마다`;
   }
 
   if (/^\d+$/.test(hour ?? "") && /^\d+$/.test(minute ?? "")) {

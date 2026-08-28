@@ -82,6 +82,8 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
       title="문의 상세"
       description="답변을 저장하면 문의 상태가 자동으로 답변 완료로 변경됩니다."
       size="lg"
+      // 스켈레톤 → 본문으로 바뀔 때 높이가 튀지 않게 한다.
+      minHeight="md"
       footer={
         <>
           <Button

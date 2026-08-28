@@ -113,6 +113,8 @@ const UniversePickerModal = ({
       title="세계관 선택"
       description={`${SERVICE_LANGUAGE_LABEL[language]} 번역이 있고, 승인 · 공개 상태라 앱에 노출될 수 있는 세계관만 보입니다. (${checkedUniverses.length}/${selectableCount} 선택)`}
       size="lg"
+      // 검색 결과 수에 따라 모달이 접혔다 펴지지 않도록 목록 자리를 잡아 둔다.
+      minHeight="lg"
       footer={
         <>
           <Button variant="ghost" onClick={handleClose}>

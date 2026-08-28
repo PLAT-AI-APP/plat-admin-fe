@@ -76,11 +76,27 @@ export interface UserDetail extends User {
  * 유저 목록에도 잔액 집계가 딸려 들어온다.
  */
 export interface AdjustableUser {
-  userId: number;
+  /**
+   * Snowflake ID. **문자열 그대로 다룬다.**
+   *
+   * 실제 값이 18~19자리라 `Number()`로 바꾸면 `MAX_SAFE_INTEGER`(9,007,199,254,740,991)를
+   * 넘겨 끝자리가 조용히 뭉갠다. 그 값으로 조정을 걸면 **엉뚱한 유저의 잔액이 바뀐다.**
+   */
+  userId: string;
   nickname: string;
-  email: string;
-  profileImageUrl: string;
+  /** 가입 경로가 여럿이면 가장 먼저 만든 것의 이메일. 없는 유저도 있다. */
+  email?: string;
+  /** 서버는 URL을 만들지 못하고 fileId만 준다. `resolveImageUrl()`로 조립한다. */
+  profileImageFileId?: string;
+  profileImageUrl?: string;
+  /** 총 보유 크레딧 */
   creditBalance: number;
+  /**
+   * 예약으로 잠기지 않아 지금 회수할 수 있는 몫.
+   *
+   * 차감 한도가 이 값이다 — 총 잔액만 보고 그만큼 차감을 걸면 서버가 422로 거절한다.
+   */
+  availableBalance: number;
 }
 
 /** 생년월일로 만 나이를 계산한다. 성인 여부 확인에 쓴다. */

@@ -5,10 +5,8 @@ import { z } from "zod";
  * 운영 리스크가 크므로 사유를 반드시 남기게 한다.
  */
 export const creditAdjustmentSchema = z.object({
-  userId: z
-    .number({ error: "대상 유저를 선택해 주세요." })
-    .int()
-    .positive("대상 유저를 선택해 주세요."),
+  /* Snowflake ID는 숫자로 담을 수 없어(끝자리가 뭉갠다) 문자열로 받는다. */
+  userId: z.string().min(1, "대상 유저를 선택해 주세요."),
   type: z.enum(["GRANT", "DEDUCT"]),
   amount: z
     .number({ error: "조정 크레딧을 입력해 주세요." })

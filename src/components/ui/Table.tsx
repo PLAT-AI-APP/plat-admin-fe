@@ -21,6 +21,16 @@ interface TableProps<T> {
   isLoading?: boolean;
   /** 로딩 중 보여줄 스켈레톤 행 개수 */
   skeletonRows?: number;
+  /**
+   * 표가 이 행 수보다 낮아지지 않는다. 기본값은 `skeletonRows`.
+   *
+   * 검색 결과가 줄면 표가 접혔다가 검색어를 지우면 다시 펴져서, 아래에 있는
+   * 페이지네이션이 매번 다른 자리로 튄다. 로딩 중 스켈레톤 높이를 바닥으로
+   * 잡아 두면 **스켈레톤 → 결과 → 빈 상태**가 모두 같은 높이에서 바뀐다.
+   *
+   * 0을 주면 바닥을 두지 않고 내용만큼만 그린다.
+   */
+  minRows?: number;
   emptyTitle?: string;
   emptyDescription?: string;
   emptyAction?: ReactNode;
@@ -43,6 +53,15 @@ interface TableProps<T> {
   className?: string;
 }
 
+/**
+ * 바닥 높이를 계산할 때 쓰는 행 높이(px).
+ *
+ * 헤더는 `py-3` + body-5, 스켈레톤 행은 `py-3.5` + `h-4` + 경계선 1px에서 나온 값이다.
+ * 셀 패딩을 바꾸면 여기도 함께 고쳐야 한다.
+ */
+const HEAD_ROW_HEIGHT = 44;
+const SKELETON_ROW_HEIGHT = 45;
+
 const ALIGN_CLASS = {
   left: "text-left",
   center: "text-center",
@@ -59,6 +78,7 @@ const Table = <T,>({
   getRowKey,
   isLoading = false,
   skeletonRows = 8,
+  minRows,
   emptyTitle = "데이터가 없습니다.",
   emptyDescription,
   emptyAction,
@@ -70,9 +90,20 @@ const Table = <T,>({
 }: TableProps<T>) => {
   const isEmpty = !isLoading && rows.length === 0;
   const isExpandable = Boolean(renderExpanded);
+  const floorRows = minRows ?? skeletonRows;
 
   return (
-    <div className={cn("w-full overflow-x-auto scrollbar-thin", className)}>
+    <div
+      style={
+        floorRows > 0
+          ? { minHeight: HEAD_ROW_HEIGHT + floorRows * SKELETON_ROW_HEIGHT }
+          : undefined
+      }
+      className={cn(
+        "flex w-full flex-col overflow-x-auto scrollbar-thin",
+        className,
+      )}
+    >
       <table className="w-full min-w-max body-4">
         <thead>
           <tr className="bg-subtle">
@@ -153,11 +184,13 @@ const Table = <T,>({
         </tbody>
       </table>
 
+      {/* 바닥 높이가 잡혀 있으면 남는 자리에서 가운데로 온다. */}
       {isEmpty && (
         <EmptyState
           title={emptyTitle}
           description={emptyDescription}
           action={emptyAction}
+          className="flex-1"
         />
       )}
     </div>

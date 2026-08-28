@@ -30,7 +30,7 @@ interface CreditAdjustmentFormModalProps {
 }
 
 const EMPTY_VALUES: CreditAdjustmentSchema = {
-  userId: 0,
+  userId: "",
   type: "GRANT",
   amount: 0,
   reason: "",

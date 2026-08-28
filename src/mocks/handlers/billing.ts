@@ -76,23 +76,6 @@ export const billingHandlers = [
     },
   ),
 
-  /**
-   * 크레딧 조정 대상 유저 검색.
-   * 유저 도메인 API가 아직 목업되지 않아 조정 화면 전용 검색을 별도로 둔다.
-   */
-  http.get(`${BASE_URI}/admin/credits/users`, async ({ request }) => {
-    const url = new URL(request.url);
-    const keyword = url.searchParams.get("keyword") ?? "";
-
-    const filtered = creditUsers.filter((user) =>
-      matchesKeyword(keyword, user.nickname, user.email, String(user.userId)),
-    );
-
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(paginate(filtered, url));
-  }),
-
   http.get(`${BASE_URI}/admin/credits/adjustments`, async ({ request }) => {
     const url = new URL(request.url);
     const keyword = url.searchParams.get("keyword") ?? "";
@@ -118,11 +101,24 @@ export const billingHandlers = [
 
   http.post(`${BASE_URI}/admin/credits/adjustments`, async ({ request }) => {
     const body = (await request.json()) as CreditAdjustmentFormValues;
-    const user = creditUsers.find(({ userId }) => userId === body.userId);
+    /* 유저 ID는 Snowflake라 문자열로 온다. 목업 시드는 작은 숫자라 문자열끼리 맞춘다. */
+    const user = creditUsers.find(
+      ({ userId }) => String(userId) === body.userId,
+    );
 
+    /*
+      대상 유저 검색(`/admin/credits/users`)만 실서버에 연결돼 있어, 검색으로 고른
+      실제 유저는 이 목업 장부에 없다. 조정 실행까지 실서버(`/admin/credits/grants`
+      · `/deductions`)에 붙기 전까지는 여기서 멈추는 것이 맞다 — 없는 유저의 잔액을
+      목업이 지어내면 운영자가 조정이 반영된 것으로 읽는다.
+    */
     if (!user) {
       return HttpResponse.json(
-        { code: "USER_NOT_FOUND", message: "존재하지 않는 유저입니다." },
+        {
+          code: "USER_NOT_FOUND",
+          message:
+            "목업 장부에 없는 유저입니다. 조정 실행은 아직 실서버에 연결되지 않았습니다.",
+        },
         { status: 404 },
       );
     }

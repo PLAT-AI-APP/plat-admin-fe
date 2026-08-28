@@ -174,18 +174,25 @@ const BatchRunTable = ({
       header: "처리 / 실패",
       width: "120px",
       numeric: true,
-      render: (row) => (
-        <span className="tabular-nums text-font-1">
-          {(row.processedCount ?? 0).toLocaleString()}
-          {/* 0건 성공과 실패를 구분하려면 두 수를 나란히 봐야 한다. */}
-          <span
-            className={row.failedCount ? "text-danger" : "text-font-disabled"}
-          >
-            {" / "}
-            {(row.failedCount ?? 0).toLocaleString()}
+      render: (row) =>
+        /*
+          아직 도는 중이면 건수가 없다. 0으로 채우면 "0건 처리하고 끝났다"로 읽혀
+          실제로는 한창 돌고 있는 잡이 아무 일도 안 한 것처럼 보인다.
+        */
+        row.processedCount === undefined ? (
+          <span className="text-font-disabled">-</span>
+        ) : (
+          <span className="tabular-nums text-font-1">
+            {row.processedCount.toLocaleString()}
+            {/* 0건 성공과 실패를 구분하려면 두 수를 나란히 봐야 한다. */}
+            <span
+              className={row.failedCount ? "text-danger" : "text-font-disabled"}
+            >
+              {" / "}
+              {(row.failedCount ?? 0).toLocaleString()}
+            </span>
           </span>
-        </span>
-      ),
+        ),
     },
     {
       key: "errorMessage",

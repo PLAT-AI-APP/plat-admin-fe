@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { BatchJob } from "@/type/ops";
 
 export const getBatchJobList = async () => {
-  const response = await adminAxios.get<BatchJob[]>("/admin/batch/jobs");
+  const response = await liveAxios.get<BatchJob[]>("/admin/batch/jobs");
 
   return response.data;
 };

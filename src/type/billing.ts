@@ -93,7 +93,8 @@ export interface CreditAdjustment {
 }
 
 export interface CreditAdjustmentFormValues {
-  userId: number;
+  /** Snowflake 유저 ID. 문자열 그대로 보낸다 — 자세한 이유는 `AdjustableUser`에 있다. */
+  userId: string;
   type: AdjustmentType;
   amount: number;
   reason: string;

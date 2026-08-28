@@ -38,6 +38,8 @@ const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) =>
       title={data?.title ?? "공지사항 상세"}
       description={data ? `#${data.noticeId}` : undefined}
       size="lg"
+      // 스켈레톤 → 본문으로 바뀔 때 높이가 튀지 않게 한다.
+      minHeight="md"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>

@@ -292,8 +292,12 @@ export type BatchTrigger = "SCHEDULE" | "MANUAL";
  * 다시 돌리는 행위가 붙기 때문에, 조회만 있는 `log` 권한에 묶을 수 없다.
  */
 export interface BatchJob {
-  jobId: number;
-  /** 서버가 아는 잡 식별자. 수동 실행 요청에 그대로 싣는다. */
+  /**
+   * 서버가 아는 잡 식별자. 수동 실행 요청에 그대로 싣는다.
+   *
+   * 숫자 ID가 없다. **잡 정의를 담은 표가 서버에 없기 때문**이다 — 잡의 원본은
+   * 코드고, 어드민이 만들거나 지우지 않으므로 행에 붙일 번호도 없다.
+   */
   jobKey: string;
   name: string;
   description: string;

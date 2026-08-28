@@ -27,16 +27,16 @@ import {
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
 const CSV_COLUMNS: CsvColumn<AdminAuditLog>[] = [
-  { header: "결과", value: (row) => AUDIT_RESULT_LABEL[row.result] },
-  { header: "도메인", value: (row) => getLogDomainLabel(row.domain) },
-  { header: "액션", value: (row) => row.action },
   { header: "실행자", value: (row) => formatAdmin(row.actor, row.actorId) },
   { header: "직책", value: (row) => row.roleName ?? "" },
+  { header: "도메인", value: (row) => getLogDomainLabel(row.domain) },
+  { header: "액션", value: (row) => row.action },
   {
     header: "대상",
     value: (row) =>
       row.targetType ? `${row.targetType} #${row.targetId ?? ""}` : "",
   },
+  { header: "결과", value: (row) => AUDIT_RESULT_LABEL[row.result] },
   { header: "메시지", value: (row) => row.message },
   { header: "IP", value: (row) => row.ip ?? "" },
   { header: "일시", value: (row) => formatDateTimeSecond(row.createdAt) },
@@ -78,13 +78,19 @@ const AdminLogTable = ({ params, setParams }: AdminLogTableProps) => {
 
   const columns: TableColumn<AdminAuditLog>[] = [
     {
-      key: "result",
-      header: "결과",
-      width: "100px",
+      key: "actor",
+      header: "실행자",
+      width: "160px",
       render: (row) => (
-        <Badge tone={AUDIT_RESULT_TONE[row.result]}>
-          {AUDIT_RESULT_LABEL[row.result]}
-        </Badge>
+        <div className="flex flex-col">
+          <span className="text-font-1">
+            {formatAdmin(row.actor, row.actorId)}
+          </span>
+          {/* 지금 직책이 아니라 실행 당시 직책이다. 권한을 되짚을 때 필요하다. */}
+          {row.roleName && (
+            <span className="body-6 text-font-2">{row.roleName}</span>
+          )}
+        </div>
       ),
     },
     {
@@ -102,22 +108,6 @@ const AdminLogTable = ({ params, setParams }: AdminLogTableProps) => {
       render: (row) => <span className="text-font-1">{row.action}</span>,
     },
     {
-      key: "actor",
-      header: "실행자",
-      width: "160px",
-      render: (row) => (
-        <div className="flex flex-col">
-          <span className="text-font-1">
-            {formatAdmin(row.actor, row.actorId)}
-          </span>
-          {/* 지금 직책이 아니라 실행 당시 직책이다. 권한을 되짚을 때 필요하다. */}
-          {row.roleName && (
-            <span className="body-6 text-font-2">{row.roleName}</span>
-          )}
-        </div>
-      ),
-    },
-    {
       key: "target",
       header: "대상",
       width: "150px",
@@ -132,6 +122,16 @@ const AdminLogTable = ({ params, setParams }: AdminLogTableProps) => {
         ) : (
           <span className="text-font-disabled">-</span>
         ),
+    },
+    {
+      key: "result",
+      header: "결과",
+      width: "100px",
+      render: (row) => (
+        <Badge tone={AUDIT_RESULT_TONE[row.result]}>
+          {AUDIT_RESULT_LABEL[row.result]}
+        </Badge>
+      ),
     },
     {
       key: "message",

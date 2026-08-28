@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { BatchJob, BatchJobRun } from "@/type/ops";
+import { toBatchJobRun, type BatchJobRunResponse } from "./getBatchRunList";
 import { showAppToast } from "@/lib/toast";
 
 /**
@@ -11,11 +12,11 @@ import { showAppToast } from "@/lib/toast";
  * (크레딧 소멸 · 파일 파기). 화면에서 반드시 확인을 받고 부른다.
  */
 export const runBatchJob = async (jobKey: string) => {
-  const response = await adminAxios.post<BatchJobRun>(
+  const response = await liveAxios.post<BatchJobRunResponse>(
     `/admin/batch/jobs/${jobKey}/run`,
   );
 
-  return response.data;
+  return toBatchJobRun(response.data);
 };
 
 /** 스케줄을 켜고 끈다. 잡 정의는 지우지 않는다. */
@@ -23,7 +24,7 @@ export const updateBatchJobEnabled = async (
   jobKey: string,
   isEnabled: boolean,
 ) => {
-  const response = await adminAxios.patch<BatchJob>(
+  const response = await liveAxios.patch<BatchJob>(
     `/admin/batch/jobs/${jobKey}/enabled`,
     { isEnabled },
   );
