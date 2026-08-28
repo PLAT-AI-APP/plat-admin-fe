@@ -1,18 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { adminAxios } from "..";
 import type { AppError } from "@/type/api";
-import type { CharacterDetail, NsfwKeywordLevel } from "@/type/character";
+import type { CharacterDetail } from "@/type/character";
+import type { BannedWordLevel } from "@/type/bannedWord";
 
 /**
- * NSFW 판정에 걸린 키워드 한 건.
+ * NSFW 판정에 걸린 금지어 한 건.
  *
- * `/universes/nsfw-keywords`에 등록된 키워드와 같은 것이다. 화면에서 뱃지
+ * `/universes/banned-words`에 등록된 금지어와 같은 것이다. 화면에서 뱃지
  * 옆에 근거로 찍고, 레벨(차단·경고)까지 함께 보여 오탐을 판단하게 한다.
  */
 export interface CharacterNsfwMatch {
   keywordId: number;
   keyword: string;
-  level: NsfwKeywordLevel;
+  level: BannedWordLevel;
 }
 
 /**

@@ -2,12 +2,19 @@ import { HttpResponse, delay, http } from "msw";
 import {
   type AppVersion,
   type AppVersionFormValues,
-  type LogLevel,
+  type AuditResult,
+  type BatchJobRun,
+  type SystemEventLevel,
 } from "@/type/ops";
 import {
+  adminAuditLogs,
   appVersions,
-  operationLogs,
+  batchJobRuns,
+  batchJobs,
+  decorateBatchJob,
+  systemEventLogs,
 } from "../db/ops";
+import { currentAdmin } from "../session";
 import { comments } from "../db/comment";
 import { qnaItems } from "../db/communication";
 import { reports } from "../db/report";
@@ -106,16 +113,20 @@ export const opsHandlers = [
    * 운영 로그
    * ------------------------------------------------------------------ */
 
-  http.get(`${BASE_URI}/admin/logs/recent`, async ({ request }) => {
+  /* ---------------------------------------------------------------------
+   * 관리자 활동 로그(감사)
+   * ------------------------------------------------------------------ */
+
+  http.get(`${BASE_URI}/admin/logs/admin`, async ({ request }) => {
     const url = new URL(request.url);
     const keyword = url.searchParams.get("keyword") ?? "";
-    const level = url.searchParams.get("level") ?? "";
     const domain = url.searchParams.get("domain") ?? "";
+    const result = url.searchParams.get("result") ?? "";
     const actorId = url.searchParams.get("actorId") ?? "";
 
-    const filtered = operationLogs.filter((log) => {
-      if (level && log.level !== (level as LogLevel)) return false;
+    const filtered = adminAuditLogs.filter((log) => {
       if (domain && log.domain !== domain) return false;
+      if (result && log.result !== (result as AuditResult)) return false;
       if (actorId && String(log.actorId ?? "") !== actorId) return false;
 
       return matchesKeyword(
@@ -137,4 +148,122 @@ export const opsHandlers = [
 
     return HttpResponse.json(paginate(sorted, url));
   }),
+
+  /* ---------------------------------------------------------------------
+   * 시스템 이벤트
+   * ------------------------------------------------------------------ */
+
+  http.get(`${BASE_URI}/admin/logs/system`, async ({ request }) => {
+    const url = new URL(request.url);
+    const keyword = url.searchParams.get("keyword") ?? "";
+    const level = url.searchParams.get("level") ?? "";
+    const source = url.searchParams.get("source") ?? "";
+
+    const filtered = systemEventLogs.filter((event) => {
+      if (level && event.level !== (level as SystemEventLevel)) return false;
+      if (source && event.source !== source) return false;
+
+      return matchesKeyword(
+        keyword,
+        event.message,
+        event.source,
+        event.traceId ?? "",
+      );
+    });
+
+    // 마지막 발생이 최근인 것부터 본다. 지금 터지고 있는 것이 위에 와야 한다.
+    const sorted = [...filtered].sort((a, b) =>
+      b.lastOccurredAt.localeCompare(a.lastOccurredAt),
+    );
+
+    await delay(MOCK_DELAY_MS);
+
+    return HttpResponse.json(paginate(sorted, url));
+  }),
+
+  /* ---------------------------------------------------------------------
+   * 배치(스케줄) 작업
+   * ------------------------------------------------------------------ */
+
+  http.get(`${BASE_URI}/admin/batch/jobs`, async () => {
+    await delay(MOCK_DELAY_MS);
+
+    return HttpResponse.json(batchJobs.map(decorateBatchJob));
+  }),
+
+  http.get(`${BASE_URI}/admin/batch/runs`, async ({ request }) => {
+    const url = new URL(request.url);
+    const jobKey = url.searchParams.get("jobKey") ?? "";
+    const status = url.searchParams.get("status") ?? "";
+    const trigger = url.searchParams.get("trigger") ?? "";
+
+    const filtered = batchJobRuns.filter((run) => {
+      if (jobKey && run.jobKey !== jobKey) return false;
+      if (status && run.status !== status) return false;
+      if (trigger && run.trigger !== trigger) return false;
+
+      return true;
+    });
+
+    const sorted = [...filtered].sort((a, b) =>
+      b.startedAt.localeCompare(a.startedAt),
+    );
+
+    await delay(MOCK_DELAY_MS);
+
+    return HttpResponse.json(paginate(sorted, url));
+  }),
+
+  /**
+   * 수동 실행.
+   *
+   * 실행 이력에 `MANUAL`로 남기고 누가 눌렀는지 함께 굳힌다. 이 요청 자체는
+   * 변경(POST)이라 감사 핸들러가 관리자 활동 로그에도 따로 남긴다 —
+   * "누가 배치를 손으로 돌렸나"가 두 화면 모두에서 답이 된다.
+   */
+  http.post(
+    `${BASE_URI}/admin/batch/jobs/:jobKey/run`,
+    async ({ params }) => {
+      const job = batchJobs.find((item) => item.jobKey === params.jobKey);
+
+      if (!job) return NOT_FOUND_RESPONSE();
+
+      const actor = currentAdmin();
+
+      const run: BatchJobRun = {
+        runId: nextId(batchJobRuns, "runId"),
+        jobKey: job.jobKey,
+        jobName: job.name,
+        // 방금 걸었으므로 아직 도는 중이다. 종료 시각과 소요는 아직 없다.
+        status: "RUNNING",
+        trigger: "MANUAL",
+        actor: actor?.name,
+        actorId: actor?.managerId,
+        startedAt: new Date().toISOString(),
+      };
+
+      batchJobRuns.unshift(run);
+
+      await delay(MOCK_DELAY_MS);
+
+      return HttpResponse.json(run);
+    },
+  ),
+
+  http.patch(
+    `${BASE_URI}/admin/batch/jobs/:jobKey/enabled`,
+    async ({ params, request }) => {
+      const job = batchJobs.find((item) => item.jobKey === params.jobKey);
+
+      if (!job) return NOT_FOUND_RESPONSE();
+
+      const body = (await request.json()) as { isEnabled: boolean };
+
+      job.isEnabled = body.isEnabled;
+
+      await delay(MOCK_DELAY_MS);
+
+      return HttpResponse.json(decorateBatchJob(job));
+    },
+  ),
 ];

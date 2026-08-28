@@ -2,17 +2,17 @@
 
 import { formatDateTimeSecond } from "@/lib/dayjs";
 import { formatAdmin } from "@/lib/utils";
-import type { OperationLog } from "@/type/ops";
+import type { AdminAuditLog } from "@/type/ops";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import {
-  LOG_LEVEL_LABEL,
-  LOG_LEVEL_TONE,
+  AUDIT_RESULT_LABEL,
+  AUDIT_RESULT_TONE,
   getLogDomainLabel,
 } from "../_constants/labels";
 
 interface LogDetailModalProps {
-  log: OperationLog | null;
+  log: AdminAuditLog | null;
   onClose: () => void;
 }
 
@@ -26,7 +26,7 @@ const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
 );
 
 /**
- * 로그 상세.
+ * 관리자 활동 상세.
  *
  * 목록의 한 줄로는 "누가 무엇을 했다"까지만 알 수 있다. **무엇을 어떻게 바꿨나**는
  * 요청 본문에 있으므로 여기서 펼쳐 준다. 비밀번호 같은 값은 적재 시점에 이미
@@ -39,7 +39,7 @@ const LogDetailModal = ({ log, onClose }: LogDetailModalProps) => {
     <Modal
       isOpen={Boolean(log)}
       onClose={onClose}
-      title="로그 상세"
+      title="관리자 활동 상세"
       description={log ? formatDateTimeSecond(log.createdAt) : undefined}
       size="md"
     >
@@ -47,16 +47,18 @@ const LogDetailModal = ({ log, onClose }: LogDetailModalProps) => {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col">
             <Row
-              label="레벨"
+              label="결과"
               value={
-                <Badge tone={LOG_LEVEL_TONE[log.level]}>
-                  {LOG_LEVEL_LABEL[log.level]}
+                <Badge tone={AUDIT_RESULT_TONE[log.result]}>
+                  {AUDIT_RESULT_LABEL[log.result]}
                 </Badge>
               }
             />
             <Row label="도메인" value={getLogDomainLabel(log.domain)} />
             <Row label="액션" value={log.action} />
             <Row label="실행자" value={formatAdmin(log.actor, log.actorId)} />
+            {/* 실행 당시 직책. 지금 직책이 바뀌었어도 그때의 권한을 알 수 있어야 한다. */}
+            <Row label="직책" value={log.roleName ?? "-"} />
             <Row
               label="대상"
               value={
@@ -66,6 +68,7 @@ const LogDetailModal = ({ log, onClose }: LogDetailModalProps) => {
               }
             />
             <Row label="요청" value={<code>{log.message}</code>} />
+            <Row label="접속 IP" value={log.ip ?? "-"} />
           </div>
 
           <div>

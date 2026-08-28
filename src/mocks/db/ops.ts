@@ -1,18 +1,24 @@
 import type { ServerMetricPoint } from "@/api/ops/getServerMetrics";
 import {
+  LOG_DOMAINS,
   MANAGER_LOCK_THRESHOLD,
+  SYSTEM_EVENT_SOURCES,
+  type AdminAuditLog,
   type AdminRole,
   type AppVersion,
+  type BatchJob,
+  type BatchJobRun,
+  type BatchRunStatus,
   type DependencyHealth,
   type HealthStatus,
   type Manager,
-  type OperationLog,
+  type SystemEventLog,
 } from "@/type/ops";
 import {
   normalizePermissions,
   type PermissionKey,
 } from "@/type/permission";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, hoursAgo, pickOne, randomInt } from "../utils";
 
 /* -------------------------------------------------------------------------
  * 직책 · 관리자 계정
@@ -53,11 +59,11 @@ export const adminRoles: AdminRole[] = [
       "hashtag:read",
       "hashtag:write",
       "hashtag:delete",
-      "nsfwKeyword:read",
-      "nsfwKeyword:write",
+      "bannedWord:read",
+      "bannedWord:write",
       "notice:read",
       "notice:write",
-      "log:read",
+      "systemLog:read",
     ] as PermissionKey[]),
     isSuperAdmin: false,
     memberCount: 0,
@@ -87,7 +93,7 @@ export const adminRoles: AdminRole[] = [
         결제 담당이 한다. 조정을 열면 제재와 보상이 한 사람 손에 모인다.
       */
       "creditAdjustment:read",
-      "log:read",
+      "systemLog:read",
     ] as PermissionKey[]),
     isSuperAdmin: false,
     memberCount: 0,
@@ -108,7 +114,7 @@ export const adminRoles: AdminRole[] = [
       "creditAdjustment:read",
       "creditAdjustment:adjust",
       "ledger:read",
-      "log:read",
+      "systemLog:read",
     ] as PermissionKey[]),
     isSuperAdmin: false,
     memberCount: 0,
@@ -127,7 +133,8 @@ export const adminRoles: AdminRole[] = [
       "report:read",
       "ledger:read",
       "server:read",
-      "log:read",
+      "systemLog:read",
+      "batch:read",
     ] as PermissionKey[]),
     isSuperAdmin: false,
     memberCount: 0,
@@ -312,17 +319,11 @@ export const buildServerHealth = () => {
   };
 };
 
-export const LOG_DOMAINS = [
-  "USER",
-  "CHARACTER",
-  "BILLING",
-  "AI",
-  "MAIN_EXPOSURE",
-  "COMMUNITY",
-  "OPS",
-] as const;
+/* -------------------------------------------------------------------------
+ * 관리자 활동 로그(감사)
+ * ---------------------------------------------------------------------- */
 
-const LOG_ACTIONS: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
+const AUDIT_ACTIONS: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
   USER: ["USER_BLOCK", "USER_RESTORE", "USER_WITHDRAW"],
   COMMUNITY: [
     "COMMENT_HIDE",
@@ -333,21 +334,16 @@ const LOG_ACTIONS: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
   CHARACTER: [
     "CHARACTER_HIDE",
     "CHARACTER_BLOCK",
-    "NSFW_KEYWORD_ADD",
+    "BANNED_WORD_ADD",
     "CHAT_EXPORT",
   ],
-  BILLING: [
-    "PRODUCT_UPDATE",
-    "CREDIT_ADJUST",
-    "REFUND_APPROVE",
-    "PAYMENT_FAILED",
-  ],
-  AI: ["MODEL_SWITCH", "PROMPT_UPDATE", "PROVIDER_TIMEOUT", "MODEL_COST_UPDATE"],
+  BILLING: ["PRODUCT_UPDATE", "CREDIT_ADJUST", "REFUND_APPROVE"],
+  AI: ["MODEL_SWITCH", "PROMPT_UPDATE", "MODEL_COST_UPDATE"],
   MAIN_EXPOSURE: ["BANNER_CREATE", "BANNER_ORDER_UPDATE", "CURATION_SAVE"],
-  OPS: ["MANAGER_CREATE", "MANAGER_STATUS_CHANGE", "APP_VERSION_UPDATE", "LOGIN"],
+  OPS: ["MANAGER_CREATE", "MANAGER_STATUS_CHANGE", "APP_VERSION_UPDATE"],
 };
 
-const LOG_MESSAGES: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
+const AUDIT_MESSAGES: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
   USER: [
     "유저 계정 상태를 변경했습니다.",
     "약관 위반 신고로 계정을 정지했습니다.",
@@ -360,18 +356,18 @@ const LOG_MESSAGES: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
   ],
   CHARACTER: [
     "캐릭터를 비공개로 전환했습니다.",
-    "NSFW 키워드에 의해 캐릭터 등록이 차단되었습니다.",
+    "금지어를 추가했습니다.",
     "채팅 내보내기 작업을 생성했습니다.",
   ],
   BILLING: [
     "크레딧 수동 지급을 완료했습니다.",
-    "결제 승인에 실패해 재시도 큐에 담았습니다.",
+    "환불 요청을 승인했습니다.",
     "상품 판매가를 수정했습니다.",
   ],
   AI: [
     "기본 대화 모델을 교체했습니다.",
-    "AI 제공자 응답이 지연되어 폴백 모델로 전환했습니다.",
     "시스템 프롬프트를 새 버전으로 배포했습니다.",
+    "모델 단가를 수정했습니다.",
   ],
   MAIN_EXPOSURE: [
     "메인 배너를 추가했습니다.",
@@ -381,53 +377,281 @@ const LOG_MESSAGES: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
   OPS: [
     "관리자 계정을 추가했습니다.",
     "앱 최소 버전 정책을 수정했습니다.",
-    "관리자 로그인에 성공했습니다.",
+    "관리자 계정 잠금을 해제했습니다.",
   ],
 };
 
 /**
- * 로그 실행자 후보.
+ * 감사 로그의 실행자.
  *
- * 관리자는 실제 계정에서 골라 이름과 ID가 맞도록 한다. `system`·`batch-scheduler`는
- * 사람이 아니라 서버가 스스로 남긴 것이라 계정 ID가 없다 — 그래서 화면에도
- * 이름만 찍힌다.
+ * **사람만 온다.** `system` · `batch-scheduler`를 여기 섞으면 "누가 했는가"에
+ * 계정이 없는 행이 생기고, 실행자 필터가 그 행을 영영 잡지 못한다.
+ * 서버가 스스로 한 일은 시스템 이벤트와 배치 실행 이력으로 간다.
  */
-const LOG_ACTORS: { name: string; managerId?: number }[] = [
-  ...managers.slice(0, 4).map(({ name, managerId }) => ({ name, managerId })),
-  { name: "system" },
-  { name: "batch-scheduler" },
-];
+const AUDIT_ACTORS = managers
+  .slice(0, 4)
+  .map(({ name, managerId, roleId }) => ({
+    name,
+    managerId,
+    roleName: findAdminRole(roleId)?.name,
+  }));
+
+/** 사내망 대역. 낯선 IP를 알아보게 하려면 익숙한 값이 먼저 있어야 한다. */
+const AUDIT_IPS = ["10.0.12.31", "10.0.12.44", "10.0.20.7", "121.170.88.14"];
 
 /**
- * 최근 운영 로그 72건.
+ * 최근 관리자 활동 로그 72건.
  * 최신순 정렬을 그대로 쓸 수 있도록 배열 앞쪽이 가장 최근이 되게 만든다.
  */
-export const operationLogs: OperationLog[] = Array.from(
+export const adminAuditLogs: AdminAuditLog[] = Array.from(
   { length: 72 },
   (_, index) => {
     const seed = index + 1;
     const domain = pickOne(seed * 2, LOG_DOMAINS);
-    // ERROR가 너무 잦으면 필터 확인이 어려우므로 INFO 비중을 높인다.
-    const level = pickOne(seed * 5, [
-      "INFO",
-      "INFO",
-      "INFO",
-      "WARN",
-      "WARN",
-      "ERROR",
-    ] as const);
+    const actor = pickOne(seed * 7, AUDIT_ACTORS);
 
-    const actor = pickOne(seed * 7, LOG_ACTORS);
+    /*
+      대부분은 성공한다. 거부(DENIED)를 일부러 섞어 두는 것은, 감사에서 먼저
+      봐야 하는 행이 실제로 눈에 띄는지 화면에서 확인하기 위해서다.
+    */
+    const result = pickOne(seed * 13, [
+      "SUCCESS",
+      "SUCCESS",
+      "SUCCESS",
+      "SUCCESS",
+      "SUCCESS",
+      "DENIED",
+      "FAILED",
+    ] as const);
 
     return {
       logId: 72 - index,
-      level,
-      domain,
-      action: pickOne(seed * 3, LOG_ACTIONS[domain]),
       actor: actor.name,
       actorId: actor.managerId,
-      message: pickOne(seed * 11, LOG_MESSAGES[domain]),
-      createdAt: daysAgo(Math.floor(index / 3), 23 - (index % 24)),
+      roleName: actor.roleName,
+      domain,
+      action: pickOne(seed * 3, AUDIT_ACTIONS[domain]),
+      result,
+      message:
+        result === "DENIED"
+          ? "권한이 없어 요청이 거부되었습니다."
+          : pickOne(seed * 11, AUDIT_MESSAGES[domain]),
+      targetType: domain.toLowerCase(),
+      targetId: String(randomInt(seed * 17, 1, 240)),
+      ip: pickOne(seed * 19, AUDIT_IPS),
+      createdAt: hoursAgo(index * 2 + 1),
     };
   },
 );
+
+/* -------------------------------------------------------------------------
+ * 시스템 이벤트
+ * ---------------------------------------------------------------------- */
+
+const SYSTEM_EVENT_MESSAGES: Record<
+  (typeof SYSTEM_EVENT_SOURCES)[number],
+  readonly string[]
+> = {
+  API: [
+    "응답 지연이 임계치를 넘었습니다. (p99 > 3s)",
+    "요청 처리 중 처리되지 않은 예외가 발생했습니다.",
+  ],
+  DB: [
+    "커넥션 풀이 고갈되어 대기가 발생했습니다.",
+    "슬로우 쿼리가 반복 감지되었습니다.",
+  ],
+  AI_PROVIDER: [
+    "제공자 응답이 지연되어 폴백 모델로 전환했습니다.",
+    "제공자가 rate limit을 반환했습니다.",
+  ],
+  PAYMENT: [
+    "PG 승인 요청이 타임아웃되어 재시도 큐에 담았습니다.",
+    "결제 웹훅 서명 검증에 실패했습니다.",
+  ],
+  PUSH: [
+    "푸시 토큰이 만료되어 발송에 실패했습니다.",
+    "FCM 응답이 5xx로 돌아왔습니다.",
+  ],
+  STORAGE: [
+    "이미지 업로드가 용량 제한으로 거부되었습니다.",
+    "오브젝트 스토리지 응답이 지연되었습니다.",
+  ],
+};
+
+/**
+ * 최근 시스템 이벤트 46건.
+ *
+ * 같은 오류가 여러 번 난 것은 한 행으로 묶여 `occurrenceCount`를 갖는다.
+ * 원본을 그대로 나열하면 같은 줄이 화면을 덮어 정작 다른 이벤트가 묻힌다.
+ */
+export const systemEventLogs: SystemEventLog[] = Array.from(
+  { length: 46 },
+  (_, index) => {
+    const seed = index + 101;
+    const source = pickOne(seed * 2, SYSTEM_EVENT_SOURCES);
+    const level = pickOne(seed * 5, ["WARN", "WARN", "ERROR"] as const);
+    const occurrenceCount = randomInt(seed * 7, 1, 240);
+    const lastOccurredAt = hoursAgo(index * 3 + 1);
+
+    return {
+      eventId: 46 - index,
+      level,
+      source,
+      message: pickOne(seed * 3, SYSTEM_EVENT_MESSAGES[source]),
+      traceId: `trc-${(seed * 8191).toString(16).padStart(8, "0")}`,
+      occurrenceCount,
+      // 묶인 이벤트는 처음 발생이 더 앞선다. 한 건이면 두 시각이 같다.
+      firstOccurredAt:
+        occurrenceCount > 1
+          ? hoursAgo(index * 3 + 1 + randomInt(seed * 23, 2, 96))
+          : lastOccurredAt,
+      lastOccurredAt,
+    };
+  },
+);
+
+/* -------------------------------------------------------------------------
+ * 배치(스케줄) 작업
+ * ---------------------------------------------------------------------- */
+
+/**
+ * 배치 잡 정의.
+ *
+ * 실제 서버의 스케줄러가 들고 있는 목록을 그대로 비춘다. 어드민이 잡을
+ * 만들거나 지우지는 않는다 — 코드에 있는 것이 원본이고, 여기서는 켜고 끄는 것과
+ * 다시 돌리는 것만 한다.
+ */
+export const batchJobs: BatchJob[] = [
+  {
+    jobId: 1,
+    jobKey: "expire-credits",
+    name: "크레딧 소멸 처리",
+    description: "유효기간이 지난 크레딧을 회수하고 소멸 내역을 장부에 남깁니다.",
+    cronExpression: "0 10 4 * * *",
+    isEnabled: true,
+  },
+  {
+    jobId: 2,
+    jobKey: "purge-chat-exports",
+    name: "채팅 내보내기 파일 파기",
+    description: "유예 기간이 끝난 내보내기 파일과 이미지를 실제로 파기합니다.",
+    cronExpression: "0 0 5 * * *",
+    isEnabled: true,
+  },
+  {
+    jobId: 3,
+    jobKey: "aggregate-daily-metrics",
+    name: "일간 지표 집계",
+    description: "대시보드가 읽는 전일 지표를 집계해 적재합니다.",
+    cronExpression: "0 30 0 * * *",
+    isEnabled: true,
+  },
+  {
+    jobId: 4,
+    jobKey: "settle-payments",
+    name: "결제 정산 대사",
+    description: "PG 거래 내역과 내부 장부를 대조해 불일치 건을 추립니다.",
+    cronExpression: "0 0 6 * * *",
+    isEnabled: true,
+  },
+  {
+    jobId: 5,
+    jobKey: "retry-failed-push",
+    name: "실패 푸시 재발송",
+    description: "일시 오류로 실패한 푸시를 다시 큐에 담습니다.",
+    cronExpression: "0 */30 * * * *",
+    isEnabled: true,
+  },
+  {
+    jobId: 6,
+    jobKey: "sync-official-universes",
+    name: "공식 세계관 동기화",
+    description: "공식 계정의 세계관 목록을 다시 훑어 노출 후보를 갱신합니다.",
+    /* 공식 계정 지정 방식이 바뀌는 중이라 잠시 꺼 두었다. 정의는 남긴다. */
+    isEnabled: false,
+    cronExpression: "0 0 3 * * *",
+  },
+];
+
+/** 잡 하나가 하루에 도는 횟수만큼 이력을 만들기 위한 상태 분포 */
+const BATCH_RUN_STATUSES: readonly BatchRunStatus[] = [
+  "SUCCESS",
+  "SUCCESS",
+  "SUCCESS",
+  "SUCCESS",
+  "SKIPPED",
+  "FAILED",
+];
+
+const BATCH_ERRORS = [
+  "PG 응답 타임아웃 (30s). 3회 재시도 후 중단했습니다.",
+  "대상 조회 중 커넥션 풀이 고갈되었습니다.",
+  "일부 레코드에서 제약 조건 위반이 발생했습니다.",
+];
+
+/**
+ * 배치 실행 이력 90건.
+ *
+ * 잡을 돌아가며 만들어 화면에서 잡별 필터가 실제로 걸리는지 보이게 한다.
+ */
+export const batchJobRuns: BatchJobRun[] = Array.from(
+  { length: 90 },
+  (_, index) => {
+    const seed = index + 201;
+    const job = batchJobs[index % batchJobs.length];
+    const status = pickOne(seed * 3, BATCH_RUN_STATUSES);
+    const trigger = pickOne(seed * 5, [
+      "SCHEDULE",
+      "SCHEDULE",
+      "SCHEDULE",
+      "SCHEDULE",
+      "MANUAL",
+    ] as const);
+    const manualActor =
+      trigger === "MANUAL" ? pickOne(seed * 7, AUDIT_ACTORS) : undefined;
+
+    const startedAt = hoursAgo(index * 2 + 1);
+    const durationMs = randomInt(seed * 11, 220, 184_000);
+    const processedCount =
+      status === "SKIPPED" ? 0 : randomInt(seed * 13, 1, 12_400);
+
+    return {
+      runId: 90 - index,
+      jobKey: job.jobKey,
+      jobName: job.name,
+      status,
+      trigger,
+      actor: manualActor?.name,
+      actorId: manualActor?.managerId,
+      startedAt,
+      finishedAt: new Date(
+        new Date(startedAt).getTime() + durationMs,
+      ).toISOString(),
+      durationMs,
+      processedCount,
+      failedCount: status === "FAILED" ? randomInt(seed * 17, 1, 40) : 0,
+      errorMessage:
+        status === "FAILED" ? pickOne(seed * 19, BATCH_ERRORS) : undefined,
+    };
+  },
+);
+
+/**
+ * 잡 정의에 최근 실행 결과와 다음 예정 시각을 채워 넣는다.
+ *
+ * 잡 목록과 이력을 따로 들고 있으면 둘이 어긋난다. **이력이 원본**이고,
+ * 목록의 `lastRunStatus`는 거기서 파생되는 값이라 계산해서 붙인다.
+ */
+export const decorateBatchJob = (job: BatchJob): BatchJob => {
+  const lastRun = batchJobRuns
+    .filter((run) => run.jobKey === job.jobKey)
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
+
+  return {
+    ...job,
+    lastRunStatus: lastRun?.status,
+    lastRunAt: lastRun?.startedAt,
+    // 꺼진 잡은 다음 실행이 없다. 시각을 채우면 곧 돈다는 뜻이 되어 버린다.
+    nextRunAt: job.isEnabled ? hoursAgo(-randomInt(job.jobId, 1, 20)) : undefined,
+  };
+};

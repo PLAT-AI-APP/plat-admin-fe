@@ -432,17 +432,6 @@ export interface UniverseDetail {
   scenarios: UniverseScenarioDetail[];
 }
 
-/** NSFW 키워드 */
-export type NsfwKeywordLevel = "BLOCK" | "WARN";
-
-export interface NsfwKeyword {
-  keywordId: number;
-  keyword: string;
-  level: NsfwKeywordLevel;
-  hitCount: number;
-  createdAt: string;
-}
-
 /** 채팅 내보내기 작업 */
 export type ChatExportStatus = "PENDING" | "PROCESSING" | "DONE" | "FAILED";
 

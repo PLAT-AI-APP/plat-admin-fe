@@ -1,7 +1,6 @@
 import type {
   Character,
   ChatExportJob,
-  NsfwKeyword,
   ScenarioLifecycle,
   ScenarioType,
   Universe,
@@ -12,7 +11,9 @@ import type {
   UniverseTendency,
 } from "@/type/character";
 import type { ServiceLanguage } from "@/type/language";
+import type { BannedWord, BannedWordLevel, BannedWordType } from "@/type/bannedWord";
 import { daysAgo, pickOne, randomInt } from "../utils";
+import { pickManager } from "./ops";
 import { CHARACTER_TAG_POOL, hashtags } from "./hashtag";
 import { creatorUsers, officialCreatorUsers, users } from "./user";
 
@@ -467,21 +468,49 @@ export const characterProfiles: CharacterProfile[] = characters.map(
   }),
 );
 
-export const nsfwKeywords: NsfwKeyword[] = [
-  { keyword: "노출", level: "WARN" },
-  { keyword: "폭력묘사", level: "BLOCK" },
-  { keyword: "자해", level: "BLOCK" },
-  { keyword: "미성년", level: "BLOCK" },
-  { keyword: "혐오표현", level: "BLOCK" },
-  { keyword: "선정적", level: "WARN" },
-  { keyword: "약물", level: "WARN" },
-].map((item, index) => ({
-  keywordId: index + 1,
-  keyword: item.keyword,
-  level: item.level as NsfwKeyword["level"],
-  hitCount: randomInt(index + 20, 0, 320),
-  createdAt: daysAgo(index * 4 + 3),
-}));
+/**
+ * 금지어 사전 시드.
+ *
+ * 금지어와 예외어를 함께 둔다. '졸라'를 막고 '고르곤졸라'를 풀어 주는 짝이 실제로
+ * 어떻게 동작하는지는 두 종류가 같이 있어야만 화면에서 확인할 수 있다.
+ */
+const BANNED_WORD_SEEDS: {
+  word: string;
+  type: BannedWordType;
+  level?: BannedWordLevel;
+}[] = [
+  { word: "노출", type: "BAN", level: "WARN" },
+  { word: "폭력묘사", type: "BAN", level: "BLOCK" },
+  { word: "자해", type: "BAN", level: "BLOCK" },
+  { word: "미성년", type: "BAN", level: "BLOCK" },
+  { word: "혐오표현", type: "BAN", level: "BLOCK" },
+  { word: "선정적", type: "BAN", level: "WARN" },
+  { word: "약물", type: "BAN", level: "WARN" },
+  { word: "졸라", type: "BAN", level: "BLOCK" },
+  { word: "고르곤졸라", type: "EXCEPT" },
+  { word: "노출 콘크리트", type: "EXCEPT" },
+];
+
+export const bannedWords: BannedWord[] = BANNED_WORD_SEEDS.map(
+  (seed, index) => {
+    const registrar = pickManager(index + 20);
+
+    return {
+      bannedWordId: index + 1,
+      word: seed.word,
+      type: seed.type,
+      level: seed.level,
+      // 예외어는 되돌리는 쪽이라 적중 수를 세지 않는다.
+      hitCount: seed.type === "BAN" ? randomInt(index + 20, 0, 320) : 0,
+      createdBy: registrar.name,
+      createdById: registrar.managerId,
+      createdAt: daysAgo(index * 4 + 3),
+    };
+  },
+);
+
+/** 금지어(BAN)만. NSFW 판정 근거는 걸러 내는 쪽에서만 나온다. */
+export const banOnlyWords = bannedWords.filter((item) => item.type === "BAN");
 
 /**
  * 캐릭터 검수 부가 정보.
@@ -495,11 +524,11 @@ export const nsfwKeywords: NsfwKeyword[] = [
 export interface CharacterModeration {
   characterId: number;
   /**
-   * NSFW 판정에 걸린 키워드. `Character.isNsfw`가 참인 근거다.
+   * NSFW 판정에 걸린 금지어. `Character.isNsfw`가 참인 근거다.
    *
    * 뱃지만 있고 근거가 없으면 운영자가 오탐을 판단할 수 없다.
-   * 값은 `nsfwKeywords`(= `/universes/nsfw-keywords` 화면)에서만 고른다.
-   * 등록된 키워드 목록과 어긋나면 "이 키워드로 걸렸다"는 말이 성립하지 않는다.
+   * 값은 `bannedWords`(= `/universes/banned-words` 화면)에서만 고른다.
+   * 등록된 사전과 어긋나면 "이 단어로 걸렸다"는 말이 성립하지 않는다.
    */
   nsfwMatchedKeywordIds: number[];
   /** 차단 사유. `status`가 `BLOCKED`일 때만 있다. */
@@ -517,14 +546,14 @@ export const characterModerations: CharacterModeration[] = characters.map(
   (character, index) => {
     const seed = index + 1;
     /*
-      NSFW로 걸린 캐릭터만 매칭 키워드를 갖는다. 1~2개를 고른다.
-      걸리지 않은 캐릭터에 키워드를 붙이면 뱃지와 근거가 어긋난다.
+      NSFW로 걸린 캐릭터만 매칭 금지어를 갖는다. 1~2개를 고른다.
+      걸리지 않은 캐릭터에 금지어를 붙이면 뱃지와 근거가 어긋난다.
     */
     const matchCount = character.isNsfw ? randomInt(seed * 31, 1, 2) : 0;
     const nsfwMatchedKeywordIds = Array.from(
       { length: matchCount },
       (_, matchIndex) =>
-        pickOne(seed * 37 + matchIndex * 13, nsfwKeywords).keywordId,
+        pickOne(seed * 37 + matchIndex * 13, banOnlyWords).bannedWordId,
     ).filter((id, idx, ids) => ids.indexOf(id) === idx);
 
     const isBlocked = character.status === "BLOCKED";

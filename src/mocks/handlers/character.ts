@@ -6,22 +6,23 @@ import type {
 import type { CharacterSort } from "@/api/character/getCharacterList";
 import type { CharacterStatusBody } from "@/api/character/mutateCharacter";
 import type { ChatExportSchema } from "@/schema/chatExport.schema";
-import type { NsfwKeywordSchema } from "@/schema/nsfwKeyword.schema";
+import type { BannedWordSchema } from "@/schema/bannedWord.schema";
+import type { BannedWord, BannedWordLevel } from "@/type/bannedWord";
 import type {
   Character,
   CharacterVisibility,
   ChatExportJob,
-  NsfwKeyword,
 } from "@/type/character";
 import {
   characterModerations,
   characterProfiles,
   characters,
   chatExportJobs,
-  nsfwKeywords,
+  bannedWords,
   universes,
   syncCharacterDerivedCounts,
 } from "../db/character";
+import { stampAdmin } from "../session";
 import {
   MOCK_DELAY_MS,
   matchesKeyword,
@@ -117,18 +118,18 @@ const filterCharacters = (url: URL): Character[] => {
 /**
  * NSFW 판정 근거.
  *
- * 매칭 키워드 ID를 등록된 키워드 목록에서 다시 찾아 붙인다.
- * 키워드가 삭제되면 근거에서도 사라져야 `/universes/nsfw-keywords` 화면과
- * 어긋나지 않는다.
+ * 매칭 ID를 등록된 금지어 사전에서 다시 찾아 붙인다.
+ * 단어가 삭제되면 근거에서도 사라져야 `/universes/banned-words` 화면과
+ * 어긋나지 않는다. 레벨이 없는 예외어는 판정 근거가 될 수 없어 걸러진다.
  */
 const buildNsfwMatches = (characterId: number): CharacterNsfwMatch[] => {
   const ids = findModeration(characterId)?.nsfwMatchedKeywordIds ?? [];
 
   return ids.flatMap((keywordId) => {
-    const found = nsfwKeywords.find((item) => item.keywordId === keywordId);
+    const found = bannedWords.find((item) => item.bannedWordId === keywordId);
 
-    return found
-      ? [{ keywordId, keyword: found.keyword, level: found.level }]
+    return found?.level
+      ? [{ keywordId, keyword: found.word, level: found.level }]
       : [];
   });
 };
@@ -278,19 +279,22 @@ export const characterHandlers = [
     },
   ),
 
-  http.get(`${BASE_URI}/admin/nsfw-keywords`, async ({ request }) => {
+  http.get(`${BASE_URI}/admin/banned-words`, async ({ request }) => {
     const url = new URL(request.url);
     const keyword = url.searchParams.get("keyword") ?? "";
+    const type = url.searchParams.get("type") ?? "";
     const level = url.searchParams.get("level") ?? "";
 
-    const filtered = nsfwKeywords.filter((item) => {
+    const filtered = bannedWords.filter((item) => {
+      if (type && item.type !== type) return false;
       if (level && item.level !== level) return false;
 
-      return matchesKeyword(keyword, item.keyword);
+      return matchesKeyword(keyword, item.word);
     });
 
-    const sorted = [...filtered].sort((a, b) =>
-      b.createdAt.localeCompare(a.createdAt),
+    // 적중이 많은 것부터. 이 표를 여는 이유는 대개 과하게 걸리는 단어를 찾기 위해서다.
+    const sorted = [...filtered].sort(
+      (a, b) => b.hitCount - a.hitCount || b.createdAt.localeCompare(a.createdAt),
     );
 
     await delay(MOCK_DELAY_MS);
@@ -298,46 +302,71 @@ export const characterHandlers = [
     return HttpResponse.json(paginate(sorted, url));
   }),
 
-  http.post(`${BASE_URI}/admin/nsfw-keywords`, async ({ request }) => {
-    const body = (await request.json()) as NsfwKeywordSchema;
-    const isDuplicated = nsfwKeywords.some(
-      (item) => item.keyword === body.keyword,
-    );
+  http.post(`${BASE_URI}/admin/banned-words`, async ({ request }) => {
+    const body = (await request.json()) as BannedWordSchema;
+    const word = body.word.trim();
+    // 한 단어가 금지어이면서 예외어일 수는 없으므로 유형과 무관하게 단어 자체가 유일하다.
+    const isDuplicated = bannedWords.some((item) => item.word === word);
 
     await delay(MOCK_DELAY_MS);
 
     if (isDuplicated) {
       return HttpResponse.json(
-        {
-          code: "KEYWORD_DUPLICATED",
-          message: "이미 등록된 키워드입니다.",
-        },
+        { code: "BANNED_WORD_DUPLICATED", message: "이미 등록된 단어입니다." },
         { status: 409 },
       );
     }
 
-    const created: NsfwKeyword = {
-      keywordId: nextId(nsfwKeywords, "keywordId"),
-      keyword: body.keyword,
-      level: body.level,
+    const registrar = stampAdmin();
+    const created: BannedWord = {
+      bannedWordId: nextId(bannedWords, "bannedWordId"),
+      word,
+      type: body.type,
+      level: body.type === "BAN" ? body.level : undefined,
       hitCount: 0,
+      createdBy: registrar.name,
+      createdById: registrar.managerId,
       createdAt: new Date().toISOString(),
     };
 
-    nsfwKeywords.push(created);
+    bannedWords.push(created);
 
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  http.delete(
-    `${BASE_URI}/admin/nsfw-keywords/:keywordId`,
-    async ({ params }) => {
-      const keywordId = Number(params.keywordId);
-      const index = nsfwKeywords.findIndex(
-        (item) => item.keywordId === keywordId,
+  http.patch(
+    `${BASE_URI}/admin/banned-words/:bannedWordId/level`,
+    async ({ params, request }) => {
+      const bannedWordId = Number(params.bannedWordId);
+      const { level } = (await request.json()) as { level: BannedWordLevel };
+      const found = bannedWords.find(
+        (item) => item.bannedWordId === bannedWordId,
       );
 
-      if (index >= 0) nsfwKeywords.splice(index, 1);
+      await delay(MOCK_DELAY_MS);
+
+      if (!found) {
+        return HttpResponse.json(
+          { code: "NOT_FOUND", message: "존재하지 않는 단어입니다." },
+          { status: 404 },
+        );
+      }
+
+      found.level = level;
+
+      return HttpResponse.json(found);
+    },
+  ),
+
+  http.delete(
+    `${BASE_URI}/admin/banned-words/:bannedWordId`,
+    async ({ params }) => {
+      const bannedWordId = Number(params.bannedWordId);
+      const index = bannedWords.findIndex(
+        (item) => item.bannedWordId === bannedWordId,
+      );
+
+      if (index >= 0) bannedWords.splice(index, 1);
 
       await delay(MOCK_DELAY_MS);
 

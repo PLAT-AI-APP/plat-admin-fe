@@ -38,11 +38,13 @@ import {
   isExposableCharacter,
 } from "../../_lib/characterExposure";
 import {
-  NSFW_LEVEL_LABEL,
-  NSFW_LEVEL_TONE,
   VISIBILITY_LABEL,
   VISIBILITY_TONE,
 } from "../../../_constants/character";
+import {
+  BANNED_WORD_LEVEL_TONE,
+} from "../../../_constants/bannedWord";
+import { BANNED_WORD_LEVEL_LABEL } from "@/type/bannedWord";
 
 interface CharacterDetailViewProps {
   characterId: number;
@@ -334,7 +336,7 @@ const CharacterHeaderCard = ({
                 // 근거를 뱃지에 바로 붙인다. 자세한 내역은 기본 정보 탭에 있다.
                 title={
                   character.nsfwMatches.length > 0
-                    ? `걸린 키워드: ${character.nsfwMatches
+                    ? `걸린 금지어: ${character.nsfwMatches
                         .map((match) => match.keyword)
                         .join(", ")}`
                     : "자동 판정 근거가 없습니다. 수동 지정으로 보입니다."
@@ -444,29 +446,29 @@ const BasicInfoPanel = ({
     </Card>
 
     {/*
-      NSFW 뱃지의 근거. 어떤 키워드에 걸렸는지 없으면 오탐인지 판단할 수 없다.
-      키워드 자체는 `/universes/nsfw-keywords`에서 관리한다.
+      NSFW 뱃지의 근거. 어떤 금지어에 걸렸는지 없으면 오탐인지 판단할 수 없다.
+      단어 자체는 `/universes/banned-words`에서 관리한다.
     */}
     <Card
       title="NSFW 판정 근거"
-      description="캐릭터 원문에서 검출된 등록 키워드입니다."
+      description="캐릭터 원문에서 검출된 금지어입니다."
       action={
         <Link
-          href="/universes/nsfw-keywords"
+          href="/universes/banned-words"
           className="title-6 text-brand hover:underline"
         >
-          키워드 관리
+          금지어 관리
         </Link>
       }
     >
       {!character.isNsfw ? (
         <p className="body-5 text-font-2">
-          NSFW로 판정되지 않았습니다. 등록 키워드에 걸린 내용이 없습니다.
+          NSFW로 판정되지 않았습니다. 등록된 금지어에 걸린 내용이 없습니다.
         </p>
       ) : character.nsfwMatches.length === 0 ? (
         <Alert tone="warning" title="자동 판정 근거가 없습니다.">
-          등록 키워드에 걸리지 않았는데 NSFW로 표시되어 있습니다. 운영자가 직접
-          지정했거나, 판정 이후 해당 키워드가 삭제된 경우입니다.
+          등록된 금지어에 걸리지 않았는데 NSFW로 표시되어 있습니다. 운영자가 직접
+          지정했거나, 판정 이후 해당 금지어가 삭제된 경우입니다.
         </Alert>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -479,8 +481,8 @@ const BasicInfoPanel = ({
               <span className="body-5 flex-1 text-font-1">
                 #{match.keyword}
               </span>
-              <Badge tone={NSFW_LEVEL_TONE[match.level]}>
-                {NSFW_LEVEL_LABEL[match.level]}
+              <Badge tone={BANNED_WORD_LEVEL_TONE[match.level]}>
+                {BANNED_WORD_LEVEL_LABEL[match.level]}
               </Badge>
             </li>
           ))}

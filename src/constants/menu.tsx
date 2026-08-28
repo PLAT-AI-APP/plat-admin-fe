@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import type { PermissionKey } from "@/type/permission";
 import {
   Bell,
+  Calendar,
   Coin,
   Cpu,
   CreditCard,
@@ -159,9 +160,9 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Hash size={SUB_ICON_SIZE} />,
       },
       {
-        label: "NSFW 키워드",
-        href: "/universes/nsfw-keywords",
-        permission: "nsfwKeyword:read",
+        label: "금지어 관리",
+        href: "/universes/banned-words",
+        permission: "bannedWord:read",
         icon: <ShieldAlert size={SUB_ICON_SIZE} />,
       },
       {
@@ -345,9 +346,20 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Server size={SUB_ICON_SIZE} />,
       },
       {
+        label: "배치 관리",
+        href: "/ops/batch",
+        permission: "batch:read",
+        icon: <Calendar size={SUB_ICON_SIZE} />,
+      },
+      {
         label: "로그",
         href: "/ops/logs",
-        permission: "log:read",
+        /*
+          탭마다 권한이 다르다(관리자 활동 `log:read` · 시스템 이벤트 `systemLog:read`).
+          메뉴는 키를 하나만 걸 수 있어 **넓은 쪽**을 두고, 감사 탭은 화면 안에서
+          따로 막는다. 좁은 쪽을 걸면 장애를 보려는 사람이 메뉴 자체를 못 본다.
+        */
+        permission: "systemLog:read",
         icon: <ListLines size={SUB_ICON_SIZE} />,
       },
     ],

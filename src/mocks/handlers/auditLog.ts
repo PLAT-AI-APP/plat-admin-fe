@@ -1,19 +1,19 @@
 import { http } from "msw";
-import type { OperationLog } from "@/type/ops";
-import { operationLogs } from "../db/ops";
+import type { LogDomain } from "@/type/ops";
+import { adminAuditLogs } from "../db/ops";
 import { currentAdmin } from "../session";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
 /** 경로 앞부분 → 운영 로그 도메인 */
-const DOMAIN_BY_PATH_PREFIX: Record<string, OperationLog["domain"]> = {
+const DOMAIN_BY_PATH_PREFIX: Record<string, LogDomain> = {
   users: "USER",
   characters: "CHARACTER",
   "official-accounts": "CHARACTER",
   reports: "COMMUNITY",
   comments: "COMMUNITY",
   notices: "OPS",
-  "nsfw-keywords": "CHARACTER",
+  "banned-words": "CHARACTER",
   "chat-exports": "CHARACTER",
   universes: "CHARACTER",
   billing: "BILLING",
@@ -87,7 +87,7 @@ export const maskAuditPayload = (
 };
 
 /** `/admin/billing/products/3` → `billing` */
-const resolveDomain = (pathname: string): OperationLog["domain"] => {
+const resolveDomain = (pathname: string): LogDomain => {
   const segments = pathname.replace(/^\/admin\/?/, "").split("/");
 
   for (const segment of segments) {
@@ -150,17 +150,23 @@ export const auditLogHandlers = [
     const actor = currentAdmin();
     const { targetType, targetId } = resolveTarget(pathname);
 
-    operationLogs.unshift({
-      logId: Math.max(...operationLogs.map((log) => log.logId), 0) + 1,
-      level: "INFO",
+    adminAuditLogs.unshift({
+      logId: Math.max(...adminAuditLogs.map((log) => log.logId), 0) + 1,
       domain: resolveDomain(pathname),
       action,
       actor: actor?.name ?? "알 수 없음",
       actorId: actor?.managerId,
+      roleName: actor?.roleName,
+      /*
+        목업은 요청을 가로채는 시점에 남기므로 결과를 아직 모른다. 실제 서버는
+        처리가 끝난 뒤 `DENIED`(권한 없음) · `FAILED`(오류)를 구분해 적재해야 한다.
+      */
+      result: "SUCCESS",
       message: `${request.method} ${pathname}`,
       targetType,
       targetId,
       payload,
+      ip: "10.0.12.31",
       createdAt: new Date().toISOString(),
     });
 

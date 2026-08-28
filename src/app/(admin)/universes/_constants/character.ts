@@ -3,7 +3,6 @@ import type { SelectOption } from "@/components/ui/Select";
 import type {
   CharacterVisibility,
   ChatExportStatus,
-  NsfwKeywordLevel,
   ScenarioLifecycle,
   ScenarioType,
   UniverseCategory,
@@ -193,28 +192,6 @@ export const SCENARIO_LIFECYCLE_TONE: Record<ScenarioLifecycle, BadgeTone> = {
   HIDDEN: "neutral",
   DEPRECATED: "warning",
 };
-
-export const NSFW_LEVEL_LABEL: Record<NsfwKeywordLevel, string> = {
-  BLOCK: "차단",
-  WARN: "경고",
-};
-
-export const NSFW_LEVEL_TONE: Record<NsfwKeywordLevel, BadgeTone> = {
-  BLOCK: "danger",
-  WARN: "warning",
-};
-
-/** 키워드 등록 폼용 옵션 */
-export const NSFW_LEVEL_OPTIONS: SelectOption[] = [
-  { label: `${NSFW_LEVEL_LABEL.BLOCK} (생성 차단)`, value: "BLOCK" },
-  { label: `${NSFW_LEVEL_LABEL.WARN} (경고만)`, value: "WARN" },
-];
-
-export const NSFW_LEVEL_FILTER_OPTIONS: SelectOption[] = [
-  { label: "레벨 전체", value: "" },
-  { label: NSFW_LEVEL_LABEL.BLOCK, value: "BLOCK" },
-  { label: NSFW_LEVEL_LABEL.WARN, value: "WARN" },
-];
 
 export const EXPORT_STATUS_LABEL: Record<ChatExportStatus, string> = {
   PENDING: "대기",

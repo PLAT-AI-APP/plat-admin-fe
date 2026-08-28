@@ -154,30 +154,189 @@ export interface ServerHealth {
   checkedAt: string;
 }
 
-/** 운영 로그 */
-export type LogLevel = "INFO" | "WARN" | "ERROR";
+/* -------------------------------------------------------------------------
+ * 관리자 활동 로그(감사)
+ * ---------------------------------------------------------------------- */
 
-export interface OperationLog {
+/**
+ * 감사 로그의 도메인.
+ *
+ * 서버가 요청 경로에서 정한다. 화면이 목록을 들고 있으면 새 API가 생길 때마다
+ * 화면도 같이 고쳐야 하므로, **값의 주인은 서버**다. 여기 목록은 필터 선택지와
+ * 한국어 라벨을 붙이기 위한 것이고, 모르는 값이 와도 원문을 그대로 보여 준다.
+ */
+export const LOG_DOMAINS = [
+  "USER",
+  "CHARACTER",
+  "COMMUNITY",
+  "BILLING",
+  "AI",
+  "MAIN_EXPOSURE",
+  "OPS",
+] as const;
+
+export type LogDomain = (typeof LOG_DOMAINS)[number];
+
+/**
+ * 관리자 활동의 결과.
+ *
+ * **성공만 남기면 감사가 되지 않는다.** 권한이 없어 막힌 시도(`DENIED`)가
+ * 오히려 먼저 봐야 할 기록이다. 서버 오류로 끝난 것(`FAILED`)은 그 사람의
+ * 의도는 있었으나 반영되지 않았다는 뜻이라 또 다르게 읽어야 한다.
+ */
+export type AuditResult = "SUCCESS" | "DENIED" | "FAILED";
+
+/**
+ * 관리자 활동 로그.
+ *
+ * 답해야 하는 질문은 하나다 — **누가, 무엇을, 어떤 값으로 바꿨나.**
+ * 그래서 레벨(INFO/WARN/ERROR)이 없다. 사람이 한 변경에 심각도를 매기는 것은
+ * 의미가 없고, 감사에서 갈라 봐야 하는 것은 심각도가 아니라 `result`다.
+ */
+export interface AdminAuditLog {
   logId: number;
-  level: LogLevel;
-  /** 어떤 도메인에서 발생했는지 */
-  domain: string;
-  action: string;
+  /** 실행한 관리자 이름. 표시용이다. */
   actor: string;
   /** 누가 했는지를 계정으로 고정한다. 이름은 바뀔 수 있어 필터 기준으로 쓸 수 없다. */
   actorId?: number;
-  message: string;
+  /** 실행 시점의 직책. 지금 직책이 바뀌어도 **당시 권한**을 알 수 있어야 한다. */
+  roleName?: string;
+  action: string;
+  domain: LogDomain | (string & {});
   /** 무엇을 바꿨는지. 경로에서 뽑은 대상 종류와 식별자다. */
   targetType?: string;
   targetId?: string;
+  result: AuditResult;
+  message: string;
   /**
    * 요청 본문.
    *
    * "무엇을 바꿨나"에 답하려면 값이 남아야 한다. 비밀번호 · 토큰 필드는
    * 적재 시점에 마스킹한다(`maskAuditPayload`).
+   *
+   * 값이 그대로 남는다는 것은 이 로그가 **다른 관리자의 작업 내용을 전부
+   * 드러낸다**는 뜻이다. `log:read`를 민감 권한으로 둔 이유다.
    */
   payload?: Record<string, unknown>;
+  /** 접속 IP. 낯선 곳에서 들어온 변경을 알아채는 최소 단서다. */
+  ip?: string;
   createdAt: string;
+}
+
+/* -------------------------------------------------------------------------
+ * 시스템 이벤트 로그
+ * ---------------------------------------------------------------------- */
+
+/**
+ * 시스템 이벤트의 심각도.
+ *
+ * `INFO`가 없다. 정상 동작까지 어드민으로 끌어오면 볼륨이 폭발하고, 그러면
+ * 정작 봐야 할 것이 묻힌다. **조치가 필요한 것만** 여기로 온다.
+ */
+export type SystemEventLevel = "WARN" | "ERROR";
+
+/** 이벤트가 난 곳. 어디를 봐야 하는지를 바로 가리킨다. */
+export const SYSTEM_EVENT_SOURCES = [
+  "API",
+  "DB",
+  "AI_PROVIDER",
+  "PAYMENT",
+  "PUSH",
+  "STORAGE",
+] as const;
+
+export type SystemEventSource = (typeof SYSTEM_EVENT_SOURCES)[number];
+
+/**
+ * 시스템 이벤트.
+ *
+ * 원본 애플리케이션 로그가 아니다. 원본은 관제 도구(CloudWatch · Datadog)에 있고,
+ * 여기에는 **같은 이벤트를 묶은 요약**만 온다. 어드민 DB에 로그 전문을 쌓으면
+ * 보존 비용과 검색 성능이 곧바로 어드민의 문제가 된다.
+ *
+ * 그래서 시각이 둘이다. 같은 오류가 200번 났을 때 필요한 정보는 200줄이 아니라
+ * "언제 시작해서 마지막이 언제였고 몇 번이었나"이다.
+ */
+export interface SystemEventLog {
+  eventId: number;
+  level: SystemEventLevel;
+  source: SystemEventSource | (string & {});
+  message: string;
+  /** 원본 추적용 식별자. 관제 도구에서 이 값으로 찾는다. */
+  traceId?: string;
+  /** 묶인 발생 횟수. 1이면 단발이다. */
+  occurrenceCount: number;
+  firstOccurredAt: string;
+  lastOccurredAt: string;
+}
+
+/* -------------------------------------------------------------------------
+ * 배치(스케줄) 작업
+ * ---------------------------------------------------------------------- */
+
+/**
+ * 배치 실행 결과.
+ *
+ * `SKIPPED`를 따로 둔다. 처리할 대상이 없어 넘어간 것과 실제로 실패한 것을
+ * 같은 값으로 두면, 매일 아무 일도 하지 않는 잡이 "정상"으로 보인다.
+ */
+export type BatchRunStatus = "RUNNING" | "SUCCESS" | "FAILED" | "SKIPPED";
+
+/** 무엇이 실행을 걸었나. 수동 실행은 관리자 활동 로그에도 함께 남는다. */
+export type BatchTrigger = "SCHEDULE" | "MANUAL";
+
+/**
+ * 배치 잡 정의.
+ *
+ * 이 화면은 로그가 아니라 **관리** 화면이다. 이력만 보는 것이 아니라 실패한 잡을
+ * 다시 돌리는 행위가 붙기 때문에, 조회만 있는 `log` 권한에 묶을 수 없다.
+ */
+export interface BatchJob {
+  jobId: number;
+  /** 서버가 아는 잡 식별자. 수동 실행 요청에 그대로 싣는다. */
+  jobKey: string;
+  name: string;
+  description: string;
+  /** 크론식. 화면에는 사람이 읽는 주기 설명과 함께 보여 준다. */
+  cronExpression: string;
+  /**
+   * 스케줄 사용 여부.
+   *
+   * 꺼도 잡 정의는 남는다. 지워 버리면 "왜 이 배치가 없어졌는지"를
+   * 아무도 알 수 없게 된다.
+   */
+  isEnabled: boolean;
+  lastRunStatus?: BatchRunStatus;
+  lastRunAt?: string;
+  /** 다음 실행 예정. 꺼져 있으면 값이 없다. */
+  nextRunAt?: string;
+}
+
+/**
+ * 배치 실행 이력 한 건.
+ *
+ * 관리자 로그와 컬럼이 겹치지 않는다. 여기서 답해야 하는 질문은 "누가 바꿨나"가
+ * 아니라 **"제대로 돌았나, 다시 돌려야 하나"** 이기 때문이다.
+ */
+export interface BatchJobRun {
+  runId: number;
+  jobKey: string;
+  /** 표에서 바로 보여 주기 위해 서버가 함께 내려준다. */
+  jobName: string;
+  status: BatchRunStatus;
+  trigger: BatchTrigger;
+  /** 수동 실행일 때만 있다. 스케줄 실행에는 사람이 없다. */
+  actor?: string;
+  actorId?: number;
+  startedAt: string;
+  /** 아직 도는 중이면 없다. */
+  finishedAt?: string;
+  durationMs?: number;
+  /** 처리한 건수. 0건 성공과 실패를 구분하는 값이다. */
+  processedCount?: number;
+  failedCount?: number;
+  /** 실패 사유. 재실행 전에 먼저 읽어야 하는 값이다. */
+  errorMessage?: string;
 }
 
 /** 처리 대기 건수. 사이드바 · 헤더 뱃지가 쓴다. */
