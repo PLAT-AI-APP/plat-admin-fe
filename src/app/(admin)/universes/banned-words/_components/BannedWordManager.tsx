@@ -6,7 +6,7 @@ import { useBannedWordMutation } from "@/api/word/mutateBannedWord";
 import { Trash } from "@/icons";
 import { formatDate } from "@/lib/dayjs";
 import { showErrorToast } from "@/lib/toast";
-import { formatAdmin, formatWithCommas } from "@/lib/utils";
+import { formatAdmin } from "@/lib/utils";
 import type { BannedWordSchema } from "@/schema/bannedWord.schema";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
@@ -34,7 +34,7 @@ import BannedWordAddForm from "./BannedWordAddForm";
 const TAB_GUIDE: Record<BannedWordType, { title: string; body: string }> = {
   BAN: {
     title: "걸러 낼 단어입니다.",
-    body: "적중 수가 유난히 많은 단어부터 확인해 보세요. 대개 너무 짧거나 다른 말에 흔히 섞이는 단어입니다. 오탐이라면 이 단어를 지우는 대신 예외어 탭에 그 표현을 더하는 편이 안전합니다.",
+    body: "너무 짧거나 다른 말에 흔히 섞이는 단어는 멀쩡한 글까지 막습니다. 그런 오탐이 확인되면 이 단어를 지우는 대신 예외어 탭에 그 표현을 더하는 편이 안전합니다 — 걸러야 할 표현은 그대로 두고 멀쩡한 말만 풀어 줍니다.",
   },
   EXCEPT: {
     title: "금지어를 되돌리는 단어입니다.",
@@ -102,7 +102,7 @@ const BannedWordManager = () => {
     ),
   };
 
-  /** 금지어에만 있는 열. 예외어 표에 빈 칸으로 남기면 뭘 넣어야 하는지 묻게 된다. */
+  /** 금지어에만 있는 열. 예외어는 무엇도 막지 않아 고를 레벨이 없다. */
   const banColumns: TableColumn<BannedWord>[] = [
     {
       key: "level",
@@ -127,14 +127,6 @@ const BannedWordManager = () => {
         ) : (
           <span className="body-5 text-font-2">-</span>
         ),
-    },
-    {
-      key: "hitCount",
-      header: "적중 수",
-      align: "right",
-      width: "100px",
-      numeric: true,
-      render: (row) => formatWithCommas(row.hitCount),
     },
   ];
 

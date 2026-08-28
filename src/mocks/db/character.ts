@@ -500,8 +500,6 @@ export const bannedWords: BannedWord[] = BANNED_WORD_SEEDS.map(
       word: seed.word,
       type: seed.type,
       level: seed.level,
-      // 예외어는 되돌리는 쪽이라 적중 수를 세지 않는다.
-      hitCount: seed.type === "BAN" ? randomInt(index + 20, 0, 320) : 0,
       createdBy: registrar.name,
       createdById: registrar.managerId,
       createdAt: daysAgo(index * 4 + 3),

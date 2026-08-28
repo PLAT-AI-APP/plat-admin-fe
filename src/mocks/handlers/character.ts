@@ -292,9 +292,9 @@ export const characterHandlers = [
       return matchesKeyword(keyword, item.word);
     });
 
-    // 적중이 많은 것부터. 이 표를 여는 이유는 대개 과하게 걸리는 단어를 찾기 위해서다.
-    const sorted = [...filtered].sort(
-      (a, b) => b.hitCount - a.hitCount || b.createdAt.localeCompare(a.createdAt),
+    // 최근에 넣은 것부터. 방금 추가한 단어를 확인하는 것이 가장 잦은 용도다.
+    const sorted = [...filtered].sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
     );
 
     await delay(MOCK_DELAY_MS);
@@ -323,7 +323,6 @@ export const characterHandlers = [
       word,
       type: body.type,
       level: body.type === "BAN" ? body.level : undefined,
-      hitCount: 0,
       createdBy: registrar.name,
       createdById: registrar.managerId,
       createdAt: new Date().toISOString(),

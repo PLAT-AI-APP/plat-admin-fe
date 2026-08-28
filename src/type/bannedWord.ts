@@ -33,13 +33,6 @@ export interface BannedWord {
   type: BannedWordType;
   /** 금지어일 때만 값이 있다. */
   level?: BannedWordLevel;
-  /**
-   * 이 단어에 걸린 횟수.
-   *
-   * 오탐을 찾는 단서다. 적중이 유난히 많은 단어는 대개 너무 짧거나 다른 말에 흔히
-   * 섞이는 단어라, 예외어를 더할지 이 단어를 지울지 판단하는 출발점이 된다.
-   */
-  hitCount: number;
   /** 등록한 관리자 이름 스냅샷. 계정이 지워져도 남는다. */
   createdBy: string;
   createdById?: number;
