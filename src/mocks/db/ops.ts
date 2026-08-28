@@ -583,6 +583,66 @@ const BATCH_RUN_STATUSES: readonly BatchRunStatus[] = [
   "FAILED",
 ];
 
+/** 로그 한 줄 앞에 붙는 시각. 시작 시각에서 초를 더해 만든다. */
+const logStamp = (startedAt: string, offsetMs: number) =>
+  new Date(new Date(startedAt).getTime() + offsetMs)
+    .toTimeString()
+    .slice(0, 8);
+
+/**
+ * 실행 로그를 만든다.
+ *
+ * 실제 배치가 남길 법한 모양으로 둔다 — 시작 · 대상 조회 · 처리 · 종료.
+ * 화면에서 접었다 펴는 것을 확인하려면 **여러 줄이어야** 의미가 있다.
+ */
+const buildRunLog = (run: Omit<BatchJobRun, "log">): string => {
+  const at = (offsetMs: number) => logStamp(run.startedAt, offsetMs);
+  const duration = run.durationMs ?? 0;
+
+  const lines = [
+    `[${at(0)}] ${run.jobKey} 시작 (trigger=${run.trigger})`,
+  ];
+
+  if (run.status === "RUNNING") {
+    lines.push(`[${at(0)}] 대상 조회 중…`);
+
+    return lines.join("\n");
+  }
+
+  if (run.status === "SKIPPED") {
+    lines.push(
+      `[${at(duration * 0.4)}] 대상 조회 완료: 0건`,
+      `[${at(duration)}] 처리할 대상이 없어 건너뜁니다.`,
+      `[${at(duration)}] 종료 (SKIPPED)`,
+    );
+
+    return lines.join("\n");
+  }
+
+  lines.push(
+    `[${at(duration * 0.2)}] 대상 조회 완료: ${(run.processedCount ?? 0).toLocaleString()}건`,
+    `[${at(duration * 0.5)}] 처리 중… ${Math.floor((run.processedCount ?? 0) / 2).toLocaleString()}건 완료`,
+  );
+
+  if (run.status === "FAILED") {
+    lines.push(
+      `[${at(duration * 0.7)}] ERROR ${run.errorMessage ?? "알 수 없는 오류"}`,
+      `[${at(duration * 0.8)}] 재시도 1/3`,
+      `[${at(duration * 0.9)}] 재시도 실패. 남은 대상 ${(run.failedCount ?? 0).toLocaleString()}건을 처리하지 못했습니다.`,
+      `[${at(duration)}] 종료 (FAILED)`,
+    );
+
+    return lines.join("\n");
+  }
+
+  lines.push(
+    `[${at(duration * 0.9)}] 처리 완료: 성공 ${(run.processedCount ?? 0).toLocaleString()}건 / 실패 0건`,
+    `[${at(duration)}] 종료 (SUCCESS)`,
+  );
+
+  return lines.join("\n");
+};
+
 const BATCH_ERRORS = [
   "PG 응답 타임아웃 (30s). 3회 재시도 후 중단했습니다.",
   "대상 조회 중 커넥션 풀이 고갈되었습니다.",
@@ -615,7 +675,7 @@ export const batchJobRuns: BatchJobRun[] = Array.from(
     const processedCount =
       status === "SKIPPED" ? 0 : randomInt(seed * 13, 1, 12_400);
 
-    return {
+    const run: Omit<BatchJobRun, "log"> = {
       runId: 90 - index,
       jobKey: job.jobKey,
       jobName: job.name,
@@ -633,6 +693,8 @@ export const batchJobRuns: BatchJobRun[] = Array.from(
       errorMessage:
         status === "FAILED" ? pickOne(seed * 19, BATCH_ERRORS) : undefined,
     };
+
+    return { ...run, log: buildRunLog(run) };
   },
 );
 

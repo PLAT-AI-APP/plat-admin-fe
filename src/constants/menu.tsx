@@ -262,6 +262,18 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         permission: "ledger:read",
         icon: <Receipt size={SUB_ICON_SIZE} />,
       },
+      {
+        /*
+          장부와 나란히 두지만 다른 화면이다. 장부는 **지금 운영 중인 유저의 돈
+          흐름**을 보는 곳이고, 이쪽은 **탈퇴하고 개인정보까지 파기된 뒤에도
+          법이 남기게 하는 기록**을 보는 곳이다. 조회 키부터 다르다 — 유저가
+          아니라 결제사 거래번호로 찾는다.
+        */
+        label: "결제 보존 원장",
+        href: "/billing/retention",
+        permission: "paymentRecord:read",
+        icon: <Scale size={SUB_ICON_SIZE} />,
+      },
     ],
   },
   {

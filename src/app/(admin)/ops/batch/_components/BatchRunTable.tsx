@@ -1,18 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import { useBatchRunListQuery } from "@/api/ops/getBatchRunList";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond } from "@/lib/dayjs";
-import { formatAdmin } from "@/lib/utils";
+import { cn, formatAdmin } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { BatchJobRun, BatchRunStatus, BatchTrigger } from "@/type/ops";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import CsvExportButton from "@/components/ui/CsvExportButton";
 import Pagination from "@/components/ui/Pagination";
 import Select from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
+import { ChevronDown } from "@/icons";
 import {
   BATCH_RUN_STATUS_LABEL,
   BATCH_RUN_STATUS_OPTIONS,
@@ -32,6 +35,7 @@ const CSV_COLUMNS: CsvColumn<BatchJobRun>[] = [
   { header: "처리", value: (row) => String(row.processedCount ?? "") },
   { header: "실패", value: (row) => String(row.failedCount ?? "") },
   { header: "오류", value: (row) => row.errorMessage ?? "" },
+  { header: "실행 로그", value: (row) => row.log ?? "" },
 ];
 
 interface BatchRunTableProps {
@@ -67,7 +71,50 @@ const BatchRunTable = ({
     trigger: trigger as BatchTrigger | "",
   });
 
+  /*
+    펼친 행은 주소에 싣지 않는다. 목록 조건과 달리 **남에게 공유할 상태가 아니고**,
+    스무 개 행의 열림 여부를 주소에 넣으면 주소가 읽을 수 없게 길어진다.
+  */
+  const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+
+  const rows = data?.content ?? [];
+
+  const toggleKey = (key: string) =>
+    setExpandedKeys((keys) =>
+      keys.includes(key) ? keys.filter((it) => it !== key) : [...keys, key],
+    );
+
+  /*
+    현재 화면의 행이 모두 열려 있을 때만 '전체 접기'가 된다.
+    하나라도 닫혀 있으면 누르는 사람의 의도는 "다 열어 달라"다.
+  */
+  const isAllExpanded =
+    rows.length > 0 && rows.every((row) => expandedKeys.includes(String(row.runId)));
+
+  const toggleAll = () =>
+    setExpandedKeys(isAllExpanded ? [] : rows.map((row) => String(row.runId)));
+
   const columns: TableColumn<BatchJobRun>[] = [
+    {
+      /*
+        행 전체가 클릭 대상이지만, 표만 보고 펼 수 있다는 것을 알 수는 없다.
+        맨 앞에 둔다 — 오른쪽 끝에 두면 표가 가로로 넓어졌을 때 스크롤 밖으로
+        밀려서 유일한 표시가 보이지 않는다.
+      */
+      key: "expand",
+      header: "",
+      width: "40px",
+      align: "center",
+      render: (row) => (
+        <ChevronDown
+          size={16}
+          className={cn(
+            "inline-block text-font-2 transition-transform",
+            expandedKeys.includes(String(row.runId)) && "rotate-180",
+          )}
+        />
+      ),
+    },
     {
       key: "status",
       header: "상태",
@@ -162,12 +209,23 @@ const BatchRunTable = ({
 
       <Card noPadding>
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
-          <p className="body-4 font-semibold text-font-1">실행 이력</p>
+          <div className="flex items-center gap-2">
+            <p className="body-4 font-semibold text-font-1">실행 이력</p>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={rows.length === 0}
+              onClick={toggleAll}
+            >
+              {isAllExpanded ? "전체 접기" : "전체 열기"}
+            </Button>
+          </div>
 
           <div className="flex items-center gap-2">
             <CsvExportButton
               fileName="배치실행이력"
-              rows={data?.content ?? []}
+              rows={rows}
               columns={CSV_COLUMNS}
               disabled={isLoading}
             />
@@ -194,9 +252,16 @@ const BatchRunTable = ({
 
         <Table
           columns={columns}
-          rows={data?.content ?? []}
+          rows={rows}
           getRowKey={(row) => String(row.runId)}
           isLoading={isLoading}
+          expandedKeys={expandedKeys}
+          onToggleExpand={toggleKey}
+          renderExpanded={(row) => (
+            <pre className="max-h-80 overflow-auto rounded-field border border-border-main bg-surface px-3.5 py-3 body-6 whitespace-pre-wrap text-font-2 scrollbar-thin">
+              {row.log ?? "남은 실행 로그가 없습니다."}
+            </pre>
+          )}
           emptyTitle="조회된 실행 이력이 없습니다."
           emptyDescription="잡 · 상태 · 트리거 필터를 바꿔서 다시 확인해 보세요."
         />

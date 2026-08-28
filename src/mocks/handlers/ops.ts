@@ -240,6 +240,7 @@ export const opsHandlers = [
         actor: actor?.name,
         actorId: actor?.managerId,
         startedAt: new Date().toISOString(),
+        log: `[${new Date().toTimeString().slice(0, 8)}] ${job.jobKey} 시작 (trigger=MANUAL)`,
       };
 
       batchJobRuns.unshift(run);

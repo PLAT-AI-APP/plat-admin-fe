@@ -25,6 +25,21 @@ interface TableProps<T> {
   emptyDescription?: string;
   emptyAction?: ReactNode;
   onRowClick?: (row: T) => void;
+  /**
+   * 펼친 행 아래에 붙는 내용.
+   *
+   * 주면 **행 클릭이 펼치기로 동작한다**(`onRowClick`은 무시된다).
+   * 한 행에 두 가지 클릭 의미를 두면 운영자가 무엇이 열릴지 예측할 수 없다.
+   */
+  renderExpanded?: (row: T) => ReactNode;
+  /**
+   * 펼쳐진 행의 키 목록.
+   *
+   * 표가 아니라 **호출부가 들고 있다.** 그래야 '전체 열기'처럼 표 바깥에 있는
+   * 조작이 같은 상태를 건드릴 수 있다.
+   */
+  expandedKeys?: string[];
+  onToggleExpand?: (key: string) => void;
   className?: string;
 }
 
@@ -48,9 +63,13 @@ const Table = <T,>({
   emptyDescription,
   emptyAction,
   onRowClick,
+  renderExpanded,
+  expandedKeys,
+  onToggleExpand,
   className,
 }: TableProps<T>) => {
   const isEmpty = !isLoading && rows.length === 0;
+  const isExpandable = Boolean(renderExpanded);
 
   return (
     <div className={cn("w-full overflow-x-auto scrollbar-thin", className)}>
@@ -85,29 +104,52 @@ const Table = <T,>({
             ))}
 
           {!isLoading &&
-            rows.map((row, rowIndex) => (
-              <tr
-                key={getRowKey(row, rowIndex)}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className={cn(
-                  "border-t border-border-main transition-colors hover:bg-surface-hover",
-                  onRowClick && "cursor-pointer",
-                )}
-              >
-                {columns.map(({ key, render, align = "left", numeric }) => (
-                  <td
-                    key={key}
+            rows.map((row, rowIndex) => {
+              const rowKey = getRowKey(row, rowIndex);
+              const isExpanded = Boolean(expandedKeys?.includes(rowKey));
+
+              const handleClick = isExpandable
+                ? () => onToggleExpand?.(rowKey)
+                : onRowClick
+                  ? () => onRowClick(row)
+                  : undefined;
+
+              return (
+                <Fragment key={rowKey}>
+                  <tr
+                    onClick={handleClick}
+                    aria-expanded={isExpandable ? isExpanded : undefined}
                     className={cn(
-                      "px-4 py-3.5 text-font-1",
-                      ALIGN_CLASS[align],
-                      numeric && "tabular-nums",
+                      "border-t border-border-main transition-colors hover:bg-surface-hover",
+                      handleClick && "cursor-pointer",
+                      // 펼친 행은 아래 내용과 한 덩어리로 보여야 한다.
+                      isExpanded && "bg-subtle",
                     )}
                   >
-                    {render(row, rowIndex)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+                    {columns.map(({ key, render, align = "left", numeric }) => (
+                      <td
+                        key={key}
+                        className={cn(
+                          "px-4 py-3.5 text-font-1",
+                          ALIGN_CLASS[align],
+                          numeric && "tabular-nums",
+                        )}
+                      >
+                        {render(row, rowIndex)}
+                      </td>
+                    ))}
+                  </tr>
+
+                  {isExpanded && (
+                    <tr className="border-t border-border-main bg-subtle">
+                      <td colSpan={columns.length} className="px-4 pt-0 pb-4">
+                        {renderExpanded?.(row)}
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
         </tbody>
       </table>
 

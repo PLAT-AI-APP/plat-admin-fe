@@ -71,9 +71,6 @@ export interface NoticeDetail extends NoticeSummary {
   content: string;
 }
 
-/** @deprecated 새 코드에서는 목록은 NoticeSummary, 상세는 NoticeDetail을 사용한다. */
-export type Notice = NoticeDetail;
-
 export interface NoticeFormValues {
   category: NoticeCategory;
   title: string;

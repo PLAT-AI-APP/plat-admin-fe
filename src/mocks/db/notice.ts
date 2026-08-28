@@ -1,4 +1,4 @@
-import type { Notice, NoticeCategory, NoticeStatus } from "@/type/notice";
+import type { NoticeCategory, NoticeDetail, NoticeStatus } from "@/type/notice";
 import { daysAgo, pickOne, randomInt } from "../utils";
 
 /**
@@ -159,7 +159,7 @@ const SEED_NOTICES: {
   },
 ];
 
-export const notices: Notice[] = SEED_NOTICES.map((item, index) => {
+export const notices: NoticeDetail[] = SEED_NOTICES.map((item, index) => {
   const seed = index + 1;
   const author = pickOne(seed * 5, NOTICE_AUTHORS);
   // 절반 정도만 수정 이력을 둬서 "등록만 된 공지"도 화면에서 확인할 수 있게 한다.
@@ -179,6 +179,7 @@ export const notices: Notice[] = SEED_NOTICES.map((item, index) => {
     updatedBy: editor?.name,
     updatedById: editor?.managerId,
     createdAt: daysAgo(index * 4 + 1, 11),
-    updatedAt: daysAgo(index * 4, 15),
+    // 수정 시각은 수정한 사람이 있을 때만 있다. 둘은 항상 함께 채워지거나 함께 빈다.
+    updatedAt: editor ? daysAgo(index * 4, 15) : undefined,
   };
 });

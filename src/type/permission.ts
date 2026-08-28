@@ -30,6 +30,7 @@ export type PermissionResource =
   | "creditPolicy"
   | "creditAdjustment"
   | "ledger"
+  | "paymentRecord"
   | "notice"
   | "qna"
   | "notification"
@@ -174,6 +175,18 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
   ledger: {
     label: "결제 장부",
     description: "결제 · 충전 · 사용 · 환불 흐름",
+    actions: ["read"],
+    isSensitive: true,
+  },
+  paymentRecord: {
+    /*
+      장부 권한과 따로 뗀다. 여기 남는 것은 **탈퇴하고 개인정보까지 파기된 회원의
+      결제 기록**이라, 법정 보존 의무 때문에 지우지 못하고 들고 있는 자료다.
+      장부를 보는 사람 전부가 열 이유는 없고, 열람 자체가 감사 대상이 된다.
+    */
+    label: "결제 보존 원장",
+    description:
+      "탈퇴 · 파기 후에도 법정 5년간 남기는 결제 기록. 결제사 거래번호로만 조회한다.",
     actions: ["read"],
     isSensitive: true,
   },
@@ -359,7 +372,14 @@ export const PERMISSION_CATEGORIES = [
     label: "보기만 하는 자료",
     description:
       "지표와 기록입니다. 고칠 수 있으면 기록이 아니라 조회만 둡니다.",
-    resources: ["dashboard", "ledger", "server", "log", "systemLog"],
+    resources: [
+      "dashboard",
+      "ledger",
+      "paymentRecord",
+      "server",
+      "log",
+      "systemLog",
+    ],
   },
 ] as const satisfies readonly PermissionCategoryDef[];
 
