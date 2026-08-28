@@ -6,7 +6,11 @@ import {
   type PageResponse,
   type PageWith,
 } from "@/type/api";
-import type { BannedWord, BannedWordType } from "@/type/bannedWord";
+import type {
+  BannedWord,
+  BannedWordSort,
+  BannedWordType,
+} from "@/type/bannedWord";
 
 export interface BannedWordListParams {
   page: number;
@@ -14,6 +18,7 @@ export interface BannedWordListParams {
   keyword?: string;
   /** 빈 문자열이면 금지어·예외어를 함께 조회한다. */
   type?: BannedWordType | "";
+  sort?: BannedWordSort;
 }
 
 /** 서버 목록 항목. BannedWordId는 JSON에서 문자열로 내려온다. */
@@ -44,6 +49,7 @@ const toRequestParams = (params: BannedWordListParams) => ({
   size: params.size,
   keyword: params.keyword?.trim() || undefined,
   type: params.type || undefined,
+  sort: params.sort || undefined,
 });
 
 export const getBannedWordList = async (

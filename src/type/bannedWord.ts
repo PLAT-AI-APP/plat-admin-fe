@@ -24,3 +24,10 @@ export interface BannedWord {
   createdById?: number;
   createdAt: string;
 }
+
+/** 목록 정렬 기준. 서버 enum(`BannedWordOrderBy`)과 이름이 같아야 한다. */
+export type BannedWordSort =
+  | "CREATED_DESC"
+  | "CREATED_ASC"
+  | "WORD_ASC"
+  | "WORD_DESC";

@@ -10,15 +10,23 @@ import { formatAdmin } from "@/lib/utils";
 import type { BannedWordSchema } from "@/schema/bannedWord.schema";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
-import type { BannedWord, BannedWordType } from "@/type/bannedWord";
+import type {
+  BannedWord,
+  BannedWordSort,
+  BannedWordType,
+} from "@/type/bannedWord";
 import Alert from "@/components/ui/Alert";
 import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
+import Select from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import Tabs from "@/components/ui/Tabs";
-import { BANNED_WORD_TYPE_TABS } from "../../_constants/bannedWord";
+import {
+  BANNED_WORD_SORT_OPTIONS,
+  BANNED_WORD_TYPE_TABS,
+} from "../../_constants/bannedWord";
 import BannedWordAddForm from "./BannedWordAddForm";
 
 /** 탭마다 안내가 다르다. 두 표에서 운영자가 하는 일이 다르기 때문이다. */
@@ -37,6 +45,7 @@ const BannedWordManager = () => {
   const [type, setType] = useState<BannedWordType>("BAN");
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState("");
+  const [sort, setSort] = useState<BannedWordSort>("CREATED_DESC");
 
   const isBan = type === "BAN";
 
@@ -45,6 +54,7 @@ const BannedWordManager = () => {
     size: DEFAULT_PAGE_SIZE,
     keyword,
     type,
+    sort,
   });
   const { createMutation, deleteMutation } = useBannedWordMutation();
 
@@ -56,6 +66,11 @@ const BannedWordManager = () => {
 
   const handleSearch = (next: string) => {
     setKeyword(next);
+    setPage(1);
+  };
+
+  const handleChangeSort = (next: BannedWordSort) => {
+    setSort(next);
     setPage(1);
   };
 
@@ -157,6 +172,15 @@ const BannedWordManager = () => {
             placeholder="단어 검색"
           />
 
+          <Select
+            aria-label="정렬"
+            options={BANNED_WORD_SORT_OPTIONS}
+            value={sort}
+            onChange={(event) =>
+              handleChangeSort(event.target.value as BannedWordSort)
+            }
+            selectBoxClassName="w-36"
+          />
         </div>
 
         <Table
