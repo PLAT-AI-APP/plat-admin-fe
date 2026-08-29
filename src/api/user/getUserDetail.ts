@@ -3,7 +3,7 @@ import { adminAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { UserDetail } from "@/type/user";
 
-export const getUserDetail = async (userId: number) => {
+export const getUserDetail = async (userId: string) => {
   const response = await adminAxios.get<UserDetail>(`/admin/users/${userId}`);
 
   return response.data;
@@ -13,7 +13,7 @@ export const getUserDetail = async (userId: number) => {
  * 유저 상세 화면에서 사용합니다.
  * userId가 없으면 조회하지 않습니다.
  */
-export const useUserDetailQuery = (userId: number | null) => {
+export const useUserDetailQuery = (userId: string | null) => {
   return useQuery<UserDetail, AppError>({
     queryKey: ["get-user-detail", userId],
     queryFn: () => getUserDetail(userId!),

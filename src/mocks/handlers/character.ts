@@ -85,7 +85,7 @@ const filterCharacters = (url: URL): Character[] => {
   const filtered = characters.filter((character) => {
     if (!isListed(character)) return false;
 
-    if (creatorId && character.creatorId !== Number(creatorId)) return false;
+    if (creatorId && character.creatorId !== creatorId) return false;
 
     if (
       !matchesKeyword(

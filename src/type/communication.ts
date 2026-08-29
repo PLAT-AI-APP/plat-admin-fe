@@ -13,7 +13,8 @@ export interface QnaItem {
   title: string;
   content: string;
   status: QnaStatus;
-  userId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  userId: string;
   userNickname: string;
   answer?: string;
   answeredBy?: string;

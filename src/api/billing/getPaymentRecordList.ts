@@ -29,7 +29,7 @@ export interface PaymentRecordListParams {
    * 놓치면 안 되는 것이 그쪽이다. 해시는 파기 후에도 남으므로 계정이 남아 있는
    * 동안에는 유저에서 원장으로 언제든 건너갈 수 있다.
    */
-  userId?: number;
+  userId?: string;
 }
 
 export const getPaymentRecordList = async (params: PaymentRecordListParams) => {

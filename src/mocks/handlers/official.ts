@@ -27,8 +27,7 @@ export const officialHandlers = [
 
   http.post(`${BASE_URI}/admin/official-accounts`, async ({ request }) => {
     const { userId } = (await request.json()) as OfficialAccountSchema;
-    const numericUserId = Number(userId);
-    const user = users.find((item) => item.userId === numericUserId);
+    const user = users.find((item) => item.userId === userId);
 
     await delay(MOCK_DELAY_MS);
 
@@ -39,7 +38,7 @@ export const officialHandlers = [
       );
     }
 
-    if (isOfficialUserId(numericUserId)) {
+    if (isOfficialUserId(userId)) {
       return HttpResponse.json(
         {
           code: "OFFICIAL_ACCOUNT_DUPLICATED",
@@ -60,10 +59,10 @@ export const officialHandlers = [
       );
     }
 
-    addOfficialAccount(numericUserId, "운영자");
+    addOfficialAccount(userId, "운영자");
 
     const created = listOfficialAccounts().find(
-      (account) => account.userId === String(numericUserId),
+      (account) => account.userId === userId,
     );
 
     return HttpResponse.json(created, { status: 201 });
@@ -72,7 +71,7 @@ export const officialHandlers = [
   http.delete(
     `${BASE_URI}/admin/official-accounts/:userId`,
     async ({ params }) => {
-      removeOfficialAccount(Number(params.userId));
+      removeOfficialAccount(String(params.userId));
 
       await delay(MOCK_DELAY_MS);
 

@@ -97,8 +97,8 @@ const CharacterManager = () => {
     status,
     isOfficial,
     sort,
-    // 빈 문자열을 Number()에 넣으면 0이 되어 "0번 크리에이터" 조회가 된다.
-    creatorId: creatorId ? Number(creatorId) : undefined,
+    // Snowflake ID 라 숫자로 바꾸지 않는다. 빈 문자열만 걸러 보낸다.
+    creatorId: creatorId || undefined,
   });
   const { visibilityMutation, statusMutation, deleteMutation } =
     useCharacterMutation();

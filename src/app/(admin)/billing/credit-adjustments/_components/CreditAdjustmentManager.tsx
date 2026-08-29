@@ -7,13 +7,11 @@ import { Coin, Plus } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
 import { cn, formatAdmin, formatCredit, formatWithCommas } from "@/lib/utils";
+import { useHasPermission } from "@/store/useAdminStore";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
-import type {
-  AdjustmentType,
-  CreditAdjustment,
-  CreditAdjustmentFormValues,
-} from "@/type/billing";
+import type { CreditAdjustmentRequest } from "@/api/billing/mutateCreditAdjustment";
+import type { AdjustmentType, CreditAdjustment } from "@/type/billing";
 import type { AdjustableUser } from "@/type/user";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
@@ -63,6 +61,13 @@ const CreditAdjustmentManager = () => {
   const [type, setType] = useState<AdjustmentType | "">("");
   const [isFormOpen, setIsFormOpen] = useState(false);
 
+  /*
+    조정 권한이 없으면 실행 버튼을 감춘다. 막는 책임은 서버에 있지만(`:adjust`),
+    누를 수 없는 버튼을 보여 주면 운영자는 눌러 보고 나서야 안 된다는 것을 안다.
+    조회 권한만 있는 사람도 이력은 봐야 하므로 표 자체는 그대로 둔다.
+  */
+  const canAdjust = useHasPermission("creditAdjustment:adjust");
+
   const { data, isLoading } = useCreditAdjustmentListQuery({
     page,
     size: DEFAULT_PAGE_SIZE,
@@ -89,20 +94,20 @@ const CreditAdjustmentManager = () => {
    * 대상 닉네임과 금액을 다시 보여 주는 확인 단계를 반드시 거친다.
    */
   const handleSubmit = (
-    values: CreditAdjustmentFormValues,
+    request: CreditAdjustmentRequest,
     user: AdjustableUser,
   ) => {
-    const typeLabel = ADJUSTMENT_TYPE_LABEL[values.type];
+    const typeLabel = ADJUSTMENT_TYPE_LABEL[request.type];
 
     openConfirm({
       title: `크레딧을 ${typeLabel}할까요?`,
-      description: `'${user.nickname}'(#${user.userId}) 님에게 ${formatCredit(values.amount)}를 ${typeLabel}합니다.`,
+      description: `'${user.nickname}'(#${user.userId}) 님에게 ${formatCredit(request.amount)}를 ${typeLabel}합니다.`,
       warning:
         "실행 즉시 유저 잔액에 반영되며 되돌릴 수 없습니다. 사유는 감사 로그로 남습니다.",
       confirmText: `${typeLabel} 실행`,
       tone: "danger",
       onConfirm: async () => {
-        await createMutation.mutateAsync(values);
+        await createMutation.mutateAsync(request);
 
         setIsFormOpen(false);
       },
@@ -203,14 +208,16 @@ const CreditAdjustmentManager = () => {
               disabled={isLoading}
             />
 
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={() => setIsFormOpen(true)}
-            >
-              크레딧 조정
-            </Button>
+            {canAdjust && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={() => setIsFormOpen(true)}
+              >
+                크레딧 조정
+              </Button>
+            )}
           </>
         }
         noPadding
@@ -240,16 +247,22 @@ const CreditAdjustmentManager = () => {
           isLoading={isLoading}
           skeletonRows={6}
           emptyTitle="조정 이력이 없습니다."
-          emptyDescription="보상·회수가 필요하면 '크레딧 조정'으로 대상 유저를 선택해 처리하세요."
+          emptyDescription={
+            canAdjust
+              ? "보상·회수가 필요하면 '크레딧 조정'으로 대상 유저를 선택해 처리하세요."
+              : "아직 실행된 수동 조정이 없습니다."
+          }
           emptyAction={
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Coin size={15} />}
-              onClick={() => setIsFormOpen(true)}
-            >
-              크레딧 조정
-            </Button>
+            canAdjust ? (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Coin size={15} />}
+                onClick={() => setIsFormOpen(true)}
+              >
+                크레딧 조정
+              </Button>
+            ) : undefined
           }
         />
 

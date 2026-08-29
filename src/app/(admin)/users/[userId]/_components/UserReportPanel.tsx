@@ -25,7 +25,7 @@ import {
 import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
 
 interface UserReportPanelProps {
-  userId: number;
+  userId: string;
 }
 
 /** 두 표가 공유하는 컬럼 (사유 · 신고 내용 · 상태 · 신고일) */

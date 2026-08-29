@@ -23,7 +23,7 @@ import {
 import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
 
 interface UserCommentPanelProps {
-  userId: number;
+  userId: string;
   nickname: string;
 }
 

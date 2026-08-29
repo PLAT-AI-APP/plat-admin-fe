@@ -33,7 +33,14 @@ export const DEVICE_PLATFORM_LABEL: Record<DevicePlatform, string> = {
  * 셋 다 상세(`UserDetail`)에 있다. 필요한 한 명을 열어서 본다.
  */
 export interface User {
-  userId: number;
+  /**
+   * Snowflake ID. **문자열 그대로 다룬다.**
+   *
+   * 실제 값이 18~19자리라 `Number()`로 바꾸면 `MAX_SAFE_INTEGER`(9,007,199,254,740,991)를
+   * 넘겨 끝자리가 조용히 뭉갠다. 서버가 문자열로 내려주는 이유가 이것이므로
+   * 화면·라우트·목업 어디서도 숫자로 되돌리지 않는다.
+   */
+  userId: string;
   nickname: string;
   email: string;
   profileImageUrl: string;

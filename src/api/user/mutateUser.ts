@@ -13,7 +13,7 @@ export interface UpdateUserStatusRequest {
 }
 
 export const updateUserStatus = async (
-  userId: number,
+  userId: string,
   body: UpdateUserStatusRequest,
 ) => {
   const response = await adminAxios.patch<UserDetail>(
@@ -36,7 +36,7 @@ export const useUserMutation = () => {
   const statusMutation = useMutation<
     UserDetail,
     AppError,
-    { userId: number; body: UpdateUserStatusRequest }
+    { userId: string; body: UpdateUserStatusRequest }
   >({
     mutationFn: ({ userId, body }) => updateUserStatus(userId, body),
     onSuccess: (user) => {

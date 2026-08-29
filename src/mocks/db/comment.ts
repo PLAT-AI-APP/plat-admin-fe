@@ -48,12 +48,12 @@ const pickTarget = (seed: number, targetType: CommentTargetType) => {
   if (targetType === "CHARACTER") {
     const character = characters[randomInt(seed, 0, characters.length - 1)];
 
-    return { targetId: character.characterId, targetName: character.name };
+    return { targetId: String(character.characterId), targetName: character.name };
   }
 
   const universe = universes[randomInt(seed, 0, universes.length - 1)];
 
-  return { targetId: universe.universeId, targetName: universe.name };
+  return { targetId: String(universe.universeId), targetName: universe.name };
 };
 
 /**

@@ -44,7 +44,7 @@ export const paymentRecordHandlers = [
       "탈퇴 전 결제만" 보이고 정작 파기된 건이 사라진다.
       실서버도 같다 — 계정 식별자를 같은 방식으로 해시해 대조한다.
     */
-    const userKey = userId ? userKeyOf(Number(userId)) : "";
+    const userKey = userId ? userKeyOf(userId) : "";
 
     const filtered = paymentRecords.filter((record) => {
       if (userKey && record.userKey !== userKey) return false;

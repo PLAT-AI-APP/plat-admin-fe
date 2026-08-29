@@ -40,15 +40,11 @@ export const reportHandlers = [
     }
 
     if (reporterId) {
-      filtered = filtered.filter(
-        (report) => report.reporterId === Number(reporterId),
-      );
+      filtered = filtered.filter((report) => report.reporterId === reporterId);
     }
 
     if (targetId) {
-      filtered = filtered.filter(
-        (report) => report.targetId === Number(targetId),
-      );
+      filtered = filtered.filter((report) => report.targetId === targetId);
     }
 
     const sorted = [...filtered].sort((a, b) => {

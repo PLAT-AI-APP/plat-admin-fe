@@ -34,7 +34,7 @@ import {
 } from "./userDetailConstants";
 
 interface UserDetailViewProps {
-  userId: number;
+  userId: string;
 }
 
 /** 지표 한 칸 */

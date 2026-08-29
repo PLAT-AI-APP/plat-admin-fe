@@ -8,23 +8,10 @@ import {
 } from "@/type/api";
 import type { AdjustableUser } from "@/type/user";
 
-/**
- * 정렬 기준.
- *
- * 기본은 유저 ID 내림차순이다 — Snowflake라 값이 곧 가입 순서이고 동시에
- * 유일하다. 정렬 키가 유일해야 페이지를 넘길 때 같은 줄이 두 번 나오거나
- * 통째로 사라지지 않는다.
- */
-export type AdjustableUserOrderBy =
-  | "USER_ID_DESC"
-  | "USER_ID_ASC"
-  | "NICKNAME_ASC";
-
 export interface AdjustableUserListParams {
   page: number;
   size: number;
   keyword?: string;
-  sort?: AdjustableUserOrderBy;
 }
 
 /**
@@ -59,7 +46,6 @@ const toRequestParams = (params: AdjustableUserListParams) => ({
   page: Math.max(params.page - 1, 0),
   size: params.size,
   keyword: params.keyword?.trim() || undefined,
-  sort: params.sort,
 });
 
 export const getAdjustableUserList = async (
@@ -82,6 +68,8 @@ export const getAdjustableUserList = async (
  * 검색어 하나로 닉네임·이메일·유저 ID를 함께 본다. 닉네임과 이메일은 부분
  * 일치지만 유저 ID는 **정확히 같은 값만** 찾는다 — Snowflake는 일부만 기억해
  * 치는 값이 아니다. 탈퇴 유저는 나오지 않는다.
+ *
+ * 정렬은 서버가 유저 ID 내림차순(최근 가입순)으로 고정한다.
  */
 export const useAdjustableUserListQuery = (
   params: AdjustableUserListParams,

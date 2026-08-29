@@ -91,7 +91,8 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
   );
 
   return {
-    userId: seed,
+    // Snowflake ID 는 문자열이다. 목업도 같은 모양으로 둬야 화면이 실서버와 같게 동작한다.
+    userId: String(seed),
     nickname: `${pickOne(seed, NICKNAME_POOL)}${randomInt(seed * 3, 100, 999)}`,
     email: `plat.user${String(seed).padStart(3, "0")}@example.com`,
     phoneNumber: isVerified

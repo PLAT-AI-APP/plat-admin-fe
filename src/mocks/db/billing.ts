@@ -1,14 +1,13 @@
 import type {
   AdjustmentType,
   BillingProduct,
-  CreditAdjustment,
   CreditPolicy,
   CreditPolicyKey,
   LedgerEntry,
   LedgerType,
 } from "@/type/billing";
 import type { UserDetail } from "@/type/user";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt, seedOf } from "../utils";
 import { pickManager } from "./ops";
 import { users } from "./user";
 
@@ -178,7 +177,7 @@ const daysSinceJoin = (user: UserDetail) =>
  * 이렇게 해야 유저의 보유 크레딧·누적 결제금액을 장부에서 그대로 계산할 수 있다.
  */
 const buildUserLedger = (user: UserDetail): DraftLedgerEntry[] => {
-  const seed = user.userId;
+  const seed = seedOf(user.userId);
   const joinedDaysAgo = daysSinceJoin(user);
   const entries: DraftLedgerEntry[] = [];
 
@@ -271,7 +270,7 @@ const buildUserLedger = (user: UserDetail): DraftLedgerEntry[] => {
 const baseEntries: DraftLedgerEntry[] = creditUsers.flatMap(buildUserLedger);
 
 /** 조정 전 시점의 유저별 잔액. 차감이 보유 크레딧을 넘지 않도록 하는 데 쓴다. */
-const remainingCredit = new Map<number, number>(
+const remainingCredit = new Map<string, number>(
   creditUsers.map((user) => [
     user.userId,
     baseEntries
@@ -335,10 +334,19 @@ const draftEntries: DraftLedgerEntry[] = [
   })),
 ];
 
-/** 최신순으로 정렬한 뒤 위에서부터 큰 번호를 매겨 최근 건이 앞 번호를 갖게 한다. */
+/**
+ * 최신순으로 정렬한 뒤 위에서부터 큰 번호를 매겨 최근 건이 앞 번호를 갖게 한다.
+ *
+ * 장부 화면은 실서버를 보므로 이 시드는 **아직 목업인 결제 내역 화면**이 파생해
+ * 쓰는 용도만 남았다(`db/paymentRecord.ts`). 실서버 원장 ID는 Snowflake라
+ * `ledgerId`가 문자열이고, 시드도 그 형태를 따른다.
+ */
 export const ledgerEntries: LedgerEntry[] = draftEntries
   .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  .map((entry, index, all) => ({ ...entry, ledgerId: all.length - index }));
+  .map((entry, index, all) => ({
+    ...entry,
+    ledgerId: String(all.length - index),
+  }));
 
 /**
  * 유저의 보유 크레딧·누적 결제금액은 장부의 합이다.
@@ -355,18 +363,3 @@ creditUsers.forEach((user) => {
     return sum;
   }, 0);
 });
-
-/** 조정 후 잔액은 그 시점까지의 장부 누적이다. 같은 유저에 조정이 여러 건이어도 흐름이 이어진다. */
-export const creditAdjustments: CreditAdjustment[] = adjustmentDrafts.map(
-  (adjustment) => {
-    const balanceAfter = ledgerEntries
-      .filter(
-        (entry) =>
-          entry.userId === adjustment.userId &&
-          entry.createdAt <= adjustment.createdAt,
-      )
-      .reduce((sum, entry) => sum + entry.creditDelta, 0);
-
-    return { ...adjustment, balanceAfter };
-  },
-);

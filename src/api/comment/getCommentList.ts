@@ -16,7 +16,7 @@ export interface CommentListParams {
   /** 신고가 1건 이상인 댓글만 조회한다. */
   onlyReported?: boolean;
   /** 특정 유저가 쓴 댓글만 조회한다. (유저 상세에서 사용) */
-  authorId?: number;
+  authorId?: string;
   sort?: "RECENT" | "REPORTED";
 }
 

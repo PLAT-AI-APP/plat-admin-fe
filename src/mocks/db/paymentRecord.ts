@@ -8,7 +8,7 @@ import type {
   ProductPlatform,
 } from "@/type/billing";
 import type { UserDetail } from "@/type/user";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt, seedOf } from "../utils";
 import { billingProducts, creditUsers, ledgerEntries } from "./billing";
 
 /**
@@ -139,8 +139,8 @@ const retentionUntilOf = (approvedAt: string): string => {
  * 실제로는 회원 식별자에 소금을 섞어 단방향 해시한 값이다. 목업에서는 되돌릴 수
  * 없다는 성질만 흉내 내면 되므로 seed로 만든 16자리 16진수를 쓴다.
  */
-export const userKeyOf = (seed: number) =>
-  `u_${token(seed * 97, 16, "0123456789abcdef")}`;
+export const userKeyOf = (seed: number | string) =>
+  `u_${token(seedOf(String(seed)) * 97, 16, "0123456789abcdef")}`;
 
 /** 번호와 보존 만료일은 정렬을 마친 뒤 한 번에 채운다. */
 type DraftRecord = Omit<PaymentRecord, "recordId" | "retentionUntil">;
@@ -159,7 +159,7 @@ interface BuildRecordInput {
   /** 부분 환불 금액. `PARTIAL_REFUNDED`일 때만 쓴다. */
   partialRefundAmount?: number;
   userKey: string;
-  userId?: number;
+  userId?: string;
   userNickname?: string;
   isWithdrawn: boolean;
   withdrawnAt?: string;
@@ -276,12 +276,12 @@ const buildRecord = ({
 const platformOfMemo = (memo: string): ProductPlatform =>
   (memo.split(" ")[0] as ProductPlatform) ?? "WEB";
 
-const userById = new Map<number, UserDetail>(
+const userById = new Map<string, UserDetail>(
   creditUsers.map((user) => [user.userId, user]),
 );
 
 /** 같은 유저·같은 상품·같은 금액의 환불 장부를 결제 건에 한 번씩만 물린다. */
-const refundKey = (userId: number, productName: string, amount: number) =>
+const refundKey = (userId: string, productName: string, amount: number) =>
   `${userId}/${productName}/${amount}`;
 
 const refundQueue = new Map<string, string[]>();

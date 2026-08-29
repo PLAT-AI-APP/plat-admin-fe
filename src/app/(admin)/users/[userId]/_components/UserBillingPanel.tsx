@@ -40,7 +40,7 @@ import {
 import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
 
 interface UserBillingPanelProps {
-  userId: number;
+  userId: string;
 }
 
 /** 크레딧 증감은 부호를 앞에 붙이고 색으로 방향을 먼저 읽게 한다. */

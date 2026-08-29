@@ -10,7 +10,7 @@ import { officialCreatorUsers, users } from "./user";
  * 복사해 두면 계정을 해제해도 이미 공식으로 저장된 콘텐츠가 남아, 실제 서버와
  * 다르게 동작한다(서버는 조회할 때마다 이 목록으로 다시 판정한다).
  */
-const officialUserIds = new Set<number>(
+const officialUserIds = new Set<string>(
   /*
     콘텐츠를 가진 운영 계정 두 곳만 지정해 둔다. 지정한 계정에 세계관이 없으면
     공식 목록이 빈 채로 보여, 화면이 잘못된 것인지 지정이 잘못된 것인지 구분이 안 된다.
@@ -29,14 +29,14 @@ interface OfficialRegistration {
   registeredAt: string;
 }
 
-const registrations = new Map<number, OfficialRegistration>(
+const registrations = new Map<string, OfficialRegistration>(
   [...officialUserIds].map((userId, index) => [
     userId,
     { registeredBy: "운영자", registeredAt: daysAgo(index * 12 + 6, 11) },
   ]),
 );
 
-export const isOfficialUserId = (userId: number) =>
+export const isOfficialUserId = (userId: string) =>
   officialUserIds.has(userId);
 
 /**
@@ -46,7 +46,7 @@ export const isOfficialUserId = (userId: number) =>
  * 경고 로그만 남기고 건너뛴다. **모든 유저가 곧 크리에이터**이므로 유저가
  * 존재하는지만 확인하면 된다.
  */
-const findCreatorId = (userId: number): string | undefined => {
+const findCreatorId = (userId: string): string | undefined => {
   const user = users.find((item) => item.userId === userId);
 
   // 목업은 크리에이터 ID를 따로 두지 않으므로 유저 ID를 그대로 쓴다.
@@ -94,7 +94,7 @@ export const listOfficialAccounts = (): OfficialAccount[] =>
     })
     .sort((a, b) => b.registeredAt.localeCompare(a.registeredAt));
 
-export const addOfficialAccount = (userId: number, registeredBy: string) => {
+export const addOfficialAccount = (userId: string, registeredBy: string) => {
   officialUserIds.add(userId);
   registrations.set(userId, {
     registeredBy,
@@ -104,7 +104,7 @@ export const addOfficialAccount = (userId: number, registeredBy: string) => {
   syncOfficialFlags();
 };
 
-export const removeOfficialAccount = (userId: number) => {
+export const removeOfficialAccount = (userId: string) => {
   officialUserIds.delete(userId);
   registrations.delete(userId);
 

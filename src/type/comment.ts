@@ -31,13 +31,15 @@ export const COMMENT_STATUS_LABEL: Record<CommentStatus, string> = {
 export interface Comment {
   commentId: number;
   targetType: CommentTargetType;
-  targetId: number;
+  /** 대상은 유저·캐릭터·세계관 등이고 전부 Snowflake다. 문자열 그대로 다룬다. */
+  targetId: string;
   /** 대상 이름. 목록에서 어디에 달린 댓글인지 바로 알 수 있게 서버가 채워준다. */
   targetName: string;
   /** 대댓글이면 부모 댓글 ID */
   parentCommentId?: number;
   content: string;
-  authorId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  authorId: string;
   authorNickname: string;
   status: CommentStatus;
   /** 누적 신고 수. 높을수록 먼저 확인해야 한다. */

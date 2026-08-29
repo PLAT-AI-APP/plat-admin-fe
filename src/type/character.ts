@@ -14,7 +14,8 @@ export interface Character {
   characterId: number;
   name: string;
   thumbnailUrl: string;
-  creatorId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  creatorId: string;
   creatorNickname: string;
   /**
    * 공식 여부. 소유 크리에이터가 공식 계정으로 등록되어 있으면 참이다.
@@ -177,7 +178,8 @@ export interface Universe {
    */
   isOfficial: boolean;
   /** 소유 크리에이터. 공식 판정의 근거라 목록에서 함께 본다. */
-  creatorId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  creatorId: string;
   creatorNickname: string;
   visibility: UniverseVisibility;
   status: UniverseStatus;

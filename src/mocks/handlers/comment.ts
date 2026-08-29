@@ -44,9 +44,7 @@ export const commentHandlers = [
     }
 
     if (authorId) {
-      filtered = filtered.filter(
-        (comment) => comment.authorId === Number(authorId),
-      );
+      filtered = filtered.filter((comment) => comment.authorId === authorId);
     }
 
     const sorted = [...filtered].sort((a, b) => {

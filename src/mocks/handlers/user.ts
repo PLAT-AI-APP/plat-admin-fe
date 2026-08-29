@@ -29,7 +29,7 @@ const toUserSummary = (user: UserDetail): User => ({
   createdAt: user.createdAt,
 });
 
-const findUser = (userId: number) =>
+const findUser = (userId: string) =>
   users.find((user) => user.userId === userId);
 
 const notFound = (message: string) =>
@@ -67,7 +67,7 @@ export const userHandlers = [
   }),
 
   http.get(`${BASE_URI}/admin/users/:userId`, async ({ params }) => {
-    const user = findUser(Number(params.userId));
+    const user = findUser(String(params.userId));
 
     await delay(MOCK_DELAY_MS);
 
@@ -79,7 +79,7 @@ export const userHandlers = [
   http.patch(
     `${BASE_URI}/admin/users/:userId/status`,
     async ({ params, request }) => {
-      const user = findUser(Number(params.userId));
+      const user = findUser(String(params.userId));
       const body = (await request.json()) as {
         status: UserStatus;
         reason?: string;

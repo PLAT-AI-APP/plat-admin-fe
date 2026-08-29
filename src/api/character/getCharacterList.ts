@@ -39,7 +39,7 @@ export interface CharacterListParams {
   /** "true" | "false" | ""(전체). select 값을 그대로 넘기기 위해 문자열로 둔다. */
   isOfficial?: string;
   /** 특정 크리에이터가 만든 캐릭터만 조회한다. (유저 상세에서 사용) */
-  creatorId?: number;
+  creatorId?: string;
   /** 빈 문자열이면 서버 기본 정렬(등록 최신순)을 따른다. */
   sort?: CharacterSort | "";
 }

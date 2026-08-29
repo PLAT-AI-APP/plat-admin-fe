@@ -17,9 +17,9 @@ export interface ReportListParams {
   status?: ReportStatus | "";
   reason?: ReportReason | "";
   /** 이 유저가 접수한 신고만 조회한다. (유저 상세에서 사용) */
-  reporterId?: number;
+  reporterId?: string;
   /** 이 대상에 접수된 신고만 조회한다. targetType과 함께 쓴다. */
-  targetId?: number;
+  targetId?: string;
   sort?: "RECENT" | "REPORTED";
 }
 

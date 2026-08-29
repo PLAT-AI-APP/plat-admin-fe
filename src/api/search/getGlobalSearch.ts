@@ -10,7 +10,8 @@ export type GlobalSearchType =
 
 export interface GlobalSearchItem {
   type: GlobalSearchType;
-  id: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  id: string;
   /** 대표 이름 */
   title: string;
   /** 보조 설명 (이메일, 캐릭터명 등) */

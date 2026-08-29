@@ -59,6 +59,26 @@ export const hoursAgo = (hours: number): string => {
 };
 
 /** 시드 데이터용 의사 난수. 실행마다 값이 바뀌지 않도록 seed 기반으로 만든다. */
+/**
+ * 문자열 ID에서 난수 시드를 만든다.
+ *
+ * 목업은 ID를 시드로 써서 새로고침해도 같은 데이터가 나오게 한다. 유저 ID가
+ * Snowflake 문자열이 된 뒤로는 그대로 곱셈에 쓸 수 없어 여기서 숫자로 접는다.
+ *
+ * **ID를 숫자로 되돌리는 것이 아니다.** 시드는 겹쳐도 목업 데이터가 조금
+ * 비슷해질 뿐이지만, ID를 숫자로 되돌리면 Snowflake의 끝자리가 뭉개져
+ * 서로 다른 유저가 같은 유저가 된다.
+ */
+export const seedOf = (id: string): number => {
+  let hash = 0;
+
+  for (let index = 0; index < id.length; index += 1) {
+    hash = (hash * 31 + id.charCodeAt(index)) % 100_000;
+  }
+
+  return hash + 1;
+};
+
 export const pseudoRandom = (seed: number): number => {
   const value = Math.sin(seed) * 10_000;
 

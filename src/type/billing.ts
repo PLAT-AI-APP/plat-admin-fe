@@ -78,8 +78,11 @@ export interface CreditPolicy {
 export type AdjustmentType = "GRANT" | "DEDUCT";
 
 export interface CreditAdjustment {
+  /** 어드민 안에서만 쓰는 식별자라 Snowflake가 아니다. 숫자로 그대로 다룬다. */
   adjustmentId: number;
-  userId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `AdjustableUser`에 있다. */
+  userId: string;
+  /** 조정 시점 스냅샷이 아니라 지금 닉네임이다. 닉네임을 바꾼 유저도 알아볼 수 있어야 한다. */
   userNickname: string;
   type: AdjustmentType;
   amount: number;
@@ -100,13 +103,30 @@ export interface CreditAdjustmentFormValues {
   reason: string;
 }
 
-/** 결제/크레딧 장부 */
-export type LedgerType = "PAYMENT" | "CHARGE" | "USE" | "REFUND" | "ADJUSTMENT";
+/**
+ * 결제/크레딧 장부 한 줄의 성격.
+ *
+ * 서버 원장은 결제 충전·이벤트 지급·관리자 지급을 전부 `CHARGE` 하나로 적는다.
+ * 운영자가 구분해야 하는 것이 바로 그 셋이라, 서버가 **유형 + 출처**를 합쳐
+ * 이 값으로 내려 준다.
+ *
+ * `EXPIRE`는 원장에는 있는데 화면에 없던 값이다. 만료는 아무도 누르지 않았는데
+ * 잔액이 줄어드는 유일한 경로라, 보이지 않으면 설명할 수 없는 차액이 생긴다.
+ */
+export type LedgerType =
+  | "PAYMENT"
+  | "CHARGE"
+  | "USE"
+  | "REFUND"
+  | "EXPIRE"
+  | "ADJUSTMENT";
 
 export interface LedgerEntry {
-  ledgerId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 숫자로 바꾸면 끝자리가 뭉갠다. */
+  ledgerId: string;
   type: LedgerType;
-  userId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  userId: string;
   userNickname: string;
   /** 결제 금액 (원). 크레딧 사용 건은 0이다. */
   amount: number;
@@ -236,7 +256,7 @@ export interface PaymentRecord {
    */
   userKey: string;
   /** 아직 파기되지 않은 회원의 결제. 파기 후에는 값이 없다. */
-  userId?: number;
+  userId?: string;
   userNickname?: string;
   isWithdrawn: boolean;
   withdrawnAt?: string;
