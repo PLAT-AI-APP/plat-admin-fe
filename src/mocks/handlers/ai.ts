@@ -1,12 +1,6 @@
 import { HttpResponse, delay, http } from "msw";
 import type { AiModel, AiModelPingResult } from "@/type/ai";
-import {
-  aiModels,
-  modelCatalog,
-  systemPromptVersions,
-  systemPrompts,
-} from "../db/ai";
-import { stampAdmin } from "../session";
+import { aiModels, modelCatalog } from "../db/ai";
 import { MOCK_DELAY_MS, pickOne, randomInt } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
@@ -109,93 +103,4 @@ export const aiHandlers = [
 
     return HttpResponse.json(next);
   }),
-
-  http.get(`${BASE_URI}/admin/ai/prompts`, async () => {
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(systemPrompts);
-  }),
-
-  http.get(`${BASE_URI}/admin/ai/prompts/:promptKey`, async ({ params }) => {
-    const promptKey = String(params.promptKey);
-    const prompt = systemPrompts.find((item) => item.promptKey === promptKey);
-
-    await delay(MOCK_DELAY_MS);
-
-    if (!prompt) return notFound("존재하지 않는 프롬프트입니다.");
-
-    return HttpResponse.json({
-      ...prompt,
-      versions: systemPromptVersions
-        .filter((version) => version.promptKey === promptKey)
-        .sort((a, b) => b.version - a.version),
-    });
-  }),
-
-  http.put(
-    `${BASE_URI}/admin/ai/prompts/:promptKey`,
-    async ({ params, request }) => {
-      const promptKey = String(params.promptKey);
-      const { content } = (await request.json()) as { content: string };
-      const prompt = systemPrompts.find((item) => item.promptKey === promptKey);
-
-      if (!prompt) return notFound("존재하지 않는 프롬프트입니다.");
-
-      const versions = systemPromptVersions.filter(
-        (version) => version.promptKey === promptKey,
-      );
-      const nextVersion =
-        versions.reduce((max, item) => Math.max(max, item.version), 0) + 1;
-
-      // 새 버전은 비활성 상태로 쌓이고, 활성화는 별도 API로 처리한다.
-      const author = stampAdmin();
-
-      const created = {
-        versionId:
-          systemPromptVersions.reduce(
-            (max, item) => Math.max(max, item.versionId),
-            0,
-          ) + 1,
-        promptKey,
-        version: nextVersion,
-        content,
-        isActive: false,
-        createdBy: author.name,
-        createdById: author.managerId,
-        createdAt: new Date().toISOString(),
-      };
-
-      systemPromptVersions.push(created);
-      await delay(MOCK_DELAY_MS);
-
-      return HttpResponse.json(created, { status: 201 });
-    },
-  ),
-
-  http.post(
-    `${BASE_URI}/admin/ai/prompts/:promptKey/activate`,
-    async ({ params, request }) => {
-      const promptKey = String(params.promptKey);
-      const { version } = (await request.json()) as { version: number };
-      const prompt = systemPrompts.find((item) => item.promptKey === promptKey);
-
-      const target = systemPromptVersions.find(
-        (item) => item.promptKey === promptKey && item.version === version,
-      );
-
-      if (!prompt || !target) return notFound("존재하지 않는 버전입니다.");
-
-      systemPromptVersions.forEach((item) => {
-        if (item.promptKey === promptKey) item.isActive = false;
-      });
-
-      target.isActive = true;
-      prompt.activeVersion = version;
-      prompt.updatedAt = new Date().toISOString();
-
-      await delay(MOCK_DELAY_MS);
-
-      return HttpResponse.json(prompt);
-    },
-  ),
 ];

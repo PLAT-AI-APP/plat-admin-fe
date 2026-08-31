@@ -38,18 +38,41 @@ export interface AiModel {
   updatedAt: string;
 }
 
-/** 시스템 프롬프트 */
+/**
+ * 시스템 프롬프트의 종류.
+ *
+ * 어떤 프롬프트가 존재하는지는 서버의 `SystemPromptKey` enum이 정한다.
+ * 여기 적는 것은 서버가 내려주는 값을 좁혀 두는 것일 뿐, 목록의 출처가 아니다.
+ */
+export type SystemPromptKey =
+  | "SAFETY_FILTER"
+  | "UNIVERSE_CHAT"
+  | "UNIVERSE_REVIEW";
+
+/**
+ * 시스템 프롬프트.
+ *
+ * **활성 버전이 없을 수 있다.** 서버에 키를 새로 더하면 그 키는 버전이 하나도 없는 채로
+ * 목록에 나타난다. 그때는 `activeVersion`과 `updatedAt`이 함께 비어 있다.
+ */
 export interface SystemPrompt {
-  promptKey: string;
+  promptKey: SystemPromptKey;
   label: string;
   description: string;
-  activeVersion: number;
-  updatedAt: string;
+  activeVersion: number | null;
+  /**
+   * 지금까지 **발급한** 마지막 번호. 남아 있는 버전의 최대값이 아니다.
+   *
+   * v3을 지워도 이 값은 3으로 남고 다음 저장은 v4를 받는다. 다음 번호를 이력에서
+   * 세면 지운 번호를 다시 쓰겠다고 말하게 되므로, 화면은 언제나 이 값을 쓴다.
+   */
+  latestVersion: number;
+  updatedAt: string | null;
 }
 
 export interface SystemPromptVersion {
   versionId: number;
-  promptKey: string;
+  promptKey: SystemPromptKey;
   version: number;
   content: string;
   isActive: boolean;

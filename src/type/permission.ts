@@ -145,8 +145,13 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
   },
   systemPrompt: {
     label: "시스템 프롬프트",
-    description: "프롬프트 버전 작성과 활성화. 전체 대화 품질에 바로 반영된다.",
-    actions: ["read", "write"],
+    /*
+      삭제를 따로 뗀다. 지운 버전은 되돌릴 수 없고, 그 버전에서 무엇이 바뀌었는지를
+      되짚을 근거까지 함께 사라진다. 활성 버전은 어떤 권한으로도 지울 수 없다.
+    */
+    description:
+      "프롬프트 버전 작성과 활성화. 전체 대화 품질에 바로 반영된다.",
+    actions: ["read", "write", "delete"],
     isSensitive: true,
   },
   billingProduct: {
@@ -322,6 +327,7 @@ export const PERMISSION_CATEGORIES = [
       "officialAccount",
       "hashtag",
       "bannedWord",
+      "systemPrompt",
       "billingProduct",
       "role",
       "manager",
@@ -338,7 +344,6 @@ export const PERMISSION_CATEGORIES = [
       "user",
       "chatExport",
       "aiModel",
-      "systemPrompt",
       "creditPolicy",
       "notification",
       "appVersion",
