@@ -7,9 +7,9 @@ import {
   type UniverseOrder,
 } from "@/api/universe/getAdminUniverseList";
 import { useListParams } from "@/hooks/useListParams";
-import { ExternalLink, Eye, Refresh, Users, Warning } from "@/icons";
+import { ExternalLink, Eye, Refresh, Search, Users, Warning } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
-import dayjs, { formatDate } from "@/lib/dayjs";
+import { formatDate } from "@/lib/dayjs";
 import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatStatCount, formatWithCommas } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
@@ -56,7 +56,7 @@ const DEFAULT_PARAMS = {
   tendency: "",
   commentEnabled: "",
   /*
-    드릴다운 수신용. 세계관 상세의 "소유 계정"이 `/universes?creatorId=...`로
+    드릴다운 수신용. 세계관 상세의 "제작자"가 `/universes?creatorId=...`로
     링크를 걸고, 해시태그 화면에서도 `hashtagId`로 사용처를 보러 온다.
     여기에 기본값이 없으면 주소에 값이 실려 와도 훅이 읽어 주지 않아 죽은 링크가 된다.
   */
@@ -100,26 +100,25 @@ const TENDENCY_FILTER_OPTIONS: SelectOption[] = [
 const COMMENT_FILTER_OPTIONS: SelectOption[] = [
   { label: "댓글 전체", value: "" },
   { label: "댓글 허용", value: "true" },
-  { label: "댓글 차단", value: "false" },
+  { label: "댓글 불가", value: "false" },
 ];
 
 /* ------------------------------------------------------------------ */
 /* 업무 흐름 탭                                                          */
 /* ------------------------------------------------------------------ */
 
-type BoardTab = "ALL" | "REVIEW" | "ACTIVE" | "DELETED" | "PURGED";
+type BoardTab = "ALL" | "REVIEW" | "ACTIVE";
 
 /** 탭 프리셋 어디에도 없는 조합. 탭 목록에 없으므로 아무 탭도 켜지지 않는다. */
 type BoardTabValue = BoardTab | "CUSTOM";
 
 /** 탭이 정하는 것은 상태 · 심사 두 축뿐이다. 나머지 필터는 탭과 무관하게 유지된다. */
-const TAB_FILTERS: Record<BoardTab, { status: string; reviewStatus: string }> = {
-  ALL: { status: "", reviewStatus: "" },
-  REVIEW: { status: "", reviewStatus: "PENDING" },
-  ACTIVE: { status: "ACTIVE", reviewStatus: "" },
-  DELETED: { status: "DELETED", reviewStatus: "" },
-  PURGED: { status: "PURGED", reviewStatus: "" },
-};
+const TAB_FILTERS: Record<BoardTab, { status: string; reviewStatus: string }> =
+  {
+    ALL: { status: "", reviewStatus: "" },
+    REVIEW: { status: "", reviewStatus: "PENDING" },
+    ACTIVE: { status: "ACTIVE", reviewStatus: "" },
+  };
 
 /**
  * 현재 조건이 어느 탭인지 되짚는다.
@@ -143,48 +142,6 @@ const resolveTab = (status: string, reviewStatus: string): BoardTabValue => {
   );
 
   return found?.[0] ?? "CUSTOM";
-};
-
-/* ------------------------------------------------------------------ */
-/* 파기 D-day                                                           */
-/* ------------------------------------------------------------------ */
-
-/** 임박 기준. 이 안에 들면 danger로 칠해 배치가 지우기 전에 눈에 띄게 한다. */
-const PURGE_IMMINENT_DAYS = 3;
-
-/**
- * 파기까지 남은 일수. 오늘이면 0, 이미 지났으면 음수.
- *
- * 서버 시각은 오프셋 없는 KST `LocalDateTime`이라 `dayjs()`가 브라우저 로컬로
- * 읽는다. 여기서 타임존을 다시 씌우면 9시간이 밀리므로 **변환하지 않는다.**
- * 남은 "일수"만 필요하므로 양쪽을 자정으로 내려 비교한다.
- */
-const purgeRemainingDays = (purgeAt: string) =>
-  dayjs(purgeAt).startOf("day").diff(dayjs().startOf("day"), "day");
-
-const purgeDDayLabel = (remaining: number) => {
-  if (remaining < 0) return `기한 ${Math.abs(remaining)}일 초과`;
-  if (remaining === 0) return "D-DAY";
-
-  return `D-${remaining}`;
-};
-
-/** 파기 예정 뱃지. 삭제 대기 행에만 의미가 있다. */
-const PurgeDDay = ({ purgeAt }: { purgeAt: string | null }) => {
-  if (!purgeAt) return <span className="body-5 text-font-disabled">-</span>;
-
-  const remaining = purgeRemainingDays(purgeAt);
-
-  return (
-    <div className="flex flex-col items-center gap-0.5">
-      <Badge tone={remaining <= PURGE_IMMINENT_DAYS ? "danger" : "warning"}>
-        {purgeDDayLabel(remaining)}
-      </Badge>
-      <span className="caption-3 text-font-2 tabular-nums">
-        {formatDate(purgeAt)}
-      </span>
-    </div>
-  );
 };
 
 /** 서비스 언어 수. 번역이 이 수에 못 미치면 아직 다 번역되지 않은 세계관이다. */
@@ -238,21 +195,26 @@ const UniverseBoard = () => {
 
   const rows = data?.content ?? [];
   const activeTab = resolveTab(params.status, params.reviewStatus);
-  /* 삭제 대기 탭에서만 파기 기한을 컬럼으로 세운다. 다른 탭에서는 전부 "-"라 자리만 먹는다. */
-  const showPurgeColumn = activeTab === "DELETED";
 
   const tabs: TabItem<BoardTabValue>[] = [
     { label: "전체", value: "ALL" },
     { label: "심사 대기", value: "REVIEW", count: pendingData?.totalCount },
     { label: "운영 중", value: "ACTIVE" },
-    { label: "삭제 대기", value: "DELETED" },
-    { label: "파기 완료", value: "PURGED" },
   ];
 
   const clearDrilldown = () => setParams({ creatorId: "", hashtagId: "" });
 
   const openDetail = (universeId: string) =>
     router.push(`/universes/${universeId}`);
+
+  /*
+    제작자를 누르면 그 사람의 유저 상세로 간다.
+
+    링크는 `userId`로만 건다 — 크리에이터 ID와 유저 ID는 서로 다른
+    Snowflake라 `creatorId`로 유저를 찾으면 반드시 빈 화면이 된다. 크리에이터에
+    연결된 유저가 없으면(값이 null) 갈 곳이 없으므로 링크를 걸지 않는다.
+  */
+  const openUser = (userId: string) => router.push(`/users/${userId}`);
 
   /** 행 액션. 행 클릭(상세 이동)과 겹치지 않도록 셀에서 클릭을 멈춘다. */
   const buildRowActions = (row: AdminUniverseListItem): DropdownItem[] => [
@@ -262,9 +224,15 @@ const UniverseBoard = () => {
       onSelect: () => openDetail(row.universeId),
     },
     {
-      label: "이 크리에이터의 세계관",
+      label: "이 제작자의 세계관",
       icon: <Users size={15} />,
       onSelect: () => setParams({ creatorId: row.creatorId }),
+    },
+    {
+      label: "제작자 유저 상세",
+      icon: <Search size={15} />,
+      disabled: !row.userId,
+      onSelect: () => row.userId && openUser(row.userId),
     },
     {
       label: "새 탭에서 열기",
@@ -314,23 +282,54 @@ const UniverseBoard = () => {
     },
     {
       key: "creator",
-      header: "소유 계정",
-      render: (row) => (
-        <div className="min-w-0">
-          <p className="body-5 truncate text-font-2">{row.creatorNickname}</p>
-          <p className="caption-3 mt-0.5 text-font-disabled tabular-nums">
-            #{row.creatorId}
-          </p>
-        </div>
-      ),
+      header: "제작자",
+      render: (row) => {
+        const userId = row.userId;
+
+        return (
+          /*
+            제작자를 누르면 유저 상세로 간다. 행 클릭(세계관 상세)과 목적지가
+            다르므로 셀에서 클릭을 멈춘다.
+          */
+          <div className="min-w-0" onClick={(event) => event.stopPropagation()}>
+            {userId ? (
+              <button
+                type="button"
+                className="max-w-full truncate body-5 text-font-2 underline-offset-2 hover:text-font-1 hover:underline"
+                onClick={() => openUser(userId)}
+              >
+                {row.nickname}
+              </button>
+            ) : (
+              /* 연결된 유저가 없으면 갈 곳이 없다. 죽은 링크를 두지 않는다. */
+              <p className="max-w-full truncate body-5 text-font-2">
+                {row.nickname}
+              </p>
+            )}
+            <p className="caption-3 mt-0.5 text-font-disabled tabular-nums">
+              #{row.creatorId}
+            </p>
+          </div>
+        );
+      },
     },
     {
+      /* 세계관 하나는 장르를 하나만 가진다. 한 칸에 하나만 적는다. */
       key: "category",
       header: "장르",
       align: "center",
       render: (row) => (
         <span className="body-5 text-font-2">
-          {UNIVERSE_CATEGORY_LABEL[row.category]} ·{" "}
+          {UNIVERSE_CATEGORY_LABEL[row.category]}
+        </span>
+      ),
+    },
+    {
+      key: "tendency",
+      header: "성향",
+      align: "center",
+      render: (row) => (
+        <span className="body-5 text-font-2">
           {UNIVERSE_TENDENCY_LABEL[row.tendency]}
         </span>
       ),
@@ -360,53 +359,21 @@ const UniverseBoard = () => {
       header: "상태",
       align: "center",
       render: (row) => (
-        <div className="flex flex-col items-center gap-0.5">
-          <Badge tone={UNIVERSE_STATUS_TONE[row.status]}>
-            {UNIVERSE_STATUS_LABEL[row.status]}
-          </Badge>
-          {/*
-            파기 전까지는 복구 문의를 받을 수 있으므로 남은 기한을 함께 보여 준다.
-            삭제 대기 탭에는 D-day 컬럼이 따로 서므로 여기서는 중복을 피한다.
-          */}
-          {!showPurgeColumn && row.status === "DELETED" && row.purgeAt && (
-            <span className="caption-3 text-font-2 tabular-nums">
-              {formatDate(row.purgeAt)} 파기
-            </span>
-          )}
-        </div>
+        <Badge tone={UNIVERSE_STATUS_TONE[row.status]}>
+          {UNIVERSE_STATUS_LABEL[row.status]}
+        </Badge>
       ),
     },
-    ...(showPurgeColumn
-      ? [
-          {
-            key: "purgeAt",
-            header: "파기까지",
-            align: "center" as const,
-            render: (row: AdminUniverseListItem) => (
-              <PurgeDDay purgeAt={row.purgeAt} />
-            ),
-          },
-        ]
-      : []),
     {
       key: "commentEnabled",
       header: "댓글",
       align: "center",
       render: (row) =>
         row.commentEnabled ? (
-          <span className="body-5 text-font-2">사용</span>
+          <span className="body-5 text-font-2">허용</span>
         ) : (
-          <span className="body-5 text-font-disabled">미사용</span>
+          <span className="body-5 text-font-disabled">불가</span>
         ),
-    },
-    {
-      key: "hashtagCount",
-      header: "해시태그",
-      align: "right",
-      numeric: true,
-      render: (row) => (
-        <span className="body-5 text-font-2">{row.hashtagCount}개</span>
-      ),
     },
     {
       key: "translationCount",
@@ -425,13 +392,6 @@ const UniverseBoard = () => {
           {row.translationCount}/{TOTAL_LANGUAGE_COUNT}
         </span>
       ),
-    },
-    {
-      key: "scenarioCount",
-      header: "시나리오",
-      align: "right",
-      numeric: true,
-      render: (row) => `${formatWithCommas(row.scenarioCount)}편`,
     },
     {
       key: "chatCount",
@@ -458,15 +418,6 @@ const UniverseBoard = () => {
       ),
     },
     {
-      key: "updatedAt",
-      header: "수정일",
-      align: "right",
-      numeric: true,
-      render: (row) => (
-        <span className="body-5 text-font-2">{formatDate(row.updatedAt)}</span>
-      ),
-    },
-    {
       key: "actions",
       header: "",
       width: "56px",
@@ -487,8 +438,8 @@ const UniverseBoard = () => {
     { header: "ID", value: (row) => row.universeId },
     { header: "제목", value: (row) => row.title },
     { header: "소개", value: (row) => row.introduce },
-    { header: "소유 계정", value: (row) => row.creatorNickname },
-    { header: "크리에이터 ID", value: (row) => row.creatorId },
+    { header: "제작자", value: (row) => row.nickname },
+    { header: "제작자 ID", value: (row) => row.creatorId },
     { header: "장르", value: (row) => UNIVERSE_CATEGORY_LABEL[row.category] },
     { header: "성향", value: (row) => UNIVERSE_TENDENCY_LABEL[row.tendency] },
     {
@@ -497,33 +448,15 @@ const UniverseBoard = () => {
     },
     { header: "심사", value: (row) => UNIVERSE_REVIEW_LABEL[row.reviewStatus] },
     { header: "상태", value: (row) => UNIVERSE_STATUS_LABEL[row.status] },
-    ...(showPurgeColumn
-      ? [
-          {
-            header: "파기까지",
-            value: (row: AdminUniverseListItem) =>
-              row.purgeAt
-                ? purgeDDayLabel(purgeRemainingDays(row.purgeAt))
-                : "-",
-          },
-          {
-            header: "파기 예정일",
-            value: (row: AdminUniverseListItem) => formatDate(row.purgeAt),
-          },
-        ]
-      : []),
-    { header: "댓글", value: (row) => (row.commentEnabled ? "사용" : "미사용") },
-    { header: "해시태그 수", value: (row) => row.hashtagCount },
+    { header: "댓글", value: (row) => (row.commentEnabled ? "허용" : "불가") },
     {
       header: "번역",
       value: (row) => `${row.translationCount}/${TOTAL_LANGUAGE_COUNT}`,
     },
-    { header: "시나리오 수", value: (row) => row.scenarioCount },
     // CSV는 원본 숫자를 담는다. 축약값을 담으면 스프레드시트에서 합계를 못 낸다.
     { header: "대화 수", value: (row) => row.chatCount },
     { header: "좋아요 수", value: (row) => row.likeCount },
     { header: "생성일", value: (row) => formatDate(row.createdAt) },
-    { header: "수정일", value: (row) => formatDate(row.updatedAt) },
   ];
 
   return (
@@ -545,7 +478,7 @@ const UniverseBoard = () => {
             </Button>
           }
         >
-          {creatorId && <>크리에이터 #{creatorId}의 세계관</>}
+          {creatorId && <>제작자 #{creatorId}의 세계관</>}
           {creatorId && hashtagId && " · "}
           {hashtagId && <>해시태그 #{hashtagId}가 붙은 세계관</>}
           만 조회하는 중입니다.

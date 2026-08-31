@@ -65,28 +65,27 @@ export const UNIVERSE_VISIBILITY_TONE: Record<UniverseVisibility, BadgeTone> = {
   UNLISTED: "info",
 };
 
-/** 상태 라벨은 서버 `UniverseStatus.description`을 그대로 따른다. */
+/**
+ * 상태 라벨.
+ *
+ * 세계관 삭제는 하드 딜리트라 "삭제 대기"·"콘텐츠 파기"가 없다. 지운 세계관은
+ * 데이터째 사라져 목록에도 상세에도 나타나지 않으므로, 화면이 칠할 상태는
+ * 운영 중과 내려둔 것 둘뿐이다.
+ */
 export const UNIVERSE_STATUS_LABEL: Record<UniverseStatus, string> = {
   ACTIVE: "활성",
   INACTIVE: "비활성",
-  DELETED: "삭제 대기",
-  PURGED: "콘텐츠 파기",
 };
 
 export const UNIVERSE_STATUS_TONE: Record<UniverseStatus, BadgeTone> = {
   ACTIVE: "success",
   INACTIVE: "neutral",
-  // 파기 전이라 복구 문의를 받을 수 있는 구간이다. 파기 완료와 같은 색으로 두지 않는다.
-  DELETED: "warning",
-  PURGED: "danger",
 };
 
 export const UNIVERSE_STATUS_FILTER_OPTIONS: SelectOption[] = [
   { label: "상태 전체", value: "" },
   { label: UNIVERSE_STATUS_LABEL.ACTIVE, value: "ACTIVE" },
   { label: UNIVERSE_STATUS_LABEL.INACTIVE, value: "INACTIVE" },
-  { label: UNIVERSE_STATUS_LABEL.DELETED, value: "DELETED" },
-  { label: UNIVERSE_STATUS_LABEL.PURGED, value: "PURGED" },
 ];
 
 export const UNIVERSE_REVIEW_LABEL: Record<UniverseReviewStatus, string> = {

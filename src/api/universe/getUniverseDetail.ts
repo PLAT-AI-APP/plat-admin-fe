@@ -91,9 +91,6 @@ interface UniverseDetailResponse {
   profileImageUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
-  deletedAt: string | null;
-  purgeAt: string | null;
-  purgedAt: string | null;
   translations: TranslationResponse[];
   hashtags: HashtagResponse[];
   character: CharacterResponse | null;
@@ -123,9 +120,6 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
   profileImageUrl: response.profileImageUrl,
   createdAt: response.createdAt,
   updatedAt: response.updatedAt,
-  deletedAt: response.deletedAt,
-  purgeAt: response.purgeAt,
-  purgedAt: response.purgedAt,
   translations: response.translations.map((t) => ({
     language: t.language,
     title: t.title,

@@ -153,15 +153,11 @@ const buildCharacterDetail = (
     /*
       이 캐릭터가 **등장하는** 세계관. 소유가 아니라 등장 기준이라, 다른 크리에이터의
       세계관에 초대된 경우도 함께 나온다.
-      삭제·파기된 세계관은 목록 지표에서도 빠지므로 여기서도 뺀다.
     */
-    universes: universes.filter(
-      (universe) =>
-        universe.characters.some(
-          (item) => item.characterId === character.characterId,
-        ) &&
-        universe.status !== "DELETED" &&
-        universe.status !== "PURGED",
+    universes: universes.filter((universe) =>
+      universe.characters.some(
+        (item) => item.characterId === character.characterId,
+      ),
     ),
     updatedAt: profile?.updatedAt ?? character.createdAt,
   };

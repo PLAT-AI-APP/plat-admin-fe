@@ -1,4 +1,3 @@
-import dayjs from "@/lib/dayjs";
 import type { BadgeTone } from "@/components/ui/Badge";
 import type { SelectOption } from "@/components/ui/Select";
 import type {
@@ -17,8 +16,8 @@ import {
  * 세계관 상세 화면에서만 쓰는 라벨 · 계산.
  *
  * 도메인 공통 라벨은 `_constants/character.ts`에 있다. 여기에는 **상세 화면이
- * 처음 쓰기 시작한 것**만 둔다 — 크리에이터 등급·상태 뱃지, 조치 폼의 선택지,
- * 파기까지 남은 기간처럼 목록에는 없는 값들이다.
+ * 처음 쓰기 시작한 것**만 둔다 — 크리에이터 등급·상태 뱃지, 조치 폼의 선택지처럼
+ * 목록에는 없는 값들이다.
  */
 
 /* ------------------------------------------------------------------ */
@@ -98,44 +97,6 @@ export const UNIVERSE_CATEGORY_OPTIONS: SelectOption[] = (
 export const UNIVERSE_TENDENCY_OPTIONS: SelectOption[] = (
   Object.keys(UNIVERSE_TENDENCY_LABEL) as (keyof typeof UNIVERSE_TENDENCY_LABEL)[]
 ).map((value) => ({ label: UNIVERSE_TENDENCY_LABEL[value], value }));
-
-/* ------------------------------------------------------------------ */
-/* 파기까지 남은 기간                                                    */
-/* ------------------------------------------------------------------ */
-
-export interface PurgeCountdown {
-  /** 화면에 그대로 찍는 문구. (ex: D-12) */
-  label: string;
-  /** 남은 날짜. 이미 지났으면 음수다. */
-  days: number;
-  /** 파기 예정 시각이 지났는지. 지났으면 복구 문의를 받아도 소용이 없다. */
-  isOver: boolean;
-}
-
-/**
- * 파기까지 남은 기간.
- *
- * 날짜만 보여 주면 "지금 문의를 받아도 되는지"를 매번 달력으로 계산해야 한다.
- * 파기 전에만 복구 문의가 의미 있으므로 남은 일수를 화면에 직접 적는다.
- *
- * 서버 시각은 오프셋 없는 KST LocalDateTime이라 그대로 파싱한다(재변환 금지).
- */
-export const purgeCountdown = (
-  purgeAt: string | null,
-): PurgeCountdown | undefined => {
-  if (!purgeAt) return undefined;
-
-  const target = dayjs(purgeAt);
-  if (!target.isValid()) return undefined;
-
-  // 날짜 경계로 끊는다. "2일 6시간"이 아니라 "D-2"로 읽는 편이 판단이 빠르다.
-  const days = target.startOf("day").diff(dayjs().startOf("day"), "day");
-
-  if (days > 0) return { label: `D-${days}`, days, isOver: false };
-  if (days === 0) return { label: "D-DAY", days, isOver: false };
-
-  return { label: `D+${Math.abs(days)}`, days, isOver: true };
-};
 
 /* ------------------------------------------------------------------ */
 /* 번역                                                                */

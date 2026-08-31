@@ -53,15 +53,6 @@ export const universeHandlers = [
 
     if (status) {
       filtered = filtered.filter((universe) => universe.status === status);
-    } else {
-      /*
-        상태를 고르지 않았을 때 삭제·파기를 함께 보여 주면, 이미 앱에서 사라진
-        세계관이 큐레이션 후보 목록에 섞인다. 골라 봐야만 나오게 둔다.
-      */
-      filtered = filtered.filter(
-        (universe) =>
-          universe.status !== "DELETED" && universe.status !== "PURGED",
-      );
     }
 
     if (reviewStatus) {
@@ -81,5 +72,4 @@ export const universeHandlers = [
 
     return HttpResponse.json(paginate(sorted, url));
   }),
-
 ];

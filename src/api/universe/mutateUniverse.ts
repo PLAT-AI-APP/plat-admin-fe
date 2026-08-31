@@ -24,7 +24,7 @@ export interface UniversePatchBody {
   tendency?: UniverseTendency;
   category?: UniverseCategory;
   commentEnabled?: boolean;
-  /** ACTIVE ↔ INACTIVE 만 허용된다. 삭제·파기는 서버가 막는다. */
+  /** ACTIVE ↔ INACTIVE 만 있다. 삭제는 하드 딜리트라 상태로 남지 않는다. */
   status?: UniverseStatus;
 }
 
@@ -62,15 +62,13 @@ export const APP_SYNC_DELAY_NOTICE =
  * 서버 오류 코드 → 운영자가 읽고 다음 행동을 정할 수 있는 문구.
  *
  * 서버 메시지는 코드에 가깝게 오기 때문에 그대로 띄우면 "그래서 내가 뭘 해야
- * 하나"를 알 수 없다. 특히 삭제·파기 세계관의 상태 변경(409)은 **화면에서 할
- * 수 있는 일이 없다**는 사실을 알려 줘야 한다(복구 API가 서버에 없다).
+ * 하나"를 알 수 없다.
  */
 const UNIVERSE_ERROR_MESSAGE: Record<string, string> = {
-  UNIVERSE_STATUS_TRANSITION_INVALID:
-    "삭제·파기된 세계관은 상태를 바꿀 수 없습니다.",
+  UNIVERSE_STATUS_TRANSITION_INVALID: "이 세계관은 상태를 바꿀 수 없습니다.",
   UNIVERSE_REVIEW_REASON_REQUIRED:
     "반려 사유를 입력해야 심사를 반려할 수 있습니다.",
-  UNIVERSE_NOT_FOUND: "세계관을 찾을 수 없습니다. 이미 파기되었을 수 있습니다.",
+  UNIVERSE_NOT_FOUND: "세계관을 찾을 수 없습니다. 이미 삭제되었을 수 있습니다.",
 };
 
 /** 세계관 조치 실패 문구. 아는 코드는 우리 문구로, 모르는 코드는 서버 문구로. */

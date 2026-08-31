@@ -26,10 +26,7 @@ export interface UniverseListParams {
    * 실으면 앱에서는 한국어 원문이 그대로 나가므로, 후보 단계에서 뺀다.
    */
   language?: ServiceLanguage;
-  /**
-   * 운영 상태. 기본값(빈 문자열)은 삭제·파기를 제외한 전체다.
-   * 삭제 대기 세계관은 파기 전까지 복구 문의를 받을 수 있어 따로 골라 볼 수 있게 둔다.
-   */
+  /** 운영 상태. 기본값(빈 문자열)은 전체다. */
   status?: UniverseStatus | "";
   /** 심사 상태. 승인 전 세계관은 앱에 노출되지 않는다. */
   reviewStatus?: UniverseReviewStatus | "";

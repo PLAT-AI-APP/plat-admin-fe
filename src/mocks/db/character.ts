@@ -161,16 +161,6 @@ const REVIEW_REJECTION_REASONS = [
 ];
 
 /**
- * 삭제 후 콘텐츠가 실제로 파기되기까지의 유예 기간(일).
- *
- * 서버 설정에서 확인된 `P1D`는 **임시 업로드 파일**의 해제 주기이지 세계관
- * 파기 주기가 아니다. 세계관 파기 주기는 설정에서 확인하지 못했으므로
- * 복구 문의를 받을 수 있는 현실적인 길이로 30일을 가정한다.
- * 실제 값이 확인되면 여기만 고친다.
- */
-const PURGE_GRACE_DAYS = 30;
-
-/**
  * 세계관 ↔ 캐릭터 매핑. 서버 `universe_character_mappings`에 해당한다.
  *
  * **N:M이다.** 세계관 하나에 캐릭터가 여럿 나올 수 있고, 같은 캐릭터가 다른
@@ -200,33 +190,15 @@ export const universes: Universe[] = characterBases.flatMap(
       );
 
       /*
-        심사·삭제 상태를 섞어 둔다. 서버는 승인되지 않았거나 삭제된 세계관을
+        심사·운영 상태를 섞어 둔다. 서버는 승인되지 않았거나 내려둔 세계관을
         홈 섹션에서 빼기 때문에, 운영 화면에서 그 이유를 구분할 수 있어야 한다.
+
+        삭제는 하드 딜리트라 상태로 남지 않는다 — 지운 세계관은 자료에서 통째로
+        사라지므로 목업도 살아 있는 것만 만든다.
       */
       const reviewStatus: UniverseReviewStatus =
         seed % 17 === 0 ? "REJECTED" : seed % 9 === 0 ? "PENDING" : "APPROVED";
-      const status: UniverseStatus =
-        seed % 23 === 0
-          ? "PURGED"
-          : seed % 13 === 0
-            ? "DELETED"
-            : seed % 19 === 0
-              ? "INACTIVE"
-              : "ACTIVE";
-      const isDeleted = status === "DELETED" || status === "PURGED";
-      // 삭제는 등록 이후, 오늘 사이에 일어난다.
-      /*
-        삭제 시점.
-
-        파기 대기(`DELETED`) 세계관은 **유예 기간 안에 삭제된 것**이어야 한다.
-        유예를 넘긴 것은 정리 스케줄이 이미 `PURGED`로 바꿨을 것이므로,
-        오래전에 지워졌는데 아직 대기 중인 자료는 실제로 생길 수 없다.
-        그런 시드를 두면 화면의 파기 D-day가 전부 "기한 초과"로만 나온다.
-      */
-      const deletedDaysAgo =
-        status === "DELETED"
-          ? randomInt(seed * 3, 0, PURGE_GRACE_DAYS - 1)
-          : randomInt(seed * 3, 0, createdDaysAgo);
+      const status: UniverseStatus = seed % 19 === 0 ? "INACTIVE" : "ACTIVE";
 
       return {
         universeId: seed,
@@ -272,15 +244,6 @@ export const universes: Universe[] = characterBases.flatMap(
         scenarioCount: 0,
         chatCount: randomInt(seed * 7, 80, 32_000),
         likeCount: randomInt(seed * 9, 0, 9_400),
-        deletedAt: isDeleted ? daysAgo(deletedDaysAgo, 9) : undefined,
-        // 파기 예정 시각은 삭제 시각 + 유예 기간이다.
-        purgeAt: isDeleted
-          ? daysAgo(deletedDaysAgo - PURGE_GRACE_DAYS, 9)
-          : undefined,
-        purgedAt:
-          status === "PURGED"
-            ? daysAgo(Math.max(0, deletedDaysAgo - PURGE_GRACE_DAYS), 10)
-            : undefined,
         createdAt: daysAgo(createdDaysAgo),
       };
     }),
@@ -375,14 +338,10 @@ universes.forEach((universe) => {
  * 소유가 아니라 등장 기준이라, 다른 사람의 세계관에 초대된 캐릭터도 함께 잡힌다.
  */
 export const characters: Character[] = characterBases.map((character) => {
-  // 삭제·파기된 세계관은 앱에서 사라지므로 캐릭터 지표에서도 뺀다.
-  const appearedUniverses = universes.filter(
-    (universe) =>
-      universe.characters.some(
-        (item) => item.characterId === character.characterId,
-      ) &&
-      universe.status !== "DELETED" &&
-      universe.status !== "PURGED",
+  const appearedUniverses = universes.filter((universe) =>
+    universe.characters.some(
+      (item) => item.characterId === character.characterId,
+    ),
   );
 
   return {

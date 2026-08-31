@@ -27,7 +27,7 @@ import {
  * 계정 등록 결과가 실제로 무엇에 반영됐는지 같은 화면에서 확인하기 위한 표다.
  *
  * 상태로 거르지 않는다 — 위 표의 "공식 세계관" 건수와 같은 조건이라야 두 숫자가
- * 어긋나지 않는다. 삭제 대기 중인 세계관도 여기 보인다.
+ * 어긋나지 않는다. 비활성으로 내려둔 세계관도 여기 보인다.
  */
 const OfficialUniversePanel = () => {
   const router = useRouter();
@@ -74,9 +74,9 @@ const OfficialUniversePanel = () => {
     },
     {
       key: "creator",
-      header: "소유 계정",
+      header: "제작자",
       render: (row) => (
-        <span className="body-5 text-font-2">{row.creatorNickname}</span>
+        <span className="body-5 text-font-2">{row.nickname}</span>
       ),
     },
     {

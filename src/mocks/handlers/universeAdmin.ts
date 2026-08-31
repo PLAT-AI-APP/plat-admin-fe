@@ -83,7 +83,9 @@ const toItemResponse = (universe: Universe) => ({
   likeCount: universe.likeCount,
   commentEnabled: universe.commentEnabled,
   creatorId: String(universe.creatorId),
-  creatorNickname: universe.creatorNickname,
+  /* 상세(`toDetailResponse`)와 같은 규칙으로 만든다. 두 화면이 같은 유저를 가리켜야 한다. */
+  userId: String(600000000000000000 + universe.creatorId),
+  nickname: universe.creatorNickname,
   profileImageFileId: fileIdOf(universe.universeId),
   profileImageUrl: mockProfileImageUrl(universe),
   hashtagCount: universe.tags.length,
@@ -91,8 +93,6 @@ const toItemResponse = (universe: Universe) => ({
   translationCount: translationCountOf(universe),
   createdAt: universe.createdAt,
   updatedAt: universe.createdAt,
-  deletedAt: universe.deletedAt ?? null,
-  purgeAt: universe.purgeAt ?? null,
 });
 
 /** 세계관에 붙은 태그를 해시태그 목업에서 찾아 서버 DTO 모양으로 옮긴다. */
@@ -176,49 +176,42 @@ const toDetailResponse = (universe: Universe) => ({
   profileImageUrl: mockProfileImageUrl(universe),
   createdAt: universe.createdAt,
   updatedAt: universe.createdAt,
-  deletedAt: universe.deletedAt ?? null,
-  purgeAt: universe.purgeAt ?? null,
-  purgedAt: universe.purgedAt ?? null,
   translations: toTranslationViews(universe),
   hashtags: toHashtagViews(universe),
-  /* 파기된 세계관은 콘텐츠가 지워져 캐릭터도 남지 않는다. */
-  character:
-    universe.status === "PURGED"
-      ? null
-      : universe.characters[0]
-        ? {
-            characterId: String(universe.characters[0].characterId),
-            name: universe.characters[0].name,
-            profileImageFileId: fileIdOf(universe.characters[0].characterId),
-            profileImageUrl: universe.characters[0].thumbnailUrl,
-          }
-        : null,
-  assets:
-    universe.status === "PURGED"
-      ? []
-      : Array.from({ length: Math.min(universe.assetCount, 12) }, (_, index) => ({
-          assetId: String(universe.universeId * 100 + index),
-          fileId: fileIdOf(universe.universeId * 100 + index),
-          /*
-            이름 풀이 6개뿐이라 에셋이 그보다 많으면 같은 이름이 반복된다.
-            운영 화면에서 중복 자료로 오해하지 않도록 두 바퀴째부터 번호를 붙인다.
-          */
-          assetName:
-            index < ASSET_NAMES.length
-              ? ASSET_NAMES[index]
-              : `${ASSET_NAMES[index % ASSET_NAMES.length]} ${Math.floor(index / ASSET_NAMES.length) + 1}`,
-          assetSituation:
-            ASSET_SITUATIONS[index % ASSET_SITUATIONS.length] ?? null,
-          /*
-            실서버는 null을 준다. 목업은 검수 화면(갤러리 · 확대 보기)을
-            실제로 확인할 수 있도록 이미지를 싣되, 마지막 한 장은 null로 남겨
-            자리표시가 섞여 나오는 모습까지 보이게 한다.
-          */
-          url:
-            index === Math.min(universe.assetCount, 12) - 1
-              ? null
-              : `https://picsum.photos/seed/asset-${universe.universeId}-${index}/640/640`,
-        })),
+  character: universe.characters[0]
+    ? {
+        characterId: String(universe.characters[0].characterId),
+        name: universe.characters[0].name,
+        profileImageFileId: fileIdOf(universe.characters[0].characterId),
+        profileImageUrl: universe.characters[0].thumbnailUrl,
+      }
+    : null,
+  assets: Array.from(
+    { length: Math.min(universe.assetCount, 12) },
+    (_, index) => ({
+      assetId: String(universe.universeId * 100 + index),
+      fileId: fileIdOf(universe.universeId * 100 + index),
+      /*
+        이름 풀이 6개뿐이라 에셋이 그보다 많으면 같은 이름이 반복된다.
+        운영 화면에서 중복 자료로 오해하지 않도록 두 바퀴째부터 번호를 붙인다.
+      */
+      assetName:
+        index < ASSET_NAMES.length
+          ? ASSET_NAMES[index]
+          : `${ASSET_NAMES[index % ASSET_NAMES.length]} ${Math.floor(index / ASSET_NAMES.length) + 1}`,
+      assetSituation:
+        ASSET_SITUATIONS[index % ASSET_SITUATIONS.length] ?? null,
+      /*
+        실서버는 null을 준다. 목업은 검수 화면(갤러리 · 확대 보기)을
+        실제로 확인할 수 있도록 이미지를 싣되, 마지막 한 장은 null로 남겨
+        자리표시가 섞여 나오는 모습까지 보이게 한다.
+      */
+      url:
+        index === Math.min(universe.assetCount, 12) - 1
+          ? null
+          : `https://picsum.photos/seed/asset-${universe.universeId}-${index}/640/640`,
+    }),
+  ),
   scenarios: toScenarioViews(universe.universeId),
 });
 
@@ -238,9 +231,6 @@ interface UniversePatchBody {
   commentEnabled?: boolean;
   status?: UniverseStatus;
 }
-
-/** 운영이 직접 켜고 끄는 것은 ACTIVE ↔ INACTIVE 뿐이다. 삭제·파기는 배치가 소유한다. */
-const OPERABLE_STATUSES: UniverseStatus[] = ["ACTIVE", "INACTIVE"];
 
 export const universeAdminHandlers = [
   http.get(`${LIVE_BASE_URI}/admin/universes`, async ({ request }) => {
@@ -387,22 +377,8 @@ export const universeAdminHandlers = [
 
       if (!universe) return notFound();
 
-      if (body.status) {
-        if (
-          !OPERABLE_STATUSES.includes(universe.status) ||
-          !OPERABLE_STATUSES.includes(body.status)
-        ) {
-          return HttpResponse.json(
-            {
-              code: "UNIVERSE_STATUS_TRANSITION_INVALID",
-              message:
-                "이 상태로는 바꿀 수 없습니다. 삭제·파기 상태는 운영에서 직접 바꾸지 않습니다.",
-            },
-            { status: 409 },
-          );
-        }
-        universe.status = body.status;
-      }
+      /* 상태는 ACTIVE ↔ INACTIVE 둘뿐이다. 삭제는 하드 딜리트라 상태로 오지 않는다. */
+      if (body.status) universe.status = body.status;
 
       if (body.visibility) universe.visibility = body.visibility;
       if (body.tendency) universe.tendency = body.tendency;

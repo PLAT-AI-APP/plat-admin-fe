@@ -42,7 +42,7 @@ export interface AdminUniverseFilterParams {
   reviewStatus?: UniverseReviewStatus | "";
   tendency?: UniverseTendency | "";
   commentEnabled?: "true" | "false" | "";
-  /** 크리에이터 드릴다운. 상세 화면의 "소유 계정"이 이 값으로 링크를 건다. */
+  /** 제작자 드릴다운. 상세 화면의 "제작자"가 이 값으로 링크를 건다. */
   creatorId?: string;
   /** 해시태그 드릴다운. 태그가 실제로 어디에 붙어 있는지 확인할 때 쓴다. */
   hashtagId?: string;
@@ -79,7 +79,8 @@ interface AdminUniverseItemResponse {
   likeCount: number;
   commentEnabled: boolean;
   creatorId: string;
-  creatorNickname: string | null;
+  userId: string | null;
+  nickname: string | null;
   profileImageFileId: string | null;
   profileImageUrl: string | null;
   hashtagCount: number;
@@ -87,8 +88,6 @@ interface AdminUniverseItemResponse {
   translationCount: number;
   createdAt: string;
   updatedAt: string | null;
-  deletedAt: string | null;
-  purgeAt: string | null;
 }
 
 /** 서버 페이징 봉투(PageWith). 화면의 `PageResponse`로 정규화한다. */
@@ -117,7 +116,8 @@ const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
   likeCount: item.likeCount,
   commentEnabled: item.commentEnabled,
   creatorId: item.creatorId,
-  creatorNickname: item.creatorNickname ?? "-",
+  userId: item.userId,
+  nickname: item.nickname ?? "-",
   profileImageFileId: item.profileImageFileId,
   profileImageUrl: item.profileImageUrl,
   hashtagCount: item.hashtagCount,
@@ -125,8 +125,6 @@ const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
   translationCount: item.translationCount,
   createdAt: item.createdAt,
   updatedAt: item.updatedAt,
-  deletedAt: item.deletedAt,
-  purgeAt: item.purgeAt,
 });
 
 /** 빈 문자열 필터는 아예 빼고, 페이지는 0부터로 낮춰 서버가 받는 형태로 만든다. */

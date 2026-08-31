@@ -50,13 +50,13 @@ export interface CharacterDetail extends Character {
 export type UniverseVisibility = "PUBLIC" | "PRIVATE" | "UNLISTED";
 
 /**
- * 세계관 운영 상태. 서버 `UniverseStatus`와 같다.
+ * 세계관 운영 상태. 서버 `UniverseStatus` 중 **운영에서 만날 수 있는 값**이다.
  *
- * 삭제는 두 단계다. `DELETED`는 유저가 지운 뒤 파기를 기다리는 상태이고,
- * `PURGED`는 정리 스케줄이 실제 콘텐츠(이미지·에셋)를 파기한 상태다.
- * 파기 전까지는 복구 문의를 받을 수 있으므로 운영에서 두 상태를 구분해야 한다.
+ * 세계관 삭제는 하드 딜리트다 — 지우면 데이터가 그대로 폐기되어 조회 자체가
+ * 되지 않는다. 그래서 "삭제 대기"·"콘텐츠 파기" 같은 중간 상태가 존재할 수 없고,
+ * 화면이 다룰 상태는 운영 중(`ACTIVE`)과 내려둔 것(`INACTIVE`) 둘뿐이다.
  */
-export type UniverseStatus = "ACTIVE" | "INACTIVE" | "DELETED" | "PURGED";
+export type UniverseStatus = "ACTIVE" | "INACTIVE";
 
 /** 세계관 심사 상태. 서버 `ReviewStatus`와 같다. 승인 전에는 앱에 노출되지 않는다. */
 export type UniverseReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -196,12 +196,6 @@ export interface Universe {
   scenarioCount: number;
   chatCount: number;
   likeCount: number;
-  /** 삭제 요청 시각. `status`가 `DELETED`·`PURGED`일 때만 있다. */
-  deletedAt?: string;
-  /** 콘텐츠 파기 예정 시각. 이 시각이 지나면 정리 스케줄이 실제로 파기한다. */
-  purgeAt?: string;
-  /** 실제 파기 완료 시각. `status`가 `PURGED`일 때만 있다. */
-  purgedAt?: string;
   createdAt: string;
 }
 
@@ -264,8 +258,6 @@ export const isExposableInLanguage = (
 export const universeBlockReason = (
   universe: UniverseExposureState,
 ): string | undefined => {
-  if (universe.status === "PURGED") return "콘텐츠 파기";
-  if (universe.status === "DELETED") return "삭제 대기";
   if (universe.status === "INACTIVE") return "비활성";
   if (universe.reviewStatus === "PENDING") return "심사 대기";
   if (universe.reviewStatus === "REJECTED") return "심사 반려";
@@ -316,7 +308,13 @@ export interface AdminUniverseListItem {
   likeCount: number;
   commentEnabled: boolean;
   creatorId: string;
-  creatorNickname: string;
+  /**
+   * 제작자의 유저 ID. 크리에이터 ID와는 **다른 값**이라, 목록에서 유저 상세로
+   * 가려면 이 값이 있어야 한다. 크리에이터에 연결된 유저가 없으면 null이다.
+   */
+  userId: string | null;
+  /** 제작자 닉네임. 이름은 서버 응답(`userId` · `nickname`)을 그대로 따른다. */
+  nickname: string;
   /** 대표 이미지 파일 ID. 관리자 서버가 URL을 만들지 못해 보통 ID만 온다. */
   profileImageFileId: string | null;
   /**
@@ -333,8 +331,6 @@ export interface AdminUniverseListItem {
   translationCount: number;
   createdAt: string;
   updatedAt: string | null;
-  deletedAt: string | null;
-  purgeAt: string | null;
 }
 
 /** 소유 크리에이터 요약. 공식 판정·계정 이동의 근거다. */
@@ -423,9 +419,6 @@ export interface UniverseDetail {
   profileImageUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
-  deletedAt: string | null;
-  purgeAt: string | null;
-  purgedAt: string | null;
   translations: UniverseTranslationView[];
   hashtags: UniverseHashtagView[];
   character: UniverseCharacterView | null;

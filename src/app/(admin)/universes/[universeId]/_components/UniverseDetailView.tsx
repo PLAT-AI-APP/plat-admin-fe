@@ -45,7 +45,6 @@ import {
   creatorStatusLabel,
   creatorStatusTone,
   isRiskyCreatorStatus,
-  purgeCountdown,
   universeTitleOf,
 } from "./universeMeta";
 import {
@@ -91,8 +90,8 @@ const StatBox = ({
  * - **판단한 것을 바로 조치한다.** 서버가 받는 값(심사·상태·공개 범위·장르·성향·
  *   댓글)은 전부 헤더 드롭다운에서 처리한다.
  *
- * 삭제·파기 복구는 서버에 엔드포인트가 없어 다루지 않는다. 복구 요청은 파기
- * 전까지만 의미가 있으므로 남은 기간을 D-day로 함께 보여 준다.
+ * 삭제는 하드 딜리트다. 지운 세계관은 데이터째 사라져 이 화면으로도 열리지 않으므로
+ * 삭제·복구는 다루지 않는다.
  */
 const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   const { data, isError } = useUniverseDetailQuery(universeId);
@@ -208,7 +207,6 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   };
 
   const blockReason = data ? universeBlockReason(data) : undefined;
-  const countdown = data ? purgeCountdown(data.purgeAt) : undefined;
   const isCreatorRisky = data ? isRiskyCreatorStatus(data.creator.status) : false;
 
   return (
@@ -289,7 +287,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                     {UNIVERSE_TENDENCY_LABEL[data.tendency]}
                   </Badge>
                   {!data.commentEnabled && (
-                    <Badge tone="neutral">댓글 미사용</Badge>
+                    <Badge tone="neutral">댓글 불가</Badge>
                   )}
                 </div>
 
@@ -315,40 +313,6 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
             {data.reviewStatus === "REJECTED" && data.reviewRejectionReason && (
               <Alert tone="danger" title="심사 반려" className="mt-4">
                 {data.reviewRejectionReason}
-              </Alert>
-            )}
-
-            {/*
-              삭제는 두 단계다. 파기 전에는 복구 문의를 받을 수 있고, 파기 뒤는
-              되돌릴 수 없다. 날짜만 적어 두면 "지금 문의를 받아도 되는지"를 매번
-              달력으로 세어야 해서 남은 기간을 함께 적는다.
-            */}
-            {data.status === "DELETED" && (
-              <Alert
-                tone="warning"
-                title={
-                  countdown
-                    ? `삭제 대기 · 파기까지 ${countdown.label}`
-                    : "삭제 대기"
-                }
-                className="mt-4"
-              >
-                {data.deletedAt &&
-                  `${formatDateTime(data.deletedAt)}에 삭제 요청됨`}
-                {data.purgeAt &&
-                  ` · ${formatDateTime(data.purgeAt)} 이후 콘텐츠가 파기됩니다.`}
-                <br />
-                {countdown?.isOver
-                  ? "파기 예정 시각이 지났습니다. 배치가 도는 즉시 콘텐츠가 사라지므로 복구 문의를 받을 수 없습니다."
-                  : "파기 전까지만 복구 문의를 받을 수 있습니다. 복구는 이 화면에서 처리할 수 없으니(서버에 복구 API 없음) 운영 채널로 요청하세요."}
-              </Alert>
-            )}
-
-            {data.status === "PURGED" && (
-              <Alert tone="danger" title="콘텐츠 파기 완료" className="mt-4">
-                {data.purgedAt && `${formatDateTime(data.purgedAt)}에 `}
-                이미지 · 에셋이 파기되어 되돌릴 수 없습니다. 상태 변경도 서버가
-                막습니다.
               </Alert>
             )}
 
@@ -456,7 +420,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
           )}
 
           {/* 공식 여부의 근거가 되는 계정이라 세계관 상세에서 바로 이어 준다. */}
-          <Card title="소유 계정">
+          <Card title="제작자">
             <CreatorRow creator={data.creator} />
           </Card>
         </>
@@ -514,7 +478,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
 };
 
 /**
- * 소유 계정 한 줄.
+ * 제작자 한 줄.
  *
  * 링크는 **갈 수 있는 곳이 있을 때만** 건다. 유저 상세가 있으면 그쪽으로,
  * 없으면 이 크리에이터의 세계관 목록으로 좁혀 준다. 둘 다 없으면(크리에이터

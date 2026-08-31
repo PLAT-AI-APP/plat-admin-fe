@@ -27,7 +27,15 @@ const findBreadcrumb = (pathname: string): string[] => {
       isMenuItemActive(item, pathname),
     );
 
-    if (child) return [group.label, child.label];
+    /*
+      1뎁스와 2뎁스 라벨이 같으면(세계관 > 세계관) 한 번만 남긴다. 같은 말을
+      두 번 적으면 위치를 알려 주지도 못하면서 자리만 먹는다.
+    */
+    if (child) {
+      return child.label === group.label
+        ? [group.label]
+        : [group.label, child.label];
+    }
   }
 
   return [];

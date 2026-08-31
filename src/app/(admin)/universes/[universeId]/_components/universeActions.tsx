@@ -38,9 +38,8 @@ interface BuildUniverseActionsParams {
  * 상태·분류·댓글 조치를 상세 헤더의 드롭다운으로 모은다. 이미 그 상태인 항목과
  * 조치 전송 중에는 항목을 비활성화한다.
  *
- * 삭제·파기(DELETED·PURGED)는 사용자 삭제와 파기 배치가 소유한다. 서버가 그
- * 상태에서의 상태 변경을 409로 막고 복구 API도 없으므로, 눌러도 실패할 항목은
- * 아예 만들지 않는다.
+ * 삭제는 하드 딜리트라 이 메뉴에 없다. 지운 세계관은 데이터째 사라져 상세가
+ * 열리지 않으므로, 조치할 대상 자체가 없다.
  */
 export const buildUniverseActions = ({
   universe,
@@ -54,9 +53,6 @@ export const buildUniverseActions = ({
   onChangeClassification,
   onToggleComment,
 }: BuildUniverseActionsParams): DropdownItem[] => {
-  const isLifecycleLocked =
-    universe.status === "DELETED" || universe.status === "PURGED";
-
   const reviewActions: DropdownItem[] = [
     {
       label: "심사 승인",
@@ -81,44 +77,39 @@ export const buildUniverseActions = ({
     },
   ];
 
-  const statusActions: DropdownItem[] = isLifecycleLocked
-    ? []
-    : [
-        {
-          label: "활성화",
-          icon: <CheckCircle size={15} />,
-          disabled: universe.status === "ACTIVE",
-          onSelect: onActivate,
-        },
-        {
-          label: "비활성화(앱에서 내림)",
-          icon: <Ban size={15} />,
-          tone: "danger" as const,
-          disabled: universe.status === "INACTIVE",
-          onSelect: onDeactivate,
-        },
-      ];
+  const statusActions: DropdownItem[] = [
+    {
+      label: "활성화",
+      icon: <CheckCircle size={15} />,
+      disabled: universe.status === "ACTIVE",
+      onSelect: onActivate,
+    },
+    {
+      label: "비활성화(앱에서 내림)",
+      icon: <Ban size={15} />,
+      tone: "danger" as const,
+      disabled: universe.status === "INACTIVE",
+      onSelect: onDeactivate,
+    },
+  ];
 
-  const settingActions: DropdownItem[] = isLifecycleLocked
-    ? []
-    : [
-        {
-          label: "공개 범위 변경",
-          icon: <Eye size={15} />,
-          onSelect: onChangeVisibility,
-        },
-        {
-          label: "장르 · 성향 변경",
-          icon: <Layers size={15} />,
-          onSelect: onChangeClassification,
-        },
-      ];
+  const settingActions: DropdownItem[] = [
+    {
+      label: "공개 범위 변경",
+      icon: <Eye size={15} />,
+      onSelect: onChangeVisibility,
+    },
+    {
+      label: "장르 · 성향 변경",
+      icon: <Layers size={15} />,
+      onSelect: onChangeClassification,
+    },
+  ];
 
   const commentAction: DropdownItem = {
     label: universe.commentEnabled ? "댓글 강제 중지" : "댓글 다시 허용",
     icon: <MessageSquare size={15} />,
     tone: universe.commentEnabled ? ("danger" as const) : undefined,
-    disabled: isLifecycleLocked,
     onSelect: () => onToggleComment(!universe.commentEnabled),
   };
 

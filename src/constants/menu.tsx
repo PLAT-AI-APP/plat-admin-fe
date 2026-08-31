@@ -136,7 +136,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     icon: <Globe size={ICON_SIZE} />,
     children: [
       {
-        label: "전체 세계관",
+        label: "세계관",
         href: "/universes",
         permission: "universe:read",
         icon: <Globe size={SUB_ICON_SIZE} />,
