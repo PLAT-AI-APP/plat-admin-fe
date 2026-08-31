@@ -12,7 +12,13 @@ import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Switch from "@/components/ui/Switch";
 import Textarea from "@/components/ui/Textarea";
-import { AI_PROVIDER_LABEL, AI_PROVIDER_TONE } from "../../_constants/aiOptions";
+import {
+  AI_MODEL_ROLES,
+  AI_MODEL_ROLE_LABEL,
+  AI_MODEL_ROLE_TONE,
+  AI_PROVIDER_LABEL,
+  AI_PROVIDER_TONE,
+} from "../../_constants/aiOptions";
 
 interface AiModelFormModalProps {
   /** 수정 대상. null이면 모달을 닫는다. */
@@ -67,7 +73,7 @@ const AiModelFormModal = ({
       isOpen={model !== null}
       onClose={onClose}
       title="모델 설정 수정"
-      description="모델명·제공사는 카탈로그가 소유하므로 여기서 바꿀 수 없습니다."
+      description="여기서 바꾼 값은 다음 대화부터 바로 적용됩니다. 모델명·제공사는 바꿀 수 없습니다."
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
@@ -94,8 +100,14 @@ const AiModelFormModal = ({
               <p className="mt-0.5 body-6 text-font-2">{model.model}</p>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-              {model.isDefault && <Badge tone="brand">기본 모델</Badge>}
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              {AI_MODEL_ROLES.filter((role) => model.roles.includes(role)).map(
+                (role) => (
+                  <Badge key={role} tone={AI_MODEL_ROLE_TONE[role]}>
+                    {AI_MODEL_ROLE_LABEL[role]}
+                  </Badge>
+                ),
+              )}
               <Badge tone={AI_PROVIDER_TONE[model.provider]}>
                 {AI_PROVIDER_LABEL[model.provider]}
               </Badge>
@@ -108,12 +120,10 @@ const AiModelFormModal = ({
             render={({ field }) => (
               <div className="flex items-center justify-between gap-4 rounded-field border border-border-main px-4 py-3">
                 <div className="min-w-0">
-                  <p className="body-5 font-medium text-font-1">
-                    사용 여부
-                  </p>
+                  <p className="body-5 font-medium text-font-1">사용 여부</p>
                   <p className="mt-0.5 body-6 text-font-2">
-                    {model.isDefault
-                      ? "기본 모델은 사용 중지할 수 없습니다. 먼저 다른 모델을 기본으로 지정하세요."
+                    {model.roles.length > 0
+                      ? "역할을 맡은 모델은 사용 중지할 수 없습니다. 먼저 역할을 다른 모델에 지정하세요."
                       : "사용 중지하면 신규 대화에서 이 모델이 선택되지 않습니다."}
                   </p>
                 </div>
@@ -122,7 +132,7 @@ const AiModelFormModal = ({
                   label="사용 여부"
                   checked={field.value}
                   onChange={field.onChange}
-                  disabled={model.isDefault}
+                  disabled={model.roles.length > 0}
                 />
               </div>
             )}
@@ -134,7 +144,7 @@ const AiModelFormModal = ({
               htmlFor="ai-model-credit-cost"
               required
               error={errors.creditCost?.message}
-              hint="응답 1회당"
+              hint="배수 x1.0 기준"
             >
               <Input
                 id="ai-model-credit-cost"
@@ -151,7 +161,7 @@ const AiModelFormModal = ({
               htmlFor="ai-model-max-output-tokens"
               required
               error={errors.maxOutputTokens?.message}
-              hint="256 ~ 64,000"
+              hint="이 모델의 출력 상한"
             >
               <Input
                 id="ai-model-max-output-tokens"
@@ -170,7 +180,7 @@ const AiModelFormModal = ({
             htmlFor="ai-model-temperature"
             required
             error={errors.temperature?.message}
-            hint="0 ~ 2 · 높을수록 답변이 다양해집니다."
+            hint="0 ~ 2 · 이 모델에만 적용됩니다."
           >
             <Input
               id="ai-model-temperature"

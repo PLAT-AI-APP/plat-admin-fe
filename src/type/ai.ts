@@ -1,6 +1,21 @@
 export type AiProvider = "ANTHROPIC" | "OPENAI" | "GOOGLE" | "META";
 export type AiModelStatus = "AVAILABLE" | "DEPRECATED" | "UNAVAILABLE";
 
+/**
+ * 모델이 맡는 역할. 역할 하나가 서비스 기능 하나와 짝을 이룬다.
+ *
+ * **역할 하나에는 모델 하나가 선다.** 역할이 비면 그 기능이 통째로 멈추므로 해제는 없고
+ * 다른 모델로 옮기는 것만 가능하다. 옮기면 이전 모델의 역할이 자동으로 풀린다.
+ *
+ * **반대 방향은 막지 않는다** — 한 모델이 여러 역할을 함께 맡을 수 있다. 서버도 역할 쪽에만
+ * 유일 제약을 걸어 두었고 모델 쪽에는 걸지 않았다.
+ *
+ * - `CHAT_DEFAULT` 모델을 따로 지정하지 않은 대화
+ * - `UNIVERSE_REVIEW` 세계관 등록 시 자동으로 도는 심사 AI
+ * - `MEMORY_SUMMARY` 대화 기록을 장기기억으로 압축하는 요약
+ */
+export type AiModelRole = "CHAT_DEFAULT" | "UNIVERSE_REVIEW" | "MEMORY_SUMMARY";
+
 /** 카탈로그 상의 모델. 운영 설정과 무관한 원본 정보다. */
 export interface AiModelCatalogItem {
   model: string;
@@ -29,9 +44,19 @@ export interface AiModel {
   displayName: string;
   provider: AiProvider;
   isEnabled: boolean;
-  isDefault: boolean;
-  /** 1회 응답당 차감 크레딧 */
+  /**
+   * 이 모델이 맡고 있는 역할. 대부분의 모델은 비어 있고, 한 모델이 여러 역할을 겸할 수 있다.
+   *
+   * 역할을 하나라도 가진 모델은 사용 중지할 수 없다 — 중지하면 그 역할이 갈 곳을 잃는다.
+   */
+  roles: AiModelRole[];
+  /**
+   * 배수 x1.0 기준 차감 크레딧. 실제 차감은 프롬프트 양 배수를 곱해 올림한 값이다.
+   *
+   * 이 값이 과금의 단일 출처다 — 서버가 대화를 태울 때마다 이 열을 읽는다. 바꾸면 다음 대화부터 바로 먹는다.
+   */
   creditCost: number;
+  /** 이 모델의 출력 상한. 배수로 늘어난 값이 이 선을 넘지 못한다. */
   maxOutputTokens: number;
   temperature: number;
   memo: string;
@@ -45,9 +70,7 @@ export interface AiModel {
  * 여기 적는 것은 서버가 내려주는 값을 좁혀 두는 것일 뿐, 목록의 출처가 아니다.
  */
 export type SystemPromptKey =
-  | "SAFETY_FILTER"
-  | "UNIVERSE_CHAT"
-  | "UNIVERSE_REVIEW";
+  "SAFETY_FILTER" | "UNIVERSE_CHAT" | "UNIVERSE_REVIEW";
 
 /**
  * 시스템 프롬프트.

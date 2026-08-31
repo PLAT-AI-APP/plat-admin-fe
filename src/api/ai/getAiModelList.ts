@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AiModel } from "@/type/ai";
 import type { AppError } from "@/type/api";
 
 export const getAiModelList = async () => {
-  const response = await adminAxios.get<AiModel[]>("/admin/ai/models");
+  const response = await liveAxios.get<AiModel[]>("/admin/ai/models");
 
   return response.data;
 };

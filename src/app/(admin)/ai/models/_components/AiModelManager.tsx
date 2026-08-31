@@ -3,23 +3,28 @@
 import { useState } from "react";
 import { useAiModelListQuery } from "@/api/ai/getAiModelList";
 import { useAiModelMutation } from "@/api/ai/mutateAiModel";
-import { Edit, Star } from "@/icons";
+import { Edit } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { showAppToast } from "@/lib/toast";
 import { formatWithCommas } from "@/lib/utils";
 import type { AiModelSchema } from "@/schema/aiModel.schema";
-import { openConfirm } from "@/store/useConfirmStore";
 import type { AiModel } from "@/type/ai";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
 import Switch from "@/components/ui/Switch";
 import Table, { TableCellStack } from "@/components/ui/Table";
 import type { TableColumn } from "@/components/ui/Table";
-import { AI_PROVIDER_LABEL, AI_PROVIDER_TONE } from "../../_constants/aiOptions";
+import {
+  AI_MODEL_ROLES,
+  AI_MODEL_ROLE_LABEL,
+  AI_MODEL_ROLE_TONE,
+  AI_PROVIDER_LABEL,
+  AI_PROVIDER_TONE,
+} from "../../_constants/aiOptions";
 import AiModelFormModal from "./AiModelFormModal";
+import AiModelRoleAssigner from "./AiModelRoleAssigner";
 
 const AiModelManager = () => {
   const [editingModel, setEditingModel] = useState<AiModel | null>(null);
@@ -28,13 +33,16 @@ const AiModelManager = () => {
   const { updateMutation } = useAiModelMutation();
 
   const models = data ?? [];
-  const defaultModel = models.find((model) => model.isDefault);
 
-  /** 사용 여부 토글. 기본 모델은 항상 사용 상태여야 하므로 중지할 수 없다. */
+  /** 사용 여부 토글. 역할을 맡은 모델은 그 역할이 갈 곳을 잃으므로 중지할 수 없다. */
   const handleToggleEnabled = (model: AiModel, isEnabled: boolean) => {
-    if (model.isDefault && !isEnabled) {
-      showAppToast("warning", "기본 모델은 사용 중지할 수 없습니다.", {
-        description: "다른 모델을 기본 모델로 지정한 뒤에 중지해 주세요.",
+    if (model.roles.length > 0 && !isEnabled) {
+      const heldRoles = model.roles
+        .map((role) => AI_MODEL_ROLE_LABEL[role])
+        .join(" · ");
+
+      showAppToast("warning", "역할을 맡은 모델은 사용 중지할 수 없습니다.", {
+        description: `${heldRoles} 역할을 다른 모델에 먼저 지정해 주세요.`,
       });
       return;
     }
@@ -45,27 +53,6 @@ const AiModelManager = () => {
       successMessage: isEnabled
         ? `'${model.displayName}' 모델을 사용합니다.`
         : `'${model.displayName}' 모델 사용을 중지했습니다.`,
-    });
-  };
-
-  /**
-   * 기본 모델은 서비스 전체에서 항상 정확히 1개만 유지된다.
-   * 지정 시 기존 기본 모델이 자동으로 해제되므로 반드시 확인을 받는다.
-   */
-  const handleSetDefault = (model: AiModel) => {
-    openConfirm({
-      title: "기본 모델을 변경할까요?",
-      description: `'${model.displayName}' 모델을 기본 모델로 지정합니다.`,
-      warning: defaultModel
-        ? `기존 기본 모델 '${defaultModel.displayName}'의 기본 지정이 해제됩니다.`
-        : undefined,
-      confirmText: "기본으로 지정",
-      onConfirm: () =>
-        updateMutation.mutateAsync({
-          modelId: model.modelId,
-          body: { isDefault: true },
-          successMessage: `'${model.displayName}' 모델을 기본 모델로 지정했습니다.`,
-        }),
     });
   };
 
@@ -111,32 +98,27 @@ const AiModelManager = () => {
       ),
     },
     {
-      key: "isDefault",
-      header: "기본 모델",
-      align: "center",
-      render: (model) => (
-        <div className="flex justify-center">
-          {model.isDefault ? (
-            <Badge tone="brand" leftIcon={<Star size={13} />}>
-              기본 모델
-            </Badge>
-          ) : (
-            // 사용 중지된 모델은 기본 모델로 지정할 수 없다.
-            <Button
-              size="sm"
-              onClick={() => handleSetDefault(model)}
-              disabled={!model.isEnabled || updateMutation.isPending}
-              title={
-                model.isEnabled
-                  ? undefined
-                  : "사용 중지된 모델은 기본 모델로 지정할 수 없습니다."
-              }
-            >
-              기본으로 지정
-            </Button>
-          )}
-        </div>
-      ),
+      key: "roles",
+      header: "역할",
+      // 지정은 위 카드에서만 한다. 여기서는 누가 무엇을 맡았는지만 읽는다.
+      render: (model) => {
+        if (model.roles.length === 0) {
+          return <span className="body-5 text-font-2">-</span>;
+        }
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {/* 모델이 가진 순서가 아니라 역할의 고정 순서로 그린다. */}
+            {AI_MODEL_ROLES.filter((role) => model.roles.includes(role)).map(
+              (role) => (
+                <Badge key={role} tone={AI_MODEL_ROLE_TONE[role]}>
+                  {AI_MODEL_ROLE_LABEL[role]}
+                </Badge>
+              ),
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "creditCost",
@@ -197,10 +179,13 @@ const AiModelManager = () => {
 
   return (
     <>
-      <Alert tone="info" title="기본 모델은 항상 1개만 유지됩니다.">
-        기본 모델은 모델을 따로 지정하지 않은 대화에 사용됩니다. 다른 모델을
-        기본으로 지정하면 기존 기본 모델은 자동으로 해제됩니다.
+      {/* 지정 규칙은 바로 아래 역할 카드가 설명한다. 여기서는 그 카드가 다루지 않는 제약만 말한다. */}
+      <Alert tone="info" title="역할을 맡은 모델은 사용 중지할 수 없습니다.">
+        중지하면 그 역할이 갈 곳을 잃습니다. 중지하려면 그 역할을 다른 모델에
+        먼저 지정해 주세요.
       </Alert>
+
+      <AiModelRoleAssigner models={models} isLoading={isLoading} />
 
       <Card noPadding>
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
@@ -208,13 +193,6 @@ const AiModelManager = () => {
             총 {formatWithCommas(models.length)}개 · 사용 중{" "}
             {formatWithCommas(models.filter((model) => model.isEnabled).length)}
             개
-          </p>
-
-          <p className="body-5 text-font-2">
-            현재 기본 모델{" "}
-            <span className="font-medium text-font-1">
-              {defaultModel?.displayName ?? "미지정"}
-            </span>
           </p>
         </div>
 

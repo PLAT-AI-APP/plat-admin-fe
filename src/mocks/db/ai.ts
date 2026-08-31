@@ -1,10 +1,5 @@
-import type {
-  AiModel,
-  AiModelCatalogItem,
-  AiModelStatus,
-  AiProvider,
-} from "@/type/ai";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import type { AiModelCatalogItem, AiModelStatus, AiProvider } from "@/type/ai";
+import { randomInt } from "../utils";
 
 /** 카탈로그 원본 메타. 단가만 seed 난수로 채운다. */
 const CATALOG_SEEDS: {
@@ -99,33 +94,3 @@ export const modelCatalog: AiModelCatalogItem[] = CATALOG_SEEDS.map(
     };
   },
 );
-
-const MODEL_MEMOS = [
-  "장문 서사와 감정 표현 품질이 가장 안정적입니다.",
-  "일반 대화 기본값. 비용과 품질의 균형이 좋습니다.",
-  "짧은 응답과 요약 작업에 사용합니다.",
-  "이미지 설명 생성 실험용으로만 열어 둡니다.",
-  "비용 절감 실험 중. 장문에서는 품질 편차가 있습니다.",
-];
-
-/** 운영에서 실제로 쓰는 모델 5개. 카탈로그 상위 5개를 가져온다. */
-export const aiModels: AiModel[] = modelCatalog
-  .slice(0, 5)
-  .map((catalogItem, index) => {
-    const seed = index + 1;
-
-    return {
-      modelId: seed,
-      model: catalogItem.model,
-      displayName: catalogItem.displayName,
-      provider: catalogItem.provider,
-      // 기본 모델은 항상 정확히 1개만 존재한다.
-      isEnabled: index !== 4,
-      isDefault: index === 1,
-      creditCost: randomInt(seed * 4, 1, 12),
-      maxOutputTokens: pickOne(seed * 6, [2_048, 4_096, 8_192]),
-      temperature: randomInt(seed * 8, 4, 12) / 10,
-      memo: MODEL_MEMOS[index],
-      updatedAt: daysAgo(index * 4 + 1, 17),
-    };
-  });

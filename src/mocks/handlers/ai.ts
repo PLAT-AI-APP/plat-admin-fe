@@ -1,9 +1,14 @@
 import { HttpResponse, delay, http } from "msw";
-import type { AiModel, AiModelPingResult } from "@/type/ai";
-import { aiModels, modelCatalog } from "../db/ai";
+import type { AiModelPingResult } from "@/type/ai";
+import { modelCatalog } from "../db/ai";
 import { MOCK_DELAY_MS, pickOne, randomInt } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
+
+/*
+  운영 모델 목록·설정·역할 지정은 실서버로 넘어갔다(`liveAxios`). 여기 남은 것은
+  아직 목업인 모델 카탈로그 화면(제공사 원본 정보 + 테스트 호출)뿐이다.
+*/
 
 /** 테스트 호출은 매번 결과가 달라야 하므로 호출 횟수를 seed로 사용한다. */
 let pingCount = 0;
@@ -64,43 +69,5 @@ export const aiHandlers = [
     await delay(Math.min(latencyMs, 1_200));
 
     return HttpResponse.json(result);
-  }),
-
-  http.get(`${BASE_URI}/admin/ai/models`, async () => {
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(
-      [...aiModels].sort((a, b) => a.modelId - b.modelId),
-    );
-  }),
-
-  http.put(`${BASE_URI}/admin/ai/models/:modelId`, async ({ params, request }) => {
-    const modelId = Number(params.modelId);
-    const body = (await request.json()) as Partial<AiModel>;
-    const index = aiModels.findIndex((item) => item.modelId === modelId);
-
-    if (index < 0) return notFound("존재하지 않는 모델입니다.");
-
-    // 기본 모델은 서비스 전체에서 1개만 유지한다.
-    if (body.isDefault) {
-      aiModels.forEach((item) => {
-        item.isDefault = false;
-      });
-    }
-
-    const next: AiModel = {
-      ...aiModels[index],
-      ...body,
-      modelId,
-      updatedAt: new Date().toISOString(),
-    };
-
-    // 기본 모델은 항상 사용 상태여야 하고, 스스로 해제할 수 없다.
-    if (next.isDefault) next.isEnabled = true;
-
-    aiModels[index] = next;
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(next);
   }),
 ];
