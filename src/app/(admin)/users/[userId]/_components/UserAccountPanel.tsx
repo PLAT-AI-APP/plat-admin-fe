@@ -5,6 +5,7 @@ import { formatDate, formatDateTime } from "@/lib/dayjs";
 import {
   DEVICE_PLATFORM_LABEL,
   GENDER_LABEL,
+  UNCOLLECTED_LABEL,
   calculateAge,
   formatPhoneNumber,
   type UserDetail,
@@ -61,9 +62,13 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
         <InfoRow
           label="로그인 수단"
           value={
-            <Badge className={LOGIN_PROVIDER_BADGE_CLASS[user.provider]}>
-              {LOGIN_PROVIDER_LABEL[user.provider]}
-            </Badge>
+            user.provider ? (
+              <Badge className={LOGIN_PROVIDER_BADGE_CLASS[user.provider]}>
+                {LOGIN_PROVIDER_LABEL[user.provider]}
+              </Badge>
+            ) : (
+              "-"
+            )
           }
         />
         <InfoRow label="가입일" value={formatDate(user.createdAt)} />
@@ -86,10 +91,16 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
               )
             }
           />
+          {/*
+            아직 모으지 않는 값이라 "미동의"로 그리지 않는다. 동의를 거절한 유저와
+            아무도 묻지 않은 유저는 푸시 발송 대상 산정에서 뜻이 정반대다.
+          */}
           <InfoRow
             label="마케팅 수신 동의"
             value={
-              user.isMarketingAgreed ? (
+              user.isMarketingAgreed === undefined ? (
+                <span className="text-font-3">{UNCOLLECTED_LABEL}</span>
+              ) : user.isMarketingAgreed ? (
                 <Badge tone="success">동의</Badge>
               ) : (
                 <Badge tone="neutral">미동의</Badge>
@@ -109,7 +120,11 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
           />
           <InfoRow
             label="마지막 로그인"
-            value={`${formatDateTime(user.lastLoginAt)} · ${DEVICE_PLATFORM_LABEL[user.lastLoginPlatform]}`}
+            value={`${formatDateTime(user.lastLoginAt)} · ${
+              user.lastLoginPlatform
+                ? DEVICE_PLATFORM_LABEL[user.lastLoginPlatform]
+                : UNCOLLECTED_LABEL
+            }`}
           />
           <InfoRow
             label="누적 신고 접수"

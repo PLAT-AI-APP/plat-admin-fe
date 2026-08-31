@@ -15,7 +15,6 @@ import { opsHandlers } from "./ops";
 import { universeHandlers } from "./universe";
 import { universeAdminHandlers } from "./universeAdmin";
 import { searchHandlers } from "./search";
-import { userHandlers } from "./user";
 
 /**
  * MSW 핸들러 모음.
@@ -28,7 +27,10 @@ import { userHandlers } from "./user";
  *
  * 연동이 끝난 도메인은 목업을 걷어냈다 — 해시태그 · 금지어 · 크레딧 조정 · 장부 ·
  * 시스템 프롬프트(`/admin/ai/prompts`) · AI 모델(`/admin/ai/models`) ·
- * 공지사항(`/admin/notices`)은 실서버로 그대로 나간다.
+ * 공지사항(`/admin/notices`) · 유저(`/admin/users`)는 실서버로 그대로 나간다.
+ *
+ * 유저는 핸들러만 지우고 **`db/user.ts` 는 남겼다.** 전역 검색(⌘K) · 공식 계정과
+ * 캐릭터 · 댓글 · 신고 · 결제 목업이 전부 그 씨앗에서 유저를 빌려 쓴다.
  */
 export const handlers = [
   // 감사 로그는 모든 변경 요청을 먼저 가로채야 하므로 항상 맨 앞에 둔다.
@@ -44,7 +46,6 @@ export const handlers = [
   ...characterHandlers,
   ...commentHandlers,
   ...reportHandlers,
-  ...userHandlers,
   ...billingHandlers,
   ...paymentRecordHandlers,
   ...communicationHandlers,

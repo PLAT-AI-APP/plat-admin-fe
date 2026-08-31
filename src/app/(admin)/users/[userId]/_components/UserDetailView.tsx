@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { ReactNode, useState } from "react";
 import { useUserDetailQuery } from "@/api/user/getUserDetail";
 import { useUserMutation } from "@/api/user/mutateUser";
 import { Ban, CheckCircle } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
+import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatCurrency, formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
 import type { UserDetail } from "@/type/user";
@@ -16,6 +16,7 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Dropdown, { type DropdownItem } from "@/components/ui/Dropdown";
 import EmptyState from "@/components/ui/EmptyState";
+import EntityImage from "@/components/ui/EntityImage";
 import Skeleton from "@/components/ui/Skeleton";
 import Tabs from "@/components/ui/Tabs";
 import {
@@ -166,16 +167,24 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
 
           <Card>
             <div className="flex items-center gap-4">
-              <div className="relative size-16 shrink-0 overflow-hidden rounded-full bg-subtle">
-                <Image
-                  src={user.profileImageUrl}
-                  alt=""
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
+              {/* 관리자 응답은 URL 을 만들어 주지 않고 fileId 만 준다. 둘 중 오는 쪽을 쓴다. */}
+              <EntityImage
+                src={resolveImageUrl(
+                  user.profileImageUrl,
+                  user.profileImageFileId,
+                  "USER_PROFILE",
+                  "SQ80",
+                )}
+                alt=""
+                ratio="square"
+                shape="circle"
+                fallback={
+                  <span className="title-3 text-font-2">
+                    {user.nickname.trim().charAt(0) || "?"}
+                  </span>
+                }
+                className="size-16 shrink-0"
+              />
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">

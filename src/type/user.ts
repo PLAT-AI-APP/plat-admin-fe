@@ -3,8 +3,18 @@
  *
  * 역할(role) 개념은 두지 않는다. 비즈니스상 **모든 유저가 곧 크리에이터**라
  * 구분할 값이 없다. 크리에이터라는 말은 캐릭터·세계관 등 창작 데이터를 가리킬 때만 쓴다.
+ *
+ * **다섯 개 모두 서버가 실제로 내려줄 수 있는 값이다.** 콘솔에서 거는 제재는
+ * 정지(`SUSPENDED`)와 해제(`ACTIVE`)뿐이지만, `BANNED`·`WARNED`를 타입에서 빼면
+ * 그 상태인 계정을 열었을 때 라벨과 뱃지 색이 `undefined`로 깨진다 —
+ * 화면이 모르는 상태는 "없는 상태"가 아니라 **읽을 수 없는 상태**가 된다.
  */
-export type UserStatus = "ACTIVE" | "SUSPENDED" | "WITHDRAWN";
+export type UserStatus =
+  | "ACTIVE"
+  | "SUSPENDED"
+  | "BANNED"
+  | "WARNED"
+  | "WITHDRAWN";
 /** 지금 지원하는 가입 경로. 애플 로그인은 아직 붙이지 않았다. */
 export type LoginProvider = "GOOGLE" | "KAKAO" | "EMAIL";
 export type Gender = "MALE" | "FEMALE" | "UNKNOWN";
@@ -42,24 +52,47 @@ export interface User {
    */
   userId: string;
   nickname: string;
-  email: string;
-  profileImageUrl: string;
+  /** 가입 경로가 여럿이면 가장 먼저 만든 것의 이메일. 없는 유저도 있다. */
+  email?: string;
+  /** 서버는 URL을 만들지 못하고 fileId만 준다. `resolveImageUrl()`로 조립한다. */
+  profileImageFileId?: string;
+  profileImageUrl?: string;
   status: UserStatus;
-  provider: LoginProvider;
+  /** 가장 먼저 만든 가입 경로. */
+  provider?: LoginProvider;
   /** 성인 인증 여부. NSFW 콘텐츠 노출 판단의 기준이다. */
   isAdultVerified: boolean;
   adultVerifiedAt?: string;
   birthDate?: string;
   gender: Gender;
-  /** 마케팅 정보 수신 동의 (푸시 발송 대상 산정에 쓰인다) */
-  isMarketingAgreed: boolean;
-  lastLoginAt: string;
-  lastLoginPlatform: DevicePlatform;
+  /**
+   * 마케팅 정보 수신 동의 (푸시 발송 대상 산정에 쓰인다).
+   *
+   * **아직 모으지 않는 값이라 항상 비어 있다.** 서버에 동의 컬럼 자체가 없다.
+   * 값이 없는 유저가 아니라 아직 아무에게도 묻지 않은 것이므로, 화면은 `-`가
+   * 아니라 `미수집`으로 그린다 — `-`로 두면 운영자가 "이 사람만 동의를 안 했다"로
+   * 읽고 푸시 대상 판단을 그르친다.
+   */
+  isMarketingAgreed?: boolean;
+  lastLoginAt?: string;
+  /**
+   * 최근 접속 기기.
+   *
+   * `isMarketingAgreed`와 같다 — 로그인할 때 기기를 기록하는 코드가 아직 없어
+   * 항상 비어 있다. 수집이 붙으면 서버 값만 채우면 이 자리가 살아난다.
+   */
+  lastLoginPlatform?: DevicePlatform;
   createdAt: string;
 }
 
 export interface UserDetail extends User {
-  /** 본인인증에서 수집한 번호. 미인증 유저는 값이 없다. */
+  /**
+   * 본인인증에서 수집한 번호.
+   *
+   * **아직 모으지 않는 값이라 항상 비어 있다.** 본인인증으로 번호를 받아 두는
+   * 코드가 서버에 없다. 곧 붙을 기능이라 자리를 비워 두고, 붙는 날 서버가 이 칸만
+   * 채우면 화면이 그대로 살아난다.
+   */
   phoneNumber?: string;
   creditBalance: number;
   characterCount: number;
@@ -122,9 +155,18 @@ export const calculateAge = (birthDate?: string): number | undefined => {
   return age;
 };
 
-/** 휴대폰번호를 010-1234-5678 형태로 표시한다. */
+/**
+ * 아직 서버가 모으지 않는 값의 표시 문구.
+ *
+ * 빈 값에 쓰는 `-`와 구분해서 쓴다. `-`는 "이 유저에게는 없는 값"이지만 이쪽은
+ * "누구에게도 아직 묻지 않은 값"이다. 둘을 같은 문자로 그리면 운영자가 이 유저만
+ * 비어 있다고 읽고, 그 오해가 그대로 CS 판단이 된다.
+ */
+export const UNCOLLECTED_LABEL = "미수집";
+
+/** 휴대폰번호를 010-1234-5678 형태로 표시한다. 아직 수집하지 않는 값이라 대개 비어 있다. */
 export const formatPhoneNumber = (phoneNumber?: string): string => {
-  if (!phoneNumber) return "-";
+  if (!phoneNumber) return UNCOLLECTED_LABEL;
 
   return phoneNumber.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
 };

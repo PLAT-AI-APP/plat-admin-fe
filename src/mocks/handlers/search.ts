@@ -21,14 +21,19 @@ export const searchHandlers = [
 
     const userItems: GlobalSearchItem[] = users
       .filter((user) =>
-        matchesKeyword(keyword, user.nickname, user.email, String(user.userId)),
+        matchesKeyword(
+          keyword,
+          user.nickname,
+          user.email ?? "",
+          String(user.userId),
+        ),
       )
       .slice(0, LIMIT_PER_TYPE)
       .map((user) => ({
         type: "USER",
         id: user.userId,
         title: user.nickname,
-        description: user.email,
+        description: user.email ?? "",
         href: `/users/${user.userId}`,
       }));
 

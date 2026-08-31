@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useListParams } from "@/hooks/useListParams";
@@ -8,12 +7,14 @@ import { useUserListQuery } from "@/api/user/getUserList";
 import { useUserMutation } from "@/api/user/mutateUser";
 import { Ban, CheckCircle, Eye } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
+import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import {
   DEVICE_PLATFORM_LABEL,
   GENDER_LABEL,
+  UNCOLLECTED_LABEL,
   type User,
   type UserStatus,
 } from "@/type/user";
@@ -21,6 +22,7 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import CsvExportButton from "@/components/ui/CsvExportButton";
 import Dropdown from "@/components/ui/Dropdown";
+import EntityImage from "@/components/ui/EntityImage";
 import type { DropdownItem } from "@/components/ui/Dropdown";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
@@ -41,7 +43,7 @@ import UserSuspendModal from "./UserSuspendModal";
 const USER_CSV_COLUMNS: CsvColumn<User>[] = [
   { header: "유저 ID", value: (row) => row.userId },
   { header: "닉네임", value: (row) => row.nickname },
-  { header: "이메일", value: (row) => row.email },
+  { header: "이메일", value: (row) => row.email ?? "-" },
   { header: "생년월일", value: (row) => row.birthDate ?? "-" },
   { header: "성별", value: (row) => GENDER_LABEL[row.gender] },
   { header: "성인 인증", value: (row) => (row.isAdultVerified ? "Y" : "N") },
@@ -49,13 +51,28 @@ const USER_CSV_COLUMNS: CsvColumn<User>[] = [
     header: "성인 인증일",
     value: (row) => formatDate(row.adultVerifiedAt),
   },
-  { header: "마케팅 동의", value: (row) => (row.isMarketingAgreed ? "Y" : "N") },
-  { header: "로그인 수단", value: (row) => LOGIN_PROVIDER_LABEL[row.provider] },
+  // 아직 모으지 않는 값은 Y/N 으로 적지 않는다. 내려받은 파일에서 N이 "동의 안 함"으로 읽힌다.
+  {
+    header: "마케팅 동의",
+    value: (row) =>
+      row.isMarketingAgreed === undefined
+        ? UNCOLLECTED_LABEL
+        : row.isMarketingAgreed
+          ? "Y"
+          : "N",
+  },
+  {
+    header: "로그인 수단",
+    value: (row) => (row.provider ? LOGIN_PROVIDER_LABEL[row.provider] : "-"),
+  },
   { header: "상태", value: (row) => USER_STATUS_LABEL[row.status] },
   { header: "마지막 로그인", value: (row) => formatDateTime(row.lastLoginAt) },
   {
     header: "최근 접속 기기",
-    value: (row) => DEVICE_PLATFORM_LABEL[row.lastLoginPlatform],
+    value: (row) =>
+      row.lastLoginPlatform
+        ? DEVICE_PLATFORM_LABEL[row.lastLoginPlatform]
+        : UNCOLLECTED_LABEL,
   },
   { header: "가입일", value: (row) => formatDate(row.createdAt) },
 ];
@@ -156,16 +173,24 @@ const UserManager = () => {
       header: "유저",
       render: (user) => (
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="relative size-9 shrink-0 overflow-hidden rounded-full bg-subtle">
-            <Image
-              src={user.profileImageUrl}
-              alt=""
-              fill
-              sizes="36px"
-              className="object-cover"
-              unoptimized
-            />
-          </div>
+          {/* 관리자 응답은 URL 을 만들어 주지 않고 fileId 만 준다. 둘 중 오는 쪽을 쓴다. */}
+          <EntityImage
+            src={resolveImageUrl(
+              user.profileImageUrl,
+              user.profileImageFileId,
+              "USER_PROFILE",
+              "SQ40",
+            )}
+            alt=""
+            ratio="square"
+            shape="circle"
+            fallback={
+              <span className="body-5 text-font-2">
+                {user.nickname.trim().charAt(0) || "?"}
+              </span>
+            }
+            className="size-9 shrink-0"
+          />
 
           <div className="min-w-0">
             <TableCellStack
@@ -182,7 +207,7 @@ const UserManager = () => {
       // 휴대폰번호는 목록에 늘어놓지 않는다. 한 명을 확인하려고 스무 명의 번호를
       // 화면에 띄울 이유가 없어 상세에서만 본다.
       render: (user) => (
-        <span className="body-5 text-font-2">{user.email}</span>
+        <span className="body-5 text-font-2">{user.email ?? "-"}</span>
       ),
     },
     {
@@ -199,11 +224,14 @@ const UserManager = () => {
     {
       key: "provider",
       header: "로그인 수단",
-      render: (user) => (
-        <Badge className={LOGIN_PROVIDER_BADGE_CLASS[user.provider]}>
-          {LOGIN_PROVIDER_LABEL[user.provider]}
-        </Badge>
-      ),
+      render: (user) =>
+        user.provider ? (
+          <Badge className={LOGIN_PROVIDER_BADGE_CLASS[user.provider]}>
+            {LOGIN_PROVIDER_LABEL[user.provider]}
+          </Badge>
+        ) : (
+          <span className="body-5 text-font-3">-</span>
+        ),
     },
     {
       key: "status",
