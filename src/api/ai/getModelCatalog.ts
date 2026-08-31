@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AiModelCatalogItem, AiProvider } from "@/type/ai";
 import type { AppError } from "@/type/api";
 
@@ -8,7 +8,7 @@ export interface ModelCatalogParams {
 }
 
 export const getModelCatalog = async (params: ModelCatalogParams) => {
-  const response = await adminAxios.get<AiModelCatalogItem[]>(
+  const response = await liveAxios.get<AiModelCatalogItem[]>(
     "/admin/ai/models/catalog",
     { params },
   );

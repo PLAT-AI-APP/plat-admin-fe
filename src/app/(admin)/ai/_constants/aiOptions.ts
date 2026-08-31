@@ -6,14 +6,12 @@ export const AI_PROVIDER_LABEL: Record<AiProvider, string> = {
   ANTHROPIC: "Anthropic",
   OPENAI: "OpenAI",
   GOOGLE: "Google",
-  META: "Meta",
 };
 
 export const AI_PROVIDER_TONE: Record<AiProvider, BadgeTone> = {
   ANTHROPIC: "brand",
   OPENAI: "success",
   GOOGLE: "info",
-  META: "warning",
 };
 
 export const AI_MODEL_STATUS_LABEL: Record<AiModelStatus, string> = {
@@ -33,7 +31,6 @@ export const AI_PROVIDER_FILTER_OPTIONS: SelectOption[] = [
   { label: AI_PROVIDER_LABEL.ANTHROPIC, value: "ANTHROPIC" },
   { label: AI_PROVIDER_LABEL.OPENAI, value: "OPENAI" },
   { label: AI_PROVIDER_LABEL.GOOGLE, value: "GOOGLE" },
-  { label: AI_PROVIDER_LABEL.META, value: "META" },
 ];
 
 /**

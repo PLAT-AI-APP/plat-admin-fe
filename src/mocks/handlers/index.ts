@@ -1,4 +1,3 @@
-import { aiHandlers } from "./ai";
 import { auditLogHandlers } from "./auditLog";
 import { billingHandlers } from "./billing";
 import { billingProductHandlers } from "./billingProduct";
@@ -47,7 +46,6 @@ export const handlers = [
   ...commentHandlers,
   ...reportHandlers,
   ...userHandlers,
-  ...aiHandlers,
   ...billingHandlers,
   ...paymentRecordHandlers,
   ...communicationHandlers,

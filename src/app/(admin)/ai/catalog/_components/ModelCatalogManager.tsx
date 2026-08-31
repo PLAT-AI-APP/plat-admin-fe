@@ -5,7 +5,11 @@ import { useModelCatalogQuery } from "@/api/ai/getModelCatalog";
 import { useModelPingMutation } from "@/api/ai/pingModel";
 import { Activity, CheckCircle, Warning } from "@/icons";
 import { formatWithCommas } from "@/lib/utils";
-import type { AiModelCatalogItem, AiModelPingResult, AiProvider } from "@/type/ai";
+import type {
+  AiModelCatalogItem,
+  AiModelPingResult,
+  AiProvider,
+} from "@/type/ai";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -144,10 +148,12 @@ const ModelCatalogManager = () => {
 
   return (
     <>
-      <Alert tone="info" title="제공사가 내려주는 원본 모델 정보입니다.">
-        여기서는 운영 설정을 바꾸지 않습니다. 사용 여부·차감 크레딧 같은 운영
-        값은 &apos;AI 모델 관리&apos;에서 변경하세요. 테스트 호출 결과는 이
-        화면에서만 유지됩니다.
+      <Alert tone="info" title="모델이 어떤 물건인지만 봅니다.">
+        &apos;AI 모델 관리&apos;와 같은 모델 목록이고, 이 화면은 제공사 쪽
+        사실만 보여줍니다. 사용 여부·역할·차감 크레딧 같은 운영 값은 그쪽에서
+        바꾸세요. 단가와 컨텍스트 윈도우는 제공사가 내려주는 값이 아니라 운영이
+        적어 두는 값이라 실제와 어긋날 수 있습니다. 테스트 호출 결과는 저장되지
+        않고 이 화면에서만 유지됩니다.
       </Alert>
 
       <Card noPadding>

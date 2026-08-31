@@ -1,4 +1,10 @@
-export type AiProvider = "ANTHROPIC" | "OPENAI" | "GOOGLE" | "META";
+/**
+ * 모델 제공사.
+ *
+ * 서버가 실제로 클라이언트를 세울 수 있는 곳만 있다. 목록을 늘리는 것은 "그 회사 모델을 부를 수
+ * 있다"는 말이라, 실제로 부를 수 있게 된 다음에 서버 `AiProvider` 와 함께 늘린다.
+ */
+export type AiProvider = "ANTHROPIC" | "OPENAI" | "GOOGLE";
 export type AiModelStatus = "AVAILABLE" | "DEPRECATED" | "UNAVAILABLE";
 
 /**
