@@ -12,11 +12,11 @@ import type {
 import type { ServiceLanguage } from "@/type/language";
 
 /**
- * 실서버(plat-admin) 세계관 목록. 세계관 관리 보드가 쓴다.
+ * 실서버(plat-admin) 세계관 목록. 세계관 관리 보드와 공식 세계관 패널이 쓴다.
  *
  * 큐레이션 후보 목록(`useUniverseListQuery`, 목업)과 **의도적으로 분리**한다.
- * 후보 피커·공식 패널은 아직 목업이라, 보드만 실서버로 옮겨 보드 → 상세가
- * 같은 실 ID로 이어지게 한다.
+ * 후보 피커는 아직 목업이라, 실서버로 옮긴 화면끼리 보드 → 상세가 같은 실
+ * ID로 이어지게 한다.
  */
 
 /**
@@ -46,6 +46,14 @@ export interface AdminUniverseFilterParams {
   creatorId?: string;
   /** 해시태그 드릴다운. 태그가 실제로 어디에 붙어 있는지 확인할 때 쓴다. */
   hashtagId?: string;
+  /**
+   * 공식 계정이 만든 세계관만.
+   *
+   * 세계관이 들고 있는 값이 아니라 **공식 계정 지정에서 계산되는 값**이라,
+   * `false`를 보내도 "공식이 아닌 것만"이 되지 않고 조건 없음과 같다.
+   * 공식 계정 화면이 지정 결과를 확인하는 데 쓴다.
+   */
+  officialOnly?: boolean;
   order?: UniverseOrder;
   language?: ServiceLanguage;
 }
@@ -136,6 +144,7 @@ const toRequestParams = (params: AdminUniverseListParams) => {
   if (params.commentEnabled) clean.commentEnabled = params.commentEnabled;
   if (params.creatorId) clean.creatorId = params.creatorId;
   if (params.hashtagId) clean.hashtagId = params.hashtagId;
+  if (params.officialOnly) clean.officialOnly = "true";
   if (params.order) clean.order = params.order;
   if (params.language) clean.language = params.language;
   return clean;

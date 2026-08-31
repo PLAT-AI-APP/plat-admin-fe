@@ -1,20 +1,26 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import { showAppToast } from "@/lib/toast";
 import type { AppError } from "@/type/api";
 import type { OfficialAccount } from "@/type/official";
+import {
+  toOfficialAccount,
+  type OfficialAccountResponse,
+} from "./getOfficialAccountList";
 
-export const registerOfficialAccount = async (userId: string) => {
-  const response = await adminAxios.post<OfficialAccount>(
+export const registerOfficialAccount = async (
+  userId: string,
+): Promise<OfficialAccount> => {
+  const response = await liveAxios.post<OfficialAccountResponse>(
     "/admin/official-accounts",
     { userId },
   );
 
-  return response.data;
+  return toOfficialAccount(response.data);
 };
 
 export const releaseOfficialAccount = async (userId: string) => {
-  await adminAxios.delete(`/admin/official-accounts/${userId}`);
+  await liveAxios.delete(`/admin/official-accounts/${userId}`);
 };
 
 /**

@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -8,6 +7,7 @@ import { useOfficialAccountListQuery } from "@/api/official/getOfficialAccountLi
 import { useOfficialAccountMutation } from "@/api/official/mutateOfficialAccount";
 import { Crown, Plus, Trash } from "@/icons";
 import { formatDate } from "@/lib/dayjs";
+import { resolveImageUrl } from "@/lib/imageUrl";
 import { showErrorToast } from "@/lib/toast";
 import { cn, formatWithCommas } from "@/lib/utils";
 import {
@@ -21,6 +21,7 @@ import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import EntityImage from "@/components/ui/EntityImage";
 import FormField from "@/components/ui/FormField";
 import IconButton from "@/components/ui/IconButton";
 import Input from "@/components/ui/Input";
@@ -103,16 +104,20 @@ const OfficialAccountManager = () => {
       width: "240px",
       render: (row) => (
         <div className="flex min-w-0 items-center gap-3">
-          <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-subtle">
-            <Image
-              src={row.profileImageUrl}
-              alt={row.nickname}
-              fill
-              sizes="36px"
-              className="object-cover"
-              unoptimized
-            />
-          </div>
+          {/* 관리자 서버는 FileId → URL을 해석하지 못한다. 빈 src를 받는 자리라 EntityImage가 자리표시를 그린다. */}
+          <EntityImage
+            src={resolveImageUrl(
+              row.profileImageUrl,
+              row.profileImageFileId,
+              "USER_PROFILE",
+              "SQ80",
+            )}
+            alt={row.nickname}
+            ratio="square"
+            shape="circle"
+            fileId={row.profileImageFileId}
+            className="w-9 shrink-0"
+          />
 
           <div className="min-w-0">
             <p className="truncate body-4 font-medium text-font-1">
@@ -178,8 +183,7 @@ const OfficialAccountManager = () => {
         여기에 등록한 유저의 크리에이터가 만든 세계관이 <b>공식</b>으로 표시되고,
         메인 &apos;공식 캐릭터 맛보기&apos; 후보가 됩니다. 서버는 조회할 때마다 이
         목록으로 다시 판정하므로, 계정을 해제하면 해당 세계관의 공식 표시가 즉시
-        사라집니다. (서버 설정 <code>universe.official-user-ids</code>와 같은
-        목록입니다.)
+        사라집니다. (배포 없이 이 화면에서 바로 반영됩니다.)
       </Alert>
 
       {idleAccounts.length > 0 && (

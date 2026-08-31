@@ -1,14 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useUniverseListQuery } from "@/api/universe/getUniverseList";
+import { useAdminUniverseListQuery } from "@/api/universe/getAdminUniverseList";
+import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatWithCommas } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
-import type { Universe } from "@/type/character";
+import type { AdminUniverseListItem } from "@/type/character";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
+import EntityImage from "@/components/ui/EntityImage";
 import Pagination from "@/components/ui/Pagination";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import {
@@ -24,39 +25,45 @@ import {
  * **읽기 전용이다.** 여기서 뺄 수 있는 것은 없다. 공식 여부는 계정 지정에서
  * 계산되므로, 목록을 바꾸려면 위에서 계정을 등록·해제한다.
  * 계정 등록 결과가 실제로 무엇에 반영됐는지 같은 화면에서 확인하기 위한 표다.
+ *
+ * 상태로 거르지 않는다 — 위 표의 "공식 세계관" 건수와 같은 조건이라야 두 숫자가
+ * 어긋나지 않는다. 삭제 대기 중인 세계관도 여기 보인다.
  */
 const OfficialUniversePanel = () => {
   const router = useRouter();
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useUniverseListQuery({
+  const { data, isLoading } = useAdminUniverseListQuery({
     page,
     size: DEFAULT_PAGE_SIZE,
     officialOnly: true,
-    sort: "CHAT_COUNT",
+    order: "CHAT_DESC",
   });
 
-  const columns: TableColumn<Universe>[] = [
+  const columns: TableColumn<AdminUniverseListItem>[] = [
     {
       key: "universe",
       header: "세계관",
       width: "260px",
       render: (row) => (
         <div className="flex min-w-0 items-center gap-3">
-          <div className="relative h-10 w-16 shrink-0 overflow-hidden rounded-chip bg-subtle">
-            <Image
-              src={row.thumbnailUrl}
-              alt={row.name}
-              fill
-              sizes="64px"
-              className="object-cover"
-              unoptimized
-            />
-          </div>
+          {/* `UNIVERSE_PROFILE`에 SQ40은 없다(422). 목록용 가장 작은 규격이 SQ80이다. */}
+          <EntityImage
+            src={resolveImageUrl(
+              row.profileImageUrl,
+              row.profileImageFileId,
+              "UNIVERSE_PROFILE",
+              "SQ80",
+            )}
+            alt={row.title}
+            ratio="square"
+            fileId={row.profileImageFileId}
+            className="w-10 shrink-0"
+          />
 
           <div className="min-w-0">
             <p className="truncate body-4 font-medium text-font-1">
-              {row.name}
+              {row.title}
             </p>
             <p className="mt-0.5 body-6 text-font-2 tabular-nums">
               #{row.universeId}
@@ -110,12 +117,10 @@ const OfficialUniversePanel = () => {
       <Table
         columns={columns}
         rows={data?.content ?? []}
-        getRowKey={(row) => String(row.universeId)}
+        getRowKey={(row) => row.universeId}
         isLoading={isLoading}
         skeletonRows={5}
-        onRowClick={(row) =>
-          router.push(`/universes/${row.universeId}`)
-        }
+        onRowClick={(row) => router.push(`/universes/${row.universeId}`)}
         emptyTitle="공식으로 표시되는 세계관이 없습니다."
         emptyDescription="공식 계정을 등록하거나, 등록한 계정이 세계관을 만들면 여기에 나타납니다."
       />

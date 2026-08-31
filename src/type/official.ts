@@ -4,7 +4,7 @@
  * **공식 여부는 콘텐츠가 아니라 계정에 붙는다.**
  * 서버는 세계관 한 건 한 건에 "공식" 값을 저장하지 않고,
  * 공식으로 지정된 유저의 크리에이터가 만든 세계관을 공식으로 판정한다.
- * (`universe.official-user-ids` → 유저 ID를 크리에이터 ID로 변환해 비교)
+ * (`official_accounts` 표의 유저 ID → 크리에이터 ID로 변환해 비교)
  *
  * 그래서 관리자가 등록하는 것은 캐릭터나 세계관이 아니라 **유저 ID**다.
  * 계정을 등록·해제하면 그 계정이 가진 세계관 전부의 공식 표시가 함께 바뀐다.
@@ -18,8 +18,11 @@ export interface OfficialAccount {
    * 아무 계정도 가리키지 않는 상태가 만들어진다.
    */
   userId: string;
+  /** 유저가 사라진 극단적인 경우에도 지정 자체는 남는다. 그 자리는 ID로 채운다. */
   nickname: string;
-  profileImageUrl: string;
+  /** 관리자 서버는 FileId → URL을 해석하지 못한다. `resolveImageUrl`로 만들어 쓴다. */
+  profileImageFileId?: string;
+  profileImageUrl?: string;
   /**
    * 이 유저의 크리에이터 ID.
    *
@@ -32,8 +35,10 @@ export interface OfficialAccount {
   universeCount: number;
   /** 이 계정이 소유한 캐릭터 수 */
   characterCount: number;
-  /** 등록한 관리자 */
+  /** 등록한 관리자 이름. 그 시점 스냅샷이라 계정이 지워져도 남는다. */
   registeredBy: string;
+  /** 등록한 관리자 ID. 계정이 지워졌으면 비어 있다. */
+  registeredById?: number;
   registeredAt: string;
 }
 

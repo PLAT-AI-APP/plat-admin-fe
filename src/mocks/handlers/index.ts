@@ -6,7 +6,6 @@ import { commentHandlers } from "./comment";
 import { communicationHandlers } from "./communication";
 import { dashboardHandlers } from "./dashboard";
 import { fileHandlers } from "./file";
-import { officialHandlers } from "./official";
 import { paymentRecordHandlers } from "./paymentRecord";
 import { reportHandlers } from "./report";
 import { legalHandlers } from "./legal";
@@ -27,10 +26,12 @@ import { searchHandlers } from "./search";
  *
  * 연동이 끝난 도메인은 목업을 걷어냈다 — 해시태그 · 금지어 · 크레딧 조정 · 장부 ·
  * 시스템 프롬프트(`/admin/ai/prompts`) · AI 모델(`/admin/ai/models`) ·
- * 공지사항(`/admin/notices`) · 유저(`/admin/users`)는 실서버로 그대로 나간다.
+ * 공지사항(`/admin/notices`) · 유저(`/admin/users`) ·
+ * 공식 계정(`/admin/official-accounts`)은 실서버로 그대로 나간다.
  *
- * 유저는 핸들러만 지우고 **`db/user.ts` 는 남겼다.** 전역 검색(⌘K) · 공식 계정과
- * 캐릭터 · 댓글 · 신고 · 결제 목업이 전부 그 씨앗에서 유저를 빌려 쓴다.
+ * 유저와 공식 계정은 핸들러만 지우고 **`db/user.ts` · `db/official.ts` 는 남겼다.**
+ * 전역 검색(⌘K) · 캐릭터 · 댓글 · 신고 · 결제 목업이 전부 그 씨앗에서 유저를
+ * 빌려 쓰고, 목업 캐릭터·세계관의 공식 뱃지는 `db/official.ts` 가 계산한다.
  */
 export const handlers = [
   // 감사 로그는 모든 변경 요청을 먼저 가로채야 하므로 항상 맨 앞에 둔다.
@@ -42,7 +43,6 @@ export const handlers = [
   ...billingProductHandlers,
   ...universeAdminHandlers,
   ...universeHandlers,
-  ...officialHandlers,
   ...characterHandlers,
   ...commentHandlers,
   ...reportHandlers,
