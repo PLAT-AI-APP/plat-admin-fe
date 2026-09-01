@@ -5,7 +5,6 @@ import { characterHandlers } from "./character";
 import { commentHandlers } from "./comment";
 import { communicationHandlers } from "./communication";
 import { dashboardHandlers } from "./dashboard";
-import { fileHandlers } from "./file";
 import { paymentRecordHandlers } from "./paymentRecord";
 import { reportHandlers } from "./report";
 import { legalHandlers } from "./legal";
@@ -36,7 +35,6 @@ import { searchHandlers } from "./search";
 export const handlers = [
   // 감사 로그는 모든 변경 요청을 먼저 가로채야 하므로 항상 맨 앞에 둔다.
   ...auditLogHandlers,
-  ...fileHandlers,
   ...searchHandlers,
   ...dashboardHandlers,
   ...mainExposureHandlers,

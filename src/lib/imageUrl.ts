@@ -36,6 +36,8 @@ export const IMAGE_VARIANTS = {
   UNIVERSE_PROFILE: ["ORIGIN", "SQ80", "SQ140"],
   UNIVERSE_ASSET: ["ORIGIN", "SQ80"],
   CHARACTER_PROFILE: ["ORIGIN", "SQ40", "SQ140"],
+  /** 배너는 가로로 긴 그림이라 정사각 변형본이 없다. 목록 썸네일은 `FIT400`을 쓴다. */
+  MAIN_BANNER: ["ORIGIN", "FIT400"],
 } as const;
 
 export type ImageFileType = keyof typeof IMAGE_VARIANTS;
