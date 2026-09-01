@@ -73,71 +73,56 @@ export interface LanguageCount {
 /**
  * 메인 배너.
  *
- * **배너 한 건은 언어 하나에만 속한다.** 이미지에 글자가 박혀 있는 데다
- * 가리키는 세계관이 그 언어 번역을 갖췄는지도 언어마다 다르다. 한 건을 여러
- * 언어가 나눠 쓰면 "영어 캐러셀 두 번째 자리"를 따로 정할 수 없다.
- * 다른 언어에도 같은 배너를 걸려면 그 언어로 복제한다.
+ * **배너는 이미지 한 장이 전부다.** 예전에는 세계관을 물고 제목·설명·태그를
+ * 앱이 템플릿에 합성했지만, 배너에는 캐릭터 소개뿐 아니라 이벤트·공지처럼
+ * 세계관이 없는 것도 들어온다. 템플릿을 걷어내고 완성된 이미지를 그대로
+ * 내보낸다 — 무엇을 그릴지는 이미지가 정하고, 어드민은 어디로 보낼지만 정한다.
+ *
+ * **배너 한 건은 언어 하나에만 속한다.** 이미지에 글자가 박혀 있어서다.
+ * 다른 언어에도 같은 자리를 채우려면 그 언어 이미지로 복제한다.
  */
 export interface Banner {
-  bannerId: number;
+  /** Snowflake가 아니지만 다른 ID와 같이 서버가 문자열로 내린다. */
+  bannerId: string;
   /** 이 배너가 나갈 언어. 캐러셀 순서도 언어별로 따로 매긴다. */
   language: ServiceLanguage;
-  imageUrl: string;
-  universeId: number;
-  /** 세계관 원본값. 조회 시 서버가 채워준다. */
-  universe: Universe;
   /**
-   * 운영 문구 조정을 위한 오버라이드. 배너의 언어로 쓴 문구다.
-   * 비어 있으면 세계관 원본값을 쓴다.
-   */
-  titleOverride?: string;
-  descriptionOverride?: string;
-  /**
-   * 배너에 표시할 해시태그.
+   * 어드민 목록에서 배너를 가리키는 이름.
    *
-   * **자유 입력이 아니라 등록된 해시태그에서 고른다.** 문자열로 적게 두면
-   * 앱에 없는 태그가 배너에만 뜨고, 태그 이름을 바꿔도 배너는 옛 이름을 들고 있다.
-   * 비어 있으면 세계관 태그를 그대로 쓴다.
+   * **앱에는 나가지 않는다.** 노출 문구는 전부 이미지 안에 있어서, 이 이름이
+   * 없으면 목록도 삭제 확인창도 썸네일 말고는 배너를 지칭할 말이 없다.
    */
-  hashtagIds?: number[];
+  name: string;
+  /** 배너 이미지 파일 ID. URL은 `buildImageUrl()`로 만든다. */
+  imageFileId: string;
+  /**
+   * 배너를 눌렀을 때 이동할 곳.
+   *
+   * 세계관·이벤트·공지 무엇이든 URL 하나로 받는다. 앱 안으로 보낼 때는
+   * 딥링크를, 바깥으로 보낼 때는 웹 주소를 적는다.
+   * **비어 있으면 이동하지 않는다** — 안내만 하는 배너도 있다.
+   */
+  linkUrl?: string;
   isActive: boolean;
-  order: number;
-  startAt?: string;
-  endAt?: string;
+  /** 언어 안에서의 노출 순서. 1부터 매긴다. */
+  sortOrder: number;
+  /**
+   * 노출 기간. 시각이 아니라 **날짜**다.
+   *
+   * 운영이 고르는 값이 날짜이고, 앱에서 바뀌는 경계도 서비스 시간대(KST)
+   * 기준의 그 날짜다. `YYYY-MM-DD` 형식이며 비어 있으면 그 방향으로 제한이 없다.
+   */
+  startDate?: string;
+  endDate?: string;
   createdAt: string;
 }
 
 export interface BannerFormValues {
   language: ServiceLanguage;
-  imageUrl: string;
-  universeId: number;
-  titleOverride?: string;
-  descriptionOverride?: string;
-  hashtagIds?: number[];
+  name: string;
+  imageFileId: string;
+  linkUrl?: string;
   isActive: boolean;
-  startAt?: string;
-  endAt?: string;
+  startDate?: string;
+  endDate?: string;
 }
-
-/**
- * 배너에 실제로 노출될 문구를 계산한다.
- *
- * 우선순위는 **오버라이드 → 세계관 원본**이다. 배너가 이미 언어를 하나 물고
- * 있으므로 여기서 언어를 다시 고르지 않는다.
- */
-export const resolveBannerContent = (
-  banner: Banner,
-  /** 해시태그 ID → 라벨. 목록을 못 받았으면 세계관 태그로 떨어진다. */
-  hashtagLabels?: Map<number, string>,
-) => {
-  const overriddenTags = (banner.hashtagIds ?? [])
-    .map((hashtagId) => hashtagLabels?.get(hashtagId))
-    .filter((label): label is string => Boolean(label));
-
-  return {
-    title: banner.titleOverride?.trim() || banner.universe.name,
-    description:
-      banner.descriptionOverride?.trim() || banner.universe.description,
-    tags: overriddenTags.length > 0 ? overriddenTags : banner.universe.tags,
-  };
-};

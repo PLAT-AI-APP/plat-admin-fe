@@ -1,20 +1,54 @@
 import { useQuery } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { Banner, LanguageCount } from "@/type/mainExposure";
 import type { ServiceLanguage } from "@/type/language";
 
-export const getBannerList = async (language: ServiceLanguage) => {
-  const response = await adminAxios.get<Banner[]>("/admin/main/banners", {
-    params: { language },
-  });
+/**
+ * 서버가 내려주는 배너 한 줄.
+ *
+ * 없는 값은 `null`로 오고 화면은 `undefined`로 다룬다. **이미지 URL은 오지
+ * 않는다** — 이미지를 서빙하는 곳은 관리자 API가 아니라 서비스 서버의 공개
+ * 경로라서, 화면이 `imageFileId`로 직접 조립한다(`buildImageUrl`).
+ */
+export interface BannerResponse {
+  mainBannerId: string;
+  language: ServiceLanguage;
+  name: string;
+  imageFileId: string;
+  linkUrl: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string;
+}
 
-  return response.data;
+export const toBanner = (banner: BannerResponse): Banner => ({
+  bannerId: banner.mainBannerId,
+  language: banner.language,
+  name: banner.name,
+  imageFileId: banner.imageFileId,
+  linkUrl: banner.linkUrl ?? undefined,
+  isActive: banner.isActive,
+  sortOrder: banner.sortOrder,
+  startDate: banner.startDate ?? undefined,
+  endDate: banner.endDate ?? undefined,
+  createdAt: banner.createdAt,
+});
+
+export const getBannerList = async (language: ServiceLanguage) => {
+  const response = await liveAxios.get<BannerResponse[]>(
+    "/admin/main-banners",
+    { params: { language } },
+  );
+
+  return response.data.map(toBanner);
 };
 
 export const getBannerLanguageCounts = async () => {
-  const response = await adminAxios.get<LanguageCount[]>(
-    "/admin/main/banners/languages",
+  const response = await liveAxios.get<LanguageCount[]>(
+    "/admin/main-banners/languages",
   );
 
   return response.data;

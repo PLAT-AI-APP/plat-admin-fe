@@ -1,6 +1,15 @@
 import { z } from "zod";
 import { SERVICE_LANGUAGES } from "@/type/language";
 
+/**
+ * 링크 형식.
+ *
+ * 앱 안으로 보내는 딥링크(`plat://...`)와 바깥으로 보내는 웹 주소를 함께
+ * 받아야 해서 스킴을 http/https로 못 박지 않는다. 다만 스킴이 없는 값은
+ * 앱이 열 방법이 없으므로 `스킴://`까지는 요구한다.
+ */
+const LINK_URL_PATTERN = /^[a-z][a-z0-9+.-]*:\/\/\S+$/i;
+
 export const bannerSchema = z
   .object({
     /**
@@ -12,30 +21,31 @@ export const bannerSchema = z
     language: z.enum(SERVICE_LANGUAGES, {
       error: "언어를 선택해 주세요.",
     }),
-    // 업로드 API가 발급한 URL이 들어오므로 형식 검증은 하지 않고 존재 여부만 본다.
-    imageUrl: z.string().min(1, "배너 이미지를 업로드해 주세요."),
-    universeId: z
-      .number({ error: "세계관을 선택해 주세요." })
-      .int()
-      .positive("세계관을 선택해 주세요."),
-    /* 비우면 세계관 원본을 그대로 쓴다. 그래서 어느 쪽도 필수가 아니다. */
-    titleOverride: z.string().max(40, "제목은 40자 이내로 입력해 주세요."),
-    descriptionOverride: z
+    /* 어드민 목록에서만 쓰는 이름. 노출 문구는 전부 이미지 안에 있다. */
+    name: z
       .string()
-      .max(120, "설명은 120자 이내로 입력해 주세요."),
-    /* 등록된 해시태그에서 고른 ID. 문자열을 직접 적게 두지 않는다. */
-    hashtagIds: z
-      .array(z.number())
-      .max(5, "해시태그는 최대 5개까지 지정할 수 있습니다."),
+      .trim()
+      .min(1, "배너 이름을 입력해 주세요.")
+      .max(40, "배너 이름은 40자 이내로 입력해 주세요."),
+    /* 업로드 API가 발급한 파일 ID. 화면은 이 값으로 이미지 URL을 만든다. */
+    imageFileId: z.string().min(1, "배너 이미지를 업로드해 주세요."),
+    /* 비우면 눌러도 이동하지 않는다. 그래서 필수가 아니다. */
+    linkUrl: z
+      .string()
+      .trim()
+      .refine((value) => !value || LINK_URL_PATTERN.test(value), {
+        message: "링크는 https:// 또는 앱 딥링크(plat://) 형식으로 입력해 주세요.",
+      }),
     isActive: z.boolean(),
-    startAt: z.string().optional(),
-    endAt: z.string().optional(),
+    /* 시각이 아니라 날짜다(`YYYY-MM-DD`). 서버도 날짜로 들고 있다. */
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
   })
   .refine(
-    ({ startAt, endAt }) => !startAt || !endAt || startAt <= endAt,
+    ({ startDate, endDate }) => !startDate || !endDate || startDate <= endDate,
     {
       message: "노출 종료일은 시작일 이후여야 합니다.",
-      path: ["endAt"],
+      path: ["endDate"],
     },
   );
 
