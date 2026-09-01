@@ -130,7 +130,11 @@ const BatchJobBoard = ({ selectedJobKey, onSelectJob }: BatchJobBoardProps) => {
             disabled={!canWrite || toggleMutation.isPending}
             label={`${row.name} 스케줄`}
             onChange={(isEnabled) =>
-              toggleMutation.mutate({ jobKey: row.jobKey, isEnabled })
+              toggleMutation.mutate({
+                jobKey: row.jobKey,
+                name: row.name,
+                isEnabled,
+              })
             }
           />
         </span>

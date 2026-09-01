@@ -1,9 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
-import type { UserDetail, UserStatus } from "@/type/user";
+import type { UserStatus } from "@/type/user";
 import { showAppToast } from "@/lib/toast";
-import { toUserDetail, type UserDetailResponse } from "./getUserDetail";
 
 export interface UpdateUserStatusRequest {
   status: UserStatus;
@@ -19,21 +18,16 @@ export interface UpdateUserStatusRequest {
 }
 
 /**
- * 상태를 바꾸고 **바뀐 뒤의 상세**를 돌려받는다.
+ * 상태를 바꾼다. 서버는 본문 없이 204 로 답한다.
  *
- * 서버가 상세를 그대로 내려주므로 화면은 정지 직후 사유·만료가 채워진 카드를
- * 곧바로 그릴 수 있다.
+ * 바뀐 상세는 **다시 조회해서** 얻는다 — 아래 훅이 목록과 상세 캐시를 함께
+ * 무효화하므로, 정지 직후 사유·만료가 채워진 카드는 재조회 결과로 그려진다.
  */
 export const updateUserStatus = async (
   userId: string,
   body: UpdateUserStatusRequest,
-): Promise<UserDetail> => {
-  const response = await liveAxios.patch<UserDetailResponse>(
-    `/admin/users/${userId}/status`,
-    body,
-  );
-
-  return toUserDetail(response.data);
+): Promise<void> => {
+  await liveAxios.patch(`/admin/users/${userId}/status`, body);
 };
 
 /** 유저 상태 변경 후 목록과 상세를 함께 갱신합니다. */
@@ -46,15 +40,15 @@ export const useUserMutation = () => {
   };
 
   const statusMutation = useMutation<
-    UserDetail,
+    void,
     AppError,
     { userId: string; body: UpdateUserStatusRequest }
   >({
     mutationFn: ({ userId, body }) => updateUserStatus(userId, body),
-    onSuccess: (user) => {
+    onSuccess: (_result, { body }) => {
       showAppToast(
         "success",
-        user.status === "ACTIVE"
+        body.status === "ACTIVE"
           ? "계정 정지를 해제했습니다."
           : "계정을 정지했습니다.",
       );

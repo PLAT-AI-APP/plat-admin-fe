@@ -18,12 +18,7 @@ export const updateAdminRole = async (
   roleId: number,
   body: AdminRoleFormValues,
 ) => {
-  const response = await liveAxios.patch<AdminRole>(
-    `/admin/roles/${roleId}`,
-    body,
-  );
-
-  return response.data;
+  await liveAxios.patch(`/admin/roles/${roleId}`, body);
 };
 
 export const deleteAdminRole = async (roleId: number) => {
@@ -53,7 +48,7 @@ export const useAdminRoleMutation = () => {
   });
 
   const updateMutation = useMutation<
-    AdminRole,
+    void,
     AppError,
     { roleId: number; body: AdminRoleFormValues }
   >({

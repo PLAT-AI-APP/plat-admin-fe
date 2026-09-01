@@ -137,7 +137,7 @@ export const billingProductHandlers = [
 
       await delay(MOCK_DELAY_MS);
 
-      return HttpResponse.json(billingProducts[index]);
+      return new HttpResponse(null, { status: 204 });
     },
   ),
 ];

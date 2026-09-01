@@ -33,12 +33,9 @@ export const updateBillingProductStatus = async (
   productId: number,
   status: ProductStatus,
 ) => {
-  const response = await liveAxios.patch<BillingProduct>(
-    `/admin/billing/products/${productId}/status`,
-    { status },
-  );
-
-  return response.data;
+  await liveAxios.patch(`/admin/billing/products/${productId}/status`, {
+    status,
+  });
 };
 
 /** 상품 생성·수정·노출 상태 변경 후 목록을 갱신합니다. */
@@ -73,7 +70,7 @@ export const useBillingProductMutation = () => {
   });
 
   const statusMutation = useMutation<
-    BillingProduct,
+    void,
     AppError,
     { productId: number; status: ProductStatus }
   >({

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
-import type { BatchJob, BatchJobRun } from "@/type/ops";
+import type { BatchJobRun } from "@/type/ops";
 import { toBatchJobRun, type BatchJobRunResponse } from "./getBatchRunList";
 import { showAppToast } from "@/lib/toast";
 
@@ -24,12 +24,7 @@ export const updateBatchJobEnabled = async (
   jobKey: string,
   isEnabled: boolean,
 ) => {
-  const response = await liveAxios.patch<BatchJob>(
-    `/admin/batch/jobs/${jobKey}/enabled`,
-    { isEnabled },
-  );
-
-  return response.data;
+  await liveAxios.patch(`/admin/batch/jobs/${jobKey}/enabled`, { isEnabled });
 };
 
 /** 수동 실행 · 스케줄 토글 후 잡 목록과 실행 이력을 함께 갱신합니다. */
@@ -54,19 +49,23 @@ export const useBatchJobMutation = () => {
     },
   });
 
+  /*
+    서버가 본문 없이 204 로 답하므로 토스트 문구는 **보낸 값**으로 만든다.
+    잡 이름은 응답에 없으니 화면이 알고 있는 것을 그대로 넘겨받는다.
+  */
   const toggleMutation = useMutation<
-    BatchJob,
+    void,
     AppError,
-    { jobKey: string; isEnabled: boolean }
+    { jobKey: string; name: string; isEnabled: boolean }
   >({
     mutationFn: ({ jobKey, isEnabled }) =>
       updateBatchJobEnabled(jobKey, isEnabled),
-    onSuccess: (job) => {
+    onSuccess: (_result, { name, isEnabled }) => {
       showAppToast(
         "success",
-        job.isEnabled
-          ? `'${job.name}' 스케줄을 켰습니다.`
-          : `'${job.name}' 스케줄을 껐습니다.`,
+        isEnabled
+          ? `'${name}' 스케줄을 켰습니다.`
+          : `'${name}' 스케줄을 껐습니다.`,
       );
       invalidateBatch();
     },

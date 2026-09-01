@@ -45,12 +45,10 @@ export const updateManager = async (
   manager: Manager,
   patch: Partial<ManagerUpdateBody>,
 ) => {
-  const response = await liveAxios.patch<Manager>(
+  await liveAxios.patch(
     `/admin/managers/${manager.managerId}`,
     toUpdateBody(manager, patch),
   );
-
-  return response.data;
 };
 
 /**
@@ -112,7 +110,7 @@ export const useManagerMutation = () => {
   });
 
   const updateMutation = useMutation<
-    Manager,
+    void,
     AppError,
     { manager: Manager; values: ManagerFormValues }
   >({
@@ -125,12 +123,12 @@ export const useManagerMutation = () => {
   });
 
   const statusMutation = useMutation<
-    Manager,
+    void,
     AppError,
     { manager: Manager; status: ManagerStatus }
   >({
     mutationFn: ({ manager, status }) => updateManager(manager, { status }),
-    onSuccess: (_manager, { status }) => {
+    onSuccess: (_result, { status }) => {
       showAppToast(
         "success",
         STATUS_MESSAGE[status] ?? "계정 상태를 변경했습니다.",

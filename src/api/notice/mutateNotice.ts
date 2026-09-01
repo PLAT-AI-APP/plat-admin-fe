@@ -33,12 +33,7 @@ export const updateNoticeStatus = async (
   noticeId: number,
   status: NoticeStatus,
 ) => {
-  const response = await liveAxios.patch<NoticeDetailResponse>(
-    `/admin/notices/${noticeId}/status`,
-    { status },
-  );
-
-  return toNoticeDetail(response.data);
+  await liveAxios.patch(`/admin/notices/${noticeId}/status`, { status });
 };
 
 export const deleteNotice = async (noticeId: number) => {
@@ -76,7 +71,7 @@ export const useNoticeMutation = () => {
   });
 
   const statusMutation = useMutation<
-    NoticeDetail,
+    void,
     AppError,
     { noticeId: number; status: NoticeStatus }
   >({
