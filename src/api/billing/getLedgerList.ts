@@ -60,7 +60,7 @@ export const getLedgerList = async (
   params: LedgerListParams,
 ): Promise<PageResponse<LedgerEntry>> => {
   const response = await liveAxios.get<PageWith<LedgerEntryResponse>>(
-    "/admin/ledger",
+    "/admin/ledgers",
     { params: toRequestParams(params) },
   );
 

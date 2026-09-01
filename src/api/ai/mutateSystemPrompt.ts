@@ -12,8 +12,8 @@ export const createSystemPromptVersion = async (
   promptKey: string,
   content: string,
 ): Promise<SystemPromptVersion> => {
-  const response = await liveAxios.put<SystemPromptVersionResponse>(
-    `/admin/ai/prompts/${promptKey}`,
+  const response = await liveAxios.post<SystemPromptVersionResponse>(
+    `/admin/ai/prompts/${promptKey}/versions`,
     { content },
   );
 

@@ -17,12 +17,7 @@ export const updateAiModel = async (
   modelId: number,
   body: UpdateAiModelRequest,
 ) => {
-  const response = await liveAxios.put<AiModel>(
-    `/admin/ai/models/${modelId}`,
-    body,
-  );
-
-  return response.data;
+  await liveAxios.patch(`/admin/ai/models/${modelId}`, body);
 };
 
 /**
@@ -51,7 +46,7 @@ export const useAiModelMutation = () => {
     queryClient.invalidateQueries({ queryKey: ["get-ai-model-list"] });
 
   const updateMutation = useMutation<
-    AiModel,
+    void,
     AppError,
     { modelId: number; body: UpdateAiModelRequest; successMessage?: string }
   >({

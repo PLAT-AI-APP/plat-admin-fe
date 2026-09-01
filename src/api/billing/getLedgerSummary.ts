@@ -5,7 +5,7 @@ import type { LedgerSummary } from "@/type/billing";
 
 export const getLedgerSummary = async () => {
   const response = await liveAxios.get<LedgerSummary>(
-    "/admin/ledger/summary",
+    "/admin/ledgers/summary",
   );
 
   return response.data;
