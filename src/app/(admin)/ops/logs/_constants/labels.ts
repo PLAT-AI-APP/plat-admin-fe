@@ -19,7 +19,7 @@ import type { BadgeTone, SelectOption } from "@/components/ui";
 
 export const LOG_DOMAIN_LABEL: Record<LogDomain, string> = {
   USER: "회원",
-  CHARACTER: "캐릭터",
+  UNIVERSE: "세계관",
   COMMUNITY: "커뮤니티",
   BILLING: "결제 · 크레딧",
   AI: "AI",
