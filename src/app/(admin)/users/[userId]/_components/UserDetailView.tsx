@@ -29,6 +29,7 @@ import UserBillingPanel from "./UserBillingPanel";
 import UserCharacterPanel from "./UserCharacterPanel";
 import UserCommentPanel from "./UserCommentPanel";
 import UserReportPanel from "./UserReportPanel";
+import UserUniversePanel from "./UserUniversePanel";
 import {
   USER_DETAIL_TABS,
   type UserDetailTab,
@@ -51,7 +52,7 @@ const StatBox = ({ label, value }: { label: string; value: ReactNode }) => (
 /**
  * 유저 상세 화면.
  *
- * 계정 정보 외에 보유 캐릭터 · 작성 댓글 · 결제/크레딧 · 신고 이력까지 붙어
+ * 계정 정보 외에 보유 세계관 · 보유 캐릭터 · 작성 댓글 · 결제/크레딧 · 신고 이력까지 붙어
  * 모달 한 장에 담기지 않는다. 그래서 탭을 가진 페이지로 둔다.
  */
 const UserDetailView = ({ userId }: UserDetailViewProps) => {
@@ -252,6 +253,9 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
           <Tabs items={USER_DETAIL_TABS} value={tab} onChange={setTab} />
 
           {tab === "ACCOUNT" && <UserAccountPanel user={user} />}
+          {tab === "UNIVERSE" && (
+            <UserUniversePanel userId={userId} nickname={user.nickname} />
+          )}
           {tab === "CHARACTER" && (
             <UserCharacterPanel userId={userId} nickname={user.nickname} />
           )}

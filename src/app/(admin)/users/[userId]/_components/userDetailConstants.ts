@@ -7,6 +7,7 @@ export const USER_DETAIL_PAGE_SIZE = 10;
 
 export type UserDetailTab =
   | "ACCOUNT"
+  | "UNIVERSE"
   | "CHARACTER"
   | "COMMENT"
   | "BILLING"
@@ -14,7 +15,8 @@ export type UserDetailTab =
 
 export const USER_DETAIL_TABS: TabItem<UserDetailTab>[] = [
   { label: "계정 정보", value: "ACCOUNT" },
-  { label: "보유 캐릭터", value: "CHARACTER" },
+  { label: "세계관", value: "UNIVERSE" },
+  { label: "캐릭터", value: "CHARACTER" },
   { label: "작성 댓글", value: "COMMENT" },
   { label: "결제 · 크레딧", value: "BILLING" },
   { label: "신고 이력", value: "REPORT" },

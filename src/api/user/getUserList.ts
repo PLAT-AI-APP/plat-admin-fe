@@ -14,16 +14,16 @@ export interface UserListParams {
   size: number;
   keyword?: string;
   status?: UserStatus;
-  /** "true" | "false" | undefined(전체) */
-  isAdultVerified?: string;
 }
 
 /**
  * 서버가 실제로 내려주는 유저 한 줄.
  *
  * 화면이 쓰는 {@link User}와 이름·널 표현이 달라 타입을 따로 둔다. 서버는 없는 값을
- * `null`로 주고 화면은 `undefined`로 다루며, 서버의 `birth`·`adultVerified`는
- * 화면에서 `birthDate`·`isAdultVerified`로 읽는다.
+ * `null`로 주고 화면은 `undefined`로 다루며, 서버의 `birth`는 화면에서 `birthDate`로 읽는다.
+ *
+ * 성인 인증은 여기 없다 — 목록이 답할 질문이 아니라 유저 상세({@link UserDetailResponse})가
+ * 답할 질문이다.
  */
 export interface UserSummaryResponse {
   userId: string;
@@ -34,8 +34,6 @@ export interface UserSummaryResponse {
   profileImageUrl: string | null;
   status: UserStatus;
   provider: User["provider"] | null;
-  adultVerified: boolean;
-  adultVerifiedAt: string | null;
   birth: string | null;
   gender: "MALE" | "FEMALE" | null;
   /** 아직 수집하지 않는 값이라 항상 null이다. */
@@ -60,8 +58,6 @@ export const toUser = (user: UserSummaryResponse): User => ({
   profileImageUrl: user.profileImageUrl ?? undefined,
   status: user.status,
   provider: user.provider ?? undefined,
-  isAdultVerified: user.adultVerified,
-  adultVerifiedAt: user.adultVerifiedAt ?? undefined,
   birthDate: user.birth ?? undefined,
   gender: user.gender ?? "UNKNOWN",
   isMarketingAgreed: user.marketingAgreed ?? undefined,
@@ -76,7 +72,6 @@ const toRequestParams = (params: UserListParams) => ({
   size: params.size,
   keyword: params.keyword?.trim() || undefined,
   status: params.status || undefined,
-  isAdultVerified: params.isAdultVerified || undefined,
 });
 
 /**
@@ -102,7 +97,7 @@ export const getUserList = async (
   });
 };
 
-/** 유저 목록 화면에서 검색·상태/인증 필터·페이지네이션과 함께 사용합니다. */
+/** 유저 목록 화면에서 검색·상태 필터·페이지네이션과 함께 사용합니다. */
 export const useUserListQuery = (params: UserListParams) => {
   return useQuery<PageResponse<User>, AppError>({
     queryKey: ["get-user-list", params],

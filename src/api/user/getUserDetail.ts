@@ -11,6 +11,9 @@ import { toUser, type UserSummaryResponse } from "./getUserList";
  * 여기서도 펴 둔다 — 두 겹으로 받으면 화면이 합치는 코드를 따로 들고 있어야 한다.
  */
 export interface UserDetailResponse extends UserSummaryResponse {
+  /** 목록에는 없고 여기에만 있다. 이유는 `UserDetail.isAdultVerified`에 있다. */
+  adultVerified: boolean;
+  adultVerifiedAt: string | null;
   /** 아직 수집하지 않는 값이라 항상 null이다. */
   phoneNumber: string | null;
   creditBalance: number;
@@ -31,6 +34,8 @@ export interface UserDetailResponse extends UserSummaryResponse {
 
 export const toUserDetail = (user: UserDetailResponse): UserDetail => ({
   ...toUser(user),
+  isAdultVerified: user.adultVerified,
+  adultVerifiedAt: user.adultVerifiedAt ?? undefined,
   phoneNumber: user.phoneNumber ?? undefined,
   creditBalance: user.creditBalance,
   characterCount: user.characterCount,

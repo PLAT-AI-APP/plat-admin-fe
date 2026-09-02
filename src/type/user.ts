@@ -60,9 +60,6 @@ export interface User {
   status: UserStatus;
   /** 가장 먼저 만든 가입 경로. */
   provider?: LoginProvider;
-  /** 성인 인증 여부. NSFW 콘텐츠 노출 판단의 기준이다. */
-  isAdultVerified: boolean;
-  adultVerifiedAt?: string;
   birthDate?: string;
   gender: Gender;
   /**
@@ -86,6 +83,14 @@ export interface User {
 }
 
 export interface UserDetail extends User {
+  /**
+   * 성인 인증 여부. NSFW 콘텐츠 노출 판단의 기준이다.
+   *
+   * **목록에는 없다.** 한 명을 확인하러 오는 값이라 스무 줄에 늘어놓을 이유가 없고,
+   * 서버도 목록 한 페이지마다 인증 시각을 따로 훑어야 해서 조회가 한 번 더 나갔다.
+   */
+  isAdultVerified: boolean;
+  adultVerifiedAt?: string;
   /**
    * 본인인증에서 수집한 번호.
    *

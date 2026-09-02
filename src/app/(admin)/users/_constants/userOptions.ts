@@ -63,10 +63,3 @@ export const SUSPEND_PERIOD_OPTIONS: SelectOption[] = [
   { label: "30일", value: "30" },
   { label: "영구 정지", value: "PERMANENT" },
 ];
-
-/** 성인 인증 여부 필터. NSFW 노출 대상 확인에 쓴다. */
-export const ADULT_VERIFIED_FILTER_OPTIONS: SelectOption[] = [
-  { label: "인증 전체", value: "" },
-  { label: "성인 인증 완료", value: "true" },
-  { label: "성인 인증 안 함", value: "false" },
-];

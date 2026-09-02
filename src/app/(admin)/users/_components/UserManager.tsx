@@ -30,7 +30,6 @@ import Select from "@/components/ui/Select";
 import Table, { TableCellStack } from "@/components/ui/Table";
 import type { TableColumn } from "@/components/ui/Table";
 import {
-  ADULT_VERIFIED_FILTER_OPTIONS,
   LOGIN_PROVIDER_BADGE_CLASS,
   LOGIN_PROVIDER_LABEL,
   USER_STATUS_FILTER_OPTIONS,
@@ -46,11 +45,6 @@ const USER_CSV_COLUMNS: CsvColumn<User>[] = [
   { header: "이메일", value: (row) => row.email ?? "-" },
   { header: "생년월일", value: (row) => row.birthDate ?? "-" },
   { header: "성별", value: (row) => GENDER_LABEL[row.gender] },
-  { header: "성인 인증", value: (row) => (row.isAdultVerified ? "Y" : "N") },
-  {
-    header: "성인 인증일",
-    value: (row) => formatDate(row.adultVerifiedAt),
-  },
   // 아직 모으지 않는 값은 Y/N 으로 적지 않는다. 내려받은 파일에서 N이 "동의 안 함"으로 읽힌다.
   {
     header: "마케팅 동의",
@@ -82,13 +76,12 @@ const DEFAULT_PARAMS = {
   page: 1,
   keyword: "",
   status: "",
-  isAdultVerified: "",
 };
 
 const UserManager = () => {
   const router = useRouter();
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
-  const { page, keyword, isAdultVerified } = params;
+  const { page, keyword } = params;
   const status = params.status as UserStatus | "";
 
   // 모달은 대상 유저를 상태로 들고 있는 방식으로 하나씩만 연다.
@@ -99,7 +92,6 @@ const UserManager = () => {
     size: DEFAULT_PAGE_SIZE,
     keyword: keyword || undefined,
     status: status || undefined,
-    isAdultVerified: isAdultVerified || undefined,
   });
 
   const { statusMutation } = useUserMutation();
@@ -211,17 +203,6 @@ const UserManager = () => {
       ),
     },
     {
-      key: "adultVerified",
-      header: "성인 인증",
-      align: "center",
-      render: (user) =>
-        user.isAdultVerified ? (
-          <Badge tone="success">인증</Badge>
-        ) : (
-          <Badge tone="neutral">미인증</Badge>
-        ),
-    },
-    {
       key: "provider",
       header: "로그인 수단",
       render: (user) =>
@@ -305,16 +286,6 @@ const UserManager = () => {
               }}
               selectBoxClassName="w-36"
             />
-
-            <Select
-              aria-label="성인 인증 필터"
-              options={ADULT_VERIFIED_FILTER_OPTIONS}
-              value={isAdultVerified}
-              onChange={(event) => {
-                setParams({ isAdultVerified: event.target.value });
-              }}
-              selectBoxClassName="w-40"
-            />
           </div>
         </div>
 
@@ -325,7 +296,7 @@ const UserManager = () => {
           isLoading={isLoading}
           onRowClick={(user) => router.push(`/users/${user.userId}`)}
           emptyTitle="조건에 맞는 유저가 없습니다."
-          emptyDescription="검색어나 상태·인증 필터를 바꿔서 다시 찾아보세요."
+          emptyDescription="검색어나 상태 필터를 바꿔서 다시 찾아보세요."
         />
 
         <Pagination

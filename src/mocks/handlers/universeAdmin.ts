@@ -70,6 +70,17 @@ const ASSET_SITUATIONS: (string | null)[] = [
   "이벤트 한정",
 ];
 
+/**
+ * 목업 크리에이터에 대응하는 유저 ID.
+ *
+ * 실서버는 두 ID를 따로 발급하므로 목업도 값을 어긋나게 둔다 — 같은 값으로 두면
+ * `creatorId`를 유저 링크에 그대로 쓰는 실수를 목업에서 잡지 못한다.
+ * 목록 · 상세 · `userId` 필터가 모두 이 함수 하나를 쓴다.
+ *
+ * 문자열을 이어 붙인다. Snowflake는 `Number`로 더하면 끝자리가 뭉개진다.
+ */
+const mockUserIdOf = (creatorId: string) => `600000000000000000${creatorId}`;
+
 const toItemResponse = (universe: Universe) => ({
   id: String(universe.universeId),
   title: universe.name,
@@ -84,7 +95,7 @@ const toItemResponse = (universe: Universe) => ({
   commentEnabled: universe.commentEnabled,
   creatorId: String(universe.creatorId),
   /* 상세(`toDetailResponse`)와 같은 규칙으로 만든다. 두 화면이 같은 유저를 가리켜야 한다. */
-  userId: String(600000000000000000 + universe.creatorId),
+  userId: mockUserIdOf(universe.creatorId),
   nickname: universe.creatorNickname,
   profileImageFileId: fileIdOf(universe.universeId),
   profileImageUrl: mockProfileImageUrl(universe),
@@ -158,7 +169,7 @@ const toDetailResponse = (universe: Universe) => ({
   id: String(universe.universeId),
   creator: {
     creatorId: String(universe.creatorId),
-    userId: String(600000000000000000 + universe.creatorId),
+    userId: mockUserIdOf(universe.creatorId),
     nickname: universe.creatorNickname,
     grade: "REGULAR",
     status: "APPROVED",
@@ -267,6 +278,11 @@ export const universeAdminHandlers = [
       ["tendency", (universe) => universe.tendency],
       ["commentEnabled", (universe) => String(universe.commentEnabled)],
       ["creatorId", (universe) => String(universe.creatorId)],
+      /*
+        유저 상세의 "세계관" 탭이 쓰는 드릴다운. 유저 화면은 크리에이터 ID를
+        모르므로 userId로 좁힌다 — 응답의 userId와 같은 규칙으로 만들어 비교한다.
+      */
+      ["userId", (universe) => mockUserIdOf(universe.creatorId)],
     ];
     for (const [param, read] of equals) {
       const value = url.searchParams.get(param);
