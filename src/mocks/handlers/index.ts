@@ -7,9 +7,7 @@ import { dashboardHandlers } from "./dashboard";
 import { paymentRecordHandlers } from "./paymentRecord";
 import { reportHandlers } from "./report";
 import { legalHandlers } from "./legal";
-import { mainExposureHandlers } from "./mainExposure";
 import { opsHandlers } from "./ops";
-import { universeHandlers } from "./universe";
 import { universeAdminHandlers } from "./universeAdmin";
 import { searchHandlers } from "./search";
 
@@ -38,10 +36,8 @@ import { searchHandlers } from "./search";
 export const handlers = [
   ...searchHandlers,
   ...dashboardHandlers,
-  ...mainExposureHandlers,
   ...billingProductHandlers,
   ...universeAdminHandlers,
-  ...universeHandlers,
   ...characterHandlers,
   ...commentHandlers,
   ...reportHandlers,

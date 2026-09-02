@@ -1,24 +1,35 @@
-import type { Universe } from "./character";
 import type { ServiceLanguage } from "./language";
 
 /**
- * 큐레이션 슬롯 종류.
- * 세 슬롯 모두 "메인 화면에 노출할 세계관"을 고르는 곳이며,
- * 최대 개수와 후보 필터만 다르다.
+ * 메인 화면 섹션.
+ *
+ * **값은 서버 `HomeSection` enum과 같아야 한다.** 세 섹션 모두 "메인 화면에
+ * 노출할 세계관"을 고르는 곳이며, 최대 개수와 후보 필터만 다르다.
  */
-export type CurationSlotKey = "TODAY_PICK" | "OFFICIAL_TASTE" | "ASSET_RICH";
+export type HomeSectionKey =
+  | "TODAY_PICK"
+  | "OFFICIAL_PREVIEW"
+  | "ASSET_PREVIEW";
 
-export interface CurationSlotConfig {
-  slotKey: CurationSlotKey;
+/**
+ * 섹션에 편성하는 대상 종류.
+ *
+ * 지금 어드민이 편성하는 것은 세계관뿐이지만, 서버는 대상을
+ * `target_type` + `target_id`로 가리켜 캐릭터도 받을 수 있게 두었다.
+ */
+export type HomeSectionTargetType = "UNIVERSE" | "CHARACTER";
+
+export interface HomeSectionConfig {
+  section: HomeSectionKey;
   label: string;
-  /** 선택 가능한 최대 세계관 수 */
+  /** 편성할 수 있는 최대 세계관 수. **언어 하나당 개수다.** */
   maxCount: number;
-  /** 후보 목록을 공식 세계관으로 제한할지 여부 */
+  /** 후보 목록을 공식 계정의 세계관으로 제한할지 여부 */
   officialOnly: boolean;
-  /** 후보 목록 기본 정렬 */
-  defaultSort: "RECENT" | "ASSET_COUNT" | "CHAT_COUNT";
+  /** 후보 목록 기본 정렬. 서버 `UniverseOrderBy` 값이다. */
+  defaultOrder: "CREATED_DESC" | "CHAT_DESC" | "LIKE_DESC";
   /**
-   * 여기서 저장한 목록이 앱에서 나가는 자리.
+   * 여기서 편성한 목록이 앱에서 나가는 자리.
    *
    * 운영 데이터의 원본은 어드민이고, 메인 서버가 이 목록을 가져가 홈에 뿌린다.
    * "저장하면 앱 어디가 바뀌나"를 화면에서 바로 알 수 있어야 해서 함께 둔다.
@@ -31,32 +42,37 @@ export interface CurationSlotConfig {
   };
 }
 
-/** 큐레이션 슬롯에 담긴 세계관 1건 */
-export interface CurationItem {
-  universeId: number;
-  order: number;
-  universe: Universe;
-}
-
 /**
- * 큐레이션 슬롯 1개 = **슬롯 × 언어** 한 칸.
+ * 편성 목록 한 줄.
  *
- * 같은 `TODAY_PICK`이라도 한국어 목록과 영어 목록은 서로 다른 자료다.
- * 앱이 `?lang=EN`으로 가져가는 목록이 곧 이 칸이다.
+ * **세계관 ID가 아니라 편성 행의 ID(`homeSectionId`)가 열쇠다.** 해제 · 순서
+ * 저장이 모두 이 값을 쓴다. 같은 세계관이라도 언어가 다르면 다른 행이다.
  */
-export interface CurationSlot {
-  slotKey: CurationSlotKey;
-  language: ServiceLanguage;
-  items: CurationItem[];
-  updatedAt: string;
-  updatedBy: string;
-  /** 수정 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
-  updatedById?: number;
-}
-
-/** 큐레이션 저장 요청. 언어는 경로/쿼리로 따로 넘긴다. */
-export interface UpdateCurationRequest {
-  universeIds: number[];
+export interface HomeSectionItem {
+  homeSectionId: string;
+  targetType: HomeSectionTargetType;
+  targetId: string;
+  targetName: string;
+  profileImageFileId: string | null;
+  sortOrder: number;
+  /**
+   * 맛보기로 실을 회차.
+   *
+   * **`OFFICIAL_PREVIEW`에서만 쓴다.** 세계관만 고르면 앱이 어느 회차를 실어야
+   * 할지 알 수 없어 운영이 직접 지목한다. 아직 고르지 않았으면 null이다.
+   */
+  scenarioId: string | null;
+  /** 회차 제목. 그 언어 번역이 없으면 한국어, 그것도 없으면 "n화"로 온다. */
+  scenarioTitle: string | null;
+  /**
+   * 지금 실제로 앱에 나가는가.
+   *
+   * 편성돼 있어도 대상이 삭제 · 비공개 · 심사 미통과면 그 자리는 빈다.
+   * 서버가 편성 행을 지우지 않는 이유는 되돌아오는 상태이기 때문이다.
+   */
+  exposed: boolean;
+  /** 나가지 않는 이유. `exposed`가 false일 때만 온다. */
+  hiddenReason: string | null;
 }
 
 /**
