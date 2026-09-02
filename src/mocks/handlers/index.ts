@@ -1,4 +1,3 @@
-import { auditLogHandlers } from "./auditLog";
 import { billingHandlers } from "./billing";
 import { billingProductHandlers } from "./billingProduct";
 import { characterHandlers } from "./character";
@@ -26,15 +25,17 @@ import { searchHandlers } from "./search";
  * 연동이 끝난 도메인은 목업을 걷어냈다 — 해시태그 · 금지어 · 크레딧 조정 · 장부 ·
  * 시스템 프롬프트(`/admin/ai/prompts`) · AI 모델(`/admin/ai/models`) ·
  * 공지사항(`/admin/notices`) · 유저(`/admin/users`) ·
- * 공식 계정(`/admin/official-accounts`)은 실서버로 그대로 나간다.
+ * 공식 계정(`/admin/official-accounts`) · 로그(`/admin/logs/**`)는 실서버로 그대로 나간다.
+ *
+ * 관리자 활동 로그는 목업이 모든 변경 요청을 가로채 직접 쌓았지만, 이제 서버가
+ * 요청 길목에서 남긴다. 목업이 실서버로 나간 요청은 애초에 보지도 못했으므로
+ * 가로채는 핸들러째로 걷어냈다.
  *
  * 유저와 공식 계정은 핸들러만 지우고 **`db/user.ts` · `db/official.ts` 는 남겼다.**
  * 전역 검색(⌘K) · 캐릭터 · 댓글 · 신고 · 결제 목업이 전부 그 씨앗에서 유저를
  * 빌려 쓰고, 목업 캐릭터·세계관의 공식 뱃지는 `db/official.ts` 가 계산한다.
  */
 export const handlers = [
-  // 감사 로그는 모든 변경 요청을 먼저 가로채야 하므로 항상 맨 앞에 둔다.
-  ...auditLogHandlers,
   ...searchHandlers,
   ...dashboardHandlers,
   ...mainExposureHandlers,

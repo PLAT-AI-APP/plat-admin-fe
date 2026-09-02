@@ -1,19 +1,10 @@
 import { HttpResponse, delay, http } from "msw";
-import {
-  type AppVersion,
-  type AppVersionFormValues,
-  type AuditResult,
-  type SystemEventLevel,
-} from "@/type/ops";
-import {
-  adminAuditLogs,
-  appVersions,
-  systemEventLogs,
-} from "../db/ops";
+import { type AppVersion, type AppVersionFormValues } from "@/type/ops";
+import { appVersions } from "../db/ops";
 import { comments } from "../db/comment";
 import { qnaItems } from "../db/communication";
 import { reports } from "../db/report";
-import { MOCK_DELAY_MS, matchesKeyword, nextId, paginate } from "../utils";
+import { MOCK_DELAY_MS, nextId } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
@@ -104,75 +95,4 @@ export const opsHandlers = [
     },
   ),
 
-  /* ---------------------------------------------------------------------
-   * 운영 로그
-   * ------------------------------------------------------------------ */
-
-  /* ---------------------------------------------------------------------
-   * 관리자 활동 로그(감사)
-   * ------------------------------------------------------------------ */
-
-  http.get(`${BASE_URI}/admin/logs/admin`, async ({ request }) => {
-    const url = new URL(request.url);
-    const keyword = url.searchParams.get("keyword") ?? "";
-    const domain = url.searchParams.get("domain") ?? "";
-    const result = url.searchParams.get("result") ?? "";
-    const actorId = url.searchParams.get("actorId") ?? "";
-
-    const filtered = adminAuditLogs.filter((log) => {
-      if (domain && log.domain !== domain) return false;
-      if (result && log.result !== (result as AuditResult)) return false;
-      if (actorId && String(log.actorId ?? "") !== actorId) return false;
-
-      return matchesKeyword(
-        keyword,
-        log.message,
-        log.action,
-        log.actor,
-        log.targetType ?? "",
-        log.targetId ?? "",
-      );
-    });
-
-    // 최신 로그가 위에 오도록 정렬한다.
-    const sorted = [...filtered].sort((a, b) =>
-      b.createdAt.localeCompare(a.createdAt),
-    );
-
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(paginate(sorted, url));
-  }),
-
-  /* ---------------------------------------------------------------------
-   * 시스템 이벤트
-   * ------------------------------------------------------------------ */
-
-  http.get(`${BASE_URI}/admin/logs/system`, async ({ request }) => {
-    const url = new URL(request.url);
-    const keyword = url.searchParams.get("keyword") ?? "";
-    const level = url.searchParams.get("level") ?? "";
-    const source = url.searchParams.get("source") ?? "";
-
-    const filtered = systemEventLogs.filter((event) => {
-      if (level && event.level !== (level as SystemEventLevel)) return false;
-      if (source && event.source !== source) return false;
-
-      return matchesKeyword(
-        keyword,
-        event.message,
-        event.source,
-        event.traceId ?? "",
-      );
-    });
-
-    // 마지막 발생이 최근인 것부터 본다. 지금 터지고 있는 것이 위에 와야 한다.
-    const sorted = [...filtered].sort((a, b) =>
-      b.lastOccurredAt.localeCompare(a.lastOccurredAt),
-    );
-
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(paginate(sorted, url));
-  }),
 ];
