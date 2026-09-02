@@ -206,7 +206,7 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 
 | tone | 용도 |
 |---|---|
-| `info` | 기능 설명, MVP 제외 안내 |
+| `info` | 기능 설명, 운영 안내 |
 | `warning` | 주의가 필요한 상태 |
 | `danger` | 실패·장애 |
 | `success` | 완료 상태 |
@@ -271,7 +271,7 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 | 1뎁스 활성(하위 포함) | `text-brand font-semibold` |
 | 2뎁스 기본 | `text-font-2 hover:bg-surface-hover hover:text-font-1` |
 | 2뎁스 활성 | `bg-surface-selected text-brand font-semibold` |
-| MVP 제외 배지 | `Badge tone="neutral"` |
+| MOCK 배지 | `Badge tone="neutral"` |
 
 - 현재 경로가 속한 1뎁스는 **자동으로 펼쳐진다.**
 - 펼침 상태는 `useSidebarStore`(zustand)에 저장해 라우팅 간 유지한다.
