@@ -40,12 +40,10 @@ export interface AdminMenuItem {
   icon?: ReactNode;
   /** 이 메뉴를 보려면 필요한 권한. 없으면 누구나 본다. */
   permission?: PermissionKey;
-  /** MVP 범위에서 제외된 기능. 메뉴에 배지로 표시한다. */
-  isExcludedFromMvp?: boolean;
   /**
    * 화면만 만들어 둔 MOCK 기능.
    *
-   * **지금은 다른 도구로 운영 중이라 MVP에서 구현하지 않는다.**
+   * **아직 실서버에 붙지 않았거나 다른 도구로 운영 중이라 구현하지 않는다.**
    * 메뉴에서 지우면 나중에 왜 없는지 아무도 모르고, 배지 없이 두면
    * 저장한 값이 실제로 반영되는 줄 안다.
    */
@@ -93,6 +91,8 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     icon: <Dashboard size={ICON_SIZE} />,
     href: "/",
     permission: "dashboard:read",
+    /* 집계 지표를 아직 실서버가 내려주지 않는다. 화면은 지표가 붙을 때를 위해 남겨 둔다. */
+    isMock: true,
   },
   {
     key: "main-exposure",
@@ -146,6 +146,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/universes/characters",
         permission: "character:read",
         icon: <Robot size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
       {
         label: "공식 계정",
@@ -170,6 +171,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/universes/chat-exports",
         permission: "chatExport:read",
         icon: <Download size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
     ],
   },
@@ -191,7 +193,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         pendingKey: "report",
         permission: "report:read",
         icon: <Flag size={SUB_ICON_SIZE} />,
-        isExcludedFromMvp: true,
+        isMock: true,
       },
     ],
   },
@@ -218,6 +220,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/ai/catalog",
         permission: "aiModel:read",
         icon: <Cpu size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
       {
         label: "AI 모델 관리",
@@ -249,6 +252,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/billing/credit-policies",
         permission: "creditPolicy:read",
         icon: <Sliders size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
       {
         label: "크레딧 수동 조정",
@@ -293,27 +297,28 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         pendingKey: "qna",
         permission: "qna:read",
         icon: <QuestionCircle size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
       {
         label: "알림 관리",
         href: "/communication/notifications",
         permission: "notification:read",
         icon: <Bell size={SUB_ICON_SIZE} />,
-        isExcludedFromMvp: true,
+        isMock: true,
       },
       {
         label: "선제 메시지",
         href: "/communication/proactive-messages",
         permission: "notification:read",
         icon: <MessageSquare size={SUB_ICON_SIZE} />,
-        isExcludedFromMvp: true,
+        isMock: true,
       },
       {
         label: "푸시 발송",
         href: "/communication/push",
         permission: "push:read",
         icon: <Megaphone size={SUB_ICON_SIZE} />,
-        isExcludedFromMvp: true,
+        isMock: true,
       },
     ],
   },

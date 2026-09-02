@@ -24,7 +24,8 @@ interface CommandItem {
   permission?: PermissionKey;
   /** 1뎁스 라벨. 같은 이름의 2뎁스를 구분하기 위해 함께 보여준다. */
   groupLabel: string;
-  isExcludedFromMvp: boolean;
+  /** 화면만 있는 MOCK 기능. 사이드바와 같은 배지를 붙인다. */
+  isMock: boolean;
   /** 검색 대상 문자열 (라벨 + 그룹 + 경로). 데이터 결과는 서버가 걸러서 비어 있다. */
   keywords: string;
   /** 데이터 결과의 보조 설명 (이메일, 캐릭터명 등) */
@@ -49,7 +50,7 @@ const buildCommandItems = (): CommandItem[] =>
           label: group.label,
           groupLabel: group.label,
           permission: group.permission,
-          isExcludedFromMvp: false,
+          isMock: Boolean(group.isMock),
           keywords: `${group.label} ${group.href}`,
         },
       ];
@@ -60,7 +61,7 @@ const buildCommandItems = (): CommandItem[] =>
       label: child.label,
       groupLabel: group.label,
       permission: child.permission,
-      isExcludedFromMvp: Boolean(child.isExcludedFromMvp),
+      isMock: Boolean(child.isMock),
       keywords: `${child.label} ${group.label} ${child.href}`,
     }));
   });
@@ -114,7 +115,7 @@ const CommandPalette = () => {
         href: item.href,
         label: item.title,
         groupLabel: SEARCH_TYPE_LABEL[item.type],
-        isExcludedFromMvp: false,
+        isMock: false,
         description: item.description,
         keywords: "",
       })),
@@ -258,9 +259,9 @@ const CommandPalette = () => {
                   </span>
                 )}
 
-                {item.isExcludedFromMvp && (
+                {item.isMock && (
                   <Badge tone="neutral" className="px-1.5 py-0.5 caption-3">
-                    MVP 제외
+                    MOCK
                   </Badge>
                 )}
               </button>

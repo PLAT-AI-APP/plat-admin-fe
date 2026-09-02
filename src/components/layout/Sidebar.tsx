@@ -159,15 +159,6 @@ const Sidebar = () => {
                         MOCK
                       </Badge>
                     )}
-
-                    {item.isExcludedFromMvp && (
-                      <Badge
-                        tone="neutral"
-                        className="px-1.5 py-0.5 caption-3"
-                      >
-                        MVP 제외
-                      </Badge>
-                    )}
                   </Link>
                 </li>
               );

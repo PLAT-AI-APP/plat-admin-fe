@@ -223,7 +223,7 @@ const ReportManager = () => {
 
   return (
     <>
-      <Alert tone="warning" title="MVP 제외 기능">
+      <Alert tone="warning" title="MOCK 화면 · 아직 실제 운영에 반영되지 않습니다">
         현재 운영에서는 Discord로 처리합니다. 화면은 이후 전환을 위해 미리
         구현해 두었습니다.
       </Alert>
