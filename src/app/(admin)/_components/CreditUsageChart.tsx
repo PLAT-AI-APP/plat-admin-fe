@@ -7,6 +7,9 @@ import Card from "@/components/ui/Card";
 
 interface CreditUsageChartProps {
   creditUsage: DashboardSummary["creditUsage"];
+  /** 합계가 어느 구간의 값인지. 추이 차트와 같은 구간을 쓴다. */
+  windowDays: number;
+  className?: string;
 }
 
 /** 사용처 색상. 상태 색과 겹치지 않도록 브랜드 → 정보 → 성공 순으로 배분한다. */
@@ -26,11 +29,19 @@ const TOOLTIP_CONTENT_STYLE = {
   fontSize: 13,
 } as const;
 
-const CreditUsageChart = ({ creditUsage }: CreditUsageChartProps) => {
+const CreditUsageChart = ({
+  creditUsage,
+  windowDays,
+  className,
+}: CreditUsageChartProps) => {
   const total = creditUsage.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <Card title="크레딧 사용처" description={`최근 30일 · 총 ${formatCredit(total)}`}>
+    <Card
+      className={className}
+      title="크레딧 사용처"
+      description={`최근 ${windowDays}일 · 총 ${formatCredit(total)}`}
+    >
       <div className="h-[180px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>

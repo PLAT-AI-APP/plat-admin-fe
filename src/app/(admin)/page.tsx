@@ -6,7 +6,7 @@ export default function DashboardPage() {
     <>
       <PageHeader
         title="대시보드"
-        description="서비스 상태, 유저, 캐릭터, 결제, 크레딧 현황을 한 화면에서 확인합니다."
+        description="서비스 상태, 유저, 세계관, 결제, 크레딧 현황을 한 화면에서 확인합니다."
       />
 
       <DashboardOverview />
