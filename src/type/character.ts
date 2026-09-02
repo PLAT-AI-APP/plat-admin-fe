@@ -304,6 +304,13 @@ export interface AdminUniverseListItem {
   visibility: UniverseVisibility;
   status: UniverseStatus;
   reviewStatus: UniverseReviewStatus;
+  /**
+   * 제작자가 공식 계정인가.
+   *
+   * **세계관이 들고 있는 값이 아니라 공식 계정 지정에서 계산되는 값이다.**
+   * 지정을 해제하면 이 값도 함께 내려간다.
+   */
+  isOfficial: boolean;
   chatCount: number;
   likeCount: number;
   commentEnabled: boolean;

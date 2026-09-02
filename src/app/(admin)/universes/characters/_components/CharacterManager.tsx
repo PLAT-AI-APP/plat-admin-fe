@@ -182,17 +182,6 @@ const CharacterManager = () => {
       ),
     },
     {
-      key: "official",
-      header: "공식 여부",
-      align: "center",
-      render: (row) =>
-        row.isOfficial ? (
-          <Badge tone="brand">공식</Badge>
-        ) : (
-          <Badge tone="neutral">일반</Badge>
-        ),
-    },
-    {
       key: "visibility",
       header: "노출 상태",
       align: "center",
@@ -215,17 +204,6 @@ const CharacterManager = () => {
           {CHARACTER_STATUS_LABEL[row.status]}
         </Badge>
       ),
-    },
-    {
-      key: "nsfw",
-      header: "NSFW",
-      align: "center",
-      render: (row) =>
-        row.isNsfw ? (
-          <Badge tone="danger">NSFW</Badge>
-        ) : (
-          <span className="body-5 text-font-disabled">-</span>
-        ),
     },
     {
       key: "universeCount",

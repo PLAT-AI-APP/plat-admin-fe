@@ -124,6 +124,20 @@ export const UNIVERSE_TENDENCY_LABEL: Record<UniverseTendency, string> = {
   FEMALE_ORIENTED: "여성향",
 };
 
+/**
+ * 성향 표시색.
+ *
+ * 성향은 값이 셋뿐이고 거의 바뀌지 않아, 표에서 한 칸을 차지할 만한 정보가
+ * 아니다. 제목 옆 점 하나로 구분하고 칸은 지표에 내준다. 뱃지 톤(`BadgeTone`)이
+ * 아니라 색값을 직접 두는 이유는, 이 색이 상태(성공·경고)를 뜻하지 않고
+ * 성향끼리만 구분하면 되는 분류색이기 때문이다.
+ */
+export const UNIVERSE_TENDENCY_COLOR: Record<UniverseTendency, string> = {
+  ALL: "#AA8BD8",
+  MALE_ORIENTED: "#60A5FA",
+  FEMALE_ORIENTED: "#F472B6",
+};
+
 /** 보드 필터/정렬 옵션. 서버 실목록(liveAxios)이 받는 값과 이름을 맞춘다. */
 export const UNIVERSE_CATEGORY_FILTER_OPTIONS: SelectOption[] = [
   { label: "장르 전체", value: "" },

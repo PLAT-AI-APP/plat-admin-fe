@@ -2,19 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import {
+  useAdminUniverseCountQuery,
   useAdminUniverseListQuery,
   type AdminUniverseListParams,
   type UniverseOrder,
 } from "@/api/universe/getAdminUniverseList";
 import { useListParams } from "@/hooks/useListParams";
-import { ExternalLink, Eye, Refresh, Search, Users, Warning } from "@/icons";
+import { ExternalLink, Refresh, Users, Warning } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDate } from "@/lib/dayjs";
 import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatStatCount, formatWithCommas } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { AdminUniverseListItem } from "@/type/character";
-import { SERVICE_LANGUAGES } from "@/type/language";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -34,15 +34,17 @@ import {
   UNIVERSE_ORDER_OPTIONS,
   UNIVERSE_REVIEW_FILTER_OPTIONS,
   UNIVERSE_REVIEW_LABEL,
-  UNIVERSE_REVIEW_TONE,
   UNIVERSE_STATUS_FILTER_OPTIONS,
   UNIVERSE_STATUS_LABEL,
-  UNIVERSE_STATUS_TONE,
   UNIVERSE_TENDENCY_LABEL,
   UNIVERSE_VISIBILITY_FILTER_OPTIONS,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
 } from "../_constants/character";
+import UniverseStateBadge from "./UniverseStateBadge";
+import UniverseTendencyDot, {
+  UniverseTendencyLegend,
+} from "./UniverseTendencyDot";
 
 /** 주소에 실리는 목록 조건. 전역 검색(⌘K)이 넘겨 주는 keyword도 여기로 들어온다. */
 const DEFAULT_PARAMS = {
@@ -107,17 +109,30 @@ const COMMENT_FILTER_OPTIONS: SelectOption[] = [
 /* 업무 흐름 탭                                                          */
 /* ------------------------------------------------------------------ */
 
-type BoardTab = "ALL" | "REVIEW" | "ACTIVE";
+/** 심사 대기 숫자의 신선도. 방금 처리한 건이 탭에 남아 있으면 안 된다. */
+const PENDING_COUNT_STALE_TIME = 1000 * 60;
+
+type BoardTab = "ALL" | "PENDING" | "REJECTED" | "INACTIVE";
 
 /** 탭 프리셋 어디에도 없는 조합. 탭 목록에 없으므로 아무 탭도 켜지지 않는다. */
 type BoardTabValue = BoardTab | "CUSTOM";
 
-/** 탭이 정하는 것은 상태 · 심사 두 축뿐이다. 나머지 필터는 탭과 무관하게 유지된다. */
+/**
+ * 탭이 정하는 것은 상태 · 심사 두 축뿐이다. 나머지 필터는 탭과 무관하게 유지된다.
+ *
+ * "운영 중"처럼 정상인 것을 모아 보는 탭은 두지 않는다. 목록의 대부분이 그것이라
+ * 전체 탭과 거의 같은 화면이 되고, 이제는 상태 뱃지가 한 칸에서 같은 말을 한다.
+ * 탭은 **조치가 필요한 쪽**만 남긴다.
+ *
+ * 반려 탭과 비활성 탭은 겹칠 수 있다(반려된 채 내려둔 세계관). 두 축이 서로
+ * 독립이라 생기는 일이고, 어느 쪽으로 찾아도 나오는 편이 운영에 낫다.
+ */
 const TAB_FILTERS: Record<BoardTab, { status: string; reviewStatus: string }> =
   {
     ALL: { status: "", reviewStatus: "" },
-    REVIEW: { status: "", reviewStatus: "PENDING" },
-    ACTIVE: { status: "ACTIVE", reviewStatus: "" },
+    PENDING: { status: "", reviewStatus: "PENDING" },
+    REJECTED: { status: "", reviewStatus: "REJECTED" },
+    INACTIVE: { status: "INACTIVE", reviewStatus: "" },
   };
 
 /**
@@ -127,7 +142,7 @@ const TAB_FILTERS: Record<BoardTab, { status: string; reviewStatus: string }> =
  * 주소가 조건의 원본이어야 하기 때문이다. 탭 파라미터를 따로 두면 상세에서
  * 넘어온 주소나 필터 Select로 만든 조합과 탭이 어긋난다.
  *
- * 어느 탭에도 해당하지 않는 조합(예: 심사 반려, 비활성)이면 `CUSTOM`이다.
+ * 어느 탭에도 해당하지 않는 조합(예: 심사 승인 + 비활성)이면 `CUSTOM`이다.
  * 이때는 **아무 탭도 켜지지 않는다** — 없는 탭을 켜 두는 것보다 정직하다.
  */
 const resolveTab = (status: string, reviewStatus: string): BoardTabValue => {
@@ -144,14 +159,11 @@ const resolveTab = (status: string, reviewStatus: string): BoardTabValue => {
   return found?.[0] ?? "CUSTOM";
 };
 
-/** 서비스 언어 수. 번역이 이 수에 못 미치면 아직 다 번역되지 않은 세계관이다. */
-const TOTAL_LANGUAGE_COUNT = SERVICE_LANGUAGES.length;
-
 /**
  * 세계관 관리 보드(실서버 plat-admin).
  *
- * 큐레이션 후보 피커·공식 패널이 쓰는 목업 목록(`useUniverseListQuery`)과 달리
- * 실서버 목록을 쓴다. 행을 누르면 같은 실 ID로 상세가 열린다.
+ * 후보 피커 · 공식 패널과 같은 실서버 목록(`useAdminUniverseListQuery`)을 쓴다.
+ * 행을 누르면 같은 실 ID로 상세가 열린다.
  */
 const UniverseBoard = () => {
   const router = useRouter();
@@ -184,22 +196,34 @@ const UniverseBoard = () => {
     });
 
   /*
-    심사 대기 건수는 다른 필터와 무관한 "밀린 일의 양"이라 조건 없이 따로 센다.
-    개수만 필요하므로 한 건만 받아 totalCount를 읽는다.
+    탭 숫자. 화면 필터와 무관한 전체 건수이고, 목록보다 오래 묵혀 쓴다.
+
+    심사 대기만 짧게 잡는다. 운영자가 상세에서 승인 · 반려하고 돌아오면 곧바로
+    줄어야 하는 숫자다. 반려 · 비활성은 쌓여 있는 값이라 오래 묵혀도 된다.
   */
-  const { data: pendingData } = useAdminUniverseListQuery({
-    page: 1,
-    size: 1,
-    reviewStatus: "PENDING",
+  const { data: pendingCount } = useAdminUniverseCountQuery(
+    { reviewStatus: "PENDING" },
+    PENDING_COUNT_STALE_TIME,
+  );
+  const { data: rejectedCount } = useAdminUniverseCountQuery({
+    reviewStatus: "REJECTED",
+  });
+  const { data: inactiveCount } = useAdminUniverseCountQuery({
+    status: "INACTIVE",
   });
 
   const rows = data?.content ?? [];
   const activeTab = resolveTab(params.status, params.reviewStatus);
 
+  /*
+    개수가 아직 안 온 탭은 숫자를 비워 둔다(`undefined`). 0을 먼저 그리면
+    "없다"로 읽혔다가 뒤늦게 숫자가 튀어 오른다.
+  */
   const tabs: TabItem<BoardTabValue>[] = [
     { label: "전체", value: "ALL" },
-    { label: "심사 대기", value: "REVIEW", count: pendingData?.totalCount },
-    { label: "운영 중", value: "ACTIVE" },
+    { label: "심사 대기", value: "PENDING", count: pendingCount },
+    { label: "반려", value: "REJECTED", count: rejectedCount },
+    { label: "비활성", value: "INACTIVE", count: inactiveCount },
   ];
 
   const clearDrilldown = () => setParams({ creatorId: "", hashtagId: "" });
@@ -216,23 +240,16 @@ const UniverseBoard = () => {
   */
   const openUser = (userId: string) => router.push(`/users/${userId}`);
 
-  /** 행 액션. 행 클릭(상세 이동)과 겹치지 않도록 셀에서 클릭을 멈춘다. */
+  /*
+    행 액션. 행을 누르면 상세로 가고 제작자 닉네임을 누르면 유저 상세로 가므로,
+    같은 일을 하는 항목은 메뉴에 두지 않는다. 여기 남는 것은 클릭만으로는 못
+    하는 일뿐이다. 메뉴 클릭이 행 클릭으로 새지 않도록 셀에서 클릭을 멈춘다.
+  */
   const buildRowActions = (row: AdminUniverseListItem): DropdownItem[] => [
-    {
-      label: "상세 보기",
-      icon: <Eye size={15} />,
-      onSelect: () => openDetail(row.universeId),
-    },
     {
       label: "이 제작자의 세계관",
       icon: <Users size={15} />,
       onSelect: () => setParams({ creatorId: row.creatorId }),
-    },
-    {
-      label: "제작자 유저 상세",
-      icon: <Search size={15} />,
-      disabled: !row.userId,
-      onSelect: () => row.userId && openUser(row.userId),
     },
     {
       label: "새 탭에서 열기",
@@ -271,8 +288,22 @@ const UniverseBoard = () => {
           />
 
           <div className="min-w-0">
-            <p className="title-5 truncate text-font-1">{row.title}</p>
-            <p className="body-6 mt-0.5 truncate text-font-2">{row.introduce}</p>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <UniverseTendencyDot tendency={row.tendency} />
+              {/*
+                공식 마크는 성향 점과 제목 사이에 둔다. 제목 뒤에 붙이면 긴
+                제목이 잘릴 때 마크까지 함께 잘려, 공식인 줄을 못 알아본다.
+              */}
+              {row.isOfficial && (
+                <Badge tone="brand" className="shrink-0 px-1.5 py-0.5 caption-3">
+                  공식
+                </Badge>
+              )}
+              <p className="title-5 truncate text-font-1">{row.title}</p>
+            </div>
+            <p className="body-6 mt-0.5 truncate text-font-2">
+              {row.introduce}
+            </p>
             <p className="caption-3 mt-0.5 text-font-disabled tabular-nums">
               #{row.universeId}
             </p>
@@ -314,27 +345,6 @@ const UniverseBoard = () => {
       },
     },
     {
-      /* 세계관 하나는 장르를 하나만 가진다. 한 칸에 하나만 적는다. */
-      key: "category",
-      header: "장르",
-      align: "center",
-      render: (row) => (
-        <span className="body-5 text-font-2">
-          {UNIVERSE_CATEGORY_LABEL[row.category]}
-        </span>
-      ),
-    },
-    {
-      key: "tendency",
-      header: "성향",
-      align: "center",
-      render: (row) => (
-        <span className="body-5 text-font-2">
-          {UNIVERSE_TENDENCY_LABEL[row.tendency]}
-        </span>
-      ),
-    },
-    {
       key: "visibility",
       header: "공개 범위",
       align: "center",
@@ -345,52 +355,15 @@ const UniverseBoard = () => {
       ),
     },
     {
-      key: "reviewStatus",
-      header: "심사",
-      align: "center",
-      render: (row) => (
-        <Badge tone={UNIVERSE_REVIEW_TONE[row.reviewStatus]}>
-          {UNIVERSE_REVIEW_LABEL[row.reviewStatus]}
-        </Badge>
-      ),
-    },
-    {
-      key: "status",
+      /* 심사 · 상태를 한 칸으로. 두 축은 서버에서 독립이라 값이 아니라 표시만 합친다. */
+      key: "state",
       header: "상태",
       align: "center",
       render: (row) => (
-        <Badge tone={UNIVERSE_STATUS_TONE[row.status]}>
-          {UNIVERSE_STATUS_LABEL[row.status]}
-        </Badge>
-      ),
-    },
-    {
-      key: "commentEnabled",
-      header: "댓글",
-      align: "center",
-      render: (row) =>
-        row.commentEnabled ? (
-          <span className="body-5 text-font-2">허용</span>
-        ) : (
-          <span className="body-5 text-font-disabled">불가</span>
-        ),
-    },
-    {
-      key: "translationCount",
-      header: "번역",
-      align: "center",
-      render: (row) => (
-        // 6개 언어가 다 차지 않은 세계관은 앱에서 한국어로 대체 노출된다.
-        <span
-          className={
-            row.translationCount >= TOTAL_LANGUAGE_COUNT
-              ? "body-5 text-font-2 tabular-nums"
-              : "body-5 text-warning tabular-nums"
-          }
-          title="번역이 없는 언어는 앱에서 한국어로 대체됩니다."
-        >
-          {row.translationCount}/{TOTAL_LANGUAGE_COUNT}
-        </span>
+        <UniverseStateBadge
+          status={row.status}
+          reviewStatus={row.reviewStatus}
+        />
       ),
     },
     {
@@ -433,7 +406,10 @@ const UniverseBoard = () => {
     },
   ];
 
-  /** CSV 컬럼은 표와 같은 순서로 둔다. 내려받은 파일이 화면과 어긋나지 않게 한다. */
+  /*
+    CSV는 표에서 뺀 값(댓글 허용 여부 등)까지 담는다. 화면은 훑어보는 곳이고
+    내려받은 파일은 걸러 내고 세는 곳이라, 열이 더 많아도 방해가 되지 않는다.
+  */
   const csvColumns: CsvColumn<AdminUniverseListItem>[] = [
     { header: "ID", value: (row) => row.universeId },
     { header: "제목", value: (row) => row.title },
@@ -442,6 +418,7 @@ const UniverseBoard = () => {
     { header: "제작자 ID", value: (row) => row.creatorId },
     { header: "장르", value: (row) => UNIVERSE_CATEGORY_LABEL[row.category] },
     { header: "성향", value: (row) => UNIVERSE_TENDENCY_LABEL[row.tendency] },
+    { header: "공식", value: (row) => (row.isOfficial ? "Y" : "N") },
     {
       header: "공개 범위",
       value: (row) => UNIVERSE_VISIBILITY_LABEL[row.visibility],
@@ -449,10 +426,6 @@ const UniverseBoard = () => {
     { header: "심사", value: (row) => UNIVERSE_REVIEW_LABEL[row.reviewStatus] },
     { header: "상태", value: (row) => UNIVERSE_STATUS_LABEL[row.status] },
     { header: "댓글", value: (row) => (row.commentEnabled ? "허용" : "불가") },
-    {
-      header: "번역",
-      value: (row) => `${row.translationCount}/${TOTAL_LANGUAGE_COUNT}`,
-    },
     // CSV는 원본 숫자를 담는다. 축약값을 담으면 스프레드시트에서 합계를 못 낸다.
     { header: "대화 수", value: (row) => row.chatCount },
     { header: "좋아요 수", value: (row) => row.likeCount },
@@ -480,8 +453,8 @@ const UniverseBoard = () => {
         >
           {creatorId && <>제작자 #{creatorId}의 세계관</>}
           {creatorId && hashtagId && " · "}
-          {hashtagId && <>해시태그 #{hashtagId}가 붙은 세계관</>}
-          만 조회하는 중입니다.
+          {hashtagId && <>해시태그 #{hashtagId}가 붙은 세계관</>}만 조회하는
+          중입니다.
         </Alert>
       )}
 
@@ -500,7 +473,7 @@ const UniverseBoard = () => {
       >
         {/*
           업무 흐름 탭. 탭이 정하는 것은 상태 · 심사뿐이고, 어느 탭에도 없는
-          조합(심사 반려 · 비활성)을 필터로 만들면 아무 탭도 켜지지 않는다.
+          조합(예: 심사 승인 + 비활성)을 필터로 만들면 아무 탭도 켜지지 않는다.
         */}
         <Tabs
           items={tabs}
@@ -579,6 +552,9 @@ const UniverseBoard = () => {
             />
           </div>
         </div>
+
+        {/* 제목 앞 점이 무슨 뜻인지 표를 보기 전에 알려 준다. */}
+        <UniverseTendencyLegend className="border-b border-border-main px-5 py-2.5" />
 
         {/*
           조회 실패를 빈 목록으로 보여 주면 "조건에 맞는 세계관이 없다"로 읽혀
