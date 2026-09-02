@@ -62,7 +62,7 @@ const pickTarget = (seed: number, targetType: CommentTargetType) => {
  * 각 댓글의 reportCount로 되돌려 준다. 그래야 댓글의 "신고 N"과
  * 신고 관리의 "누적 신고"가 같은 수를 가리킨다.
  */
-export const reportableCommentIds: number[] = [];
+export const reportableCommentIds: string[] = [];
 
 export const comments: Comment[] = Array.from({ length: 64 }, (_, index) => {
   const seed = index + 1;
@@ -81,7 +81,7 @@ export const comments: Comment[] = Array.from({ length: 64 }, (_, index) => {
       : "VISIBLE";
 
   const isHandled = status === "HIDDEN";
-  const commentId = 64 - index;
+  const commentId = String(64 - index);
   const createdDaysAgo = Math.floor(index / 2);
   const handler = pickManager(seed * 17);
 
@@ -93,23 +93,24 @@ export const comments: Comment[] = Array.from({ length: 64 }, (_, index) => {
     targetId: target.targetId,
     targetName: target.targetName,
     // 4건 중 1건은 대댓글로 만든다.
-    parentCommentId: index % 4 === 2 ? commentId + 1 : undefined,
+    parentCommentId: index % 4 === 2 ? String(65 - index) : null,
     content: isReported
       ? pickOne(seed * 7, REPORTED_CONTENTS)
       : pickOne(seed * 7, COMMENT_CONTENTS),
     authorId: author.userId,
     authorNickname: author.nickname,
     status,
+    // 목업은 직접 내린 건만 만든다. 연쇄 숨김은 서버 조치에서만 생긴다.
+    cascaded: false,
     // 실제 신고 건수는 db/report가 채운다.
     reportCount: 0,
     likeCount: randomInt(seed * 11, 0, 320),
-    hiddenReason: isHandled ? pickOne(seed * 13, HIDDEN_REASONS) : undefined,
-    handledBy: isHandled ? handler.name : undefined,
-    handledById: isHandled ? handler.managerId : undefined,
+    replyCount: 0,
+    hiddenReason: isHandled ? pickOne(seed * 13, HIDDEN_REASONS) : null,
+    handledBy: isHandled ? handler.name : null,
+    handledById: isHandled ? handler.managerId : null,
     // 숨김 처리는 댓글이 작성된 뒤에 일어난다.
-    handledAt: isHandled
-      ? daysAgo(Math.max(0, createdDaysAgo - 1), 16)
-      : undefined,
+    handledAt: isHandled ? daysAgo(Math.max(0, createdDaysAgo - 1), 16) : null,
     createdAt: daysAgo(createdDaysAgo, 22 - (index % 12)),
   };
 });

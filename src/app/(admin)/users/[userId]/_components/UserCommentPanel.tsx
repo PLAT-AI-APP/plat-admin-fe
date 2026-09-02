@@ -16,6 +16,7 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import Table, { type TableColumn } from "@/components/ui/Table";
+import CommentHiddenReason from "../../../community/comments/_components/CommentHiddenReason";
 import {
   COMMENT_STATUS_TONE,
   COMMENT_TARGET_TYPE_TONE,
@@ -52,21 +53,35 @@ const UserCommentPanel = ({ userId, nickname }: UserCommentPanelProps) => {
       key: "target",
       header: "대상",
       width: "180px",
-      render: (row) => (
-        <Link
-          href={getCommentTargetHref(row)}
-          className="flex min-w-0 items-center gap-1 body-5 text-font-1 transition hover:text-brand"
-        >
-          <span className="truncate">{row.targetName}</span>
-          <ExternalLink size={11} className="shrink-0" />
-        </Link>
-      ),
+      render: (row) => {
+        const href = getCommentTargetHref(row);
+        const label = row.targetName ?? row.targetId;
+
+        // 콘솔에 상세 화면이 없는 대상은 링크를 걸지 않는다.
+        if (!href) {
+          return <span className="truncate body-5 text-font-2">{label}</span>;
+        }
+
+        return (
+          <Link
+            href={href}
+            className="flex min-w-0 items-center gap-1 body-5 text-font-1 transition hover:text-brand"
+          >
+            <span className="truncate">{label}</span>
+            <ExternalLink size={11} className="shrink-0" />
+          </Link>
+        );
+      },
     },
     {
       key: "content",
       header: "내용",
+      /*
+       * 폭 상한이 있어야 한다. 표가 min-w-max 라 상한이 없으면 긴 숨김 사유가 칸을
+       * 그대로 늘려 표 전체가 가로로 흐른다. 사유는 자르지 않는 대신 여기서 줄을 바꾼다.
+       */
       render: (row) => (
-        <div className="min-w-0">
+        <div className="max-w-md min-w-0">
           {row.parentCommentId && (
             <span className="mr-1 body-6 text-font-disabled">↳ 대댓글</span>
           )}
@@ -80,11 +95,7 @@ const UserCommentPanel = ({ userId, nickname }: UserCommentPanelProps) => {
             {truncate(row.content, 60)}
           </span>
 
-          {row.hiddenReason && (
-            <p className="mt-1 body-6 text-warning">
-              사유: {row.hiddenReason}
-            </p>
-          )}
+          <CommentHiddenReason comment={row} />
         </div>
       ),
     },
@@ -147,7 +158,7 @@ const UserCommentPanel = ({ userId, nickname }: UserCommentPanelProps) => {
       <Table
         columns={columns}
         rows={data?.content ?? []}
-        getRowKey={(row) => String(row.commentId)}
+        getRowKey={(row) => row.commentId}
         isLoading={isLoading}
         skeletonRows={4}
         emptyTitle="작성한 댓글이 없습니다."

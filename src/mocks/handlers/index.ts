@@ -1,7 +1,6 @@
 import { billingHandlers } from "./billing";
 import { billingProductHandlers } from "./billingProduct";
 import { characterHandlers } from "./character";
-import { commentHandlers } from "./comment";
 import { communicationHandlers } from "./communication";
 import { dashboardHandlers } from "./dashboard";
 import { paymentRecordHandlers } from "./paymentRecord";
@@ -39,7 +38,6 @@ export const handlers = [
   ...billingProductHandlers,
   ...universeAdminHandlers,
   ...characterHandlers,
-  ...commentHandlers,
   ...reportHandlers,
   ...billingHandlers,
   ...paymentRecordHandlers,

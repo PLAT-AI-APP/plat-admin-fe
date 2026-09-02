@@ -7,7 +7,10 @@ import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import Textarea from "@/components/ui/Textarea";
-import { COMMENT_HIDE_REASONS } from "./commentOptions";
+import {
+  COMMENT_HIDE_REASON_MAX_LENGTH,
+  COMMENT_HIDE_REASONS,
+} from "./commentOptions";
 
 interface CommentHideModalProps {
   /** null이면 모달이 닫힌 상태다. 여러 건이면 일괄 처리다. */
@@ -20,8 +23,11 @@ interface CommentHideModalProps {
 /**
  * 댓글 숨김 사유 입력.
  *
- * 숨김은 이용자에게 영향을 주는 조치라 사유를 반드시 남긴다.
+ * 사유는 작성자에게 통보되고 기록으로 남으므로 반드시 받는다.
  * 자주 쓰는 사유는 버튼으로 제공하고, 필요하면 직접 수정할 수 있다.
+ *
+ * **프리셋은 자르지 않는다.** 고를 문장을 뒤가 잘린 채로 보여 주면 무엇을 고르는지
+ * 알 수 없어, 눌러서 입력란을 확인한 뒤 다시 고르게 된다. 버튼이 두 줄로 늘어나는 편이 낫다.
  */
 const CommentHideModal = ({
   targets,
@@ -49,7 +55,7 @@ const CommentHideModal = ({
       isOpen={targets !== null}
       onClose={onClose}
       title={isBulk ? `댓글 ${targets?.length}건 숨김` : "댓글 숨김"}
-      description="숨긴 댓글은 앱에서 보이지 않습니다. 사유는 운영 로그에 남습니다."
+      description="숨긴 댓글은 앱에서 보이지 않습니다. 사유는 작성자에게 통보되고 기록으로 남습니다. 루트 댓글이면 그 답글도 함께 내려갑니다."
       closeOnOverlayClick={false}
       footer={
         <>
@@ -92,16 +98,18 @@ const CommentHideModal = ({
                   key={preset}
                   type="button"
                   onClick={() => setReason(preset)}
-                  className="rounded-full border border-border-main px-2.5 py-1 body-6 text-font-2 transition hover:border-brand hover:text-brand"
+                  className="rounded-full border border-border-main px-2.5 py-1 text-left body-6 break-keep text-font-2 transition hover:border-brand hover:text-brand"
                 >
-                  {truncate(preset, 18)}
+                  {preset}
                 </button>
               ))}
             </div>
 
+            {/* 서버가 200자까지만 받는다. 넘겨 보내면 저장이 아니라 400으로 끝난다. */}
             <Textarea
               id="comment-hide-reason"
               rows={3}
+              maxLength={COMMENT_HIDE_REASON_MAX_LENGTH}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               placeholder="숨김 사유를 입력하거나 위에서 선택해 주세요."
