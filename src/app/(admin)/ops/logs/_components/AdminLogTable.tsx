@@ -6,7 +6,7 @@ import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond } from "@/lib/dayjs";
 import { formatAdmin } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
-import type { AdminAuditLog, AuditResult } from "@/type/ops";
+import type { AdminAuditLog, AuditResult, LogDomain } from "@/type/ops";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
@@ -54,7 +54,9 @@ interface AdminLogTableProps {
  * 실행자로 좁히고, 바뀐 값은 행을 눌러 상세에서 본다.
  */
 const AdminLogTable = ({ params, setParams }: AdminLogTableProps) => {
-  const { page, keyword, domain, actorId } = params;
+  const { page, keyword, actorId } = params;
+  /* 주소는 문자열만 들고 있다. 서버로 나가기 전에 한 번 좁혀 준다. */
+  const domain = params.domain as LogDomain | "";
   const result = params.result as AuditResult | "";
 
   const [detailLog, setDetailLog] = useState<AdminAuditLog | null>(null);

@@ -75,8 +75,17 @@ const LogDetailModal = ({ log, onClose }: LogDetailModalProps) => {
             <p className="mb-2 body-5 font-medium text-font-1">변경 내용</p>
 
             {payloadEntries.length === 0 ? (
+              /*
+               * "본문이 없었다"라고 단언하지 않는다. 본문이 비는 경로가 셋이고
+               * 서로 뜻이 다르다 — 애초에 본문이 없는 요청(삭제 등), 서버가
+               * 일부러 남기지 않는 파일 업로드, 그리고 90일이 지나 보관 기한이
+               * 끝나 비워진 줄. 마지막 것을 "본문 없이 실행된 요청"으로 읽으면
+               * 반년 전 조치를 되짚을 때 없던 사실을 있다고 믿게 된다.
+               */
               <p className="rounded-field border border-border-main bg-subtle px-3.5 py-3 body-5 text-font-2">
-                본문 없이 실행된 요청입니다. (삭제 · 상태 변경 등)
+                남아 있는 본문이 없습니다. 본문 없이 실행된 요청(삭제 · 상태
+                변경 등)이거나, 파일 업로드이거나, 보관 기한(90일)이 지나 본문만
+                비워진 기록입니다.
               </p>
             ) : (
               <ul className="flex flex-col rounded-field border border-border-main bg-subtle px-3.5 py-1">

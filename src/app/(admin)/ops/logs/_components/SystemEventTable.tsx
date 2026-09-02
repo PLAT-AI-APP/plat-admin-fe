@@ -4,7 +4,11 @@ import { useSystemEventListQuery } from "@/api/ops/getSystemEventList";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond, formatFromNow } from "@/lib/dayjs";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
-import type { SystemEventLevel, SystemEventLog } from "@/type/ops";
+import type {
+  SystemEventLevel,
+  SystemEventLog,
+  SystemEventSource,
+} from "@/type/ops";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
@@ -46,8 +50,10 @@ interface SystemEventTableProps {
  * 어드민의 문제가 된다.
  */
 const SystemEventTable = ({ params, setParams }: SystemEventTableProps) => {
-  const { page, keyword, source } = params;
+  const { page, keyword } = params;
+  /* 주소는 문자열만 들고 있다. 서버로 나가기 전에 한 번 좁혀 준다. */
   const level = params.level as SystemEventLevel | "";
+  const source = params.source as SystemEventSource | "";
 
   const { data, isLoading, isError } = useSystemEventListQuery({
     page,

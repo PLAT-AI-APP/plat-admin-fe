@@ -167,7 +167,7 @@ export interface ServerHealth {
  */
 export const LOG_DOMAINS = [
   "USER",
-  "CHARACTER",
+  "UNIVERSE",
   "COMMUNITY",
   "BILLING",
   "AI",
@@ -194,7 +194,8 @@ export type AuditResult = "SUCCESS" | "DENIED" | "FAILED";
  * 의미가 없고, 감사에서 갈라 봐야 하는 것은 심각도가 아니라 `result`다.
  */
 export interface AdminAuditLog {
-  logId: number;
+  /** Snowflake라 문자열이다. 숫자로 받으면 자바스크립트가 뒷자리를 잘라 먹는다. */
+  logId: string;
   /** 실행한 관리자 이름. 표시용이다. */
   actor: string;
   /** 누가 했는지를 계정으로 고정한다. 이름은 바뀔 수 있어 필터 기준으로 쓸 수 없다. */
@@ -212,7 +213,11 @@ export interface AdminAuditLog {
    * 요청 본문.
    *
    * "무엇을 바꿨나"에 답하려면 값이 남아야 한다. 비밀번호 · 토큰 필드는
-   * 적재 시점에 마스킹한다(`maskAuditPayload`).
+   * 서버가 적재 시점에 마스킹한다.
+   *
+   * 서버는 이것을 **문자열로** 내려준다 — 마스킹하고 4KB로 자른 본문이라 늘
+   * 유효한 JSON이라는 보장이 없어서다. 객체로 펼치는 일은 API 레이어가 맡고,
+   * 펼치지 못하면 원문을 그대로 한 줄로 보여 준다.
    *
    * 값이 그대로 남는다는 것은 이 로그가 **다른 관리자의 작업 내용을 전부
    * 드러낸다**는 뜻이다. `log:read`를 민감 권한으로 둔 이유다.
@@ -250,19 +255,20 @@ export type SystemEventSource = (typeof SYSTEM_EVENT_SOURCES)[number];
 /**
  * 시스템 이벤트.
  *
- * 원본 애플리케이션 로그가 아니다. 원본은 관제 도구(CloudWatch · Datadog)에 있고,
- * 여기에는 **같은 이벤트를 묶은 요약**만 온다. 어드민 DB에 로그 전문을 쌓으면
- * 보존 비용과 검색 성능이 곧바로 어드민의 문제가 된다.
+ * 원본 애플리케이션 로그가 아니다. 서버가 예외 알림을 지문으로 묶어 **한 종류에
+ * 한 줄씩** 내려준다. 발생마다 한 줄씩 쌓으면 장애가 난 순간 같은 문장으로 화면이
+ * 가득 차, 정작 필요한 "몇 종류가 났는가"를 볼 수 없게 된다.
  *
  * 그래서 시각이 둘이다. 같은 오류가 200번 났을 때 필요한 정보는 200줄이 아니라
  * "언제 시작해서 마지막이 언제였고 몇 번이었나"이다.
  */
 export interface SystemEventLog {
-  eventId: number;
+  /** Snowflake라 문자열이다. 숫자로 받으면 자바스크립트가 뒷자리를 잘라 먹는다. */
+  eventId: string;
   level: SystemEventLevel;
   source: SystemEventSource | (string & {});
   message: string;
-  /** 원본 추적용 식별자. 관제 도구에서 이 값으로 찾는다. */
+  /** 가장 최근 발생 건의 요청 추적 키. 액세스 로그에서 그 요청을 찾아가는 실마리다. */
   traceId?: string;
   /** 묶인 발생 횟수. 1이면 단발이다. */
   occurrenceCount: number;
