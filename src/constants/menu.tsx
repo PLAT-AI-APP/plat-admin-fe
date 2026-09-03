@@ -277,6 +277,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/billing/retention",
         permission: "paymentRecord:read",
         icon: <Scale size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
     ],
   },
