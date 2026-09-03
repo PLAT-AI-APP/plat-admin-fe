@@ -33,7 +33,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           className={cn(
-            "h-full w-full cursor-pointer appearance-none bg-transparent pr-9 pl-3 text-[14px] text-font-1 outline-none",
+            "h-full w-full cursor-pointer appearance-none bg-transparent pr-9 pl-3 body-4 text-font-1 outline-none",
             "disabled:cursor-not-allowed",
             className,
           )}

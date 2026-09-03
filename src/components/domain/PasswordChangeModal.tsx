@@ -71,7 +71,7 @@ const PasswordChangeModal = ({
       description={
         isForced
           ? "임시 비밀번호로 접속했습니다. 비밀번호를 바꾼 뒤 콘솔을 사용할 수 있습니다."
-          : "10자 이상, 영문 · 숫자 · 특수문자를 포함해 주세요."
+          : "10자 이상, 영문 · 숫자 · 특수문자를 포함해 주세요. 다른 기기의 로그인은 모두 해제됩니다."
       }
       size="sm"
       footer={
@@ -139,6 +139,14 @@ const PasswordChangeModal = ({
             {error.message}
           </Alert>
         )}
+
+        {/*
+          엔터로 변경되게 하는 제출 버튼.
+
+          실제 "변경" 버튼은 Modal 푸터(폼 바깥)에 있어서, 폼 안에 제출 버튼이
+          하나도 없으면 브라우저가 엔터 암묵적 제출을 하지 않는다.
+        */}
+        <button type="submit" className="hidden" tabIndex={-1} aria-hidden />
       </form>
     </Modal>
   );

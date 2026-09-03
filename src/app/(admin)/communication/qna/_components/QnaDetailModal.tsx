@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { useQnaDetailQuery } from "@/api/communication/getQnaDetail";
 import { useQnaMutation } from "@/api/communication/mutateQna";
 import { formatDateTime } from "@/lib/dayjs";
+import { formatAdmin } from "@/lib/utils";
 import { qnaAnswerSchema, type QnaAnswerSchema } from "@/schema/qnaAnswer.schema";
 import { openConfirm } from "@/store/useConfirmStore";
 import Badge from "@/components/ui/Badge";
@@ -16,6 +17,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import Textarea from "@/components/ui/Textarea";
 import {
   QNA_CATEGORY_LABEL,
+  QNA_CATEGORY_TONE,
   QNA_STATUS_LABEL,
   QNA_STATUS_TONE,
 } from "../../_constants/labels";
@@ -80,6 +82,8 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
       title="문의 상세"
       description="답변을 저장하면 문의 상태가 자동으로 답변 완료로 변경됩니다."
       size="lg"
+      // 스켈레톤 → 본문으로 바뀔 때 높이가 튀지 않게 한다.
+      minHeight="md"
       footer={
         <>
           <Button
@@ -115,23 +119,25 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge tone="brand">{QNA_CATEGORY_LABEL[qna.category]}</Badge>
+              <Badge tone={QNA_CATEGORY_TONE[qna.category]}>
+                {QNA_CATEGORY_LABEL[qna.category]}
+              </Badge>
               <Badge tone={QNA_STATUS_TONE[qna.status]}>
                 {QNA_STATUS_LABEL[qna.status]}
               </Badge>
             </div>
 
-            <h3 className="text-[17px] font-semibold text-font-0">
+            <h3 className="title-2 font-semibold text-font-0">
               {qna.title}
             </h3>
 
-            <p className="text-[13px] text-font-2">
+            <p className="body-5 text-font-2">
               {qna.userNickname} (#{qna.userId}) ·{" "}
               {formatDateTime(qna.createdAt)}
             </p>
           </div>
 
-          <div className="rounded-field border border-border-main bg-subtle p-4 text-[14px] whitespace-pre-wrap text-font-1">
+          <div className="rounded-field border border-border-main bg-subtle p-4 body-4 whitespace-pre-wrap text-font-1">
             {qna.content}
           </div>
 
@@ -142,7 +148,7 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
             error={errors.answer?.message}
             hint={
               qna.answeredAt
-                ? `최종 답변 ${formatDateTime(qna.answeredAt)} · ${qna.answeredBy ?? "-"}`
+                ? `최종 답변 ${formatDateTime(qna.answeredAt)} · 답변자 ${formatAdmin(qna.answeredBy, qna.answeredById)}`
                 : "아직 답변이 등록되지 않았습니다."
             }
           >

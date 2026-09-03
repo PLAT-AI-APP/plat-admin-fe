@@ -8,6 +8,7 @@ export const LEDGER_TYPE_LABEL: Record<LedgerType, string> = {
   CHARGE: "충전",
   USE: "사용",
   REFUND: "환불",
+  EXPIRE: "만료",
   ADJUSTMENT: "수동 조정",
 };
 
@@ -16,6 +17,8 @@ export const LEDGER_TYPE_TONE: Record<LedgerType, BadgeTone> = {
   CHARGE: "info",
   USE: "neutral",
   REFUND: "danger",
+  /* 만료는 사고가 아니라 정책대로 일어난 일이라 경고색을 쓰지 않는다. */
+  EXPIRE: "neutral",
   ADJUSTMENT: "warning",
 };
 

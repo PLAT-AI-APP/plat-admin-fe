@@ -31,10 +31,14 @@ npm run dev
 
 | 이름 | 설명 |
 |---|---|
-| `NEXT_PUBLIC_BASE_URI` | 목업 구간의 관리자 API 베이스 URI |
+| `NEXT_PUBLIC_BASE_URI` | 목업 구간의 관리자 API 베이스 URI. **아무것도 뜨지 않는 포트**를 둔다 |
 | `NEXT_PUBLIC_API_MOCKING` | `enabled`일 때만 MSW 목업 워커가 뜬다 |
-| `NEXT_PUBLIC_LIVE_BASE_URI` | 실서버(`plat-be` `plat-admin`, 기본 `8081`) 베이스 URI |
-| `NEXT_PUBLIC_LIVE_ACCESS_TOKEN` | 개발용 실서버 ADMIN 토큰 (아래 참고) |
+| `NEXT_PUBLIC_LIVE_BASE_URI` | 실서버(`plat-be`, 기본 `8080`) 베이스 URI |
+| `NEXT_PUBLIC_IMAGE_BASE_URI` | 이미지 서빙 베이스 URI (`GET /images/{fileId}`) |
+
+관리자 API(`/admin/**`)는 별도 서버가 아니라 **`plat-boot`이 서비스 API와 같은
+포트에서 함께 서빙한다.** `SecurityConfig`의 `adminFilterChain`이
+`/admin/**`을 먼저 잡아 관리자 토큰으로만 통과시킨다.
 
 **목업과 실서버가 함께 돈다.** 연동이 끝난 도메인은 `src/api/index.ts`의
 `liveAxios`로 `NEXT_PUBLIC_LIVE_BASE_URI`에 붙고, 나머지는 그대로
@@ -43,34 +47,39 @@ npm run dev
 
 ### 실서버 연동 현황
 
-**지금은 전부 목업으로 돈다.** 실서버 없이 화면을 돌릴 수 있게, 서버에 연동해 둔
-해시태그 · 세계관도 **목업 응답으로 받는다.** 다만 목업을 목업 베이스가 아니라
-**실서버 베이스(`NEXT_PUBLIC_LIVE_BASE_URI`)에 등록**해 두어, API 코드(`liveAxios`)와
-응답 DTO 모양은 실서버 계약 그대로다. 실서버를 붙일 때는 아래 두 핸들러의 등록만
-지우면 된다.
-
 | 도메인 | 호출 | 지금 응답하는 곳 |
 |---|---|---|
+| 로그인 · 내 계정 (`/admin/auth/**`) | `liveAxios` | **실서버** |
+| 관리자 계정 (`/admin/managers`) | `liveAxios` | **실서버** |
+| 직책 · 권한 (`/admin/roles`) | `liveAxios` | **실서버** |
 | 해시태그 (`/admin/hashtags`) | `liveAxios` | 목업 `src/mocks/handlers/hashtag.ts` (실서버 DTO 모양) |
 | 세계관 운영 (`/admin/universes`) | `liveAxios` | 목업 `src/mocks/handlers/universeAdmin.ts` (실서버 DTO 모양) |
-| 세계관 큐레이션 후보 목록 | `adminAxios` | 목업 `src/mocks/handlers/universe.ts` |
+| 서버 상태 (`/admin/server/**`) | `liveAxios` | **실서버** |
 | 그 외 전체 | `adminAxios` | MSW 목업 |
 
-세계관 운영 목업은 큐레이션과 **같은 시드(`src/mocks/db/character.ts`)** 를 쓴다.
-보드에서 내린 조치가 큐레이션 후보 목록에도 그대로 반영된다. 이미지 URL은 실서버가
-만들지 못하는 것과 똑같이 늘 `null`이고, 화면은 함께 오는 `*FileId`로 자리표시를 둔다.
+**세션은 실서버가 준다.** 로그인 · 관리자 계정 · 직책이 실서버로 나가므로
+목업 구간이어도 401은 진짜 세션 만료다(`liveAxios`가 로그인 화면으로 보낸다).
 
-관리자 서버에는 **로그인 엔드포인트가 없다.** 토큰은 서비스 서버가 발급하고
-관리자 서버는 `hasRole(ADMIN)`으로 검증만 한다. 관리자 로그인이 실연동될
-때까지는 서비스 서버에서 받은 ADMIN 토큰을 `.env.local`의
-`NEXT_PUBLIC_LIVE_ACCESS_TOKEN`에 넣어 쓴다.
+해시태그 · 세계관은 실서버에 엔드포인트가 있지만 **아직 목업이 가로챈다.**
+`liveAxios`(실서버 베이스)로 나가는 요청을 같은 베이스에 등록한 목업이 받는
+구조라, 붙일 때는 `src/mocks/handlers/index.ts`에서 두 핸들러의 등록만 지우면 된다.
 
-```bash
-curl -s -X POST http://localhost:8080/auth/login -H 'Content-Type: application/json' -d '{"username":"<admin-email>","password":"<password>"}'
-```
+### 권한 키
 
-목업 로그인 세션과 실서버 토큰은 별개이므로, 목업 구간에서는 실서버 401이
-콘솔 세션을 끊지 않는다(토큰만 잘못 넣었을 때 로그인 화면으로 튕기지 않는다).
+권한 모델의 출처는 서버의 `AdminResource` · `AdminAction` enum 하나다
+(`GET /admin/permissions`가 그대로 내려 준다). 어드민은 같은 목록을
+`src/type/permission.ts`에 **라벨 · 설명 · 갈래와 함께** 들고 있다 — 서버에는
+없는 정보라 화면이 직접 가진다. **서버에 자원이 늘면 이 파일도 함께 고친다.**
+빠뜨리면 그 권한은 직책 편집 화면에 나타나지 않아 아무도 켤 수 없다.
+
+### 서버가 열어 주지 않는 것
+
+- **관리자 삭제.** 계정은 지우지 않고 상태로만 내린다(`INACTIVE`). 운영 로그에
+  남은 실행자를 나중에도 이름으로 되짚을 수 있어야 하기 때문이다. `manager:delete`
+  권한 키는 있지만 이를 쓰는 엔드포인트가 없어 화면에도 삭제가 없다.
+- **관리자 목록의 검색 · 필터 · 페이지.** 서버가 전체를 한 번에 준다.
+  `src/api/ops/getManagerList.ts`에서 걸러 쓴다.
+- **이메일 변경.** 로그인 계정이라 초대할 때만 정할 수 있다.
 
 ## 스택
 
@@ -93,15 +102,19 @@ sonner · recharts · MSW v2
 | 다크 모드 | 헤더 토글 |
 | 다국어 문구 | 해시태그 라벨 · 배너 제목/설명 (한국어 · 영어 · 일본어 · 중국어 · 태국어 · 베트남어) |
 
-## 목업 로그인
+## 로그인
 
-서버 인증 연동 전까지 아래 시드 계정으로 접속한다. (로그인 화면에도 안내가 뜬다)
+실서버 계정으로 들어간다. 최초 최고관리자는
+`plat-be/db/manual/Admin_Bootstrap.sql`로 직접 만든다(비밀번호 해시는
+`BCryptPasswordEncoder(12)`로 생성해 넣는다).
 
-| 계정 | 비밀번호 | 직책 |
-|---|---|---|
-| `admin@plat.so` | `plat-admin-2026!` | 최고관리자 |
-| `seoyeon@plat.so` | `plat-admin-2026!` | 콘텐츠 운영 |
-| `haneul@plat.so` | `Plat-temp-2026!` | 결제 담당 · 초대 상태(첫 로그인 시 비밀번호 변경 강제) |
+`password_updated_at`이 `NULL`인 계정은 **임시 비밀번호 상태**다. 서버가
+`PASSWORD_CHANGE_REQUIRED` 권한 하나만 주므로 `/admin/auth/**` 밖이 전부
+막히고, 콘솔은 비밀번호 변경 모달을 강제로 띄운다. 바꾸면 같은 토큰이 곧바로
+직책의 전체 권한을 받는다(권한은 토큰이 아니라 요청마다 직책에서 읽는다).
+
+로그인 실패가 5회 쌓이면 계정이 잠긴다. 잠금 해제는 다른 관리자가
+**운영 &gt; 관리자 계정**에서 한다.
 
 ## 확인
 
@@ -111,8 +124,6 @@ npx tsc --noEmit && npx eslint src
 
 ## 아직 없는 것
 
-- **로그인 / 권한 게이트.** 서버 인증이 붙으면 `src/app/(admin)/layout.tsx`와
-  `src/api/index.ts`의 요청 인터셉터 두 곳만 수정하면 된다.
 - **해시태그 검색 · 페이징은 화면에서 처리한다.** 서버 목록 API가 조건 필터와
   정렬만 지원하고 검색어 · 페이지를 받지 않아, 받아 온 목록을
   `src/api/hashtag/getHashtagList.ts`에서 거르고 나눈다. 서버가 지원하게 되면

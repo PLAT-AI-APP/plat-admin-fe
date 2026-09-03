@@ -74,7 +74,7 @@ const PendingBell = () => {
         <Bell size={18} />
 
         {total > 0 && (
-          <span className="absolute top-1 right-1 flex min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] leading-4 font-semibold text-white tabular-nums">
+          <span className="absolute top-1 right-1 flex min-w-4 items-center justify-center rounded-full bg-danger px-1 caption-3 leading-4 font-semibold text-on-danger tabular-nums">
             {total > 99 ? "99+" : total}
           </span>
         )}
@@ -82,7 +82,7 @@ const PendingBell = () => {
 
       {isOpen && (
         <div className="animate-slide-up absolute right-0 z-50 mt-2 w-72 overflow-hidden rounded-card border border-border-main bg-surface shadow-popover">
-          <p className="border-b border-border-main px-4 py-3 text-[13px] font-semibold text-font-1">
+          <p className="border-b border-border-main px-4 py-3 body-5 font-semibold text-font-1">
             처리 대기
           </p>
 
@@ -98,17 +98,17 @@ const PendingBell = () => {
                     className="flex items-center justify-between gap-3 px-4 py-2.5 transition hover:bg-surface-hover"
                   >
                     <span className="min-w-0">
-                      <span className="block truncate text-[13px] text-font-1">
+                      <span className="block truncate body-5 text-font-1">
                         {entry.label}
                       </span>
-                      <span className="block truncate text-[12px] text-font-2">
+                      <span className="block truncate body-6 text-font-2">
                         {entry.hint}
                       </span>
                     </span>
 
                     <span
                       className={cn(
-                        "shrink-0 text-[14px] font-semibold tabular-nums",
+                        "shrink-0 body-4 font-semibold tabular-nums",
                         count > 0 ? "text-danger" : "text-font-disabled",
                       )}
                     >
@@ -121,7 +121,7 @@ const PendingBell = () => {
           </ul>
 
           {total === 0 && (
-            <p className="border-t border-border-main px-4 py-3 text-[12px] text-font-2">
+            <p className="border-t border-border-main px-4 py-3 body-6 text-font-2">
               밀린 처리 건이 없습니다.
             </p>
           )}

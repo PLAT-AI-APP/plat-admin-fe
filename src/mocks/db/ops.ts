@@ -1,4 +1,3 @@
-import type { ServerMetricPoint } from "@/api/ops/getServerMetrics";
 import {
   MANAGER_LOCK_THRESHOLD,
   type AdminRole,
@@ -6,7 +5,6 @@ import {
   type DependencyHealth,
   type HealthStatus,
   type Manager,
-  type OperationLog,
 } from "@/type/ops";
 import {
   normalizePermissions,
@@ -53,11 +51,11 @@ export const adminRoles: AdminRole[] = [
       "hashtag:read",
       "hashtag:write",
       "hashtag:delete",
-      "nsfwKeyword:read",
-      "nsfwKeyword:write",
+      "bannedWord:read",
+      "bannedWord:write",
       "notice:read",
       "notice:write",
-      "log:read",
+      "systemLog:read",
     ] as PermissionKey[]),
     isSuperAdmin: false,
     memberCount: 0,
@@ -87,7 +85,7 @@ export const adminRoles: AdminRole[] = [
         결제 담당이 한다. 조정을 열면 제재와 보상이 한 사람 손에 모인다.
       */
       "creditAdjustment:read",
-      "log:read",
+      "systemLog:read",
     ] as PermissionKey[]),
     isSuperAdmin: false,
     memberCount: 0,
@@ -108,7 +106,7 @@ export const adminRoles: AdminRole[] = [
       "creditAdjustment:read",
       "creditAdjustment:adjust",
       "ledger:read",
-      "log:read",
+      "systemLog:read",
     ] as PermissionKey[]),
     isSuperAdmin: false,
     memberCount: 0,
@@ -127,7 +125,8 @@ export const adminRoles: AdminRole[] = [
       "report:read",
       "ledger:read",
       "server:read",
-      "log:read",
+      "systemLog:read",
+      "batch:read",
     ] as PermissionKey[]),
     isSuperAdmin: false,
     memberCount: 0,
@@ -176,6 +175,14 @@ export const managers: Manager[] = [
     createdAt: daysAgo(index * 21 + 30, 10),
   };
 });
+
+/**
+ * 시드에서 처리자를 고른다.
+ *
+ * 다른 도메인 시드가 이름 문자열 배열을 따로 들고 있으면 화면의 `#ID`가 실제
+ * 관리자와 어긋난다. 처리자는 **언제나 여기서** 고른다.
+ */
+export const pickManager = (seed: number) => pickOne(seed, managers);
 
 /**
  * 관리자 비밀번호.
@@ -303,140 +310,3 @@ export const buildServerHealth = () => {
     checkedAt: new Date().toISOString(),
   };
 };
-
-/** 최근 24시간 자원 사용률 추이 (1시간 단위) */
-export const serverMetrics: ServerMetricPoint[] = Array.from(
-  { length: 24 },
-  (_, index) => {
-    const seed = index + 1;
-    const capturedAt = new Date();
-    capturedAt.setMinutes(0, 0, 0);
-    capturedAt.setHours(capturedAt.getHours() - (23 - index));
-
-    return {
-      capturedAt: capturedAt.toISOString(),
-      cpuUsage: randomInt(seed * 3, 16, 68),
-      memoryUsage: randomInt(seed * 6, 40, 82),
-      requestCount: randomInt(seed * 9, 8_400, 42_000),
-      errorCount: randomInt(seed * 12, 0, 46),
-    };
-  },
-);
-
-/* -------------------------------------------------------------------------
- * 운영 로그
- * ---------------------------------------------------------------------- */
-
-/** 로그 도메인. 필터 옵션과 목업 생성에 함께 쓴다. */
-export const LOG_DOMAINS = [
-  "USER",
-  "CHARACTER",
-  "BILLING",
-  "AI",
-  "MAIN_EXPOSURE",
-  "COMMUNITY",
-  "OPS",
-] as const;
-
-const LOG_ACTIONS: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
-  USER: ["USER_BLOCK", "USER_RESTORE", "USER_WITHDRAW", "USER_ROLE_CHANGE"],
-  COMMUNITY: [
-    "COMMENT_HIDE",
-    "COMMENT_RESTORE",
-    "REPORT_RESOLVE",
-    "REPORT_REJECT",
-  ],
-  CHARACTER: [
-    "CHARACTER_HIDE",
-    "CHARACTER_BLOCK",
-    "NSFW_KEYWORD_ADD",
-    "CHAT_EXPORT",
-  ],
-  BILLING: [
-    "PRODUCT_UPDATE",
-    "CREDIT_ADJUST",
-    "REFUND_APPROVE",
-    "PAYMENT_FAILED",
-  ],
-  AI: ["MODEL_SWITCH", "PROMPT_UPDATE", "PROVIDER_TIMEOUT", "MODEL_COST_UPDATE"],
-  MAIN_EXPOSURE: ["BANNER_CREATE", "BANNER_ORDER_UPDATE", "CURATION_SAVE"],
-  OPS: ["MANAGER_CREATE", "MANAGER_STATUS_CHANGE", "APP_VERSION_UPDATE", "LOGIN"],
-};
-
-const LOG_MESSAGES: Record<(typeof LOG_DOMAINS)[number], readonly string[]> = {
-  USER: [
-    "유저 계정 상태를 변경했습니다.",
-    "약관 위반 신고로 계정을 정지했습니다.",
-    "탈퇴 요청을 처리했습니다.",
-  ],
-  COMMUNITY: [
-    "신고 내용을 확인해 댓글을 숨김 처리했습니다.",
-    "신고를 검토한 뒤 위반 사항이 없어 반려했습니다.",
-    "누적 신고가 많은 대상을 검토 중으로 변경했습니다.",
-  ],
-  CHARACTER: [
-    "캐릭터를 비공개로 전환했습니다.",
-    "NSFW 키워드에 의해 캐릭터 등록이 차단되었습니다.",
-    "채팅 내보내기 작업을 생성했습니다.",
-  ],
-  BILLING: [
-    "크레딧 수동 지급을 완료했습니다.",
-    "결제 승인에 실패해 재시도 큐에 담았습니다.",
-    "상품 판매가를 수정했습니다.",
-  ],
-  AI: [
-    "기본 대화 모델을 교체했습니다.",
-    "AI 제공자 응답이 지연되어 폴백 모델로 전환했습니다.",
-    "시스템 프롬프트를 새 버전으로 배포했습니다.",
-  ],
-  MAIN_EXPOSURE: [
-    "메인 배너를 추가했습니다.",
-    "오늘의 PICK 슬롯을 저장했습니다.",
-    "배너 노출 순서를 변경했습니다.",
-  ],
-  OPS: [
-    "관리자 계정을 추가했습니다.",
-    "앱 최소 버전 정책을 수정했습니다.",
-    "관리자 로그인에 성공했습니다.",
-  ],
-};
-
-const LOG_ACTORS = [
-  "운영자",
-  "김서연",
-  "박지훈",
-  "이하늘",
-  "system",
-  "batch-scheduler",
-] as const;
-
-/**
- * 최근 운영 로그 72건.
- * 최신순 정렬을 그대로 쓸 수 있도록 배열 앞쪽이 가장 최근이 되게 만든다.
- */
-export const operationLogs: OperationLog[] = Array.from(
-  { length: 72 },
-  (_, index) => {
-    const seed = index + 1;
-    const domain = pickOne(seed * 2, LOG_DOMAINS);
-    // ERROR가 너무 잦으면 필터 확인이 어려우므로 INFO 비중을 높인다.
-    const level = pickOne(seed * 5, [
-      "INFO",
-      "INFO",
-      "INFO",
-      "WARN",
-      "WARN",
-      "ERROR",
-    ] as const);
-
-    return {
-      logId: 72 - index,
-      level,
-      domain,
-      action: pickOne(seed * 3, LOG_ACTIONS[domain]),
-      actor: pickOne(seed * 7, LOG_ACTORS),
-      message: pickOne(seed * 11, LOG_MESSAGES[domain]),
-      createdAt: daysAgo(Math.floor(index / 3), 23 - (index % 24)),
-    };
-  },
-);

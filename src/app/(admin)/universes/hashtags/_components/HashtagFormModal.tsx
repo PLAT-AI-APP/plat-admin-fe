@@ -129,11 +129,11 @@ const HashtagFormModal = ({
         </FormField>
 
         <div className="flex flex-col gap-1.5">
-          <p className="text-[13px] font-medium text-font-1">
+          <p className="body-5 font-medium text-font-1">
             해시태그 이름
             <span className="ml-0.5 text-font-error">*</span>
           </p>
-          <p className="text-[12px] text-font-2">
+          <p className="body-6 text-font-2">
             한국어는 필수입니다. 번역이 없는 언어는 앱에서 한국어로 대체됩니다.
           </p>
 
@@ -169,7 +169,7 @@ const HashtagFormModal = ({
                   checked={field.value}
                   onChange={(event) => field.onChange(event.target.checked)}
                 />
-                <p className="mt-1 pl-6 text-[12px] text-font-2">
+                <p className="mt-1 pl-6 body-6 text-font-2">
                   성인 인증을 마친 유저에게만 보입니다.
                 </p>
               </div>
@@ -183,8 +183,8 @@ const HashtagFormModal = ({
             render={({ field }) => (
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[13px] font-medium text-font-1">노출 여부</p>
-                  <p className="mt-0.5 text-[12px] text-font-2">
+                  <p className="body-5 font-medium text-font-1">노출 여부</p>
+                  <p className="mt-0.5 body-6 text-font-2">
                     끄면 사용자 선택 목록에서 사라집니다. 이미 달린 태그는 그대로
                     남습니다.
                   </p>

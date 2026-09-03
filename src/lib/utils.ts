@@ -21,28 +21,54 @@ export const formatWithCommas = (value: number | string): string => {
 };
 
 /**
- * 숫자 포맷터
- * 규칙:
- * - 999 이하: 그대로 표시
- * - 1,000 ~ 9,999: '천' 단위 (소수점 한자리, 내림)
- * - 10,000 ~ 99,999,999: '만' 단위 (정수, 내림)
- * - 100,000,000 이상: '억' 단위 (정수, 내림)
+ * 서비스 언어. 카운트 축약 단위가 언어권마다 다르다.
+ *
+ * plat-fe의 `AppLocale`과 같은 값을 쓴다. 어드민에는 i18n이 없어 기본은
+ * 한국어지만, **세계관·캐릭터 지표는 서비스 화면에 찍히는 숫자와 같아야**
+ * 운영자가 "앱에서 본 값"과 대조할 수 있다.
  */
-export const formatStatCount = (count: number): string => {
-  if (count >= 100_000_000) {
+export type CountLocale = "ko" | "en" | "ja" | "zh" | "th" | "vi";
+
+/** 자릿수를 지정해 내림한다. 반올림하면 실제보다 큰 수를 보여 주게 된다. */
+const truncateToFixed = (value: number, digits: number) => {
+  const factor = 10 ** digits;
+
+  return (Math.floor(value * factor) / factor).toFixed(digits);
+};
+
+/**
+ * 카운트성 숫자를 축약한다. (대화 수 · 좋아요 수 등)
+ *
+ * **plat-fe `formatStatCount`와 같은 규칙이다.** 서비스 화면과 어드민이
+ * 같은 값을 다르게 보여 주면 "1.2천"과 "1,234" 중 무엇이 맞는지 확인하느라
+ * 시간이 든다. 규칙을 바꿀 때는 두 곳을 함께 고친다.
+ *
+ * - 999 이하는 그대로
+ * - 한국어: 천(소수점 한 자리) → 만 → 억
+ * - 그 외: K → M → B
+ * - 전부 내림
+ *
+ * 금액·크레딧에는 쓰지 않는다. 정산에 쓰는 숫자는 축약하면 안 된다 —
+ * 그쪽은 {@link formatWithCommas}를 쓴다.
+ */
+export const formatStatCount = (
+  count: number,
+  locale: CountLocale = "ko",
+): string => {
+  if (count < 1_000) return count.toString();
+
+  if (locale === "ko") {
+    if (count < 10_000) return `${truncateToFixed(count / 1_000, 1)}천`;
+    if (count < 100_000_000) return `${Math.floor(count / 10_000)}만`;
+
     return `${Math.floor(count / 100_000_000)}억`;
   }
 
-  if (count >= 10_000) {
-    return `${Math.floor(count / 10_000)}만`;
-  }
+  if (count < 10_000) return `${truncateToFixed(count / 1_000, 1)}K`;
+  if (count < 1_000_000) return `${Math.floor(count / 1_000)}K`;
+  if (count < 1_000_000_000) return `${Math.floor(count / 1_000_000)}M`;
 
-  if (count >= 1_000) {
-    const truncated = Math.floor((count / 1000) * 10) / 10;
-    return `${truncated.toFixed(1)}천`;
-  }
-
-  return count.toString();
+  return `${Math.floor(count / 1_000_000_000)}B`;
 };
 
 /**
@@ -63,6 +89,23 @@ export const formatDelta = (rate: number): string => {
   return `${sign}${rate.toFixed(1)}%`;
 };
 
+/**
+ * 처리한 관리자를 화면에 적는다. **관리자 이름을 그리는 자리는 전부 이 함수를 쓴다.**
+ *
+ * 이름만 남기면 누가 했는지 되짚을 수 없다. 동명이인이 들어올 수 있고, 이름은
+ * 바뀌며, 퇴사한 계정과 새로 들어온 같은 이름이 화면에서 구분되지 않는다.
+ * 콘솔에서 실제로 필요한 식별자는 계정 ID이므로 이름 옆에 항상 함께 적는다.
+ *
+ * 계정이 지워져 ID가 남지 않은 옛 기록은 이름만 적는다 — 그때는 그 이름이
+ * 남은 전부다. 반대로 ID만 아는 자리(목록에서 이름을 아직 못 찾은 필터 등)는
+ * ID만 적는다. 둘 다 없을 때만 '-'다.
+ */
+export const formatAdmin = (name?: string, adminId?: number): string => {
+  if (!name) return adminId ? `#${adminId}` : "-";
+
+  return adminId ? `${name} (#${adminId})` : name;
+};
+
 /** 긴 문자열을 말줄임 처리한다. 표 셀에서 주로 사용한다. */
 export const truncate = (value: string, maxLength: number): string =>
   value.length > maxLength ? `${value.slice(0, maxLength)}…` : value;
@@ -74,4 +117,26 @@ export const reorder = <T>(items: T[], from: number, to: number): T[] => {
   next.splice(to, 0, moved);
 
   return next;
+};
+
+/** 바이트 단위 구간. 1024 기준(KiB)이지만 표기는 관례대로 KB · MB · GB로 쓴다. */
+const BYTE_UNITS = ["B", "KB", "MB", "GB", "TB"] as const;
+
+/**
+ * 바이트를 사람이 읽는 단위로 옮긴다.
+ *
+ * 소수점 한 자리까지만 둔다. 메모리를 볼 때 알고 싶은 것은 "몇 기가쯤 남았나"이지
+ * 바이트 단위의 정확한 값이 아니다.
+ */
+export const formatBytes = (bytes: number): string => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+
+  const exponent = Math.min(
+    BYTE_UNITS.length - 1,
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+  );
+  const value = bytes / 1024 ** exponent;
+
+  // B 단위는 소수점이 의미 없다. 512.0 B 는 읽는 사람을 멈칫하게 한다.
+  return `${exponent === 0 ? value : value.toFixed(1)} ${BYTE_UNITS[exponent]}`;
 };

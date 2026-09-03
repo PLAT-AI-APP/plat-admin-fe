@@ -6,7 +6,7 @@ export default function BannerPage() {
     <>
       <PageHeader
         title="배너 관리"
-        description="메인 화면 최상단 캐러셀에 노출할 배너를 관리합니다."
+        description="언어별로 메인 화면 최상단 캐러셀에 노출할 배너를 관리합니다."
       />
 
       <BannerManager />

@@ -9,8 +9,8 @@ import {
   creditAdjustmentSchema,
   type CreditAdjustmentSchema,
 } from "@/schema/creditAdjustment.schema";
-import type { CreditAdjustmentFormValues } from "@/type/billing";
-import type { User } from "@/type/user";
+import type { CreditAdjustmentRequest } from "@/api/billing/mutateCreditAdjustment";
+import type { AdjustableUser } from "@/type/user";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
@@ -25,15 +25,36 @@ interface CreditAdjustmentFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   /** 확인 다이얼로그 문구에 닉네임이 필요해 대상 유저를 함께 넘긴다. */
-  onSubmit: (values: CreditAdjustmentFormValues, user: User) => void;
+  onSubmit: (request: CreditAdjustmentRequest, user: AdjustableUser) => void;
   isSubmitting: boolean;
 }
 
 const EMPTY_VALUES: CreditAdjustmentSchema = {
-  userId: 0,
+  userId: "",
   type: "GRANT",
   amount: 0,
   reason: "",
+};
+
+/**
+ * 멱등키 한 개.
+ *
+ * `crypto.randomUUID`는 **보안 컨텍스트(https · localhost)에서만** 존재한다.
+ * 사내망 http나 LAN IP(`http://192.168.x.x:3100`)로 열면 `undefined`인데,
+ * 이 모달은 닫혀 있어도 항상 렌더되므로 그냥 부르면 모달이 아니라
+ * **크레딧 조정 페이지 전체가 렌더 중 예외로 죽는다.**
+ *
+ * `getRandomValues`는 비보안 컨텍스트에서도 쓸 수 있어 그쪽으로 물러선다.
+ * 키의 용도는 중복 요청 식별이라 UUID 형식일 필요는 없고 충돌만 없으면 된다.
+ */
+const createIdempotencyKey = (): string => {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 };
 
 const CreditAdjustmentFormModal = ({
@@ -42,8 +63,14 @@ const CreditAdjustmentFormModal = ({
   onSubmit,
   isSubmitting,
 }: CreditAdjustmentFormModalProps) => {
-  const [selectedUser, setSelectedUser] = useState<User | undefined>();
+  const [selectedUser, setSelectedUser] = useState<AdjustableUser | undefined>();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  /*
+    멱등키. 모달을 한 번 열면 하나를 쥐고 재시도에도 같은 값을 보낸다.
+    제출할 때마다 새로 만들면 중복 클릭이 그대로 두 번 조정되고,
+    아예 고정해 두면 두 번째 조정이 영영 409로 막힌다. 그래서 '모달 1회 = 키 1개'다.
+  */
+  const [idempotencyKey, setIdempotencyKey] = useState(createIdempotencyKey);
 
   const {
     register,
@@ -62,6 +89,7 @@ const CreditAdjustmentFormModal = ({
     if (!isOpen) return;
 
     setSelectedUser(undefined);
+    setIdempotencyKey(createIdempotencyKey());
     reset(EMPTY_VALUES);
   }, [isOpen, reset]);
 
@@ -71,11 +99,21 @@ const CreditAdjustmentFormModal = ({
   const expectedBalance = selectedUser
     ? Math.max(0, selectedUser.creditBalance + delta)
     : 0;
+  /*
+    차감 한도는 총 잔액이 아니라 available이다. 예약(대화 진행 중 등)으로 잠긴
+    몫은 다른 작업이 이미 잡아둔 것이라 회수 대상이 아니고, 총 잔액을 기준으로
+    검사하면 잠긴 만큼 서버에서 422를 맞는다. 눌러 보고 알게 하지 않는다.
+  */
+  const lockedBalance = selectedUser
+    ? selectedUser.creditBalance - selectedUser.availableBalance
+    : 0;
   const isOverDeduction = Boolean(
-    selectedUser && selectedUser.creditBalance + delta < 0,
+    selectedUser &&
+      values.type === "DEDUCT" &&
+      amount > selectedUser.availableBalance,
   );
 
-  const handleSelectUser = (user: User) => {
+  const handleSelectUser = (user: AdjustableUser) => {
     setSelectedUser(user);
     setValue("userId", user.userId, { shouldValidate: true });
   };
@@ -83,7 +121,7 @@ const CreditAdjustmentFormModal = ({
   const submit = handleSubmit((formValues) => {
     if (!selectedUser) return;
 
-    onSubmit(formValues, selectedUser);
+    onSubmit({ ...formValues, idempotencyKey }, selectedUser);
   });
 
   return (
@@ -127,12 +165,16 @@ const CreditAdjustmentFormModal = ({
             {selectedUser ? (
               <div className="flex items-center gap-3 rounded-field border border-border-main p-3">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-medium text-font-1">
+                  <p className="truncate body-4 font-medium text-font-1">
                     {selectedUser.nickname}
                   </p>
-                  <p className="mt-0.5 truncate text-[12px] text-font-2">
+                  <p className="mt-0.5 truncate body-6 text-font-2">
                     #{selectedUser.userId} · 보유{" "}
                     {formatCredit(selectedUser.creditBalance)}
+                    {/* 잠긴 몫이 있을 때만 알린다. 없으면 보유 = 차감 가능이라 덧붙일 것이 없다. */}
+                    {lockedBalance > 0 && (
+                      <> · 잠김 {formatCredit(lockedBalance)}</>
+                    )}
                   </p>
                 </div>
 
@@ -208,7 +250,7 @@ const CreditAdjustmentFormModal = ({
           </FormField>
 
           {/* 실행 전에 잔액이 어떻게 바뀌는지 숫자로 먼저 보여준다. */}
-          <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 text-[13px]">
+          <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 body-5">
             <div className="flex items-center gap-2">
               <dt className="text-font-2">조정 크레딧</dt>
               <dd
@@ -230,9 +272,12 @@ const CreditAdjustmentFormModal = ({
             </div>
           </dl>
 
-          {isOverDeduction && (
-            <p className="mt-2 text-[12px] text-font-error">
-              보유 크레딧보다 많은 금액은 차감할 수 없습니다.
+          {isOverDeduction && selectedUser && (
+            <p className="mt-2 body-6 text-font-error">
+              차감할 수 있는 크레딧은 {formatCredit(selectedUser.availableBalance)}
+              까지입니다.
+              {lockedBalance > 0 &&
+                ` 예약으로 잠긴 ${formatCredit(lockedBalance)}은 회수할 수 없습니다.`}
             </p>
           )}
         </form>

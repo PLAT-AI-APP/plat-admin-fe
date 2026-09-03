@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import type { PermissionKey } from "@/type/permission";
 import {
   Bell,
+  Calendar,
   Coin,
   Cpu,
   CreditCard,
@@ -39,12 +40,10 @@ export interface AdminMenuItem {
   icon?: ReactNode;
   /** 이 메뉴를 보려면 필요한 권한. 없으면 누구나 본다. */
   permission?: PermissionKey;
-  /** MVP 범위에서 제외된 기능. 메뉴에 배지로 표시한다. */
-  isExcludedFromMvp?: boolean;
   /**
    * 화면만 만들어 둔 MOCK 기능.
    *
-   * **지금은 다른 도구로 운영 중이라 MVP에서 구현하지 않는다.**
+   * **아직 실서버에 붙지 않았거나 다른 도구로 운영 중이라 구현하지 않는다.**
    * 메뉴에서 지우면 나중에 왜 없는지 아무도 모르고, 배지 없이 두면
    * 저장한 값이 실제로 반영되는 줄 안다.
    */
@@ -92,6 +91,8 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     icon: <Dashboard size={ICON_SIZE} />,
     href: "/",
     permission: "dashboard:read",
+    /* 집계 지표를 아직 실서버가 내려주지 않는다. 화면은 지표가 붙을 때를 위해 남겨 둔다. */
+    isMock: true,
   },
   {
     key: "main-exposure",
@@ -135,7 +136,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     icon: <Globe size={ICON_SIZE} />,
     children: [
       {
-        label: "전체 세계관",
+        label: "세계관",
         href: "/universes",
         permission: "universe:read",
         icon: <Globe size={SUB_ICON_SIZE} />,
@@ -145,6 +146,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/universes/characters",
         permission: "character:read",
         icon: <Robot size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
       {
         label: "공식 계정",
@@ -159,9 +161,9 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Hash size={SUB_ICON_SIZE} />,
       },
       {
-        label: "NSFW 키워드",
-        href: "/universes/nsfw-keywords",
-        permission: "nsfwKeyword:read",
+        label: "금지어 관리",
+        href: "/universes/banned-words",
+        permission: "bannedWord:read",
         icon: <ShieldAlert size={SUB_ICON_SIZE} />,
       },
       {
@@ -169,6 +171,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/universes/chat-exports",
         permission: "chatExport:read",
         icon: <Download size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
     ],
   },
@@ -190,7 +193,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         pendingKey: "report",
         permission: "report:read",
         icon: <Flag size={SUB_ICON_SIZE} />,
-        isExcludedFromMvp: true,
+        isMock: true,
       },
     ],
   },
@@ -217,6 +220,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/ai/catalog",
         permission: "aiModel:read",
         icon: <Cpu size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
       {
         label: "AI 모델 관리",
@@ -248,6 +252,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/billing/credit-policies",
         permission: "creditPolicy:read",
         icon: <Sliders size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
       {
         label: "크레딧 수동 조정",
@@ -260,6 +265,18 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/billing/ledger",
         permission: "ledger:read",
         icon: <Receipt size={SUB_ICON_SIZE} />,
+      },
+      {
+        /*
+          장부와 나란히 두지만 다른 화면이다. 장부는 **지금 운영 중인 유저의 돈
+          흐름**을 보는 곳이고, 이쪽은 **탈퇴하고 개인정보까지 파기된 뒤에도
+          법이 남기게 하는 기록**을 보는 곳이다. 조회 키부터 다르다 — 유저가
+          아니라 결제사 거래번호로 찾는다.
+        */
+        label: "결제 보존 원장",
+        href: "/billing/retention",
+        permission: "paymentRecord:read",
+        icon: <Scale size={SUB_ICON_SIZE} />,
       },
     ],
   },
@@ -280,27 +297,28 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         pendingKey: "qna",
         permission: "qna:read",
         icon: <QuestionCircle size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
       {
         label: "알림 관리",
         href: "/communication/notifications",
         permission: "notification:read",
         icon: <Bell size={SUB_ICON_SIZE} />,
-        isExcludedFromMvp: true,
+        isMock: true,
       },
       {
         label: "선제 메시지",
         href: "/communication/proactive-messages",
         permission: "notification:read",
         icon: <MessageSquare size={SUB_ICON_SIZE} />,
-        isExcludedFromMvp: true,
+        isMock: true,
       },
       {
         label: "푸시 발송",
         href: "/communication/push",
         permission: "push:read",
         icon: <Megaphone size={SUB_ICON_SIZE} />,
-        isExcludedFromMvp: true,
+        isMock: true,
       },
     ],
   },
@@ -335,6 +353,8 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/ops/app-versions",
         permission: "appVersion:read",
         icon: <Smartphone size={SUB_ICON_SIZE} />,
+        /* 강제 업데이트 정책을 아직 앱이 읽지 않는다. 화면은 붙일 때를 위해 남겨 둔다. */
+        isMock: true,
       },
       {
         label: "서버 상태",
@@ -343,9 +363,20 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Server size={SUB_ICON_SIZE} />,
       },
       {
+        label: "배치 관리",
+        href: "/ops/batch",
+        permission: "batch:read",
+        icon: <Calendar size={SUB_ICON_SIZE} />,
+      },
+      {
         label: "로그",
         href: "/ops/logs",
-        permission: "log:read",
+        /*
+          탭마다 권한이 다르다(관리자 활동 `log:read` · 시스템 이벤트 `systemLog:read`).
+          메뉴는 키를 하나만 걸 수 있어 **넓은 쪽**을 두고, 감사 탭은 화면 안에서
+          따로 막는다. 좁은 쪽을 걸면 장애를 보려는 사람이 메뉴 자체를 못 본다.
+        */
+        permission: "systemLog:read",
         icon: <ListLines size={SUB_ICON_SIZE} />,
       },
     ],

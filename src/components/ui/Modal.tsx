@@ -9,12 +9,22 @@ import IconButton from "./IconButton";
 
 export type ModalSize = "sm" | "md" | "lg" | "xl";
 
+export type ModalMinHeight = "sm" | "md" | "lg";
+
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: ReactNode;
   description?: ReactNode;
   size?: ModalSize;
+  /**
+   * 본문 영역의 최소 높이.
+   *
+   * 검색 결과 수나 로딩 여부에 따라 내용이 오가는 모달에 준다.
+   * 없으면 결과가 줄어드는 순간 모달이 확 접혔다가 다시 펴져서,
+   * 방금 누른 검색 버튼이 손가락 밑에서 사라진다.
+   */
+  minHeight?: ModalMinHeight;
   /** 푸터 영역. 취소 → 확인 순으로 우측 정렬한다. */
   footer?: ReactNode;
   /** 파괴적 작업 모달은 오버레이 클릭으로 닫지 않는다. */
@@ -38,6 +48,16 @@ const SIZE_CLASS: Record<ModalSize, string> = {
 };
 
 /**
+ * 화면 높이에서 헤더 · 푸터 · 여백 몫(280px)을 뺀 값을 함께 물려 둔다.
+ * px만 두면 낮은 화면에서 본문이 모달의 max-h를 밀어내 푸터가 잘린다.
+ */
+const MIN_HEIGHT_CLASS: Record<ModalMinHeight, string> = {
+  sm: "min-h-[min(220px,calc(100vh-280px))]",
+  md: "min-h-[min(340px,calc(100vh-280px))]",
+  lg: "min-h-[min(460px,calc(100vh-280px))]",
+};
+
+/**
  * 관리자 공통 모달.
  *
  * 등장 애니메이션은 framer-motion의 AnimatePresence가 아니라 CSS 키프레임으로 처리한다.
@@ -50,6 +70,7 @@ const Modal = ({
   title,
   description,
   size = "md",
+  minHeight,
   footer,
   closeOnOverlayClick = true,
   hideCloseButton = false,
@@ -90,9 +111,9 @@ const Modal = ({
       >
         <header className="flex items-start justify-between gap-4 border-b border-border-main px-6 py-4">
           <div className="min-w-0">
-            <h2 className="text-[17px] font-semibold text-font-0">{title}</h2>
+            <h2 className="title-2 font-semibold text-font-0">{title}</h2>
             {description && (
-              <p className="mt-1 text-[13px] text-font-2">{description}</p>
+              <p className="mt-1 body-5 text-font-2">{description}</p>
             )}
           </div>
 
@@ -106,7 +127,12 @@ const Modal = ({
           )}
         </header>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 scrollbar-thin">
+        <div
+          className={cn(
+            "flex-1 overflow-y-auto px-6 py-5 scrollbar-thin",
+            minHeight && MIN_HEIGHT_CLASS[minHeight],
+          )}
+        >
           {children}
         </div>
 

@@ -33,8 +33,8 @@ const DetailRow = ({
   children: ReactNode;
 }) => (
   <div className="flex items-start gap-4 py-2">
-    <p className="w-24 shrink-0 text-[13px] text-font-2">{label}</p>
-    <div className="min-w-0 flex-1 text-[13px] text-font-1">{children}</div>
+    <p className="w-24 shrink-0 body-5 text-font-2">{label}</p>
+    <div className="min-w-0 flex-1 body-5 text-font-1">{children}</div>
   </div>
 );
 
@@ -97,13 +97,21 @@ const HashtagDetailModal = ({
             <DetailRow label="노출 여부">
               {hashtag.isActive ? "노출 중" : "노출 중지"}
             </DetailRow>
+            {/*
+              등록일은 상세 값으로 적는다. 목록 응답의 등록일은 날짜까지만 와서
+              그대로 시각을 붙이면 전부 00:00으로 보인다.
+            */}
             <DetailRow label="등록일">
-              {formatDateTime(hashtag.createdAt)}
+              {isLoading ? (
+                <Skeleton className="h-4 w-32 rounded-field" />
+              ) : (
+                formatDateTime(detail?.createdAt)
+              )}
             </DetailRow>
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-[13px] font-medium text-font-1">
+            <p className="body-5 font-medium text-font-1">
               번역 {hashtag.translationCount}/{hashtag.totalTranslationCount}
             </p>
 

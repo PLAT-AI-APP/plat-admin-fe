@@ -15,7 +15,7 @@ const BackLink = ({ href, label, className }: BackLinkProps) => {
     <Link
       href={href}
       className={cn(
-        "-mb-2 inline-flex w-fit items-center gap-1 text-[13px] text-font-2 transition hover:text-font-1",
+        "-mb-2 inline-flex w-fit items-center gap-1 body-5 text-font-2 transition hover:text-font-1",
         className,
       )}
     >

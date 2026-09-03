@@ -62,8 +62,7 @@ const ManagerManager = () => {
   }>();
 
   // 전권 직책인지 판단해 뱃지 색을 정한다. 직책 이름으로 판단하지 않는다.
-  const { data: roleData } = useAdminRoleListQuery();
-  const roles = roleData?.items ?? [];
+  const { data: roles = [] } = useAdminRoleListQuery();
   const isSuperAdminRole = (targetRoleId: number) =>
     Boolean(roles.find((role) => role.roleId === targetRoleId)?.isSuperAdmin);
 
@@ -72,8 +71,9 @@ const ManagerManager = () => {
     inviteMutation,
     updateMutation,
     statusMutation,
-    passwordResetMutation,
+    unlockMutation,
     deleteMutation,
+    passwordResetMutation,
   } = useManagerMutation();
 
   const managers = data ?? [];
@@ -102,7 +102,7 @@ const ManagerManager = () => {
   const handleSubmit = (values: ManagerFormValues) => {
     if (editingManager) {
       updateMutation.mutate(
-        { managerId: editingManager.managerId, values },
+        { manager: editingManager, values },
         {
           onSuccess: () => setIsFormOpen(false),
           onError: (error) => showErrorToast(error),
@@ -122,9 +122,19 @@ const ManagerManager = () => {
 
   const handleChangeStatus = (manager: Manager, next: ManagerStatus) => {
     statusMutation.mutate(
-      { managerId: manager.managerId, status: next },
+      { manager, status: next },
       { onError: (error) => showErrorToast(error) },
     );
+  };
+
+  /*
+    잠금 해제만 상태 변경과 다른 경로를 쓴다. 상태 하나가 아니라 잠긴 시각과
+    실패 누적까지 함께 지워야 풀리고, 그 판단은 서버가 한다.
+  */
+  const handleUnlock = (manager: Manager) => {
+    unlockMutation.mutate(manager, {
+      onError: (error) => showErrorToast(error),
+    });
   };
 
   const handleDeactivate = (manager: Manager) => {
@@ -135,6 +145,25 @@ const ManagerManager = () => {
       confirmText: "비활성화",
       tone: "danger",
       onConfirm: () => handleChangeStatus(manager, "INACTIVE"),
+    });
+  };
+
+  const handleDelete = (manager: Manager) => {
+    openConfirm({
+      title: "계정을 삭제할까요?",
+      description: `'${manager.name}(${manager.email})' 계정을 삭제합니다. 되돌릴 수 없습니다.`,
+      /*
+        되돌릴 수 없다는 것과 로그에서 이름이 사라진다는 것을 함께 적는다.
+        운영자가 "로그를 보면 누가 했는지 알 수 있겠지"라고 생각한 채 지우면 안 된다.
+      */
+      warning:
+        "운영 로그의 활동 기록은 남지만, 실행자를 이름으로 되짚을 수 없게 됩니다. 같은 이메일로 다시 초대해도 이전 기록과 이어지지 않습니다.",
+      confirmText: "삭제",
+      tone: "danger",
+      onConfirm: () =>
+        deleteMutation.mutate(manager, {
+          onError: (error) => showErrorToast(error),
+        }),
     });
   };
 
@@ -154,21 +183,6 @@ const ManagerManager = () => {
     });
   };
 
-  const handleDelete = (manager: Manager) => {
-    openConfirm({
-      title: "관리자를 삭제할까요?",
-      description: `'${manager.name}(${manager.email})' 계정이 즉시 삭제됩니다.`,
-      warning:
-        "삭제한 계정은 되돌릴 수 없습니다. 접속을 막기만 하려면 비활성화를 쓰세요.",
-      confirmText: "삭제",
-      tone: "danger",
-      onConfirm: () =>
-        deleteMutation
-          .mutateAsync(manager.managerId)
-          .catch((error) => showErrorToast(error)),
-    });
-  };
-
   /** 행 액션. 상태에 따라 할 수 있는 일만 남긴다. */
   const rowActions = (manager: Manager) => {
     const items = [];
@@ -177,7 +191,7 @@ const ManagerManager = () => {
       items.push({
         label: "잠금 해제",
         icon: <Unlock size={15} />,
-        onSelect: () => handleChangeStatus(manager, "ACTIVE"),
+        onSelect: () => handleUnlock(manager),
       });
     }
 
@@ -219,6 +233,7 @@ const ManagerManager = () => {
         label: "삭제",
         icon: <Trash size={15} />,
         tone: "danger" as const,
+        // 자기 계정과 마지막 최고관리자는 서버가 막는다. 눌러 볼 필요가 없다.
         disabled: isSelf(manager),
         onSelect: () => handleDelete(manager),
       });
@@ -240,7 +255,7 @@ const ManagerManager = () => {
               {isSelf(manager) && <Badge tone="info">나</Badge>}
             </span>
           }
-          secondary={manager.email}
+          secondary={`#${manager.managerId} · ${manager.email}`}
         />
       ),
     },
@@ -291,7 +306,7 @@ const ManagerManager = () => {
       width: "150px",
       render: (manager) =>
         manager.passwordUpdatedAt ? (
-          <span className="text-[13px] text-font-2 tabular-nums">
+          <span className="body-5 text-font-2 tabular-nums">
             {formatDateTime(manager.passwordUpdatedAt)}
           </span>
         ) : (
@@ -328,7 +343,9 @@ const ManagerManager = () => {
           운영 &gt; 직책 · 권한
         </Link>
         에서 직책 단위로 정합니다. 관리자를 추가하면 임시 비밀번호가 발급되고,
-        본인이 비밀번호를 바꾼 뒤부터 콘솔을 사용할 수 있습니다.
+        본인이 비밀번호를 바꾼 뒤부터 콘솔을 사용할 수 있습니다. 계정을 삭제하면
+        되돌릴 수 없고, 운영 로그에 남은 활동의 실행자를 이름으로 되짚을 수 없게
+        됩니다. 잠시 막아 두려는 것이라면 삭제 대신 비활성화를 쓰세요.
       </Alert>
 
       {lockedCount > 0 && (
@@ -365,7 +382,7 @@ const ManagerManager = () => {
               aria-label="직책 필터"
             />
 
-            <p className="text-[13px] text-font-2 tabular-nums">
+            <p className="body-5 text-font-2 tabular-nums">
               총 {managers.length}명
             </p>
 

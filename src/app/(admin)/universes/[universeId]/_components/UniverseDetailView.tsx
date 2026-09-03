@@ -5,17 +5,17 @@ import Link from "next/link";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUniverseDetailQuery } from "@/api/universe/getUniverseDetail";
-import { useUniverseMutation } from "@/api/universe/mutateUniverse";
-import { ChevronRight, ImageIcon } from "@/icons";
-import { formatDateTime } from "@/lib/dayjs";
-import { cn, formatWithCommas } from "@/lib/utils";
-import { showErrorToast } from "@/lib/toast";
-import { openConfirm } from "@/store/useConfirmStore";
 import {
-  universeBlockReason,
-  type UniverseDetail,
-} from "@/type/character";
-import { SERVICE_LANGUAGES, SERVICE_LANGUAGE_LABEL } from "@/type/language";
+  showUniverseErrorToast,
+  useUniverseMutation,
+  type UniversePatchBody,
+} from "@/api/universe/mutateUniverse";
+import { ChevronRight } from "@/icons";
+import { formatDateTime } from "@/lib/dayjs";
+import { resolveImageUrl } from "@/lib/imageUrl";
+import { cn, formatStatCount, formatWithCommas } from "@/lib/utils";
+import { openConfirm } from "@/store/useConfirmStore";
+import { universeBlockReason, type UniverseDetail } from "@/type/character";
 import {
   universeRejectSchema,
   type UniverseRejectSchema,
@@ -28,12 +28,25 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Dropdown from "@/components/ui/Dropdown";
 import EmptyState from "@/components/ui/EmptyState";
+import EntityImage from "@/components/ui/EntityImage";
 import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
 import Textarea from "@/components/ui/Textarea";
+import UniverseAssetGallery from "./UniverseAssetGallery";
 import UniverseScenarioPanel from "./UniverseScenarioPanel";
+import UniverseSettingsModal, {
+  type UniverseSettingsMode,
+} from "./UniverseSettingsModal";
+import UniverseTranslationPanel from "./UniverseTranslationPanel";
 import { buildUniverseActions } from "./universeActions";
+import {
+  creatorGradeLabel,
+  creatorStatusLabel,
+  creatorStatusTone,
+  isRiskyCreatorStatus,
+  universeTitleOf,
+} from "./universeMeta";
 import {
   UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_REVIEW_LABEL,
@@ -49,86 +62,47 @@ interface UniverseDetailViewProps {
   universeId: string;
 }
 
-/** 세계관 대표 제목. 한국어 번역을 우선하고 없으면 첫 번역을 쓴다. */
-const titleOf = (universe: UniverseDetail): string => {
-  const ko = universe.translations.find((t) => t.language === "KO");
-  return (ko ?? universe.translations[0])?.title ?? "제목 없음";
-};
-
-/** 세계관 지표 한 칸 */
-const StatBox = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-field border border-border-main px-3 py-2.5">
-    <p className="text-[12px] text-font-2">{label}</p>
-    <p className="mt-1 text-[15px] font-semibold text-font-1 tabular-nums">
-      {value}
-    </p>
-  </div>
-);
-
-/**
- * 이미지 자리표시.
- *
- * 관리자 서버는 파일 저장소 어댑터를 스캔하지 않아 FileId → URL을 만들지 못한다.
- * 따라서 대부분의 이미지 URL이 비어 오며, 깨진 `img` 대신 파일 ID를 적은 자리표시를 둔다.
- */
-const ImagePlaceholder = ({
-  fileId,
-  className,
+/** 세계관 지표 한 칸. 축약값 아래에 원값을 남겨 대조할 수 있게 한다. */
+const StatBox = ({
+  label,
+  value,
+  hint,
 }: {
-  fileId: string | null;
-  className?: string;
+  label: string;
+  value: string;
+  hint?: string;
 }) => (
-  <div
-    className={cn(
-      "flex flex-col items-center justify-center gap-1 rounded-card bg-subtle text-font-disabled",
-      className,
-    )}
-  >
-    <ImageIcon size={20} />
-    {fileId && (
-      <span className="px-1 text-center text-[10px] break-all">#{fileId}</span>
-    )}
+  <div className="rounded-field border border-border-main px-3 py-2.5">
+    <p className="caption-1 text-font-2">{label}</p>
+    <p className="mt-1 title-4 text-font-1 tabular-nums">{value}</p>
+    {hint && <p className="caption-3 text-font-2 tabular-nums">{hint}</p>}
   </div>
 );
-
-/** 상세 설정처럼 긴 원문을 접어 두는 블록. 검수 시 펼쳐 전체를 본다. */
-const Collapsible = ({ text }: { text: string }) => {
-  const [open, setOpen] = useState(false);
-  const long = text.length > 160;
-
-  return (
-    <div>
-      <p
-        className={cn(
-          "text-[13px] whitespace-pre-line text-font-1",
-          !open && long && "line-clamp-3",
-        )}
-      >
-        {text || "-"}
-      </p>
-      {long && (
-        <button
-          type="button"
-          onClick={() => setOpen((prev) => !prev)}
-          className="mt-1 text-[12px] text-brand hover:underline"
-        >
-          {open ? "접기" : "전체 보기"}
-        </button>
-      )}
-    </div>
-  );
-};
 
 /**
  * 세계관 상세 · 운영 콘솔.
  *
- * 조회만 하던 화면을 심사·상태·댓글 조치와 번역·에셋·시나리오 검수까지 하는
- * 운영 화면으로 넓혔다. 삭제·파기 복구는 서버에 엔드포인트가 없어 다루지 않는다.
+ * 조회만 하던 화면을 심사·상태·분류·댓글 조치와 번역·에셋·시나리오 검수까지
+ * 하는 운영 화면으로 넓혔다. 화면의 목적은 두 가지다.
+ *
+ * - **판단에 필요한 것을 실제로 보여 준다.** 이미지(대표·에셋·캐릭터)를 원본
+ *   경로로 그리고, 비어 있는 번역까지 드러내고, 회차 본문을 언어별로 대조한다.
+ * - **판단한 것을 바로 조치한다.** 서버가 받는 값(심사·상태·공개 범위·장르·성향·
+ *   댓글)은 전부 헤더 드롭다운에서 처리한다.
+ *
+ * 삭제는 하드 딜리트다. 지운 세계관은 데이터째 사라져 이 화면으로도 열리지 않으므로
+ * 삭제·복구는 다루지 않는다.
  */
 const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   const { data, isError } = useUniverseDetailQuery(universeId);
   const { patchMutation, reviewMutation } = useUniverseMutation();
   const [isRejectOpen, setRejectOpen] = useState(false);
+  const [settingsMode, setSettingsMode] = useState<UniverseSettingsMode | null>(
+    null,
+  );
+
+  // 조치는 전부 같은 한 건을 고친다. 하나가 날아가는 동안 나머지도 잠근다.
+  const isBusy = patchMutation.isPending || reviewMutation.isPending;
 
   const {
     control,
@@ -146,21 +120,26 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   ) =>
     reviewMutation.mutate(
       { universeId, body, message },
-      { onError: (error) => showErrorToast(error) },
+      { onError: (error) => showUniverseErrorToast(error) },
     );
 
   const runPatch = (
-    body: Parameters<typeof patchMutation.mutate>[0]["body"],
+    body: UniversePatchBody,
     message: string,
+    onDone?: () => void,
   ) =>
     patchMutation.mutate(
       { universeId, body, message },
-      { onError: (error) => showErrorToast(error) },
+      {
+        onSuccess: () => onDone?.(),
+        onError: (error) => showUniverseErrorToast(error),
+      },
     );
 
   const actions = data
     ? buildUniverseActions({
         universe: data,
+        isBusy,
         onApproveReview: () =>
           runReview({ reviewStatus: "APPROVED" }, "심사를 승인했습니다."),
         onRejectReview: () => {
@@ -168,7 +147,14 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
           setRejectOpen(true);
         },
         onRequestReview: () =>
-          runReview({ reviewStatus: "PENDING" }, "재심사 대기로 전환했습니다."),
+          openConfirm({
+            title: "심사를 되돌릴까요?",
+            description:
+              "심사 대기로 되돌아가고 반려 사유도 함께 지워집니다. 잘못 승인·반려한 것을 무를 때 사용하세요.",
+            confirmText: "되돌리기",
+            onConfirm: () =>
+              runReview({ reviewStatus: "PENDING" }, "심사를 되돌렸습니다."),
+          }),
         onActivate: () =>
           runPatch({ status: "ACTIVE" }, "세계관을 활성화했습니다."),
         onDeactivate: () =>
@@ -181,11 +167,15 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
             onConfirm: () =>
               runPatch({ status: "INACTIVE" }, "세계관을 비활성화했습니다."),
           }),
+        onChangeVisibility: () => setSettingsMode("visibility"),
+        onChangeClassification: () => setSettingsMode("classification"),
         onToggleComment: (next) => {
           if (next) {
             runPatch({ commentEnabled: true }, "댓글을 다시 허용했습니다.");
+
             return;
           }
+
           openConfirm({
             title: "댓글을 강제로 중지할까요?",
             description:
@@ -207,18 +197,26 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
     setRejectOpen(false);
   });
 
+  const onChangeSettings = (body: UniversePatchBody) => {
+    const message =
+      body.visibility !== undefined
+        ? `공개 범위를 ${UNIVERSE_VISIBILITY_LABEL[body.visibility]}(으)로 바꿨습니다.`
+        : "장르 · 성향을 바꿨습니다.";
+
+    runPatch(body, message, () => setSettingsMode(null));
+  };
+
   const blockReason = data ? universeBlockReason(data) : undefined;
+  const isCreatorRisky = data ? isRiskyCreatorStatus(data.creator.status) : false;
 
   return (
     <>
       <BackLink href="/universes" label="세계관" />
 
       <PageHeader
-        title={data ? titleOf(data) : "세계관 상세"}
+        title={data ? universeTitleOf(data) : "세계관 상세"}
         description={data ? `#${data.universeId}` : undefined}
-        action={
-          data ? <Dropdown items={actions} /> : undefined
-        }
+        action={data ? <Dropdown items={actions} /> : undefined}
       />
 
       {/*
@@ -244,11 +242,31 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
 
       {data && (
         <>
+          {/*
+            정지·회수된 크리에이터의 세계관은 심사를 통과시켜도 계정 쪽 조치로
+            다시 내려갈 수 있다. 승인 버튼을 누르기 전에 보이는 자리에 둔다.
+          */}
+          {isCreatorRisky && (
+            <Alert tone="warning" title="정지된 크리에이터의 세계관입니다">
+              소유 크리에이터가 {creatorStatusLabel(data.creator.status)} 상태입니다.
+              심사를 승인해도 계정 조치로 다시 내려갈 수 있으니, 계정 상태를 먼저
+              확인하세요.
+            </Alert>
+          )}
+
           <Card>
             <div className="flex gap-4">
-              <ImagePlaceholder
+              <EntityImage
+                src={resolveImageUrl(
+                  data.profileImageUrl,
+                  data.profileImageFileId,
+                  "UNIVERSE_PROFILE",
+                  "SQ140",
+                )}
+                alt={universeTitleOf(data)}
                 fileId={data.profileImageFileId}
-                className="aspect-square w-28 shrink-0"
+                ratio="square"
+                className="w-28 shrink-0"
               />
 
               <div className="min-w-0 flex-1">
@@ -269,22 +287,22 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                     {UNIVERSE_TENDENCY_LABEL[data.tendency]}
                   </Badge>
                   {!data.commentEnabled && (
-                    <Badge tone="neutral">댓글 미사용</Badge>
+                    <Badge tone="neutral">댓글 불가</Badge>
                   )}
                 </div>
 
                 {/* 왜 앱에 안 보이는지를 뱃지 조합 대신 한 줄로 명시한다. */}
                 {blockReason ? (
-                  <p className="mt-2.5 text-[13px] text-warning">
+                  <p className="mt-2.5 body-5 text-warning">
                     현재 앱에 노출되지 않습니다 · 사유: {blockReason}
                   </p>
                 ) : (
-                  <p className="mt-2.5 text-[13px] text-success">
+                  <p className="mt-2.5 body-5 text-success">
                     앱에 정상 노출 가능한 상태입니다.
                   </p>
                 )}
 
-                <p className="mt-2 text-[12px] text-font-2 tabular-nums">
+                <p className="mt-2 body-6 text-font-2 tabular-nums">
                   등록 {formatDateTime(data.createdAt)}
                   {data.updatedAt && ` · 수정 ${formatDateTime(data.updatedAt)}`}
                 </p>
@@ -298,25 +316,6 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
               </Alert>
             )}
 
-            {/* 삭제는 두 단계다. 파기 전에는 복구 문의를 받을 수 있고, 파기 뒤는 되돌릴 수 없다. */}
-            {data.status === "DELETED" && (
-              <Alert tone="warning" title="삭제 대기" className="mt-4">
-                {data.deletedAt && `${formatDateTime(data.deletedAt)}에 삭제 요청됨`}
-                {data.purgeAt &&
-                  ` · ${formatDateTime(data.purgeAt)} 이후 콘텐츠가 파기됩니다.`}
-                <br />
-                복구는 이 화면에서 처리하지 않습니다(서버에 복구 API 미구현). 파기
-                전이라면 운영 채널로 복구를 요청하세요.
-              </Alert>
-            )}
-
-            {data.status === "PURGED" && (
-              <Alert tone="danger" title="콘텐츠 파기 완료" className="mt-4">
-                {data.purgedAt && `${formatDateTime(data.purgedAt)}에 `}
-                이미지 · 에셋이 파기되어 되돌릴 수 없습니다.
-              </Alert>
-            )}
-
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
               <StatBox
                 label="시나리오"
@@ -326,60 +325,33 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                 label="에셋"
                 value={formatWithCommas(data.assets.length)}
               />
-              <StatBox label="대화" value={formatWithCommas(data.chatCount)} />
-              <StatBox label="좋아요" value={formatWithCommas(data.likeCount)} />
+              <StatBox
+                label="대화"
+                // 앱 화면과 같은 축약 규칙으로 보여 준다(운영자가 앱과 대조한다).
+                value={formatStatCount(data.chatCount)}
+                // 축약된 숫자만으로는 조치 근거를 남길 수 없어 원값을 함께 둔다.
+                hint={
+                  data.chatCount >= 1_000
+                    ? formatWithCommas(data.chatCount)
+                    : undefined
+                }
+              />
+              <StatBox
+                label="좋아요"
+                value={formatStatCount(data.likeCount)}
+                hint={
+                  data.likeCount >= 1_000
+                    ? formatWithCommas(data.likeCount)
+                    : undefined
+                }
+              />
             </div>
           </Card>
 
-          {/* 언어별 원문. detailSetting은 프롬프트성 원문이라 NSFW·인젝션 검수에 쓴다. */}
-          <Card
-            title={`번역 ${data.translations.length}개 언어`}
-            description="detailSetting은 유저에게 보이지 않는 프롬프트성 설정입니다. 검수 시 함께 봅니다."
-            noPadding
-            bodyClassName="flex flex-col"
-          >
-            {data.translations.length === 0 ? (
-              <div className="px-5 py-6">
-                <EmptyState title="등록된 번역이 없습니다." />
-              </div>
-            ) : (
-              SERVICE_LANGUAGES.filter((language) =>
-                data.translations.some((t) => t.language === language),
-              ).map((language) => {
-                const t = data.translations.find(
-                  (item) => item.language === language,
-                )!;
-                return (
-                  <div
-                    key={language}
-                    className="border-b border-border-main px-5 py-4 last:border-b-0"
-                  >
-                    <div className="mb-2 flex items-center gap-2">
-                      <Badge tone="brand">
-                        {SERVICE_LANGUAGE_LABEL[language]}
-                      </Badge>
-                      <p className="text-[14px] font-semibold text-font-1">
-                        {t.title}
-                      </p>
-                    </div>
-                    <p className="text-[13px] text-font-2">{t.introduce}</p>
-                    <p className="mt-1 text-[13px] whitespace-pre-line text-font-1">
-                      {t.description}
-                    </p>
-                    <div className="mt-2 rounded-field border border-border-main bg-subtle p-3">
-                      <p className="mb-1 text-[11px] font-medium text-font-2">
-                        상세 설정 (detailSetting)
-                      </p>
-                      <Collapsible text={t.detailSetting} />
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </Card>
+          <UniverseTranslationPanel translations={data.translations} />
 
-          {/* 해시태그. 성인·노출 여부를 함께 보여 준다(성인 태그가 걸린 세계관 확인용). */}
-          <Card title={`해시태그 ${data.hashtags.length}개`} noPadding bodyClassName="p-5">
+          {/* 해시태그. 성인 태그가 걸린 세계관인지 함께 본다. */}
+          <Card title={`해시태그 ${data.hashtags.length}개`}>
             {data.hashtags.length === 0 ? (
               <EmptyState title="등록된 해시태그가 없습니다." />
             ) : (
@@ -388,7 +360,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                   <span
                     key={tag.hashtagId}
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-field px-2 py-1 text-[12px]",
+                      "inline-flex items-center gap-1 rounded-chip px-2 py-1 body-6",
                       tag.isEnabled
                         ? "bg-subtle text-font-1"
                         : "bg-subtle text-font-disabled line-through",
@@ -396,9 +368,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                   >
                     #{tag.label}
                     {tag.isAdult && (
-                      <span className="text-[10px] font-semibold text-danger">
-                        19
-                      </span>
+                      <span className="caption-3 text-danger">19</span>
                     )}
                   </span>
                 ))}
@@ -406,99 +376,52 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
             )}
           </Card>
 
-          {/* 에셋 갤러리. 저작권·선정성 신고 대응 시 실제 이미지를 확인하는 자리다. */}
-          <Card
-            title={`에셋 ${data.assets.length}개`}
-            description="크리에이터가 올린 이미지입니다. 신고 대응 시 원본을 확인하세요."
-            noPadding
-            bodyClassName="p-5"
-          >
-            {data.assets.length === 0 ? (
-              <EmptyState
-                icon={<ImageIcon size={36} />}
-                title="등록된 에셋이 없습니다."
-              />
-            ) : (
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {data.assets.map((asset) => (
-                  <li key={asset.assetId}>
-                    {asset.url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={asset.url}
-                        alt={asset.assetName}
-                        className="aspect-square w-full rounded-card object-cover"
-                      />
-                    ) : (
-                      <ImagePlaceholder
-                        fileId={asset.fileId}
-                        className="aspect-square w-full"
-                      />
-                    )}
-                    <p className="mt-1.5 truncate text-[13px] font-medium text-font-1">
-                      {asset.assetName}
-                    </p>
-                    {asset.assetSituation && (
-                      <p className="truncate text-[12px] text-font-2">
-                        {asset.assetSituation}
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <UniverseAssetGallery assets={data.assets} />
 
-          {/* 세계관 안의 이야기. 유저가 실제로 고르는 대상이다. */}
           <UniverseScenarioPanel scenarios={data.scenarios} />
 
-          {/* 대표 캐릭터. 같은 캐릭터가 다른 세계관에도 나올 수 있어 상세로 이어 준다. */}
+          {/*
+            대표 캐릭터.
+
+            캐릭터 상세(`/universes/characters/{id}`)로 링크하지 않는다. 그 화면은
+            아직 목업 구간이라 number ID로 조회하는데, 여기 오는 값은 실서버
+            Snowflake 문자열이라 **누르면 반드시 404**다. 실연동 전까지는 링크
+            대신 이 화면 안에서 캐릭터 정보를 그대로 보여 준다.
+          */}
           {data.character && (
-            <Card title="대표 캐릭터" noPadding>
-              <Link
-                href={`/universes/characters/${data.character.characterId}`}
-                className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-surface-hover"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <ImagePlaceholder
-                    fileId={data.character.profileImageFileId}
-                    className="size-10 shrink-0 rounded-full"
-                  />
-                  <div className="min-w-0">
-                    <p className="truncate text-[14px] font-medium text-font-1">
-                      {data.character.name ?? "이름 없음"}
-                    </p>
-                    <p className="mt-0.5 text-[12px] text-font-2 tabular-nums">
-                      #{data.character.characterId}
-                    </p>
-                  </div>
+            <Card title="대표 캐릭터">
+              <div className="flex items-center gap-3">
+                <EntityImage
+                  src={resolveImageUrl(
+                    data.character.profileImageUrl,
+                    data.character.profileImageFileId,
+                    "CHARACTER_PROFILE",
+                    "SQ140",
+                  )}
+                  alt={data.character.name ?? "대표 캐릭터"}
+                  fileId={data.character.profileImageFileId}
+                  ratio="square"
+                  className="w-16 shrink-0 rounded-full"
+                />
+
+                <div className="min-w-0">
+                  <p className="truncate title-5 text-font-1">
+                    {data.character.name ?? "이름 없음"}
+                  </p>
+                  <p className="mt-0.5 body-6 text-font-2 tabular-nums">
+                    캐릭터 #{data.character.characterId}
+                  </p>
+                  <p className="mt-1 caption-3 text-font-disabled">
+                    캐릭터 상세는 아직 실서버와 연동되지 않아 이동할 수 없습니다.
+                  </p>
                 </div>
-                <ChevronRight size={16} className="shrink-0 text-font-2" />
-              </Link>
+              </div>
             </Card>
           )}
 
           {/* 공식 여부의 근거가 되는 계정이라 세계관 상세에서 바로 이어 준다. */}
-          <Card title="소유 계정" noPadding>
-            <Link
-              href={
-                data.creator.userId
-                  ? `/users/${data.creator.userId}`
-                  : `/universes?creatorId=${data.creator.creatorId}`
-              }
-              className="flex items-center justify-between gap-3 px-5 py-4 transition hover:bg-surface-hover"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-[14px] font-medium text-font-1">
-                  {data.creator.nickname ?? "이름 없음"}
-                </p>
-                <p className="mt-0.5 text-[12px] text-font-2 tabular-nums">
-                  크리에이터 #{data.creator.creatorId} · 등급{" "}
-                  {data.creator.grade} · {data.creator.status}
-                </p>
-              </div>
-              <ChevronRight size={16} className="shrink-0 text-font-2" />
-            </Link>
+          <Card title="제작자">
+            <CreatorRow creator={data.creator} />
           </Card>
         </>
       )}
@@ -540,7 +463,69 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
           )}
         />
       </Modal>
+
+      {data && (
+        <UniverseSettingsModal
+          mode={settingsMode}
+          universe={data}
+          isPending={patchMutation.isPending}
+          onClose={() => setSettingsMode(null)}
+          onSubmit={onChangeSettings}
+        />
+      )}
     </>
+  );
+};
+
+/**
+ * 제작자 한 줄.
+ *
+ * 링크는 **갈 수 있는 곳이 있을 때만** 건다. 유저 상세가 있으면 그쪽으로,
+ * 없으면 이 크리에이터의 세계관 목록으로 좁혀 준다. 둘 다 없으면(크리에이터
+ * 식별자만 비는 경우) 링크 없이 정보만 남긴다 — 눌러서 아무 데도 못 가는
+ * 링크는 운영자가 화면을 신뢰하지 않게 만든다.
+ */
+const CreatorRow = ({ creator }: { creator: UniverseDetail["creator"] }) => {
+  const href = creator.userId
+    ? `/users/${creator.userId}`
+    : creator.creatorId
+      ? `/universes?creatorId=${creator.creatorId}`
+      : undefined;
+
+  const body = (
+    <>
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <p className="truncate title-5 text-font-1">
+            {creator.nickname ?? "이름 없음"}
+          </p>
+          <Badge tone="neutral">{creatorGradeLabel(creator.grade)}</Badge>
+          <Badge tone={creatorStatusTone(creator.status)}>
+            {creatorStatusLabel(creator.status)}
+          </Badge>
+        </div>
+
+        <p className="mt-1 body-6 text-font-2 tabular-nums">
+          크리에이터 #{creator.creatorId}
+          {creator.userId && ` · 유저 #${creator.userId}`}
+        </p>
+      </div>
+
+      {href && <ChevronRight size={16} className="shrink-0 text-font-2" />}
+    </>
+  );
+
+  if (!href) {
+    return <div className="flex items-center justify-between gap-3">{body}</div>;
+  }
+
+  return (
+    <Link
+      href={href}
+      className="-m-2 flex items-center justify-between gap-3 rounded-field p-2 transition hover:bg-surface-hover"
+    >
+      {body}
+    </Link>
   );
 };
 

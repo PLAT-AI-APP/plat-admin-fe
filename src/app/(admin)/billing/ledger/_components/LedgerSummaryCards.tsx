@@ -49,17 +49,17 @@ const LedgerSummaryCards = () => {
     <div className="grid grid-cols-4 gap-4">
       {SUMMARY_ITEMS.map(({ key, label, description, format }) => (
         <Card key={key} bodyClassName="p-4">
-          <p className="text-[13px] text-font-2">{label}</p>
+          <p className="body-5 text-font-2">{label}</p>
 
           {isLoading || !data ? (
             <Skeleton className="mt-2 h-8 w-32" />
           ) : (
-            <p className="mt-2 truncate text-[26px] font-bold text-font-0 tabular-nums">
+            <p className="mt-2 truncate heading-1 font-bold text-font-0 tabular-nums">
               {format(data[key])}
             </p>
           )}
 
-          <p className="mt-2 text-[12px] text-font-2">{description}</p>
+          <p className="mt-2 body-6 text-font-2">{description}</p>
         </Card>
       ))}
     </div>

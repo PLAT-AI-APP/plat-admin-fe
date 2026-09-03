@@ -6,7 +6,7 @@ import { useCreditPolicyMutation } from "@/api/billing/mutateCreditPolicy";
 import { Check, Close, Edit } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { showAppToast } from "@/lib/toast";
-import { cn, formatCredit } from "@/lib/utils";
+import { cn, formatAdmin, formatCredit } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
 import type { CreditPolicy, CreditPolicyKey } from "@/type/billing";
 import Alert from "@/components/ui/Alert";
@@ -159,7 +159,9 @@ const CreditPolicyManager = () => {
       header: "수정자",
       width: "110px",
       render: (policy) => (
-        <Badge tone="neutral">{policy.updatedBy}</Badge>
+        <Badge tone="neutral">
+          {formatAdmin(policy.updatedBy, policy.updatedById)}
+        </Badge>
       ),
     },
     {
@@ -204,15 +206,17 @@ const CreditPolicyManager = () => {
 
   return (
     <>
-      <Alert tone="info" title="부호 규칙">
+      <Alert tone="info" title="금액이 고정된 정책만 관리합니다.">
         지급 정책은 <b className="text-success">양수</b>, 차감 정책은{" "}
-        <b className="text-danger">음수</b>로 입력합니다. 정책을 바꾸면 확인
-        단계를 거친 뒤 모든 유저에게 즉시 적용됩니다.
+        <b className="text-danger">음수</b>로 입력하며, 정책을 바꾸면 확인 단계를
+        거친 뒤 모든 유저에게 즉시 적용됩니다. 채팅 메시지·이미지 생성처럼 모델과
+        옵션(이미지 크기·화질 등)에 따라 차감액이 달라지는 사용 요금은 고정할 수
+        없어 <b>AI 모델 설정</b>에서 모델별로 관리합니다.
       </Alert>
 
       <Card
         title={`크레딧 정책 ${policies.length}건`}
-        description="정책 키별 지급·차감 금액과 활성 여부를 관리합니다."
+        description="정책 키별 지급 금액과 활성 여부를 관리합니다."
         noPadding
       >
         <Table

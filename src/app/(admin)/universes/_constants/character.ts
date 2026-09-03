@@ -3,7 +3,6 @@ import type { SelectOption } from "@/components/ui/Select";
 import type {
   CharacterVisibility,
   ChatExportStatus,
-  NsfwKeywordLevel,
   ScenarioLifecycle,
   ScenarioType,
   UniverseCategory,
@@ -66,28 +65,27 @@ export const UNIVERSE_VISIBILITY_TONE: Record<UniverseVisibility, BadgeTone> = {
   UNLISTED: "info",
 };
 
-/** 상태 라벨은 서버 `UniverseStatus.description`을 그대로 따른다. */
+/**
+ * 상태 라벨.
+ *
+ * 세계관 삭제는 하드 딜리트라 "삭제 대기"·"콘텐츠 파기"가 없다. 지운 세계관은
+ * 데이터째 사라져 목록에도 상세에도 나타나지 않으므로, 화면이 칠할 상태는
+ * 운영 중과 내려둔 것 둘뿐이다.
+ */
 export const UNIVERSE_STATUS_LABEL: Record<UniverseStatus, string> = {
   ACTIVE: "활성",
   INACTIVE: "비활성",
-  DELETED: "삭제 대기",
-  PURGED: "콘텐츠 파기",
 };
 
 export const UNIVERSE_STATUS_TONE: Record<UniverseStatus, BadgeTone> = {
   ACTIVE: "success",
   INACTIVE: "neutral",
-  // 파기 전이라 복구 문의를 받을 수 있는 구간이다. 파기 완료와 같은 색으로 두지 않는다.
-  DELETED: "warning",
-  PURGED: "danger",
 };
 
 export const UNIVERSE_STATUS_FILTER_OPTIONS: SelectOption[] = [
   { label: "상태 전체", value: "" },
   { label: UNIVERSE_STATUS_LABEL.ACTIVE, value: "ACTIVE" },
   { label: UNIVERSE_STATUS_LABEL.INACTIVE, value: "INACTIVE" },
-  { label: UNIVERSE_STATUS_LABEL.DELETED, value: "DELETED" },
-  { label: UNIVERSE_STATUS_LABEL.PURGED, value: "PURGED" },
 ];
 
 export const UNIVERSE_REVIEW_LABEL: Record<UniverseReviewStatus, string> = {
@@ -124,6 +122,20 @@ export const UNIVERSE_TENDENCY_LABEL: Record<UniverseTendency, string> = {
   ALL: "전체",
   MALE_ORIENTED: "남성향",
   FEMALE_ORIENTED: "여성향",
+};
+
+/**
+ * 성향 표시색.
+ *
+ * 성향은 값이 셋뿐이고 거의 바뀌지 않아, 표에서 한 칸을 차지할 만한 정보가
+ * 아니다. 제목 옆 점 하나로 구분하고 칸은 지표에 내준다. 뱃지 톤(`BadgeTone`)이
+ * 아니라 색값을 직접 두는 이유는, 이 색이 상태(성공·경고)를 뜻하지 않고
+ * 성향끼리만 구분하면 되는 분류색이기 때문이다.
+ */
+export const UNIVERSE_TENDENCY_COLOR: Record<UniverseTendency, string> = {
+  ALL: "#AA8BD8",
+  MALE_ORIENTED: "#60A5FA",
+  FEMALE_ORIENTED: "#F472B6",
 };
 
 /** 보드 필터/정렬 옵션. 서버 실목록(liveAxios)이 받는 값과 이름을 맞춘다. */
@@ -193,28 +205,6 @@ export const SCENARIO_LIFECYCLE_TONE: Record<ScenarioLifecycle, BadgeTone> = {
   HIDDEN: "neutral",
   DEPRECATED: "warning",
 };
-
-export const NSFW_LEVEL_LABEL: Record<NsfwKeywordLevel, string> = {
-  BLOCK: "차단",
-  WARN: "경고",
-};
-
-export const NSFW_LEVEL_TONE: Record<NsfwKeywordLevel, BadgeTone> = {
-  BLOCK: "danger",
-  WARN: "warning",
-};
-
-/** 키워드 등록 폼용 옵션 */
-export const NSFW_LEVEL_OPTIONS: SelectOption[] = [
-  { label: `${NSFW_LEVEL_LABEL.BLOCK} (생성 차단)`, value: "BLOCK" },
-  { label: `${NSFW_LEVEL_LABEL.WARN} (경고만)`, value: "WARN" },
-];
-
-export const NSFW_LEVEL_FILTER_OPTIONS: SelectOption[] = [
-  { label: "레벨 전체", value: "" },
-  { label: NSFW_LEVEL_LABEL.BLOCK, value: "BLOCK" },
-  { label: NSFW_LEVEL_LABEL.WARN, value: "WARN" },
-];
 
 export const EXPORT_STATUS_LABEL: Record<ChatExportStatus, string> = {
   PENDING: "대기",

@@ -24,8 +24,8 @@ const PLATFORM_LABEL: Record<AppPlatform, string> = {
 /** 카드 안에서 반복되는 라벨 + 값 한 줄 */
 const VersionRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex items-center justify-between gap-3 border-t border-border-main py-3 first:border-t-0 first:pt-0">
-    <span className="text-[13px] text-font-2">{label}</span>
-    <span className="text-[14px] font-medium text-font-1 tabular-nums">
+    <span className="body-5 text-font-2">{label}</span>
+    <span className="body-4 font-medium text-font-1 tabular-nums">
       {value}
     </span>
   </div>
@@ -139,8 +139,8 @@ const AppVersionManager = () => {
               />
 
               <div className="border-t border-border-main pt-3">
-                <p className="text-[13px] text-font-2">안내 문구</p>
-                <p className="mt-1.5 rounded-field bg-subtle px-3 py-2.5 text-[13px] leading-relaxed text-font-1">
+                <p className="body-5 text-font-2">안내 문구</p>
+                <p className="mt-1.5 rounded-field bg-subtle px-3 py-2.5 body-5 leading-relaxed text-font-1">
                   {appVersion.updateMessage}
                 </p>
               </div>

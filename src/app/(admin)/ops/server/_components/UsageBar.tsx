@@ -29,8 +29,8 @@ const UsageBar = ({ label, value, description }: UsageBarProps) => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-[13px] text-font-2">{label}</span>
-        <span className={cn("text-[20px] font-bold tabular-nums", text)}>
+        <span className="body-5 text-font-2">{label}</span>
+        <span className={cn("title-1 font-bold tabular-nums", text)}>
           {value}%
         </span>
       </div>
@@ -50,7 +50,7 @@ const UsageBar = ({ label, value, description }: UsageBarProps) => {
       </div>
 
       {description && (
-        <p className="text-[12px] text-font-2">{description}</p>
+        <p className="body-6 text-font-2">{description}</p>
       )}
     </div>
   );

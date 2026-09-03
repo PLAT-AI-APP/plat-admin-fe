@@ -8,7 +8,7 @@ import { useReportMutation } from "@/api/report/mutateReport";
 import { ExternalLink } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatWithCommas, truncate } from "@/lib/utils";
+import { formatAdmin, formatWithCommas, truncate } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import {
   REPORT_REASON_LABEL,
@@ -56,7 +56,10 @@ const REPORT_CSV_COLUMNS: CsvColumn<Report>[] = [
   { header: "신고 내용", value: (row) => row.detail },
   { header: "상태", value: (row) => REPORT_STATUS_LABEL[row.status] },
   { header: "누적 신고", value: (row) => row.targetReportCount },
-  { header: "처리자", value: (row) => row.handlerName ?? "" },
+  {
+    header: "처리자",
+    value: (row) => (row.handlerName ? formatAdmin(row.handlerName, row.handlerId) : ""),
+  },
   { header: "처리 메모", value: (row) => row.handlerNote ?? "" },
   { header: "신고일", value: (row) => formatDateTime(row.createdAt) },
   { header: "처리일", value: (row) => formatDateTime(row.handledAt) },
@@ -128,7 +131,7 @@ const ReportManager = () => {
         <Link
           href={getReportTargetHref(row)}
           onClick={(event) => event.stopPropagation()}
-          className="flex min-w-0 items-center gap-1 text-[13px] text-font-1 transition hover:text-brand"
+          className="flex min-w-0 items-center gap-1 body-5 text-font-1 transition hover:text-brand"
         >
           <span className="truncate">{row.targetName}</span>
           <ExternalLink size={11} className="shrink-0" />
@@ -151,7 +154,7 @@ const ReportManager = () => {
       render: (row) => (
         <TableCellStack
           primary={
-            <span className="text-[13px]">{truncate(row.detail, 50)}</span>
+            <span className="body-5">{truncate(row.detail, 50)}</span>
           }
           secondary={
             row.targetSnippet ? truncate(row.targetSnippet, 40) : undefined
@@ -211,14 +214,16 @@ const ReportManager = () => {
       header: "처리자",
       width: "110px",
       render: (row) => (
-        <span className="text-font-2">{row.handlerName ?? "-"}</span>
+        <span className="text-font-2">
+          {formatAdmin(row.handlerName, row.handlerId)}
+        </span>
       ),
     },
   ];
 
   return (
     <>
-      <Alert tone="warning" title="MVP 제외 기능">
+      <Alert tone="warning" title="MOCK 화면 · 아직 실제 운영에 반영되지 않습니다">
         현재 운영에서는 Discord로 처리합니다. 화면은 이후 전환을 위해 미리
         구현해 두었습니다.
       </Alert>

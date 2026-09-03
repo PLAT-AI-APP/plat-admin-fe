@@ -43,10 +43,10 @@ export const PermissionDenied = ({
       </span>
 
       <div className="flex flex-col gap-1">
-        <p className="text-[15px] font-semibold text-font-0">
+        <p className="body-3 font-semibold text-font-0">
           이 화면을 볼 권한이 없습니다.
         </p>
-        <p className="text-[13px] text-font-2">
+        <p className="body-5 text-font-2">
           현재 직책은 <b className="text-font-1">{admin?.roleName ?? "-"}</b>
           입니다.
         </p>
@@ -54,13 +54,13 @@ export const PermissionDenied = ({
 
       {/* 요청할 때 그대로 복사할 수 있게 코드 형태로 둔다. */}
       <div className="flex flex-col items-center gap-1 rounded-field border border-border-main bg-subtle px-4 py-3">
-        <span className="text-[12px] text-font-2">필요한 권한</span>
-        <code className="text-[13px] font-semibold text-font-1">
+        <span className="body-6 text-font-2">필요한 권한</span>
+        <code className="body-5 font-semibold text-font-1">
           {permissionLabel(required)}
         </code>
       </div>
 
-      <p className="text-[12px] text-font-2">
+      <p className="body-6 text-font-2">
         최고관리자에게 위 권한을 요청하세요. (운영 &gt; 직책 · 권한)
       </p>
     </div>

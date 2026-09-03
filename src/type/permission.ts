@@ -19,7 +19,7 @@ export type PermissionResource =
   | "officialAccount"
   | "universe"
   | "hashtag"
-  | "nsfwKeyword"
+  | "bannedWord"
   | "chatExport"
   | "comment"
   | "report"
@@ -30,6 +30,7 @@ export type PermissionResource =
   | "creditPolicy"
   | "creditAdjustment"
   | "ledger"
+  | "paymentRecord"
   | "notice"
   | "qna"
   | "notification"
@@ -39,7 +40,9 @@ export type PermissionResource =
   | "manager"
   | "appVersion"
   | "server"
-  | "log";
+  | "log"
+  | "systemLog"
+  | "batch";
 
 /**
  * 행위.
@@ -104,9 +107,9 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     description: "사용자가 고를 수 있는 태그 목록",
     actions: ["read", "write", "delete"],
   },
-  nsfwKeyword: {
-    label: "NSFW 키워드",
-    description: "캐릭터 · 대화 검수에 쓰는 차단 키워드",
+  bannedWord: {
+    label: "금지어",
+    description: "캐릭터 · 대화 검수에 쓰는 금지어와 예외어 사전",
     actions: ["read", "write", "delete"],
   },
   chatExport: {
@@ -142,8 +145,13 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
   },
   systemPrompt: {
     label: "시스템 프롬프트",
-    description: "프롬프트 버전 작성과 활성화. 전체 대화 품질에 바로 반영된다.",
-    actions: ["read", "write"],
+    /*
+      삭제를 따로 뗀다. 지운 버전은 되돌릴 수 없고, 그 버전에서 무엇이 바뀌었는지를
+      되짚을 근거까지 함께 사라진다. 활성 버전은 어떤 권한으로도 지울 수 없다.
+    */
+    description:
+      "프롬프트 버전 작성과 활성화. 전체 대화 품질에 바로 반영된다.",
+    actions: ["read", "write", "delete"],
     isSensitive: true,
   },
   billingProduct: {
@@ -172,6 +180,18 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
   ledger: {
     label: "결제 장부",
     description: "결제 · 충전 · 사용 · 환불 흐름",
+    actions: ["read"],
+    isSensitive: true,
+  },
+  paymentRecord: {
+    /*
+      장부 권한과 따로 뗀다. 여기 남는 것은 **탈퇴하고 개인정보까지 파기된 회원의
+      결제 기록**이라, 법정 보존 의무 때문에 지우지 못하고 들고 있는 자료다.
+      장부를 보는 사람 전부가 열 이유는 없고, 열람 자체가 감사 대상이 된다.
+    */
+    label: "결제 보존 원장",
+    description:
+      "탈퇴 · 파기 후에도 법정 5년간 남기는 결제 기록. 결제사 거래번호로만 조회한다.",
     actions: ["read"],
     isSensitive: true,
   },
@@ -224,9 +244,30 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     actions: ["read"],
   },
   log: {
-    label: "운영 로그",
-    description: "누가 무엇을 바꿨는지",
+    /*
+      변경된 값이 payload에 그대로 남는다. 즉 이 권한은 "다른 관리자가 무엇을
+      어떤 값으로 바꿨는지"를 전부 열어 주는 것과 같아서 민감으로 둔다.
+      시스템 이벤트와 한 권한으로 묶으면, 장애를 보려는 사람에게 감사 기록까지
+      함께 열어 주게 된다.
+    */
+    label: "관리자 활동 로그",
+    description: "누가 무엇을 어떤 값으로 바꿨는지. 변경 값이 그대로 남는다.",
     actions: ["read"],
+    isSensitive: true,
+  },
+  systemLog: {
+    label: "시스템 이벤트",
+    description: "조치가 필요한 경고 · 오류. 원본 로그는 관제 도구에 있다.",
+    actions: ["read"],
+  },
+  batch: {
+    /*
+      조회만 있는 로그와 달리 **수동 실행**이라는 행위가 붙는다.
+      배치를 한 번 더 돌리는 일은 되돌릴 수 없는 처리가 섞여 있어 write로 뗀다.
+    */
+    label: "배치 작업",
+    description: "예약 실행 잡의 이력 조회와 수동 재실행",
+    actions: ["read", "write"],
   },
 };
 
@@ -285,7 +326,8 @@ export const PERMISSION_CATEGORIES = [
       "character",
       "officialAccount",
       "hashtag",
-      "nsfwKeyword",
+      "bannedWord",
+      "systemPrompt",
       "billingProduct",
       "role",
       "manager",
@@ -302,11 +344,11 @@ export const PERMISSION_CATEGORIES = [
       "user",
       "chatExport",
       "aiModel",
-      "systemPrompt",
       "creditPolicy",
       "notification",
       "appVersion",
       "universe",
+      "batch",
     ],
   },
   {
@@ -335,7 +377,14 @@ export const PERMISSION_CATEGORIES = [
     label: "보기만 하는 자료",
     description:
       "지표와 기록입니다. 고칠 수 있으면 기록이 아니라 조회만 둡니다.",
-    resources: ["dashboard", "ledger", "server", "log"],
+    resources: [
+      "dashboard",
+      "ledger",
+      "paymentRecord",
+      "server",
+      "log",
+      "systemLog",
+    ],
   },
 ] as const satisfies readonly PermissionCategoryDef[];
 

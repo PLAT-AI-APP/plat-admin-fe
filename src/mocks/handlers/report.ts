@@ -1,6 +1,7 @@
 import { HttpResponse, delay, http } from "msw";
 import type { UpdateReportStatusValues } from "@/type/report";
 import { reports } from "../db/report";
+import { stampAdmin } from "../session";
 import { MOCK_DELAY_MS, matchesKeyword, paginate } from "../utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
@@ -39,15 +40,11 @@ export const reportHandlers = [
     }
 
     if (reporterId) {
-      filtered = filtered.filter(
-        (report) => report.reporterId === Number(reporterId),
-      );
+      filtered = filtered.filter((report) => report.reporterId === reporterId);
     }
 
     if (targetId) {
-      filtered = filtered.filter(
-        (report) => report.targetId === Number(targetId),
-      );
+      filtered = filtered.filter((report) => report.targetId === targetId);
     }
 
     const sorted = [...filtered].sort((a, b) => {
@@ -78,13 +75,15 @@ export const reportHandlers = [
       }
 
       const isHandled = status === "RESOLVED" || status === "REJECTED";
+      const handler = stampAdmin();
 
       reports[index] = {
         ...reports[index],
         status,
         handlerNote,
         // 접수·검토 중으로 되돌리면 처리 이력을 지운다.
-        handlerName: isHandled ? "운영자" : undefined,
+        handlerName: isHandled ? handler.name : undefined,
+        handlerId: isHandled ? handler.managerId : undefined,
         handledAt: isHandled ? new Date().toISOString() : undefined,
       };
 

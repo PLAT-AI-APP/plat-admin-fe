@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { BillingProduct } from "@/type/billing";
 
 export const getBillingProductList = async () => {
-  const response = await adminAxios.get<BillingProduct[]>(
+  const response = await liveAxios.get<BillingProduct[]>(
     "/admin/billing/products",
   );
 

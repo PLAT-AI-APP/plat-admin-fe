@@ -54,7 +54,7 @@ const CredentialResultModal = ({
       onClose={handleClose}
       closeOnOverlayClick={false}
       title={mode === "INVITE" ? "관리자를 초대했습니다" : "비밀번호를 초기화했습니다"}
-      description={`${result?.manager.name ?? ""} · ${result?.manager.email ?? ""}`}
+      description={result?.email ?? ""}
       size="sm"
       footer={
         <Button variant="primary" onClick={handleClose}>
@@ -69,7 +69,7 @@ const CredentialResultModal = ({
         </Alert>
 
         <div className="flex items-center justify-between gap-3 rounded-field border border-border-main bg-subtle px-3.5 py-3">
-          <code className="truncate text-[15px] font-semibold text-font-1 select-all">
+          <code className="truncate body-3 font-semibold text-font-1 select-all">
             {result?.temporaryPassword}
           </code>
 

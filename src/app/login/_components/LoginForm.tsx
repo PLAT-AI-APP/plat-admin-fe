@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, type KeyboardEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useLoginMutation } from "@/api/auth/login";
@@ -13,7 +13,6 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
-import SeedAccountHint from "./SeedAccountHint";
 
 /** 로그인 후 돌아갈 경로. 콘솔 밖이나 절대 URL로는 보내지 않는다. */
 const resolveRedirect = (redirect: string | null) =>
@@ -55,16 +54,29 @@ const LoginForm = () => {
     submitLogin(values, { onSuccess: () => router.replace(redirectTo) }),
   );
 
+  /**
+   * 이메일 칸에서 엔터를 눌러도 바로 로그인한다.
+   *
+   * 브라우저 기본 동작(암묵적 제출)에만 기대면 IME 조합 중이거나
+   * 자동완성 팝업이 떠 있을 때 삼켜지는 경우가 있어 직접 제출한다.
+   */
+  const submitOnEnter = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+
+    event.preventDefault();
+    void submit();
+  };
+
   return (
     <div className="flex w-full max-w-[400px] flex-col gap-4">
       <div className="flex flex-col items-center gap-2 text-center">
-        <span className="flex size-11 items-center justify-center rounded-[14px] bg-brand text-font-4">
+        <span className="flex size-11 items-center justify-center rounded-card bg-brand text-font-4">
           <ShieldCheck size={22} />
         </span>
 
         <div>
-          <h1 className="text-[20px] font-bold text-font-0">PLAT 관리자</h1>
-          <p className="mt-1 text-[13px] text-font-2">
+          <h1 className="title-1 font-bold text-font-0">PLAT 관리자</h1>
+          <p className="mt-1 body-5 text-font-2">
             운영 계정으로 로그인해 주세요.
           </p>
         </div>
@@ -89,6 +101,7 @@ const LoginForm = () => {
               autoComplete="username"
               placeholder="name@plat.so"
               hasError={Boolean(errors.email)}
+              onKeyDown={submitOnEnter}
               {...register("email")}
             />
           </FormField>
@@ -130,8 +143,6 @@ const LoginForm = () => {
           </Button>
         </form>
       </Card>
-
-      <SeedAccountHint />
     </div>
   );
 };

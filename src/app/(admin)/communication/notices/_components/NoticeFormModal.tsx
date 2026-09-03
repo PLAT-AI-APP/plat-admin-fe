@@ -3,9 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { toDateInputValue } from "@/lib/dayjs";
+import { useNoticeDetailQuery } from "@/api/notice/getNoticeDetail";
 import { noticeSchema, type NoticeSchema } from "@/schema/notice.schema";
-import type { Notice, NoticeFormValues } from "@/type/notice";
+import type { NoticeFormValues } from "@/type/notice";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import FormField from "@/components/ui/FormField";
@@ -23,8 +23,8 @@ import {
 interface NoticeFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** 수정 대상. 없으면 신규 등록 모드다. */
-  notice?: Notice;
+  /** 수정 대상 ID. 목록 응답에는 본문이 없으므로 모달에서 상세를 조회한다. */
+  noticeId?: number;
   onSubmit: (values: NoticeFormValues) => void;
   isSubmitting: boolean;
 }
@@ -42,18 +42,19 @@ const EMPTY_VALUES: NoticeSchema = {
   content: "",
   status: "DRAFT",
   isPinned: false,
-  startAt: "",
-  endAt: "",
 };
 
 const NoticeFormModal = ({
   isOpen,
   onClose,
-  notice,
+  noticeId,
   onSubmit,
   isSubmitting,
 }: NoticeFormModalProps) => {
   const [tab, setTab] = useState<EditorTab>("WRITE");
+  const { data: notice, isLoading } = useNoticeDetailQuery(
+    isOpen && noticeId !== undefined ? noticeId : null,
+  );
 
   const {
     control,
@@ -80,8 +81,6 @@ const NoticeFormModal = ({
             content: notice.content,
             status: notice.status,
             isPinned: notice.isPinned,
-            startAt: toDateInputValue(notice.startAt),
-            endAt: toDateInputValue(notice.endAt),
           }
         : EMPTY_VALUES,
     );
@@ -89,29 +88,29 @@ const NoticeFormModal = ({
 
   const content = watch("content");
 
-  const submit = handleSubmit((values) =>
-    onSubmit({
-      ...values,
-      startAt: values.startAt || undefined,
-      endAt: values.endAt || undefined,
-    }),
-  );
+  const submit = handleSubmit((values) => onSubmit(values));
+  const isPending = isSubmitting || isLoading;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={notice ? "공지사항 수정" : "공지사항 등록"}
+      title={noticeId !== undefined ? "공지사항 수정" : "공지사항 등록"}
       description="본문은 마크다운으로 작성합니다. 앱에서는 렌더링된 형태로 노출됩니다."
       size="xl"
       closeOnOverlayClick={false}
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
+          <Button variant="ghost" onClick={onClose} disabled={isPending}>
             취소
           </Button>
-          <Button variant="primary" onClick={submit} isLoading={isSubmitting}>
-            {notice ? "수정" : "등록"}
+          <Button
+            variant="primary"
+            onClick={submit}
+            isLoading={isPending}
+            disabled={isPending}
+          >
+            {noticeId !== undefined ? "수정" : "등록"}
           </Button>
         </>
       }
@@ -160,6 +159,20 @@ const NoticeFormModal = ({
           required
           error={errors.title?.message}
           hint="최대 60자"
+          labelSuffix={
+            <Controller
+              control={control}
+              name="isPinned"
+              render={({ field }) => (
+                <Checkbox
+                  label="고정"
+                  boxClassName="gap-1.5"
+                  checked={field.value}
+                  onChange={(event) => field.onChange(event.target.checked)}
+                />
+              )}
+            />
+          }
         >
           <Input
             id="notice-title"
@@ -178,15 +191,15 @@ const NoticeFormModal = ({
                 rows={16}
                 placeholder={"# 제목\n\n내용을 입력하세요."}
                 hasError={Boolean(errors.content)}
-                className="font-mono text-[13px]"
+                className="font-mono body-5"
                 {...register("content")}
               />
             ) : (
-              <div className="min-h-100 rounded-field border border-border-main px-4 py-3 text-[14px]">
+              <div className="min-h-100 rounded-field border border-border-main px-4 py-3 body-4">
                 {content ? (
                   <MarkdownContent content={content} />
                 ) : (
-                  <p className="text-[13px] text-font-2">
+                  <p className="body-5 text-font-2">
                     작성 탭에서 본문을 입력하면 여기에서 미리 볼 수 있습니다.
                   </p>
                 )}
@@ -195,41 +208,6 @@ const NoticeFormModal = ({
           </div>
         </FormField>
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            label="노출 시작일"
-            htmlFor="notice-start-at"
-            hint="비우면 즉시 노출"
-          >
-            <Input id="notice-start-at" type="date" {...register("startAt")} />
-          </FormField>
-
-          <FormField
-            label="노출 종료일"
-            htmlFor="notice-end-at"
-            error={errors.endAt?.message}
-            hint="비우면 기간 제한 없음"
-          >
-            <Input
-              id="notice-end-at"
-              type="date"
-              hasError={Boolean(errors.endAt)}
-              {...register("endAt")}
-            />
-          </FormField>
-        </div>
-
-        <Controller
-          control={control}
-          name="isPinned"
-          render={({ field }) => (
-            <Checkbox
-              label="목록 최상단에 고정"
-              checked={field.value}
-              onChange={(event) => field.onChange(event.target.checked)}
-            />
-          )}
-        />
       </form>
     </Modal>
   );

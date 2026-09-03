@@ -1,14 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import { ReactNode, useState } from "react";
 import { useUserDetailQuery } from "@/api/user/getUserDetail";
 import { useUserMutation } from "@/api/user/mutateUser";
-import { Ban, CheckCircle, Gear } from "@/icons";
+import { Ban, CheckCircle } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
+import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatCurrency, formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
-import type { UserDetail, UserRole } from "@/type/user";
+import type { UserDetail } from "@/type/user";
 import BackLink from "@/components/layout/BackLink";
 import PageHeader from "@/components/layout/PageHeader";
 import Alert from "@/components/ui/Alert";
@@ -16,35 +16,34 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Dropdown, { type DropdownItem } from "@/components/ui/Dropdown";
 import EmptyState from "@/components/ui/EmptyState";
+import EntityImage from "@/components/ui/EntityImage";
 import Skeleton from "@/components/ui/Skeleton";
 import Tabs from "@/components/ui/Tabs";
 import {
-  USER_ROLE_LABEL,
-  USER_ROLE_TONE,
   USER_STATUS_LABEL,
   USER_STATUS_TONE,
 } from "../../_constants/userOptions";
-import UserRoleModal from "../../_components/UserRoleModal";
 import UserSuspendModal from "../../_components/UserSuspendModal";
 import UserAccountPanel from "./UserAccountPanel";
 import UserBillingPanel from "./UserBillingPanel";
 import UserCharacterPanel from "./UserCharacterPanel";
 import UserCommentPanel from "./UserCommentPanel";
 import UserReportPanel from "./UserReportPanel";
+import UserUniversePanel from "./UserUniversePanel";
 import {
   USER_DETAIL_TABS,
   type UserDetailTab,
 } from "./userDetailConstants";
 
 interface UserDetailViewProps {
-  userId: number;
+  userId: string;
 }
 
 /** 지표 한 칸 */
 const StatBox = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="rounded-field border border-border-main bg-subtle px-3 py-2.5">
-    <p className="text-[12px] text-font-2">{label}</p>
-    <p className="mt-1 text-[15px] font-semibold text-font-0 tabular-nums">
+    <p className="body-6 text-font-2">{label}</p>
+    <p className="mt-1 body-3 font-semibold text-font-0 tabular-nums">
       {value}
     </p>
   </div>
@@ -53,16 +52,15 @@ const StatBox = ({ label, value }: { label: string; value: ReactNode }) => (
 /**
  * 유저 상세 화면.
  *
- * 계정 정보 외에 보유 캐릭터 · 작성 댓글 · 결제/크레딧 · 신고 이력까지 붙어
+ * 계정 정보 외에 보유 세계관 · 보유 캐릭터 · 작성 댓글 · 결제/크레딧 · 신고 이력까지 붙어
  * 모달 한 장에 담기지 않는다. 그래서 탭을 가진 페이지로 둔다.
  */
 const UserDetailView = ({ userId }: UserDetailViewProps) => {
   const [tab, setTab] = useState<UserDetailTab>("ACCOUNT");
   const [isSuspendOpen, setIsSuspendOpen] = useState(false);
-  const [isRoleOpen, setIsRoleOpen] = useState(false);
 
   const { data: user, isLoading, isError, error } = useUserDetailQuery(userId);
-  const { statusMutation, roleMutation } = useUserMutation();
+  const { statusMutation } = useUserMutation();
 
   const handleUnsuspend = (target: UserDetail) => {
     openConfirm({
@@ -97,21 +95,7 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
     });
   };
 
-  const handleChangeRole = (nextRole: UserRole) => {
-    if (!user) return;
-
-    openConfirm({
-      title: "역할을 변경할까요?",
-      description: `'${user.nickname}' 계정의 역할을 '${USER_ROLE_LABEL[nextRole]}'(으)로 변경합니다.`,
-      confirmText: "변경",
-      onConfirm: () =>
-        roleMutation
-          .mutateAsync({ userId, role: nextRole })
-          .then(() => setIsRoleOpen(false)),
-    });
-  };
-
-  /** 상단 액션. 탈퇴 유저는 상태·역할을 바꾸지 않는다. */
+  /** 상단 액션. 탈퇴 유저는 상태를 바꾸지 않는다. */
   const buildActions = (target: UserDetail): DropdownItem[] => {
     const items: DropdownItem[] = [];
 
@@ -131,13 +115,6 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
         onSelect: () => handleUnsuspend(target),
       });
     }
-
-    items.push({
-      label: "역할 변경",
-      icon: <Gear size={15} />,
-      disabled: target.status === "WITHDRAWN",
-      onSelect: () => setIsRoleOpen(true),
-    });
 
     return items;
   };
@@ -191,34 +168,39 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
 
           <Card>
             <div className="flex items-center gap-4">
-              <div className="relative size-16 shrink-0 overflow-hidden rounded-full bg-subtle">
-                <Image
-                  src={user.profileImageUrl}
-                  alt=""
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
+              {/* 관리자 응답은 URL 을 만들어 주지 않고 fileId 만 준다. 둘 중 오는 쪽을 쓴다. */}
+              <EntityImage
+                src={resolveImageUrl(
+                  user.profileImageUrl,
+                  user.profileImageFileId,
+                  "USER_PROFILE",
+                  "SQ80",
+                )}
+                alt=""
+                ratio="square"
+                shape="circle"
+                fallback={
+                  <span className="title-3 text-font-2">
+                    {user.nickname.trim().charAt(0) || "?"}
+                  </span>
+                }
+                className="size-16 shrink-0"
+              />
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <p className="truncate text-[17px] font-semibold text-font-0">
+                  <p className="truncate title-2 font-semibold text-font-0">
                     {user.nickname}
                   </p>
                   <Badge tone={USER_STATUS_TONE[user.status]}>
                     {USER_STATUS_LABEL[user.status]}
-                  </Badge>
-                  <Badge tone={USER_ROLE_TONE[user.role]}>
-                    {USER_ROLE_LABEL[user.role]}
                   </Badge>
                   {user.isAdultVerified && (
                     <Badge tone="info">성인 인증</Badge>
                   )}
                 </div>
 
-                <p className="mt-1 truncate text-[13px] text-font-2">
+                <p className="mt-1 truncate body-5 text-font-2">
                   가입 {formatDate(user.createdAt)} · 마지막 로그인{" "}
                   {formatDateTime(user.lastLoginAt)}
                 </p>
@@ -271,6 +253,9 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
           <Tabs items={USER_DETAIL_TABS} value={tab} onChange={setTab} />
 
           {tab === "ACCOUNT" && <UserAccountPanel user={user} />}
+          {tab === "UNIVERSE" && (
+            <UserUniversePanel userId={userId} nickname={user.nickname} />
+          )}
           {tab === "CHARACTER" && (
             <UserCharacterPanel userId={userId} nickname={user.nickname} />
           )}
@@ -285,13 +270,6 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
             onClose={() => setIsSuspendOpen(false)}
             onSubmit={handleSuspend}
             isSubmitting={statusMutation.isPending}
-          />
-
-          <UserRoleModal
-            user={isRoleOpen ? user : null}
-            onClose={() => setIsRoleOpen(false)}
-            onSubmit={handleChangeRole}
-            isSubmitting={roleMutation.isPending}
           />
         </>
       )}

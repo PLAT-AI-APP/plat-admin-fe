@@ -1,213 +1,100 @@
 "use client";
 
-import { useState } from "react";
-import { useLogListQuery } from "@/api/ops/getLogList";
+import { useHasPermission } from "@/store/useAdminStore";
 import { useListParams } from "@/hooks/useListParams";
-import type { CsvColumn } from "@/lib/csv";
-import { formatDateTimeSecond } from "@/lib/dayjs";
-import { DEFAULT_PAGE_SIZE } from "@/type/api";
-import type { LogLevel, OperationLog } from "@/type/ops";
 import Alert from "@/components/ui/Alert";
-import Badge from "@/components/ui/Badge";
-import Card from "@/components/ui/Card";
-import CsvExportButton from "@/components/ui/CsvExportButton";
-import Pagination from "@/components/ui/Pagination";
-import SearchInput from "@/components/ui/SearchInput";
-import Select from "@/components/ui/Select";
-import Table, { type TableColumn } from "@/components/ui/Table";
-import LogDetailModal from "./LogDetailModal";
-import {
-  LOG_DOMAIN_OPTIONS,
-  LOG_LEVEL_LABEL,
-  LOG_LEVEL_OPTIONS,
-  LOG_LEVEL_TONE,
-  getLogDomainLabel,
-} from "../_constants/labels";
+import Tabs, { type TabItem } from "@/components/ui/Tabs";
+import AdminLogTable from "./AdminLogTable";
+import SystemEventTable from "./SystemEventTable";
 
-/** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
-const LOG_CSV_COLUMNS: CsvColumn<OperationLog>[] = [
-  { header: "레벨", value: (row) => LOG_LEVEL_LABEL[row.level] },
-  { header: "도메인", value: (row) => getLogDomainLabel(row.domain) },
-  { header: "액션", value: (row) => row.action },
-  { header: "실행자", value: (row) => row.actor },
-  { header: "메시지", value: (row) => row.message },
-  { header: "일시", value: (row) => formatDateTimeSecond(row.createdAt) },
-];
+export type LogTab = "admin" | "system";
 
-/** 주소에 실리는 목록 조건. 관리자 관리에서 `?actorId=`를 달고 넘어온다. */
+/**
+ * 두 탭의 조건을 한 곳에서 들고 있는다.
+ *
+ * 탭마다 `useListParams`를 따로 부르면 안 된다. 이 훅은 **자기가 아는 키만으로
+ * 주소를 다시 쓰기 때문에**, 탭 안에서 필터를 바꾸는 순간 부모가 들고 있던
+ * `tab`이 주소에서 사라진다. 키를 한 벌로 모아 한 번만 부른다.
+ */
 const DEFAULT_PARAMS = {
+  tab: "admin" as LogTab,
   page: 1,
   keyword: "",
-  level: "",
+  // 관리자 활동
   domain: "",
+  result: "",
   actorId: "",
+  // 시스템 이벤트
+  level: "",
+  source: "",
 };
 
+export type LogParams = typeof DEFAULT_PARAMS;
+export type SetLogParams = (patch: Partial<LogParams>) => void;
+
+/**
+ * 로그 화면.
+ *
+ * 관리자 활동과 시스템 이벤트는 **답해야 하는 질문이 다르다.** 전자는 "누가
+ * 무엇을 바꿨나", 후자는 "지금 무엇이 터지고 있나"다. 컬럼도 필터도 겹치지
+ * 않아 한 표에 담으면 양쪽 모두 최소한만 보여 주게 된다.
+ *
+ * 권한도 다르다. 감사 로그는 변경된 값이 그대로 남아 좁게 열어야 하므로
+ * (`log:read`), 장애를 보려는 사람에게까지 함께 열리지 않도록 탭 단위로 막는다.
+ */
 const LogManager = () => {
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
-  const { page, keyword, domain, actorId } = params;
-  const level = params.level as LogLevel | "";
 
-  const [detailLog, setDetailLog] = useState<OperationLog | null>(null);
+  const canReadAuditLog = useHasPermission("log:read");
+  const canReadSystemLog = useHasPermission("systemLog:read");
 
-  const { data, isLoading, isError } = useLogListQuery({
-    page,
-    size: DEFAULT_PAGE_SIZE,
-    keyword,
-    level,
-    domain,
-    actorId,
-  });
-
-  // 특정 관리자의 활동만 보고 있을 때, 그 사실을 화면에 드러낸다.
-  const filteredActorName = actorId
-    ? (data?.content.find((log) => String(log.actorId) === actorId)?.actor ??
-      `#${actorId}`)
-    : null;
-
-  const columns: TableColumn<OperationLog>[] = [
-    {
-      key: "level",
-      header: "레벨",
-      width: "90px",
-      render: (row) => (
-        <Badge tone={LOG_LEVEL_TONE[row.level]}>
-          {LOG_LEVEL_LABEL[row.level]}
-        </Badge>
-      ),
-    },
-    {
-      key: "domain",
-      header: "도메인",
-      width: "120px",
-      render: (row) => (
-        <span className="text-font-2">{getLogDomainLabel(row.domain)}</span>
-      ),
-    },
-    {
-      key: "action",
-      header: "액션",
-      width: "170px",
-      render: (row) => <span className="text-font-1">{row.action}</span>,
-    },
-    {
-      key: "actor",
-      header: "실행자",
-      width: "130px",
-      render: (row) => <span className="text-font-2">{row.actor}</span>,
-    },
-    {
-      key: "target",
-      header: "대상",
-      width: "150px",
-      render: (row) =>
-        row.targetType ? (
-          <span className="text-font-2">
-            {row.targetType}
-            {row.targetId && (
-              <span className="tabular-nums"> #{row.targetId}</span>
-            )}
-          </span>
-        ) : (
-          <span className="text-font-disabled">-</span>
-        ),
-    },
-    {
-      key: "message",
-      header: "메시지",
-      render: (row) => (
-        <p className="max-w-120 truncate text-font-1">{row.message}</p>
-      ),
-    },
-    {
-      key: "createdAt",
-      header: "일시",
-      width: "180px",
-      numeric: true,
-      render: (row) => (
-        <span className="text-font-2">
-          {formatDateTimeSecond(row.createdAt)}
-        </span>
-      ),
-    },
+  const items: TabItem<LogTab>[] = [
+    ...(canReadAuditLog
+      ? [{ label: "관리자 활동", value: "admin" as const }]
+      : []),
+    ...(canReadSystemLog
+      ? [{ label: "시스템 이벤트", value: "system" as const }]
+      : []),
   ];
 
+  if (items.length === 0) {
+    return (
+      <Alert tone="info" title="열람할 수 있는 로그가 없습니다.">
+        관리자 활동 로그와 시스템 이벤트는 각각 다른 권한으로 열립니다. 필요하면
+        직책 담당자에게 요청해 주세요.
+      </Alert>
+    );
+  }
+
+  // 권한이 없는 탭이 주소에 실려 들어와도 볼 수 있는 첫 탭으로 되돌린다.
+  const tab = items.some((item) => item.value === params.tab)
+    ? params.tab
+    : items[0].value;
+
+  /** 탭을 옮길 때 반대편 탭의 필터를 지운다. 남겨 두면 빈 목록의 원인이 보이지 않는다. */
+  const handleTabChange = (next: LogTab) =>
+    setParams({
+      tab: next,
+      keyword: "",
+      domain: "",
+      result: "",
+      actorId: "",
+      level: "",
+      source: "",
+    });
+
   return (
-    <>
-      {filteredActorName && (
-        <Alert
-          tone="info"
-          title={`'${filteredActorName}' 관리자의 활동만 보고 있습니다.`}
-          action={
-            <button
-              type="button"
-              onClick={() => setParams({ actorId: "" })}
-              className="shrink-0 text-[13px] font-medium underline"
-            >
-              전체 보기
-            </button>
-          }
-        />
+    <div className="flex flex-col gap-4">
+      {items.length > 1 && (
+        <Tabs items={items} value={tab} onChange={handleTabChange} />
       )}
 
-      {isError && (
-        <Alert tone="danger" title="로그를 불러오지 못했습니다.">
-          잠시 후 검색 조건을 다시 적용해 주세요. 계속 실패하면 관제 채널에
-          공유해 주세요.
-        </Alert>
+      {tab === "admin" ? (
+        <AdminLogTable params={params} setParams={setParams} />
+      ) : (
+        <SystemEventTable params={params} setParams={setParams} />
       )}
-
-      <Card noPadding>
-        <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
-          <SearchInput
-            value={keyword}
-            onSearch={(next) => setParams({ keyword: next })}
-            placeholder="메시지 · 액션 · 실행자로 검색"
-          />
-
-          <div className="flex items-center gap-2">
-            <CsvExportButton
-              fileName="운영로그"
-              rows={data?.content ?? []}
-              columns={LOG_CSV_COLUMNS}
-              disabled={isLoading}
-            />
-            <Select
-              options={LOG_LEVEL_OPTIONS}
-              value={level}
-              onChange={(event) => setParams({ level: event.target.value })}
-              selectBoxClassName="w-36"
-            />
-
-            <Select
-              options={LOG_DOMAIN_OPTIONS}
-              value={domain}
-              onChange={(event) => setParams({ domain: event.target.value })}
-              selectBoxClassName="w-44"
-            />
-          </div>
-        </div>
-
-        <Table
-          columns={columns}
-          rows={data?.content ?? []}
-          getRowKey={(row) => String(row.logId)}
-          isLoading={isLoading}
-          onRowClick={setDetailLog}
-          emptyTitle="조회된 로그가 없습니다."
-          emptyDescription="레벨 · 도메인 필터나 검색어를 바꿔서 다시 확인해 보세요."
-        />
-
-        <Pagination
-          page={page}
-          totalCount={data?.totalCount ?? 0}
-          pageSize={DEFAULT_PAGE_SIZE}
-          onChange={(next) => setParams({ page: next })}
-        />
-      </Card>
-
-      <LogDetailModal log={detailLog} onClose={() => setDetailLog(null)} />
-    </>
+    </div>
   );
 };
 

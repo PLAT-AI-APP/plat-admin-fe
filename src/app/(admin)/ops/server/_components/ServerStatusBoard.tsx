@@ -5,7 +5,7 @@ import { useServerMetricsQuery } from "@/api/ops/getServerMetrics";
 import { Refresh } from "@/icons";
 import { formatDateTimeSecond } from "@/lib/dayjs";
 import { showAppToast, showErrorToast } from "@/lib/toast";
-import { formatWithCommas } from "@/lib/utils";
+import { formatBytes, formatWithCommas } from "@/lib/utils";
 import type { DependencyHealth, HealthStatus } from "@/type/ops";
 import Alert from "@/components/ui/Alert";
 import Badge, { type BadgeTone } from "@/components/ui/Badge";
@@ -58,8 +58,8 @@ const formatUptime = (uptimeSeconds: number): string => {
 /** 요약 카드 안에서 반복되는 라벨 + 값 한 줄 */
 const SummaryRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex items-center justify-between gap-3 border-t border-border-main py-3 first:border-t-0 first:pt-0">
-    <span className="text-[13px] text-font-2">{label}</span>
-    <span className="text-[14px] font-medium text-font-1 tabular-nums">
+    <span className="body-5 text-font-2">{label}</span>
+    <span className="body-4 font-medium text-font-1 tabular-nums">
       {value}
     </span>
   </div>
@@ -167,7 +167,7 @@ const ServerStatusBoard = () => {
                 <Badge tone={HEALTH_STATUS_TONE[health.status]}>
                   {HEALTH_STATUS_LABEL[health.status]}
                 </Badge>
-                <span className="text-[13px] text-font-2">
+                <span className="body-5 text-font-2">
                   {HEALTH_STATUS_DESCRIPTION[health.status]}
                 </span>
               </div>
@@ -189,8 +189,25 @@ const ServerStatusBoard = () => {
             </div>
 
             <div className="flex flex-col justify-center gap-5">
-              <UsageBar label="CPU 사용률" value={health.cpuUsage} />
-              <UsageBar label="메모리 사용률" value={health.memoryUsage} />
+              <UsageBar
+                label="CPU 사용률"
+                value={health.cpuUsage}
+                description={`${formatWithCommas(health.cpuCores)}코어`}
+              />
+              <UsageBar
+                label="메모리 사용률"
+                value={health.memoryUsage}
+                description={`${formatBytes(health.memoryUsedBytes)} / ${formatBytes(health.memoryTotalBytes)} 사용 중`}
+              />
+              {/*
+                힙을 따로 둔다. 머신 메모리에 여유가 있어도 힙이 차면 GC가 돌기
+                시작하고, 응답이 느려지는 원인은 그쪽인 경우가 많다.
+              */}
+              <UsageBar
+                label="JVM 힙 사용률"
+                value={health.heapUsage}
+                description={`${formatBytes(health.heapUsedBytes)} / ${formatBytes(health.heapMaxBytes)} 사용 중`}
+              />
             </div>
           </div>
         )}

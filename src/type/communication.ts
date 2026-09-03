@@ -1,6 +1,6 @@
 /**
  * 커뮤니케이션 도메인 타입.
- * 전부 MVP 제외 범위지만, 나중에 켜기만 하면 되도록 화면과 타입을 미리 구현한다.
+ * 전부 MOCK 범위지만, 나중에 켜기만 하면 되도록 화면과 타입을 미리 구현한다.
  */
 
 /** Q&A */
@@ -13,10 +13,13 @@ export interface QnaItem {
   title: string;
   content: string;
   status: QnaStatus;
-  userId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  userId: string;
   userNickname: string;
   answer?: string;
   answeredBy?: string;
+  /** 답변 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  answeredById?: number;
   answeredAt?: string;
   createdAt: string;
 }
@@ -68,5 +71,7 @@ export interface PushCampaign {
   targetCount: number;
   successCount: number;
   createdBy: string;
+  /** 등록 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  createdById?: number;
   createdAt: string;
 }

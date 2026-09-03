@@ -37,7 +37,7 @@ const Pagination = ({
         className,
       )}
     >
-      <p className="text-[13px] text-font-2 tabular-nums">
+      <p className="body-5 text-font-2 tabular-nums">
         총 {formatWithCommas(totalCount)}건
       </p>
 
@@ -58,7 +58,7 @@ const Pagination = ({
             type="button"
             onClick={() => onChange(pageNumber)}
             className={cn(
-              "flex size-8 items-center justify-center rounded-field text-[13px] tabular-nums transition",
+              "flex size-8 items-center justify-center rounded-field body-5 tabular-nums transition",
               pageNumber === page
                 ? "bg-surface-selected font-semibold text-brand"
                 : "text-font-2 hover:bg-surface-hover hover:text-font-1",

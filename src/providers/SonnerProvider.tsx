@@ -22,8 +22,8 @@ const SonnerProvider = () => {
         unstyled: true,
         classNames: {
           toast: "sonner-toast",
-          title: "text-[14px] font-semibold text-font-1",
-          description: "mt-0.5 text-[13px] text-font-2",
+          title: "body-4 font-semibold text-font-1",
+          description: "mt-0.5 body-5 text-font-2",
           closeButton:
             "absolute right-3 top-3 cursor-pointer transition hover:opacity-70",
         },

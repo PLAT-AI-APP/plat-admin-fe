@@ -1,29 +1,28 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useListParams } from "@/hooks/useListParams";
 import { useUserListQuery } from "@/api/user/getUserList";
 import { useUserMutation } from "@/api/user/mutateUser";
-import { Ban, CheckCircle, Eye, Gear } from "@/icons";
+import { Ban, CheckCircle, Eye } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
+import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
-import { formatCurrency, formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import {
   DEVICE_PLATFORM_LABEL,
   GENDER_LABEL,
-  formatPhoneNumber,
+  UNCOLLECTED_LABEL,
   type User,
-  type UserRole,
   type UserStatus,
 } from "@/type/user";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import CsvExportButton from "@/components/ui/CsvExportButton";
 import Dropdown from "@/components/ui/Dropdown";
+import EntityImage from "@/components/ui/EntityImage";
 import type { DropdownItem } from "@/components/ui/Dropdown";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
@@ -31,43 +30,43 @@ import Select from "@/components/ui/Select";
 import Table, { TableCellStack } from "@/components/ui/Table";
 import type { TableColumn } from "@/components/ui/Table";
 import {
-  ADULT_VERIFIED_FILTER_OPTIONS,
+  LOGIN_PROVIDER_BADGE_CLASS,
   LOGIN_PROVIDER_LABEL,
-  USER_ROLE_FILTER_OPTIONS,
-  USER_ROLE_LABEL,
-  USER_ROLE_TONE,
   USER_STATUS_FILTER_OPTIONS,
   USER_STATUS_LABEL,
   USER_STATUS_TONE,
 } from "../_constants/userOptions";
-import UserRoleModal from "./UserRoleModal";
 import UserSuspendModal from "./UserSuspendModal";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
 const USER_CSV_COLUMNS: CsvColumn<User>[] = [
   { header: "유저 ID", value: (row) => row.userId },
   { header: "닉네임", value: (row) => row.nickname },
-  { header: "이메일", value: (row) => row.email },
-  { header: "휴대폰번호", value: (row) => formatPhoneNumber(row.phoneNumber) },
+  { header: "이메일", value: (row) => row.email ?? "-" },
   { header: "생년월일", value: (row) => row.birthDate ?? "-" },
   { header: "성별", value: (row) => GENDER_LABEL[row.gender] },
-  { header: "성인 인증", value: (row) => (row.isAdultVerified ? "Y" : "N") },
+  // 아직 모으지 않는 값은 Y/N 으로 적지 않는다. 내려받은 파일에서 N이 "동의 안 함"으로 읽힌다.
   {
-    header: "성인 인증일",
-    value: (row) => formatDate(row.adultVerifiedAt),
+    header: "마케팅 동의",
+    value: (row) =>
+      row.isMarketingAgreed === undefined
+        ? UNCOLLECTED_LABEL
+        : row.isMarketingAgreed
+          ? "Y"
+          : "N",
   },
-  { header: "마케팅 동의", value: (row) => (row.isMarketingAgreed ? "Y" : "N") },
-  { header: "로그인 수단", value: (row) => LOGIN_PROVIDER_LABEL[row.provider] },
+  {
+    header: "로그인 수단",
+    value: (row) => (row.provider ? LOGIN_PROVIDER_LABEL[row.provider] : "-"),
+  },
   { header: "상태", value: (row) => USER_STATUS_LABEL[row.status] },
-  { header: "역할", value: (row) => USER_ROLE_LABEL[row.role] },
-  { header: "보유 크레딧", value: (row) => row.creditBalance },
-  { header: "캐릭터 수", value: (row) => row.characterCount },
-  { header: "대화 수", value: (row) => row.chatCount },
-  { header: "누적 결제금액(원)", value: (row) => row.totalPaidAmount },
   { header: "마지막 로그인", value: (row) => formatDateTime(row.lastLoginAt) },
   {
     header: "최근 접속 기기",
-    value: (row) => DEVICE_PLATFORM_LABEL[row.lastLoginPlatform],
+    value: (row) =>
+      row.lastLoginPlatform
+        ? DEVICE_PLATFORM_LABEL[row.lastLoginPlatform]
+        : UNCOLLECTED_LABEL,
   },
   { header: "가입일", value: (row) => formatDate(row.createdAt) },
 ];
@@ -77,31 +76,25 @@ const DEFAULT_PARAMS = {
   page: 1,
   keyword: "",
   status: "",
-  role: "",
-  isAdultVerified: "",
 };
 
 const UserManager = () => {
   const router = useRouter();
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
-  const { page, keyword, isAdultVerified } = params;
+  const { page, keyword } = params;
   const status = params.status as UserStatus | "";
-  const role = params.role as UserRole | "";
 
   // 모달은 대상 유저를 상태로 들고 있는 방식으로 하나씩만 연다.
   const [suspendTarget, setSuspendTarget] = useState<User | null>(null);
-  const [roleTarget, setRoleTarget] = useState<User | null>(null);
 
   const { data, isLoading } = useUserListQuery({
     page,
     size: DEFAULT_PAGE_SIZE,
     keyword: keyword || undefined,
     status: status || undefined,
-    role: role || undefined,
-    isAdultVerified: isAdultVerified || undefined,
   });
 
-  const { statusMutation, roleMutation } = useUserMutation();
+  const { statusMutation } = useUserMutation();
 
   const handleUnsuspend = (user: User) => {
     openConfirm({
@@ -136,21 +129,7 @@ const UserManager = () => {
     });
   };
 
-  const handleChangeRole = (nextRole: UserRole) => {
-    if (!roleTarget) return;
-
-    openConfirm({
-      title: "역할을 변경할까요?",
-      description: `'${roleTarget.nickname}' 계정의 역할을 '${USER_ROLE_LABEL[nextRole]}'(으)로 변경합니다.`,
-      confirmText: "변경",
-      onConfirm: () =>
-        roleMutation
-          .mutateAsync({ userId: roleTarget.userId, role: nextRole })
-          .then(() => setRoleTarget(null)),
-    });
-  };
-
-  /** 행 액션. 탈퇴 유저는 상태·역할을 바꾸지 않는다. */
+  /** 행 액션. 탈퇴 유저는 상태를 바꾸지 않는다. */
   const buildRowActions = (user: User): DropdownItem[] => {
     const items: DropdownItem[] = [
       {
@@ -177,13 +156,6 @@ const UserManager = () => {
       });
     }
 
-    items.push({
-      label: "역할 변경",
-      icon: <Gear size={15} />,
-      disabled: user.status === "WITHDRAWN",
-      onSelect: () => setRoleTarget(user),
-    });
-
     return items;
   };
 
@@ -193,16 +165,24 @@ const UserManager = () => {
       header: "유저",
       render: (user) => (
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="relative size-9 shrink-0 overflow-hidden rounded-full bg-subtle">
-            <Image
-              src={user.profileImageUrl}
-              alt=""
-              fill
-              sizes="36px"
-              className="object-cover"
-              unoptimized
-            />
-          </div>
+          {/* 관리자 응답은 URL 을 만들어 주지 않고 fileId 만 준다. 둘 중 오는 쪽을 쓴다. */}
+          <EntityImage
+            src={resolveImageUrl(
+              user.profileImageUrl,
+              user.profileImageFileId,
+              "USER_PROFILE",
+              "SQ40",
+            )}
+            alt=""
+            ratio="square"
+            shape="circle"
+            fallback={
+              <span className="body-5 text-font-2">
+                {user.nickname.trim().charAt(0) || "?"}
+              </span>
+            }
+            className="size-9 shrink-0"
+          />
 
           <div className="min-w-0">
             <TableCellStack
@@ -214,38 +194,25 @@ const UserManager = () => {
       ),
     },
     {
-      key: "contact",
-      header: "이메일 / 휴대폰",
+      key: "email",
+      header: "이메일",
+      // 휴대폰번호는 목록에 늘어놓지 않는다. 한 명을 확인하려고 스무 명의 번호를
+      // 화면에 띄울 이유가 없어 상세에서만 본다.
       render: (user) => (
-        <TableCellStack
-          primary={
-            <span className="text-[13px] text-font-2">{user.email}</span>
-          }
-          secondary={
-            <span className="tabular-nums">
-              {formatPhoneNumber(user.phoneNumber)}
-            </span>
-          }
-        />
+        <span className="body-5 text-font-2">{user.email ?? "-"}</span>
       ),
-    },
-    {
-      key: "adultVerified",
-      header: "성인 인증",
-      align: "center",
-      render: (user) =>
-        user.isAdultVerified ? (
-          <Badge tone="success">인증</Badge>
-        ) : (
-          <Badge tone="neutral">미인증</Badge>
-        ),
     },
     {
       key: "provider",
       header: "로그인 수단",
-      render: (user) => (
-        <Badge tone="neutral">{LOGIN_PROVIDER_LABEL[user.provider]}</Badge>
-      ),
+      render: (user) =>
+        user.provider ? (
+          <Badge className={LOGIN_PROVIDER_BADGE_CLASS[user.provider]}>
+            {LOGIN_PROVIDER_LABEL[user.provider]}
+          </Badge>
+        ) : (
+          <span className="body-5 text-font-3">-</span>
+        ),
     },
     {
       key: "status",
@@ -257,42 +224,11 @@ const UserManager = () => {
       ),
     },
     {
-      key: "role",
-      header: "역할",
-      render: (user) => (
-        <Badge tone={USER_ROLE_TONE[user.role]}>
-          {USER_ROLE_LABEL[user.role]}
-        </Badge>
-      ),
-    },
-    {
-      key: "creditBalance",
-      header: "보유 크레딧",
-      align: "right",
-      numeric: true,
-      render: (user) => formatWithCommas(user.creditBalance),
-    },
-    {
-      key: "counts",
-      header: "캐릭터 / 대화",
-      align: "right",
-      numeric: true,
-      render: (user) =>
-        `${formatWithCommas(user.characterCount)} / ${formatWithCommas(user.chatCount)}`,
-    },
-    {
-      key: "totalPaidAmount",
-      header: "누적 결제금액",
-      align: "right",
-      numeric: true,
-      render: (user) => formatCurrency(user.totalPaidAmount),
-    },
-    {
       key: "lastLoginAt",
       header: "마지막 로그인",
       numeric: true,
       render: (user) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDateTime(user.lastLoginAt)}
         </span>
       ),
@@ -302,7 +238,7 @@ const UserManager = () => {
       header: "가입일",
       numeric: true,
       render: (user) => (
-        <span className="text-[13px] text-font-2">
+        <span className="body-5 text-font-2">
           {formatDate(user.createdAt)}
         </span>
       ),
@@ -350,26 +286,6 @@ const UserManager = () => {
               }}
               selectBoxClassName="w-36"
             />
-
-            <Select
-              aria-label="역할 필터"
-              options={USER_ROLE_FILTER_OPTIONS}
-              value={role}
-              onChange={(event) => {
-                setParams({ role: event.target.value });
-              }}
-              selectBoxClassName="w-40"
-            />
-
-            <Select
-              aria-label="성인 인증 필터"
-              options={ADULT_VERIFIED_FILTER_OPTIONS}
-              value={isAdultVerified}
-              onChange={(event) => {
-                setParams({ isAdultVerified: event.target.value });
-              }}
-              selectBoxClassName="w-40"
-            />
           </div>
         </div>
 
@@ -380,7 +296,7 @@ const UserManager = () => {
           isLoading={isLoading}
           onRowClick={(user) => router.push(`/users/${user.userId}`)}
           emptyTitle="조건에 맞는 유저가 없습니다."
-          emptyDescription="검색어나 상태·역할 필터를 바꿔서 다시 찾아보세요."
+          emptyDescription="검색어나 상태 필터를 바꿔서 다시 찾아보세요."
         />
 
         <Pagination
@@ -396,13 +312,6 @@ const UserManager = () => {
         onClose={() => setSuspendTarget(null)}
         onSubmit={handleSuspend}
         isSubmitting={statusMutation.isPending}
-      />
-
-      <UserRoleModal
-        user={roleTarget}
-        onClose={() => setRoleTarget(null)}
-        onSubmit={handleChangeRole}
-        isSubmitting={roleMutation.isPending}
       />
     </>
   );

@@ -7,7 +7,7 @@ export default function UniversePage() {
   return (
     <>
       <PageHeader
-        title="전체 세계관"
+        title="세계관"
         description="세계관을 조회합니다. 세계관 하나에 캐릭터와 시나리오가 담깁니다."
       />
 

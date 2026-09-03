@@ -1,7 +1,6 @@
 import type {
   Character,
   ChatExportJob,
-  NsfwKeyword,
   ScenarioLifecycle,
   ScenarioType,
   Universe,
@@ -11,7 +10,10 @@ import type {
   UniverseStatus,
   UniverseTendency,
 } from "@/type/character";
+import type { ServiceLanguage } from "@/type/language";
+import type { BannedWord, BannedWordType } from "@/type/bannedWord";
 import { daysAgo, pickOne, randomInt } from "../utils";
+import { pickManager } from "./ops";
 import { CHARACTER_TAG_POOL, hashtags } from "./hashtag";
 import { creatorUsers, officialCreatorUsers, users } from "./user";
 
@@ -73,6 +75,31 @@ const buildTags = (seed: number): string[] => {
   ).filter((tag, index, tags) => tags.indexOf(tag) === index);
 };
 
+/**
+ * 언어별 번역 보유율(%).
+ *
+ * **모든 세계관이 6개 언어를 다 갖춘 시드를 넣으면 안 된다.** 그러면 언어별
+ * 후보 목록이 전부 똑같아져서, 언어를 나눈 이유(영어 번역이 없는 세계관은
+ * 영어 목록에 못 오른다)가 화면에서 확인되지 않는다.
+ */
+const TRANSLATION_RATE: Record<Exclude<ServiceLanguage, "KO">, number> = {
+  EN: 62,
+  JA: 45,
+  ZH: 30,
+  TH: 20,
+  VI: 14,
+};
+
+/** seed 기반 번역 보유 언어. 한국어는 원문이라 항상 있다. */
+const buildSupportedLanguages = (seed: number): ServiceLanguage[] => [
+  "KO",
+  ...Object.entries(TRANSLATION_RATE)
+    .filter(
+      ([, rate], index) => randomInt(seed * 13 + index * 7, 0, 99) < rate,
+    )
+    .map(([language]) => language as ServiceLanguage),
+];
+
 /** 캐릭터가 만들어진 날. 세계관 등록일이 이보다 앞서지 않도록 여기서 한 번만 계산한다. */
 const characterCreatedDaysAgo = (index: number) => index * 3 + 2;
 
@@ -133,9 +160,6 @@ const REVIEW_REJECTION_REASONS = [
   "제목과 내용이 서로 맞지 않습니다.",
 ];
 
-/** 서버 파일 설정(`file.temp.release-expiration: P1D`)과 같은 파기 유예 기간 */
-const PURGE_GRACE_DAYS = 1;
-
 /**
  * 세계관 ↔ 캐릭터 매핑. 서버 `universe_character_mappings`에 해당한다.
  *
@@ -166,22 +190,15 @@ export const universes: Universe[] = characterBases.flatMap(
       );
 
       /*
-        심사·삭제 상태를 섞어 둔다. 서버는 승인되지 않았거나 삭제된 세계관을
+        심사·운영 상태를 섞어 둔다. 서버는 승인되지 않았거나 내려둔 세계관을
         홈 섹션에서 빼기 때문에, 운영 화면에서 그 이유를 구분할 수 있어야 한다.
+
+        삭제는 하드 딜리트라 상태로 남지 않는다 — 지운 세계관은 자료에서 통째로
+        사라지므로 목업도 살아 있는 것만 만든다.
       */
       const reviewStatus: UniverseReviewStatus =
         seed % 17 === 0 ? "REJECTED" : seed % 9 === 0 ? "PENDING" : "APPROVED";
-      const status: UniverseStatus =
-        seed % 23 === 0
-          ? "PURGED"
-          : seed % 13 === 0
-            ? "DELETED"
-            : seed % 19 === 0
-              ? "INACTIVE"
-              : "ACTIVE";
-      const isDeleted = status === "DELETED" || status === "PURGED";
-      // 삭제는 등록 이후, 오늘 사이에 일어난다.
-      const deletedDaysAgo = randomInt(seed * 3, 0, createdDaysAgo);
+      const status: UniverseStatus = seed % 19 === 0 ? "INACTIVE" : "ACTIVE";
 
       return {
         universeId: seed,
@@ -204,6 +221,7 @@ export const universes: Universe[] = characterBases.flatMap(
           "오래전 봉인된 기억을 따라가며, 당신과 함께 잃어버린 조각을 되찾는 이야기입니다.",
         thumbnailUrl: `https://picsum.photos/seed/plat-universe-${seed}/1200/440`,
         tags: buildTags(seed * 2),
+        supportedLanguages: buildSupportedLanguages(seed),
         /* 공식 여부는 공식 계정 목록에서 파생된다. db/official의 syncOfficialFlags가 채운다. */
         isOfficial: false,
         visibility:
@@ -226,15 +244,6 @@ export const universes: Universe[] = characterBases.flatMap(
         scenarioCount: 0,
         chatCount: randomInt(seed * 7, 80, 32_000),
         likeCount: randomInt(seed * 9, 0, 9_400),
-        deletedAt: isDeleted ? daysAgo(deletedDaysAgo, 9) : undefined,
-        // 파기 예정 시각은 삭제 시각 + 유예 기간이다.
-        purgeAt: isDeleted
-          ? daysAgo(deletedDaysAgo - PURGE_GRACE_DAYS, 9)
-          : undefined,
-        purgedAt:
-          status === "PURGED"
-            ? daysAgo(Math.max(0, deletedDaysAgo - PURGE_GRACE_DAYS), 10)
-            : undefined,
         createdAt: daysAgo(createdDaysAgo),
       };
     }),
@@ -329,14 +338,10 @@ universes.forEach((universe) => {
  * 소유가 아니라 등장 기준이라, 다른 사람의 세계관에 초대된 캐릭터도 함께 잡힌다.
  */
 export const characters: Character[] = characterBases.map((character) => {
-  // 삭제·파기된 세계관은 앱에서 사라지므로 캐릭터 지표에서도 뺀다.
-  const appearedUniverses = universes.filter(
-    (universe) =>
-      universe.characters.some(
-        (item) => item.characterId === character.characterId,
-      ) &&
-      universe.status !== "DELETED" &&
-      universe.status !== "PURGED",
+  const appearedUniverses = universes.filter((universe) =>
+    universe.characters.some(
+      (item) => item.characterId === character.characterId,
+    ),
   );
 
   return {
@@ -422,21 +427,99 @@ export const characterProfiles: CharacterProfile[] = characters.map(
   }),
 );
 
-export const nsfwKeywords: NsfwKeyword[] = [
-  { keyword: "노출", level: "WARN" },
-  { keyword: "폭력묘사", level: "BLOCK" },
-  { keyword: "자해", level: "BLOCK" },
-  { keyword: "미성년", level: "BLOCK" },
-  { keyword: "혐오표현", level: "BLOCK" },
-  { keyword: "선정적", level: "WARN" },
-  { keyword: "약물", level: "WARN" },
-].map((item, index) => ({
-  keywordId: index + 1,
-  keyword: item.keyword,
-  level: item.level as NsfwKeyword["level"],
-  hitCount: randomInt(index + 20, 0, 320),
-  createdAt: daysAgo(index * 4 + 3),
-}));
+/**
+ * 금지어 사전 시드.
+ *
+ * 금지어와 예외어를 함께 둔다. '졸라'를 막고 '고르곤졸라'를 풀어 주는 짝이 실제로
+ * 어떻게 동작하는지는 두 종류가 같이 있어야만 화면에서 확인할 수 있다.
+ */
+const BANNED_WORD_SEEDS: { word: string; type: BannedWordType }[] = [
+  { word: "노출", type: "BAN" },
+  { word: "폭력묘사", type: "BAN" },
+  { word: "자해", type: "BAN" },
+  { word: "미성년", type: "BAN" },
+  { word: "혐오표현", type: "BAN" },
+  { word: "선정적", type: "BAN" },
+  { word: "약물", type: "BAN" },
+  { word: "졸라", type: "BAN" },
+  { word: "고르곤졸라", type: "EXCEPT" },
+  { word: "노출 콘크리트", type: "EXCEPT" },
+];
+
+export const bannedWords: BannedWord[] = BANNED_WORD_SEEDS.map(
+  (seed, index) => {
+    const registrar = pickManager(index + 20);
+
+    return {
+      bannedWordId: index + 1,
+      word: seed.word,
+      type: seed.type,
+      createdBy: registrar.name,
+      createdById: registrar.managerId,
+      createdAt: daysAgo(index * 4 + 3),
+    };
+  },
+);
+
+/** 금지어(BAN)만. NSFW 판정 근거는 걸러 내는 쪽에서만 나온다. */
+export const banOnlyWords = bannedWords.filter((item) => item.type === "BAN");
+
+/**
+ * 캐릭터 검수 부가 정보.
+ *
+ * **`Character`에 필드를 더하지 않고 옆 테이블로 둔다.** 캐릭터 시드는
+ * 신고 · 공식 계정 · 댓글 · 전역 검색이 함께 읽는 공용 데이터라, 여기에
+ * 화면 하나가 필요한 필드를 얹으면 그 도메인들이 모두 영향을 받는다.
+ * 실서버에도 캐릭터 검수 API가 아직 없어(`CharacterController`는 빈 껍데기)
+ * 어차피 별도 응답으로 붙을 값들이다.
+ */
+export interface CharacterModeration {
+  characterId: number;
+  /**
+   * NSFW 판정에 걸린 금지어. `Character.isNsfw`가 참인 근거다.
+   *
+   * 뱃지만 있고 근거가 없으면 운영자가 오탐을 판단할 수 없다.
+   * 값은 `bannedWords`(= `/universes/banned-words` 화면)에서만 고른다.
+   * 등록된 사전과 어긋나면 "이 단어로 걸렸다"는 말이 성립하지 않는다.
+   */
+  nsfwMatchedKeywordIds: number[];
+  /** 차단 사유. `status`가 `BLOCKED`일 때만 있다. */
+  blockedReason?: string;
+  blockedAt?: string;
+}
+
+const CHARACTER_BLOCK_REASONS = [
+  "타 IP 캐릭터를 그대로 옮긴 것으로 확인되어 차단했습니다.",
+  "미성년으로 읽히는 설정과 선정적 묘사가 함께 있어 차단했습니다.",
+  "신고 누적으로 검수 전까지 노출을 중단했습니다.",
+];
+
+export const characterModerations: CharacterModeration[] = characters.map(
+  (character, index) => {
+    const seed = index + 1;
+    /*
+      NSFW로 걸린 캐릭터만 매칭 금지어를 갖는다. 1~2개를 고른다.
+      걸리지 않은 캐릭터에 금지어를 붙이면 뱃지와 근거가 어긋난다.
+    */
+    const matchCount = character.isNsfw ? randomInt(seed * 31, 1, 2) : 0;
+    const nsfwMatchedKeywordIds = Array.from(
+      { length: matchCount },
+      (_, matchIndex) =>
+        pickOne(seed * 37 + matchIndex * 13, banOnlyWords).bannedWordId,
+    ).filter((id, idx, ids) => ids.indexOf(id) === idx);
+
+    const isBlocked = character.status === "BLOCKED";
+
+    return {
+      characterId: character.characterId,
+      nsfwMatchedKeywordIds,
+      blockedReason: isBlocked
+        ? pickOne(seed * 41, CHARACTER_BLOCK_REASONS)
+        : undefined,
+      blockedAt: isBlocked ? daysAgo(index + 2, 16) : undefined,
+    };
+  },
+);
 
 export const chatExportJobs: ChatExportJob[] = Array.from(
   { length: 6 },

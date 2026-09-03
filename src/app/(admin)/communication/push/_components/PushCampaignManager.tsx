@@ -9,7 +9,7 @@ import {
 import { Megaphone, Plus, Trash } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { showErrorToast } from "@/lib/toast";
-import { formatWithCommas, truncate } from "@/lib/utils";
+import { formatAdmin, formatWithCommas, truncate } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { PushCampaign, PushStatus } from "@/type/communication";
@@ -100,7 +100,7 @@ const PushCampaignManager = () => {
       render: (row) => (
         <div className="max-w-100">
           <p className="truncate text-font-1">{row.title}</p>
-          <p className="mt-0.5 truncate text-[12px] text-font-2">{row.body}</p>
+          <p className="mt-0.5 truncate body-6 text-font-2">{row.body}</p>
         </div>
       ),
     },
@@ -164,7 +164,11 @@ const PushCampaignManager = () => {
       key: "createdBy",
       header: "작성자",
       width: "100px",
-      render: (row) => <span className="text-font-2">{row.createdBy}</span>,
+      render: (row) => (
+        <span className="text-font-2">
+          {formatAdmin(row.createdBy, row.createdById)}
+        </span>
+      ),
     },
     {
       key: "actions",
@@ -200,7 +204,7 @@ const PushCampaignManager = () => {
 
   return (
     <>
-      <Alert tone="warning" title="MVP 제외 기능">
+      <Alert tone="warning" title="MOCK 화면 · 아직 실제 발송으로 이어지지 않습니다">
         현재 운영에서는 Discord로 처리합니다. 화면은 이후 전환을 위해 미리
         구현해 두었습니다.
       </Alert>

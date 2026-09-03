@@ -10,10 +10,10 @@ export default function NotFound() {
         <Search size={40} />
       </span>
 
-      <p className="text-[20px] font-bold text-font-0">
+      <p className="title-1 font-bold text-font-0">
         존재하지 않는 페이지입니다.
       </p>
-      <p className="text-[13px] text-font-2">
+      <p className="body-5 text-font-2">
         주소가 바뀌었거나 삭제된 메뉴일 수 있습니다.
       </p>
 

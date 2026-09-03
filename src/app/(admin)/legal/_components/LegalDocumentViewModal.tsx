@@ -3,6 +3,7 @@
 import { useLegalDocumentQuery } from "@/api/legal/getLegalDocument";
 import { CheckCircle } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
+import { formatAdmin } from "@/lib/utils";
 import type { LegalDocument } from "@/type/legal";
 import { LEGAL_DOCUMENT_LABEL } from "@/type/legal";
 import Badge from "@/components/ui/Badge";
@@ -43,10 +44,12 @@ const LegalDocumentViewModal = ({
       }
       description={
         target
-          ? `시행일 ${formatDate(target.effectiveAt)} · 등록 ${formatDateTime(target.createdAt)} · ${target.createdBy}`
+          ? `시행일 ${formatDate(target.effectiveAt)} · 등록 ${formatDateTime(target.createdAt)} · ${formatAdmin(target.createdBy, target.createdById)}`
           : undefined
       }
       size="lg"
+      // 스켈레톤 → 본문으로 바뀔 때 높이가 튀지 않게 한다.
+      minHeight="md"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -71,7 +74,7 @@ const LegalDocumentViewModal = ({
             <Badge tone="neutral">비활성</Badge>
           )}
 
-          <span className="text-[13px] text-font-2">
+          <span className="body-5 text-font-2">
             문서 ID #{target.documentId}
           </span>
         </div>

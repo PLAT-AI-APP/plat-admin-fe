@@ -35,6 +35,20 @@ export const QNA_CATEGORY_LABEL: Record<QnaCategory, string> = {
   ETC: "기타",
 };
 
+/**
+ * 카테고리 색.
+ * 목록에서 어떤 성격의 문의가 몰려 있는지 색만 보고 훑을 수 있어야 하므로
+ * 카테고리마다 다른 톤을 준다. 오류 신고는 장애로 이어질 수 있어 가장 눈에 띄는
+ * `danger`, 결제는 금전이 얽혀 `warning`을 쓴다.
+ */
+export const QNA_CATEGORY_TONE: Record<QnaCategory, BadgeTone> = {
+  ACCOUNT: "info",
+  PAYMENT: "warning",
+  CHARACTER: "brand",
+  BUG: "danger",
+  ETC: "neutral",
+};
+
 /** 상태 탭. 빈 문자열은 전체 조회를 의미한다. */
 export const QNA_STATUS_TABS: TabItem<QnaStatus | "">[] = [
   { label: "전체", value: "" },

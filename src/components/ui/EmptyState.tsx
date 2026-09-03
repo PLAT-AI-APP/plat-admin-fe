@@ -26,8 +26,8 @@ const EmptyState = ({
     >
       {icon && <span className="text-font-disabled">{icon}</span>}
 
-      <p className="text-[14px] font-medium text-font-1">{title}</p>
-      {description && <p className="text-[13px] text-font-2">{description}</p>}
+      <p className="body-4 font-medium text-font-1">{title}</p>
+      {description && <p className="body-5 text-font-2">{description}</p>}
 
       {action && <div className="mt-3">{action}</div>}
     </div>

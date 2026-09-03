@@ -5,6 +5,7 @@ import { formatDate, formatDateTime } from "@/lib/dayjs";
 import {
   DEVICE_PLATFORM_LABEL,
   GENDER_LABEL,
+  UNCOLLECTED_LABEL,
   calculateAge,
   formatPhoneNumber,
   type UserDetail,
@@ -12,9 +13,8 @@ import {
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import {
+  LOGIN_PROVIDER_BADGE_CLASS,
   LOGIN_PROVIDER_LABEL,
-  USER_ROLE_LABEL,
-  USER_ROLE_TONE,
   USER_STATUS_LABEL,
   USER_STATUS_TONE,
 } from "../../_constants/userOptions";
@@ -26,8 +26,8 @@ interface UserAccountPanelProps {
 /** 계정 정보 한 줄 */
 const InfoRow = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="flex items-center justify-between gap-4 border-b border-border-main py-2.5 last:border-b-0">
-    <span className="shrink-0 text-[13px] text-font-2">{label}</span>
-    <span className="min-w-0 text-right text-[13px] text-font-1">{value}</span>
+    <span className="shrink-0 body-5 text-font-2">{label}</span>
+    <span className="min-w-0 text-right body-5 text-font-1">{value}</span>
   </div>
 );
 
@@ -61,7 +61,15 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
         <InfoRow label="성별" value={GENDER_LABEL[user.gender]} />
         <InfoRow
           label="로그인 수단"
-          value={LOGIN_PROVIDER_LABEL[user.provider]}
+          value={
+            user.provider ? (
+              <Badge className={LOGIN_PROVIDER_BADGE_CLASS[user.provider]}>
+                {LOGIN_PROVIDER_LABEL[user.provider]}
+              </Badge>
+            ) : (
+              "-"
+            )
+          }
         />
         <InfoRow label="가입일" value={formatDate(user.createdAt)} />
       </Card>
@@ -83,10 +91,16 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
               )
             }
           />
+          {/*
+            아직 모으지 않는 값이라 "미동의"로 그리지 않는다. 동의를 거절한 유저와
+            아무도 묻지 않은 유저는 푸시 발송 대상 산정에서 뜻이 정반대다.
+          */}
           <InfoRow
             label="마케팅 수신 동의"
             value={
-              user.isMarketingAgreed ? (
+              user.isMarketingAgreed === undefined ? (
+                <span className="text-font-3">{UNCOLLECTED_LABEL}</span>
+              ) : user.isMarketingAgreed ? (
                 <Badge tone="success">동의</Badge>
               ) : (
                 <Badge tone="neutral">미동의</Badge>
@@ -105,16 +119,12 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
             }
           />
           <InfoRow
-            label="역할"
-            value={
-              <Badge tone={USER_ROLE_TONE[user.role]}>
-                {USER_ROLE_LABEL[user.role]}
-              </Badge>
-            }
-          />
-          <InfoRow
             label="마지막 로그인"
-            value={`${formatDateTime(user.lastLoginAt)} · ${DEVICE_PLATFORM_LABEL[user.lastLoginPlatform]}`}
+            value={`${formatDateTime(user.lastLoginAt)} · ${
+              user.lastLoginPlatform
+                ? DEVICE_PLATFORM_LABEL[user.lastLoginPlatform]
+                : UNCOLLECTED_LABEL
+            }`}
           />
           <InfoRow
             label="누적 신고 접수"

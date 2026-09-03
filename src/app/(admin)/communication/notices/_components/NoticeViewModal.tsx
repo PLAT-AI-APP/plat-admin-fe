@@ -3,9 +3,9 @@
 import { useNoticeDetailQuery } from "@/api/notice/getNoticeDetail";
 import { Edit } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatWithCommas } from "@/lib/utils";
+import { formatAdmin, formatWithCommas } from "@/lib/utils";
 import { NOTICE_CATEGORY_LABEL, NOTICE_STATUS_LABEL } from "@/type/notice";
-import type { Notice } from "@/type/notice";
+import type { NoticeDetail } from "@/type/notice";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
@@ -19,7 +19,7 @@ interface NoticeViewModalProps {
   noticeId: number | null;
   onClose: () => void;
   /** 수정 버튼을 노출할 때만 전달한다. (댓글 관리 등에서 열면 수정은 제공하지 않는다) */
-  onEdit?: (notice: Notice) => void;
+  onEdit?: (notice: NoticeDetail) => void;
 }
 
 /**
@@ -36,12 +36,10 @@ const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) =>
       isOpen={noticeId !== null}
       onClose={onClose}
       title={data?.title ?? "공지사항 상세"}
-      description={
-        data
-          ? `#${data.noticeId} · ${data.createdBy} · ${formatDateTime(data.updatedAt)}`
-          : undefined
-      }
+      description={data ? `#${data.noticeId}` : undefined}
       size="lg"
+      // 스켈레톤 → 본문으로 바뀔 때 높이가 튀지 않게 한다.
+      minHeight="md"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -83,14 +81,47 @@ const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) =>
             <Badge tone={NOTICE_STATUS_TONE[data.status]}>
               {NOTICE_STATUS_LABEL[data.status]}
             </Badge>
-            {data.isPinned && <Badge tone="brand">상단 고정</Badge>}
+            {data.isPinned && <Badge tone="brand">고정</Badge>}
 
-            <span className="ml-auto text-[12px] text-font-2 tabular-nums">
+            <span className="ml-auto body-6 text-font-2 tabular-nums">
               조회 {formatWithCommas(data.viewCount)}
             </span>
           </div>
 
-          <div className="rounded-field border border-border-main px-4 py-3 text-[14px]">
+          {/*
+            등록·수정 관리자 이력.
+            계정이 삭제돼도 남도록 이름을 스냅샷으로 들고 있는 값이며,
+            앱에 노출되는 공지에는 담기지 않는다(유저에게는 언제나 '운영자'다).
+          */}
+          <dl className="flex flex-col gap-1 rounded-field bg-subtle px-4 py-3 body-6 text-font-2">
+            <div className="flex gap-2">
+              <dt className="w-10 shrink-0 text-font-2">등록</dt>
+              <dd className="text-font-1">
+                {formatAdmin(data.createdBy, data.createdById)}
+                <span className="ml-2 tabular-nums text-font-2">
+                  {formatDateTime(data.createdAt)}
+                </span>
+              </dd>
+            </div>
+
+            <div className="flex gap-2">
+              <dt className="w-10 shrink-0 text-font-2">수정</dt>
+              <dd className={data.updatedBy ? "text-font-1" : "text-font-2"}>
+                {data.updatedBy ? (
+                  <>
+                    {formatAdmin(data.updatedBy, data.updatedById)}
+                    <span className="ml-2 tabular-nums text-font-2">
+                      {formatDateTime(data.updatedAt)}
+                    </span>
+                  </>
+                ) : (
+                  "수정 이력 없음"
+                )}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="rounded-field border border-border-main px-4 py-3 body-4">
             <MarkdownContent content={data.content} />
           </div>
         </div>

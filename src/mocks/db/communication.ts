@@ -12,6 +12,7 @@ import type {
 } from "@/type/communication";
 import { daysAgo, pickOne, randomInt } from "../utils";
 import { characters } from "./character";
+import { pickManager } from "./ops";
 import { users } from "./user";
 
 /* ------------------------------------------------------------------ */
@@ -98,6 +99,8 @@ export const qnaItems: QnaItem[] = Array.from({ length: 34 }, (_, index) => {
   const isAnswered = status !== "OPEN";
   // 문의 작성자는 실제 유저여야 한다. ID와 닉네임을 따로 만들면 서로 다른 사람이 된다.
   const user = pickOne(seed * 11, users);
+  // 답변자는 실제 관리자여야 목록의 '#ID'가 관리자 관리 화면과 이어진다.
+  const answerer = pickManager(seed * 13);
 
   return {
     qnaId: seed,
@@ -108,7 +111,8 @@ export const qnaItems: QnaItem[] = Array.from({ length: 34 }, (_, index) => {
     userId: user.userId,
     userNickname: user.nickname,
     answer: isAnswered ? QNA_ANSWER[category] : undefined,
-    answeredBy: isAnswered ? "운영자" : undefined,
+    answeredBy: isAnswered ? answerer.name : undefined,
+    answeredById: isAnswered ? answerer.managerId : undefined,
     // 답변일은 항상 작성일 이후가 되도록 하루 뒤로 잡는다.
     answeredAt: isAnswered ? daysAgo(Math.max(0, index - 1), 15) : undefined,
     createdAt: daysAgo(index, 9),
@@ -286,8 +290,6 @@ const PUSH_BODIES = [
   "첫 결제 할인 혜택이 곧 종료됩니다.",
 ];
 
-const PUSH_CREATORS = ["운영자", "마케팅팀", "김관리"];
-
 export const pushCampaigns: PushCampaign[] = Array.from(
   { length: 10 },
   (_, index) => {
@@ -295,6 +297,7 @@ export const pushCampaigns: PushCampaign[] = Array.from(
     const status = pickOne(seed * 3, PUSH_STATUSES);
     const targetCount = randomInt(seed * 5, 1_200, 84_000);
     const isSent = status === "SENT";
+    const creator = pickManager(seed * 13);
 
     return {
       campaignId: seed,
@@ -309,7 +312,8 @@ export const pushCampaigns: PushCampaign[] = Array.from(
       successCount: isSent
         ? Math.floor((targetCount * randomInt(seed * 11, 88, 99)) / 100)
         : 0,
-      createdBy: pickOne(seed * 13, PUSH_CREATORS),
+      createdBy: creator.name,
+      createdById: creator.managerId,
       createdAt: daysAgo(index + 3, 13),
     };
   },

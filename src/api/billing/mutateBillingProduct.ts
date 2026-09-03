@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type {
   BillingProduct,
@@ -9,7 +9,7 @@ import type {
 import { showAppToast } from "@/lib/toast";
 
 export const createBillingProduct = async (values: BillingProductFormValues) => {
-  const response = await adminAxios.post<BillingProduct>(
+  const response = await liveAxios.post<BillingProduct>(
     "/admin/billing/products",
     values,
   );
@@ -21,7 +21,7 @@ export const updateBillingProduct = async (
   productId: number,
   values: BillingProductFormValues,
 ) => {
-  const response = await adminAxios.put<BillingProduct>(
+  const response = await liveAxios.put<BillingProduct>(
     `/admin/billing/products/${productId}`,
     values,
   );
@@ -33,12 +33,9 @@ export const updateBillingProductStatus = async (
   productId: number,
   status: ProductStatus,
 ) => {
-  const response = await adminAxios.patch<BillingProduct>(
-    `/admin/billing/products/${productId}/status`,
-    { status },
-  );
-
-  return response.data;
+  await liveAxios.patch(`/admin/billing/products/${productId}/status`, {
+    status,
+  });
 };
 
 /** 상품 생성·수정·노출 상태 변경 후 목록을 갱신합니다. */
@@ -73,7 +70,7 @@ export const useBillingProductMutation = () => {
   });
 
   const statusMutation = useMutation<
-    BillingProduct,
+    void,
     AppError,
     { productId: number; status: ProductStatus }
   >({

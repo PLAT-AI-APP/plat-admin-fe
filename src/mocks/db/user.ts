@@ -3,7 +3,6 @@ import type {
   Gender,
   LoginProvider,
   UserDetail,
-  UserRole,
   UserStatus,
 } from "@/type/user";
 import { daysAgo, pickOne, randomInt } from "../utils";
@@ -29,7 +28,6 @@ const NICKNAME_POOL = [
 const PROVIDERS: readonly LoginProvider[] = [
   "GOOGLE",
   "KAKAO",
-  "APPLE",
   "EMAIL",
 ];
 
@@ -69,8 +67,6 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
   const status: UserStatus =
     index % 9 === 0 ? "SUSPENDED" : index % 13 === 0 ? "WITHDRAWN" : "ACTIVE";
 
-  const role: UserRole = index % 4 === 0 ? "CREATOR" : "USER";
-
   const isSuspended = status === "SUSPENDED";
   const isWithdrawn = status === "WITHDRAWN";
 
@@ -95,7 +91,8 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
   );
 
   return {
-    userId: seed,
+    // Snowflake ID 는 문자열이다. 목업도 같은 모양으로 둬야 화면이 실서버와 같게 동작한다.
+    userId: String(seed),
     nickname: `${pickOne(seed, NICKNAME_POOL)}${randomInt(seed * 3, 100, 999)}`,
     email: `plat.user${String(seed).padStart(3, "0")}@example.com`,
     phoneNumber: isVerified
@@ -103,7 +100,6 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
       : undefined,
     profileImageUrl: `https://picsum.photos/seed/plat-user-${seed}/96/96`,
     status,
-    role,
     provider: pickOne(seed * 5, PROVIDERS),
     // 성인 인증은 본인인증을 마치고 만 19세 이상인 경우에만 가능하다.
     isAdultVerified,
@@ -136,12 +132,15 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
 });
 
 /**
- * 세계관을 만드는 크리에이터 후보.
+ * 세계관·캐릭터를 만드는 크리에이터 후보.
  *
- * 공식 계정도 여기서 고른다. **운영이 쓰는 계정도 결국 크리에이터 계정**이라
- * 따로 종류를 만들지 않는다.
+ * **모든 유저가 곧 크리에이터**라 역할로 걸러낼 것이 없다. 탈퇴 계정만
+ * 새 창작물의 작성자가 될 수 없으므로 후보에서 뺀다.
+ * 공식 계정도 여기서 고른다 — 운영이 쓰는 계정도 결국 크리에이터 계정이다.
  */
-export const creatorUsers = users.filter((user) => user.role === "CREATOR");
+export const creatorUsers = users.filter((user) => user.status !== "WITHDRAWN");
 
-/** 공식 계정 후보. 콘텐츠를 많이 가진 크리에이터를 앞에서부터 쓴다. */
-export const officialCreatorUsers = creatorUsers.slice(0, 6);
+/** 공식 계정 후보. 제재 없이 정상 운영 중인 계정을 앞에서부터 쓴다. */
+export const officialCreatorUsers = creatorUsers
+  .filter((user) => user.status === "ACTIVE")
+  .slice(0, 6);

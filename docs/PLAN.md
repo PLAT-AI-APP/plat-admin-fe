@@ -19,7 +19,7 @@
 | 대시보드 | 운영 요약 | 서비스 상태, 유저, 캐릭터, 결제, 크레딧 현황을 한 화면에서 확인 |
 | 캐릭터 | 전체 캐릭터 | 일반 캐릭터 검색, 상세 확인, 노출 상태 관리 |
 | 캐릭터 | 공식 캐릭터 | PLAT이 직접 운영하는 공식 캐릭터 관리 |
-| 캐릭터 | NSFW 키워드 | 캐릭터/채팅 안전성 관리를 위한 키워드 관리 |
+| 캐릭터 | 금지어 | 금지어·예외어 사전으로 캐릭터/채팅 문구를 걸러 낸다 |
 | 캐릭터 | 채팅 내보내기 | 운영 확인이 필요한 대화 기록 추출 |
 | 유저/크리에이터 | 유저 관리 | 유저 검색, 상세 확인, 상태 관리 |
 | 유저/크리에이터 | 더미 크리에이터 | 초기 콘텐츠 운영을 위한 더미 크리에이터 관리 |
@@ -57,7 +57,7 @@
 
 캐릭터 운영의 핵심은 검색, 상세 확인, 노출 상태 관리다.  
 MVP에서는 공식 캐릭터를 별도 하위 메뉴로 두어 PLAT이 직접 운영하는 캐릭터를 명확히 관리한다.  
-NSFW 키워드와 채팅 내보내기는 캐릭터 품질 관리와 운영 대응을 위한 보조 기능으로 둔다.
+금지어와 채팅 내보내기는 캐릭터 품질 관리와 운영 대응을 위한 보조 기능으로 둔다.
 
 ### 4.3 유저/크리에이터
 
@@ -113,9 +113,10 @@ MVP에서도 결제 금액과 크레딧은 반드시 관리 가능해야 한다.
 | GET | `/admin/characters/official` | 공식 캐릭터 목록 |
 | POST | `/admin/characters/official` | 공식 캐릭터 생성 |
 | PUT | `/admin/characters/official/{characterId}` | 공식 캐릭터 수정 |
-| GET | `/admin/nsfw-keywords` | NSFW 키워드 목록 |
-| POST | `/admin/nsfw-keywords` | NSFW 키워드 추가 |
-| DELETE | `/admin/nsfw-keywords/{keywordId}` | NSFW 키워드 삭제 |
+| GET | `/admin/banned-words` | 금지어·예외어 목록 |
+| POST | `/admin/banned-words` | 금지어·예외어 추가 |
+| PATCH | `/admin/banned-words/{bannedWordId}/level` | 처리 레벨 변경 |
+| DELETE | `/admin/banned-words/{bannedWordId}` | 금지어·예외어 삭제 |
 | POST | `/admin/chat-exports` | 채팅 내보내기 작업 생성 |
 | GET | `/admin/chat-exports/{jobId}` | 채팅 내보내기 상태 조회 |
 | GET | `/admin/chat-exports/{jobId}/download` | 채팅 내보내기 다운로드 |
@@ -207,7 +208,7 @@ MVP에서도 결제 금액과 크레딧은 반드시 관리 가능해야 한다.
 | CSV 형태의 채팅 내보내기가 필요할 때 | Jackson CSV 또는 OpenCSV |
 | Excel 내보내기가 실제 운영 요구가 될 때 | Apache POI |
 | Markdown 본문 검증이나 미리보기가 필요할 때 | CommonMark |
-| NSFW 키워드 캐싱이 필요할 때 | 기존 Redis 모듈 |
+| 금지어 사전 캐싱이 필요할 때 | 기존 Redis 모듈 |
 | Discord 운영 자동화가 필요할 때 | Discord Webhook 호출. 별도 SDK는 MVP 이후 검토 |
 
 MVP에서 제외한 푸시 발송 때문에 Firebase Admin SDK는 넣지 않는다.  
@@ -221,7 +222,7 @@ MVP에서 제외한 푸시 발송 때문에 Firebase Admin SDK는 넣지 않는�
 4. 결제/크레딧 관리
 5. 법적 고지, 앱 버전 관리
 6. AI 운영
-7. NSFW 키워드, 채팅 내보내기, 더미 크리에이터
+7. 금지어, 채팅 내보내기, 더미 크리에이터
 
 ## 8. 확인 필요
 

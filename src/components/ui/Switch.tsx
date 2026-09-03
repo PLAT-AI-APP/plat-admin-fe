@@ -33,7 +33,7 @@ const Switch = ({
     >
       <span
         className={cn(
-          "inline-block size-[18px] rounded-full bg-white shadow-card transition",
+          "inline-block size-[18px] rounded-full bg-control-knob shadow-card transition",
           checked ? "translate-x-[23px]" : "translate-x-[3px]",
         )}
       />

@@ -8,7 +8,7 @@ export default function LogPage() {
     <>
       <PageHeader
         title="로그"
-        description="누가 무엇을 바꿨는지 확인합니다. 행을 클릭하면 변경 내용이 열립니다."
+        description="관리자가 바꾼 것과 시스템이 남긴 경고를 나눠서 봅니다."
       />
 
       <Suspense fallback={<Skeleton className="h-64 w-full rounded-card" />}>

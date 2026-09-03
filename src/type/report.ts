@@ -43,12 +43,14 @@ export const REPORT_REASON_LABEL: Record<ReportReason, string> = {
 export interface Report {
   reportId: number;
   targetType: ReportTargetType;
-  targetId: number;
+  /** 대상은 유저·캐릭터·세계관 등이고 전부 Snowflake다. 문자열 그대로 다룬다. */
+  targetId: string;
   /** 대상 이름. 목록에서 무엇이 신고됐는지 바로 알 수 있게 서버가 채워준다. */
   targetName: string;
   /** 신고된 내용 일부. 댓글이면 본문, 캐릭터면 설명 일부다. */
   targetSnippet?: string;
-  reporterId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  reporterId: string;
   reporterNickname: string;
   reason: ReportReason;
   detail: string;
@@ -56,6 +58,8 @@ export interface Report {
   /** 같은 대상에 누적된 신고 수. 높을수록 먼저 확인해야 한다. */
   targetReportCount: number;
   handlerName?: string;
+  /** 처리 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  handlerId?: number;
   handlerNote?: string;
   handledAt?: string;
   createdAt: string;

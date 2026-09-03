@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 import { useCommentDetailQuery } from "@/api/comment/getCommentDetail";
 import { ExternalLink } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatWithCommas } from "@/lib/utils";
+import { formatAdmin, formatWithCommas } from "@/lib/utils";
 import {
   COMMENT_STATUS_LABEL,
   COMMENT_TARGET_TYPE_LABEL,
@@ -20,7 +20,7 @@ import { COMMENT_STATUS_TONE, COMMENT_TARGET_TYPE_TONE } from "./commentOptions"
 
 interface CommentDetailModalProps {
   /** null이면 모달이 닫힌 상태다. */
-  commentId: number | null;
+  commentId: string | null;
   onClose: () => void;
 }
 
@@ -33,8 +33,8 @@ const DetailRow = ({
   children: ReactNode;
 }) => (
   <div className="flex items-start gap-4 py-2">
-    <p className="w-20 shrink-0 text-[13px] text-font-2">{label}</p>
-    <div className="min-w-0 flex-1 text-[13px] text-font-1">{children}</div>
+    <p className="w-20 shrink-0 body-5 text-font-2">{label}</p>
+    <div className="min-w-0 flex-1 body-5 text-font-1">{children}</div>
   </div>
 );
 
@@ -55,6 +55,8 @@ const CommentDetailModal = ({
       title="댓글 상세"
       description={data ? `#${data.commentId}` : undefined}
       size="lg"
+      // 스켈레톤 → 본문으로 바뀔 때 높이가 튀지 않게 한다.
+      minHeight="md"
       footer={
         <Button variant="secondary" onClick={onClose}>
           닫기
@@ -83,24 +85,48 @@ const CommentDetailModal = ({
               {COMMENT_STATUS_LABEL[data.status]}
             </Badge>
             {data.parentCommentId && <Badge tone="neutral">대댓글</Badge>}
+            {data.cascaded && <Badge tone="neutral">연쇄 조치</Badge>}
             {data.reportCount > 0 && (
               <Badge tone="danger">신고 {data.reportCount}</Badge>
             )}
           </div>
 
-          <div className="rounded-field border border-border-main px-4 py-3 text-[14px] whitespace-pre-line text-font-1">
+          <div className="rounded-field border border-border-main px-4 py-3 body-4 whitespace-pre-line text-font-1">
             {data.content}
           </div>
 
-          {data.hiddenReason && (
+          {data.status === "HIDDEN" && (
+            /*
+             * 사유는 자르지 않는다. 운영자가 조치 근거를 통째로 읽는 자리라
+             * 뒤가 잘리면 이의를 받았을 때 무엇을 근거로 내렸는지 알 수 없다.
+             */
             <div className="rounded-field border border-border-main bg-subtle px-4 py-3">
-              <p className="text-[13px] font-medium text-warning">숨김 사유</p>
-              <p className="mt-1 text-[13px] text-font-2">
-                {data.hiddenReason}
-              </p>
+              {data.cascaded ? (
+                <>
+                  <p className="body-5 font-medium text-font-1">
+                    상위 댓글 조치로 함께 숨김
+                  </p>
+                  <p className="mt-1 body-6 break-words text-font-2">
+                    이 답글은 직접 제재를 받은 것이 아니라 상위 댓글이 내려가면서
+                    함께 내려갔습니다. 상위 댓글을 다시 노출하면 함께 올라옵니다.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="body-5 font-medium text-warning">숨김 사유</p>
+                  <p className="mt-1 body-5 break-words whitespace-pre-line text-font-2">
+                    {data.hiddenReason ?? "-"}
+                  </p>
+                </>
+              )}
+
               {data.handledBy && (
-                <p className="mt-1 text-[12px] text-font-2">
-                  {data.handledBy} · {formatDateTime(data.handledAt)}
+                <p className="mt-1 body-6 text-font-2">
+                  {formatAdmin(
+                    data.handledBy ?? undefined,
+                    data.handledById ?? undefined,
+                  )}{" "}
+                  · {formatDateTime(data.handledAt)}
                 </p>
               )}
             </div>
@@ -114,13 +140,22 @@ const CommentDetailModal = ({
             </DetailRow>
 
             <DetailRow label="대상">
-              <Link
-                href={getCommentTargetHref(data)}
-                className="inline-flex items-center gap-1 transition hover:text-brand"
-              >
-                <span className="truncate">{data.targetName}</span>
-                <ExternalLink size={12} className="shrink-0" />
-              </Link>
+              {/* 콘솔에 상세 화면이 없는 대상은 링크를 걸지 않는다. */}
+              {getCommentTargetHref(data) ? (
+                <Link
+                  href={getCommentTargetHref(data) as string}
+                  className="inline-flex items-center gap-1 transition hover:text-brand"
+                >
+                  <span className="truncate">
+                    {data.targetName ?? data.targetId}
+                  </span>
+                  <ExternalLink size={12} className="shrink-0" />
+                </Link>
+              ) : (
+                <span className="truncate">
+                  {data.targetName ?? data.targetId}
+                </span>
+              )}
             </DetailRow>
 
             <DetailRow label="작성자">

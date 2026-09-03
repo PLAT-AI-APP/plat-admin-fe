@@ -26,6 +26,15 @@ interface PromptVersionModalProps {
   nextVersion: number;
   /** 편집 시작점이 되는 현재 활성 버전 본문 */
   initialContent: string;
+  /**
+   * 직전(최신) 버전의 본문.
+   *
+   * 편집 시작점과 다를 수 있다. 새 버전을 저장해 두고 아직 활성화하지 않았다면
+   * 모달은 **활성** 버전으로 열리지만, 서버가 중복을 판정하는 상대는 **최신** 버전이다.
+   */
+  latestContent: string;
+  /** 직전(최신) 버전의 번호. 안내 문구에 쓴다. 버전이 하나도 없으면 비어 있다. */
+  latestVersion: number | null;
   onSubmit: (content: string) => void;
   isSubmitting: boolean;
 }
@@ -43,6 +52,8 @@ const PromptVersionModal = ({
   promptLabel,
   nextVersion,
   initialContent,
+  latestContent,
+  latestVersion,
   onSubmit,
   isSubmitting,
 }: PromptVersionModalProps) => {
@@ -69,6 +80,16 @@ const PromptVersionModal = ({
 
   const content = watch("content");
 
+  /**
+   * 직전 버전과 같은 내용은 서버가 받지 않는다.
+   *
+   * 그런데 이 모달은 활성 버전 본문으로 열리므로 **열자마자의 상태가 대개 거기 해당한다.**
+   * 눌러 보고 나서야 빨간 문구로 알게 하는 대신, 고치기 전에는 버튼을 잠가 둔다.
+   * 판정의 출처는 여전히 서버다 — 여기서 막는 것은 헛걸음을 줄이기 위한 것이다.
+   */
+  const isUnchanged =
+    latestContent.trim() !== "" && content.trim() === latestContent.trim();
+
   const submit = handleSubmit((values) => onSubmit(values.content));
 
   return (
@@ -80,10 +101,22 @@ const PromptVersionModal = ({
       size="lg"
       footer={
         <>
+          {isUnchanged && (
+            <span className="mr-auto body-6 text-font-2">
+              직전 버전 v{latestVersion}의 내용과 같습니다. 고쳐야 새 버전으로
+              쌓입니다.
+            </span>
+          )}
+
           <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
             취소
           </Button>
-          <Button variant="primary" onClick={submit} isLoading={isSubmitting}>
+          <Button
+            variant="primary"
+            onClick={submit}
+            isLoading={isSubmitting}
+            disabled={isUnchanged}
+          >
             새 버전 저장
           </Button>
         </>
@@ -101,14 +134,14 @@ const PromptVersionModal = ({
             htmlFor="system-prompt-content"
             required
             error={errors.content?.message}
-            hint={`${formatWithCommas(content.length)} / 8,000자`}
+            hint={`${formatWithCommas(content.length)} / 20,000자`}
           >
             <Textarea
               id="system-prompt-content"
               rows={16}
               placeholder="마크다운으로 작성할 수 있습니다."
               hasError={Boolean(errors.content)}
-              className="font-mono text-[13px]"
+              className="font-mono body-5"
               {...register("content")}
             />
           </FormField>

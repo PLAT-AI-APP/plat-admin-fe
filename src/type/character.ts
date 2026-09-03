@@ -1,5 +1,8 @@
 import type { HashtagCategory } from "./hashtag";
-import type { ServiceLanguage } from "./language";
+import {
+  SERVICE_LANGUAGE_LABEL,
+  type ServiceLanguage,
+} from "./language";
 
 /** 캐릭터 노출 상태 */
 export type CharacterVisibility = "PUBLIC" | "PRIVATE" | "HIDDEN";
@@ -11,7 +14,8 @@ export interface Character {
   characterId: number;
   name: string;
   thumbnailUrl: string;
-  creatorId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  creatorId: string;
   creatorNickname: string;
   /**
    * 공식 여부. 소유 크리에이터가 공식 계정으로 등록되어 있으면 참이다.
@@ -46,13 +50,13 @@ export interface CharacterDetail extends Character {
 export type UniverseVisibility = "PUBLIC" | "PRIVATE" | "UNLISTED";
 
 /**
- * 세계관 운영 상태. 서버 `UniverseStatus`와 같다.
+ * 세계관 운영 상태. 서버 `UniverseStatus` 중 **운영에서 만날 수 있는 값**이다.
  *
- * 삭제는 두 단계다. `DELETED`는 유저가 지운 뒤 파기를 기다리는 상태이고,
- * `PURGED`는 정리 스케줄이 실제 콘텐츠(이미지·에셋)를 파기한 상태다.
- * 파기 전까지는 복구 문의를 받을 수 있으므로 운영에서 두 상태를 구분해야 한다.
+ * 세계관 삭제는 하드 딜리트다 — 지우면 데이터가 그대로 폐기되어 조회 자체가
+ * 되지 않는다. 그래서 "삭제 대기"·"콘텐츠 파기" 같은 중간 상태가 존재할 수 없고,
+ * 화면이 다룰 상태는 운영 중(`ACTIVE`)과 내려둔 것(`INACTIVE`) 둘뿐이다.
  */
-export type UniverseStatus = "ACTIVE" | "INACTIVE" | "DELETED" | "PURGED";
+export type UniverseStatus = "ACTIVE" | "INACTIVE";
 
 /** 세계관 심사 상태. 서버 `ReviewStatus`와 같다. 승인 전에는 앱에 노출되지 않는다. */
 export type UniverseReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -157,6 +161,14 @@ export interface Universe {
   characters: UniverseCharacter[];
   tags: string[];
   /**
+   * 이 세계관이 **번역을 갖춘 언어**. 한국어는 항상 포함된다.
+   *
+   * 메인 노출(배너 · 오늘의 PICK · 공식 맛보기 · 에셋 추천)은 언어별로 목록을
+   * 따로 관리하는데, 그 후보를 거르는 기준이 이 값이다. 영어 번역이 없는
+   * 세계관을 영어 목록에 실으면 앱에서는 한국어 원문이 그대로 나간다.
+   */
+  supportedLanguages: ServiceLanguage[];
+  /**
    * 공식 여부.
    *
    * **저장된 값이 아니라 조회 시점에 계산된 값이다.**
@@ -166,7 +178,8 @@ export interface Universe {
    */
   isOfficial: boolean;
   /** 소유 크리에이터. 공식 판정의 근거라 목록에서 함께 본다. */
-  creatorId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  creatorId: string;
   creatorNickname: string;
   visibility: UniverseVisibility;
   status: UniverseStatus;
@@ -183,12 +196,6 @@ export interface Universe {
   scenarioCount: number;
   chatCount: number;
   likeCount: number;
-  /** 삭제 요청 시각. `status`가 `DELETED`·`PURGED`일 때만 있다. */
-  deletedAt?: string;
-  /** 콘텐츠 파기 예정 시각. 이 시각이 지나면 정리 스케줄이 실제로 파기한다. */
-  purgeAt?: string;
-  /** 실제 파기 완료 시각. `status`가 `PURGED`일 때만 있다. */
-  purgedAt?: string;
   createdAt: string;
 }
 
@@ -226,6 +233,24 @@ export const isExposableUniverse = (universe: UniverseExposureState) =>
   universe.visibility === "PUBLIC" &&
   universe.reviewStatus === "APPROVED";
 
+/** 해당 언어 번역을 갖춘 세계관인지. 언어별 큐레이션 후보를 거를 때 쓴다. */
+export const supportsLanguage = (
+  universe: Pick<Universe, "supportedLanguages">,
+  language: ServiceLanguage,
+) => universe.supportedLanguages.includes(language);
+
+/**
+ * 그 언어 화면에 나갈 수 있는 세계관인지.
+ *
+ * 노출 가능 상태(승인 · 공개 · 활성)만으로는 부족하다. **번역이 없는 언어의
+ * 목록에 실리면 앱에서는 그 자리에 한국어 원문이 나간다.** 언어별 목록은
+ * 상태와 번역을 함께 본다.
+ */
+export const isExposableInLanguage = (
+  universe: Universe,
+  language: ServiceLanguage,
+) => isExposableUniverse(universe) && supportsLanguage(universe, language);
+
 /**
  * 노출될 수 없는 이유. 화면에 그대로 찍는다.
  * 노출 가능하면 `undefined`.
@@ -233,8 +258,6 @@ export const isExposableUniverse = (universe: UniverseExposureState) =>
 export const universeBlockReason = (
   universe: UniverseExposureState,
 ): string | undefined => {
-  if (universe.status === "PURGED") return "콘텐츠 파기";
-  if (universe.status === "DELETED") return "삭제 대기";
   if (universe.status === "INACTIVE") return "비활성";
   if (universe.reviewStatus === "PENDING") return "심사 대기";
   if (universe.reviewStatus === "REJECTED") return "심사 반려";
@@ -243,6 +266,21 @@ export const universeBlockReason = (
 
   return undefined;
 };
+
+/**
+ * 그 언어 목록에 실을 수 없는 이유.
+ *
+ * 상태 문제(`universeBlockReason`)를 먼저 보고, 상태가 멀쩡하면 번역 여부를 본다.
+ * 번역이 없는 쪽이 더 흔한데 화면에 안 적어 두면 "왜 후보에 없지"를 매번 다시 찾는다.
+ */
+export const universeLanguageBlockReason = (
+  universe: Universe,
+  language: ServiceLanguage,
+): string | undefined =>
+  universeBlockReason(universe) ??
+  (supportsLanguage(universe, language)
+    ? undefined
+    : `${SERVICE_LANGUAGE_LABEL[language]} 번역 없음`);
 
 /* ------------------------------------------------------------------ */
 /* 실서버(plat-admin) 세계관 계약                                        */
@@ -266,21 +304,40 @@ export interface AdminUniverseListItem {
   visibility: UniverseVisibility;
   status: UniverseStatus;
   reviewStatus: UniverseReviewStatus;
+  /**
+   * 제작자가 공식 계정인가.
+   *
+   * **세계관이 들고 있는 값이 아니라 공식 계정 지정에서 계산되는 값이다.**
+   * 지정을 해제하면 이 값도 함께 내려간다.
+   */
+  isOfficial: boolean;
   chatCount: number;
   likeCount: number;
   commentEnabled: boolean;
   creatorId: string;
-  creatorNickname: string;
-  /** 대표 이미지 파일 ID. 관리자 서버가 URL을 만들지 못해 ID만 온다. */
+  /**
+   * 제작자의 유저 ID. 크리에이터 ID와는 **다른 값**이라, 목록에서 유저 상세로
+   * 가려면 이 값이 있어야 한다. 크리에이터에 연결된 유저가 없으면 null이다.
+   */
+  userId: string | null;
+  /** 제작자 닉네임. 이름은 서버 응답(`userId` · `nickname`)을 그대로 따른다. */
+  nickname: string;
+  /** 대표 이미지 파일 ID. 관리자 서버가 URL을 만들지 못해 보통 ID만 온다. */
   profileImageFileId: string | null;
+  /**
+   * 서버가 만들어 준 이미지 URL. 관리자 서버는 대개 null을 준다.
+   *
+   * null이어도 화면은 `profileImageFileId`로 공개 이미지 경로를 조립해
+   * 실제 이미지를 그린다(`src/lib/imageUrl.ts`). 이 필드를 남겨 두는 이유는
+   * **서버가 URL을 채워 주기 시작하는 날 화면을 고치지 않기 위해서**다.
+   */
+  profileImageUrl: string | null;
   hashtagCount: number;
   scenarioCount: number;
   /** 번역이 채워진 언어 수 */
   translationCount: number;
   createdAt: string;
   updatedAt: string | null;
-  deletedAt: string | null;
-  purgeAt: string | null;
 }
 
 /** 소유 크리에이터 요약. 공식 판정·계정 이동의 근거다. */
@@ -315,6 +372,8 @@ export interface UniverseCharacterView {
   characterId: string;
   name: string | null;
   profileImageFileId: string | null;
+  /** 서버가 만들어 준 URL. 보통 null이며 fileId로 조립한다. */
+  profileImageUrl: string | null;
 }
 
 /** 세계관 에셋 한 장. 신고 대응 시 실제 이미지를 확인하는 자리다. */
@@ -363,28 +422,16 @@ export interface UniverseDetail {
   chatCount: number;
   likeCount: number;
   profileImageFileId: string | null;
+  /** 서버가 만들어 준 URL. 보통 null이며 fileId로 조립한다. */
+  profileImageUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
-  deletedAt: string | null;
-  purgeAt: string | null;
-  purgedAt: string | null;
   translations: UniverseTranslationView[];
   hashtags: UniverseHashtagView[];
   character: UniverseCharacterView | null;
   assets: UniverseAssetView[];
   /** 회차 오름차순으로 정렬되어 온다. */
   scenarios: UniverseScenarioDetail[];
-}
-
-/** NSFW 키워드 */
-export type NsfwKeywordLevel = "BLOCK" | "WARN";
-
-export interface NsfwKeyword {
-  keywordId: number;
-  keyword: string;
-  level: NsfwKeywordLevel;
-  hitCount: number;
-  createdAt: string;
 }
 
 /** 채팅 내보내기 작업 */

@@ -131,7 +131,7 @@ const LegalDocumentFormModal = ({
               id="legal-content"
               rows={18}
               placeholder={"# 서비스 이용약관\n\n## 제1조 (목적)\n..."}
-              className="h-100 resize-none font-mono text-[13px]"
+              className="h-100 resize-none font-mono body-5"
               hasError={Boolean(errors.content)}
               {...register("content")}
             />
@@ -142,7 +142,7 @@ const LegalDocumentFormModal = ({
               {content ? (
                 <MarkdownContent content={content} />
               ) : (
-                <p className="text-[13px] text-font-disabled">
+                <p className="body-5 text-font-disabled">
                   본문을 입력하면 여기에서 렌더링 결과를 확인할 수 있습니다.
                 </p>
               )}

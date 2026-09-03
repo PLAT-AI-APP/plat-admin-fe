@@ -83,16 +83,32 @@ const GRID_TEMPLATE = `minmax(200px,1fr) repeat(${ACTION_COLUMN_COUNT}, 84px)`;
  * "크레딧을 지급할 수 있는 사람이 누구인가"를 물었을 때
  * 직책이면 하나만 열어 보면 되고, 사람마다면 전원을 훑어야 한다.
  */
+/** 만들자마자 채워 두는 설명. 서버가 빈 설명을 받지 않으므로 자리라도 있어야 한다. */
+const NEW_ROLE_DESCRIPTION = "새로 만든 직책입니다. 무슨 일을 하는지 적어 주세요.";
+
+/** 서버가 거절할 값. 눌러 보고 400을 받는 대신 저장 버튼 옆에 미리 적는다. */
+const NAME_MAX = 50;
+const DESCRIPTION_MAX = 200;
+
+const findFormError = (role: AdminRole): string | null => {
+  if (!role.name.trim()) return "직책 이름을 입력해 주세요.";
+  if (role.name.length > NAME_MAX) return `직책 이름은 ${NAME_MAX}자 이내입니다.`;
+  if (!role.description.trim()) return "직책 설명을 입력해 주세요.";
+  if (role.description.length > DESCRIPTION_MAX)
+    return `직책 설명은 ${DESCRIPTION_MAX}자 이내입니다.`;
+
+  return null;
+};
+
 const RoleManager = () => {
   const canRead = useHasPermission("role:read");
   const canWrite = useHasPermission("role:write");
   const canDelete = useHasPermission("role:delete");
 
-  const { data, isLoading } = useAdminRoleListQuery();
+  const { data: roles = [], isLoading } = useAdminRoleListQuery();
   const { createMutation, updateMutation, deleteMutation } =
     useAdminRoleMutation();
 
-  const roles = data?.items ?? [];
   const [selectedId, setSelectedId] = useState<number | null>(null);
   /** 편집 전에는 서버 값을 그대로 쓰고, 손대면 draft가 화면을 담당한다. */
   const [draft, setDraft] = useState<AdminRole | null>(null);
@@ -102,6 +118,7 @@ const RoleManager = () => {
     null;
   const editing = draft ?? selected;
   const isDirty = draft !== null;
+  const formError = editing ? findFormError(editing) : null;
 
   const patch = (next: Partial<AdminRole>) =>
     editing && setDraft({ ...editing, ...next });
@@ -146,7 +163,7 @@ const RoleManager = () => {
   };
 
   const handleSave = async () => {
-    if (!editing) return;
+    if (!editing || findFormError(editing)) return;
 
     try {
       await updateMutation.mutateAsync({
@@ -167,7 +184,8 @@ const RoleManager = () => {
     try {
       const created = await createMutation.mutateAsync({
         name: `새 직책 ${roles.length}`,
-        description: "",
+        /* 서버가 설명을 비워 두지 못하게 한다. 자리만 만들고 문구는 바로 고치게 둔다. */
+        description: NEW_ROLE_DESCRIPTION,
         permissions: ["dashboard:read"],
       });
 
@@ -246,7 +264,7 @@ const RoleManager = () => {
                   <span className="flex flex-wrap items-center gap-1.5">
                     <span
                       className={cn(
-                        "text-[14px] font-medium",
+                        "body-4 font-medium",
                         isActive ? "text-brand" : "text-font-1",
                       )}
                     >
@@ -259,7 +277,7 @@ const RoleManager = () => {
                     )}
                   </span>
 
-                  <span className="flex items-center gap-1 text-[12px] text-font-2 tabular-nums">
+                  <span className="flex items-center gap-1 body-6 text-font-2 tabular-nums">
                     <Users size={12} />
                     {role.memberCount}명 ·{" "}
                     {role.isSuperAdmin
@@ -294,6 +312,10 @@ const RoleManager = () => {
               !editing.isSuperAdmin &&
               canWrite && (
                 <div className="flex flex-wrap items-center gap-2">
+                  {/* 왜 저장이 눌리지 않는지 버튼 옆에 적는다. */}
+                  {isDirty && formError && (
+                    <span className="body-6 text-danger">{formError}</span>
+                  )}
                   {isDirty && (
                     <Button
                       variant="ghost"
@@ -306,7 +328,7 @@ const RoleManager = () => {
                   <Button
                     variant="primary"
                     size="sm"
-                    disabled={!isDirty}
+                    disabled={!isDirty || Boolean(formError)}
                     isLoading={updateMutation.isPending}
                     onClick={handleSave}
                   >
@@ -341,6 +363,7 @@ const RoleManager = () => {
                 <Input
                   aria-label="직책 이름"
                   value={editing.name}
+                  maxLength={NAME_MAX}
                   disabled={!canWrite}
                   onChange={(event) => patch({ name: event.target.value })}
                 />
@@ -348,6 +371,7 @@ const RoleManager = () => {
                   aria-label="직책 설명"
                   rows={2}
                   value={editing.description}
+                  maxLength={DESCRIPTION_MAX}
                   disabled={!canWrite}
                   placeholder="이 직책이 무슨 일을 하는지 적어 두면 관리자를 배정할 때 헷갈리지 않습니다."
                   onChange={(event) =>
@@ -381,7 +405,7 @@ const RoleManager = () => {
                     title={category.label}
                     description={category.description}
                     action={
-                      <span className="text-[13px] text-font-2 tabular-nums">
+                      <span className="body-5 text-font-2 tabular-nums">
                         {countGranted(editing.permissions, category.resources)}
                         {" / "}
                         {countTotal(category.resources)}
@@ -396,7 +420,7 @@ const RoleManager = () => {
                       */}
                       <div className="min-w-[560px]">
                         <div
-                          className="grid items-center gap-2 border-b border-border-main bg-subtle px-5 py-2 text-[12px] font-medium text-font-2"
+                          className="grid items-center gap-2 border-b border-border-main bg-subtle px-5 py-2 body-6 font-medium text-font-2"
                           style={{ gridTemplateColumns: GRID_TEMPLATE }}
                         >
                           <span>자료</span>
@@ -434,7 +458,7 @@ const RoleManager = () => {
                                   title="이 자료의 권한을 한 번에 켜고 끕니다."
                                 >
                                   <span className="flex flex-wrap items-center gap-1.5">
-                                    <span className="text-[13px] font-medium text-font-1">
+                                    <span className="body-5 font-medium text-font-1">
                                       {def.label}
                                     </span>
                                     {/* 개인정보 · 금전은 좁게 열어야 하는 자료라 표시해 둔다. */}
@@ -442,7 +466,7 @@ const RoleManager = () => {
                                       <Badge tone="warning">민감</Badge>
                                     )}
                                   </span>
-                                  <span className="block truncate text-[12px] text-font-2">
+                                  <span className="block truncate body-6 text-font-2">
                                     {def.description}
                                   </span>
                                 </button>
@@ -484,7 +508,7 @@ const RoleManager = () => {
                 );
               })}
 
-              <p className="px-1 text-[12px] text-font-2">
+              <p className="px-1 body-6 text-font-2">
                 <span className="tabular-nums">
                   {editing.permissions.length} / {ALL_PERMISSIONS.length}개 권한
                 </span>

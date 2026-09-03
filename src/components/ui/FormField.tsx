@@ -5,6 +5,8 @@ interface FormFieldProps {
   label: ReactNode;
   htmlFor?: string;
   required?: boolean;
+  /** 라벨 바로 옆에 붙는 요소. 입력값에 딸린 짧은 토글(체크박스 등)을 둔다. */
+  labelSuffix?: ReactNode;
   /** 라벨 우측 보조 설명 */
   hint?: ReactNode;
   error?: string;
@@ -20,6 +22,7 @@ const FormField = ({
   label,
   htmlFor,
   required = false,
+  labelSuffix,
   hint,
   error,
   children,
@@ -28,20 +31,24 @@ const FormField = ({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       <div className="flex items-center justify-between gap-2">
-        <label
-          htmlFor={htmlFor}
-          className="text-[13px] font-medium text-font-1"
-        >
-          {label}
-          {required && <span className="ml-0.5 text-font-error">*</span>}
-        </label>
+        <div className="flex items-center gap-3">
+          <label
+            htmlFor={htmlFor}
+            className="body-5 font-medium text-font-1"
+          >
+            {label}
+            {required && <span className="ml-0.5 text-font-error">*</span>}
+          </label>
 
-        {hint && <span className="text-[12px] text-font-2">{hint}</span>}
+          {labelSuffix}
+        </div>
+
+        {hint && <span className="body-6 text-font-2">{hint}</span>}
       </div>
 
       {children}
 
-      <p className="min-h-4 text-[12px] text-font-error">{error}</p>
+      <p className="min-h-4 body-6 text-font-error">{error}</p>
     </div>
   );
 };

@@ -7,15 +7,16 @@ import {
   type FileUploadType,
 } from "@/api/file/postFileUpload";
 import { ImageIcon, Trash, Upload } from "@/icons";
+import { buildImageUrl } from "@/lib/imageUrl";
 import { showAppToast, showErrorToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import Button from "./Button";
 import Spinner from "./Spinner";
 
 interface ImageUploadFieldProps {
-  /** 업로드 완료된 이미지 URL. 비어 있으면 빈 상태를 보여준다. */
+  /** 업로드 완료된 이미지의 파일 ID. 비어 있으면 빈 상태를 보여준다. */
   value: string;
-  onChange: (url: string) => void;
+  onChange: (fileId: string) => void;
   /** 서버가 용도별로 보관 정책을 다르게 가져가므로 반드시 지정한다. */
   fileType: FileUploadType;
   /** 미리보기 비율. 배너처럼 가로로 긴 이미지는 직접 지정한다. */
@@ -34,8 +35,11 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 /**
  * 이미지 업로드 필드.
  *
- * 파일을 고르면 즉시 업로드해 URL을 받아 onChange로 넘긴다.
- * 폼은 URL 문자열만 다루면 되므로 기존 스키마를 그대로 쓸 수 있다.
+ * 파일을 고르면 즉시 업로드해 **파일 ID**를 받아 onChange로 넘긴다. 서버가
+ * 저장 API에서 받는 값이 파일 ID라 폼도 같은 값을 들고 있어야 한다.
+ *
+ * 미리보기는 그 파일 ID로 서비스 서버의 공개 이미지 경로를 조립해 그린다 —
+ * 관리자 서버는 이미지를 서빙하지 않아 업로드 응답에 URL이 없다.
  */
 const ImageUploadField = ({
   value,
@@ -74,7 +78,7 @@ const ImageUploadField = ({
 
     try {
       const uploaded = await uploadFile({ fileType, file });
-      onChange(uploaded.originalUrl);
+      onChange(uploaded.fileId);
       showAppToast("success", "이미지를 업로드했습니다.");
     } catch (error) {
       showErrorToast(error, "이미지 업로드에 실패했습니다.");
@@ -100,6 +104,9 @@ const ImageUploadField = ({
 
   const handleRemove = () => onChange("");
 
+  /* 업로드 직후에도 서버에 파일이 이미 있어 같은 URL로 바로 보인다. */
+  const previewUrl = buildImageUrl(value, fileType);
+
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <input
@@ -112,13 +119,13 @@ const ImageUploadField = ({
         className="hidden"
       />
 
-      {value ? (
+      {previewUrl ? (
         <div
           style={{ aspectRatio }}
           className="relative w-full overflow-hidden rounded-field border border-border-main bg-subtle"
         >
           <Image
-            src={value}
+            src={previewUrl}
             alt="업로드한 이미지 미리보기"
             fill
             sizes="(max-width: 960px) 100vw, 960px"
@@ -171,15 +178,15 @@ const ImageUploadField = ({
           {isPending ? (
             <>
               <Spinner size={22} className="text-brand" />
-              <p className="text-[13px] text-font-2">업로드 중…</p>
+              <p className="body-5 text-font-2">업로드 중…</p>
             </>
           ) : (
             <>
               <ImageIcon size={28} className="text-font-disabled" />
-              <p className="text-[13px] font-medium text-font-1">
+              <p className="body-5 font-medium text-font-1">
                 클릭하거나 이미지를 끌어다 놓으세요
               </p>
-              <p className="text-[12px] text-font-2">
+              <p className="body-6 text-font-2">
                 JPG · PNG · WEBP / 10MB 이하
               </p>
             </>

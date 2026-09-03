@@ -38,3 +38,14 @@ export const passwordChangeSchema = z
   });
 
 export type PasswordChangeSchema = z.infer<typeof passwordChangeSchema>;
+
+/** 내 이름. 서버도 30자까지만 받는다. */
+export const profileNameSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "이름을 입력해 주세요.")
+    .max(30, "30자 이내로 입력해 주세요."),
+});
+
+export type ProfileNameSchema = z.infer<typeof profileNameSchema>;

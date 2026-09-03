@@ -1,4 +1,5 @@
 import { HttpResponse, delay, http } from "msw";
+import { LIVE_BASE_URI } from "@/api/baseUri";
 import type {
   Universe,
   UniverseCategory,
@@ -15,8 +16,8 @@ import { MOCK_DELAY_MS, matchesKeyword } from "../utils";
  * 세계관 운영 목업(보드 · 상세 · 운영 조치).
  *
  * 이 도메인도 실서버(plat-be `plat-admin`)에 연동해 두었지만, 서버를 띄우지 않고도
- * 화면을 돌릴 수 있도록 **다시 목업으로 세운다.** 그래서 목업 베이스(8080)가 아니라
- * **실서버 베이스(8081)에 등록한다.** 실서버를 다시 붙일 때는 이 파일과
+ * 화면을 돌릴 수 있도록 **다시 목업으로 세운다.** 그래서 목업 베이스가 아니라
+ * **실서버 베이스에 등록한다.** 실서버를 다시 붙일 때는 이 파일과
  * handlers/index.ts의 등록 줄만 지우면 된다.
  *
  * 목록 경로가 큐레이션 후보 목록(`handlers/universe.ts`, 8080)과 같은 `/admin/universes`라
@@ -29,15 +30,56 @@ import { MOCK_DELAY_MS, matchesKeyword } from "../utils";
  * 것도 실서버와 같다 — 관리자 서버는 파일 저장소 어댑터를 스캔하지 않아 FileId → URL을
  * 해석하지 못하고, 화면은 함께 내려오는 FileId로 자리표시를 그린다.
  */
-const LIVE_BASE_URI =
-  process.env.NEXT_PUBLIC_LIVE_BASE_URI ?? process.env.NEXT_PUBLIC_BASE_URI;
 
 /** 목업에는 파일 ID가 없다. 세계관 ID로 만들어 자리표시가 안정적으로 보이게 한다. */
 const fileIdOf = (seed: number) => String(700000000000000000 + seed);
 
+/*
+  번역 보유 언어는 세계관 시드(`supportedLanguages`)가 원본이다.
+  여기서 따로 계산하면 **상세의 "번역 n개 언어"와 언어별 메인 노출 후보가 어긋난다.**
+  영어 후보에는 떴는데 상세에는 영어 번역이 없는 세계관이 생기면 어느 쪽을 믿을지 알 수 없다.
+*/
 const translationCountOf = (universe: Universe) =>
-  /* 일부만 영어까지 번역된 상태로 두어 "번역 n개 언어"가 의미를 갖게 한다. */
-  universe.universeId % 3 === 0 ? 2 : 1;
+  universe.supportedLanguages.length;
+
+/*
+  실서버 관리자 API는 파일 저장소를 스캔하지 않아 이 값이 항상 null이다.
+  목업까지 null을 주면 목업 구간에서 이미지 관련 화면을 전혀 확인할 수 없어,
+  여기서는 시드 썸네일을 실어 보낸다. 화면은 두 경우를 모두 처리해야 하므로
+  **일부러 일부 세계관은 null로 남겨** 자리표시 경로도 함께 확인되게 한다.
+*/
+const mockProfileImageUrl = (universe: Universe): string | null =>
+  universe.universeId % 7 === 0 ? null : universe.thumbnailUrl;
+
+/* 에셋 검수 화면이 실제 운영 자료처럼 보이도록 이름과 상황을 돌려 쓴다. */
+const ASSET_NAMES = [
+  "첫 만남",
+  "학교 옥상",
+  "비 오는 골목",
+  "카페 창가",
+  "밤의 옥탑방",
+  "졸업식",
+];
+
+const ASSET_SITUATIONS: (string | null)[] = [
+  "주요 장면",
+  null,
+  "분기 진입",
+  "엔딩 직전",
+  null,
+  "이벤트 한정",
+];
+
+/**
+ * 목업 크리에이터에 대응하는 유저 ID.
+ *
+ * 실서버는 두 ID를 따로 발급하므로 목업도 값을 어긋나게 둔다 — 같은 값으로 두면
+ * `creatorId`를 유저 링크에 그대로 쓰는 실수를 목업에서 잡지 못한다.
+ * 목록 · 상세 · `userId` 필터가 모두 이 함수 하나를 쓴다.
+ *
+ * 문자열을 이어 붙인다. Snowflake는 `Number`로 더하면 끝자리가 뭉개진다.
+ */
+const mockUserIdOf = (creatorId: string) => `600000000000000000${creatorId}`;
 
 const toItemResponse = (universe: Universe) => ({
   id: String(universe.universeId),
@@ -52,16 +94,16 @@ const toItemResponse = (universe: Universe) => ({
   likeCount: universe.likeCount,
   commentEnabled: universe.commentEnabled,
   creatorId: String(universe.creatorId),
-  creatorNickname: universe.creatorNickname,
+  /* 상세(`toDetailResponse`)와 같은 규칙으로 만든다. 두 화면이 같은 유저를 가리켜야 한다. */
+  userId: mockUserIdOf(universe.creatorId),
+  nickname: universe.creatorNickname,
   profileImageFileId: fileIdOf(universe.universeId),
-  profileImageUrl: null,
+  profileImageUrl: mockProfileImageUrl(universe),
   hashtagCount: universe.tags.length,
   scenarioCount: universe.scenarioCount,
   translationCount: translationCountOf(universe),
   createdAt: universe.createdAt,
   updatedAt: universe.createdAt,
-  deletedAt: universe.deletedAt ?? null,
-  purgeAt: universe.purgeAt ?? null,
 });
 
 /** 세계관에 붙은 태그를 해시태그 목업에서 찾아 서버 DTO 모양으로 옮긴다. */
@@ -109,17 +151,17 @@ const toTranslationViews = (universe: Universe) => {
     description: universe.description,
   };
 
-  if (translationCountOf(universe) === 1) return [korean];
-
   return [
     korean,
-    {
-      language: "EN",
-      title: `Universe #${universe.universeId}`,
-      introduce: "An English introduction for this universe.",
-      detailSetting: "English detail setting used for the model prompt.",
-      description: "An English description for this universe.",
-    },
+    ...universe.supportedLanguages
+      .filter((language) => language !== "KO")
+      .map((language) => ({
+        language,
+        title: `Universe #${universe.universeId} (${language})`,
+        introduce: `A ${language} introduction for this universe.`,
+        detailSetting: `${language} detail setting used for the model prompt.`,
+        description: `A ${language} description for this universe.`,
+      })),
   ];
 };
 
@@ -127,7 +169,7 @@ const toDetailResponse = (universe: Universe) => ({
   id: String(universe.universeId),
   creator: {
     creatorId: String(universe.creatorId),
-    userId: String(600000000000000000 + universe.creatorId),
+    userId: mockUserIdOf(universe.creatorId),
     nickname: universe.creatorNickname,
     grade: "REGULAR",
     status: "APPROVED",
@@ -142,36 +184,45 @@ const toDetailResponse = (universe: Universe) => ({
   chatCount: universe.chatCount,
   likeCount: universe.likeCount,
   profileImageFileId: fileIdOf(universe.universeId),
-  profileImageUrl: null,
+  profileImageUrl: mockProfileImageUrl(universe),
   createdAt: universe.createdAt,
   updatedAt: universe.createdAt,
-  deletedAt: universe.deletedAt ?? null,
-  purgeAt: universe.purgeAt ?? null,
-  purgedAt: universe.purgedAt ?? null,
   translations: toTranslationViews(universe),
   hashtags: toHashtagViews(universe),
-  /* 파기된 세계관은 콘텐츠가 지워져 캐릭터도 남지 않는다. */
-  character:
-    universe.status === "PURGED"
-      ? null
-      : universe.characters[0]
-        ? {
-            characterId: String(universe.characters[0].characterId),
-            name: universe.characters[0].name,
-            profileImageFileId: fileIdOf(universe.characters[0].characterId),
-            profileImageUrl: null,
-          }
-        : null,
-  assets:
-    universe.status === "PURGED"
-      ? []
-      : Array.from({ length: Math.min(universe.assetCount, 6) }, (_, index) => ({
-          assetId: String(universe.universeId * 100 + index),
-          fileId: fileIdOf(universe.universeId * 100 + index),
-          assetName: `에셋 ${index + 1}`,
-          assetSituation: index % 2 === 0 ? "주요 장면" : null,
-          url: null,
-        })),
+  character: universe.characters[0]
+    ? {
+        characterId: String(universe.characters[0].characterId),
+        name: universe.characters[0].name,
+        profileImageFileId: fileIdOf(universe.characters[0].characterId),
+        profileImageUrl: universe.characters[0].thumbnailUrl,
+      }
+    : null,
+  assets: Array.from(
+    { length: Math.min(universe.assetCount, 12) },
+    (_, index) => ({
+      assetId: String(universe.universeId * 100 + index),
+      fileId: fileIdOf(universe.universeId * 100 + index),
+      /*
+        이름 풀이 6개뿐이라 에셋이 그보다 많으면 같은 이름이 반복된다.
+        운영 화면에서 중복 자료로 오해하지 않도록 두 바퀴째부터 번호를 붙인다.
+      */
+      assetName:
+        index < ASSET_NAMES.length
+          ? ASSET_NAMES[index]
+          : `${ASSET_NAMES[index % ASSET_NAMES.length]} ${Math.floor(index / ASSET_NAMES.length) + 1}`,
+      assetSituation:
+        ASSET_SITUATIONS[index % ASSET_SITUATIONS.length] ?? null,
+      /*
+        실서버는 null을 준다. 목업은 검수 화면(갤러리 · 확대 보기)을
+        실제로 확인할 수 있도록 이미지를 싣되, 마지막 한 장은 null로 남겨
+        자리표시가 섞여 나오는 모습까지 보이게 한다.
+      */
+      url:
+        index === Math.min(universe.assetCount, 12) - 1
+          ? null
+          : `https://picsum.photos/seed/asset-${universe.universeId}-${index}/640/640`,
+    }),
+  ),
   scenarios: toScenarioViews(universe.universeId),
 });
 
@@ -191,9 +242,6 @@ interface UniversePatchBody {
   commentEnabled?: boolean;
   status?: UniverseStatus;
 }
-
-/** 운영이 직접 켜고 끄는 것은 ACTIVE ↔ INACTIVE 뿐이다. 삭제·파기는 배치가 소유한다. */
-const OPERABLE_STATUSES: UniverseStatus[] = ["ACTIVE", "INACTIVE"];
 
 export const universeAdminHandlers = [
   http.get(`${LIVE_BASE_URI}/admin/universes`, async ({ request }) => {
@@ -216,6 +264,12 @@ export const universeAdminHandlers = [
       );
     }
 
+    /*
+      값이 하나로 딱 떨어지는 조건들. 크리에이터·해시태그 드릴다운도 여기 낀다 —
+      목업이 이 둘을 안 걸러 주면 보드에서 "크리에이터 #123의 세계관만 보는 중"
+      알림만 뜨고 목록은 전체가 나와, 링크가 동작하는지 확인할 수 없다.
+      ID는 응답과 같은 문자열 기준으로 비교한다(Snowflake 규약).
+    */
     const equals: [string, (universe: Universe) => string][] = [
       ["category", (universe) => universe.category],
       ["visibility", (universe) => universe.visibility],
@@ -223,10 +277,32 @@ export const universeAdminHandlers = [
       ["reviewStatus", (universe) => universe.reviewStatus],
       ["tendency", (universe) => universe.tendency],
       ["commentEnabled", (universe) => String(universe.commentEnabled)],
+      ["creatorId", (universe) => String(universe.creatorId)],
+      /*
+        유저 상세의 "세계관" 탭이 쓰는 드릴다운. 유저 화면은 크리에이터 ID를
+        모르므로 userId로 좁힌다 — 응답의 userId와 같은 규칙으로 만들어 비교한다.
+      */
+      ["userId", (universe) => mockUserIdOf(universe.creatorId)],
     ];
     for (const [param, read] of equals) {
       const value = url.searchParams.get(param);
       if (value) rows = rows.filter((universe) => read(universe) === value);
+    }
+
+    /*
+      해시태그 드릴다운. 목업 세계관은 태그를 ID가 아니라 한국어 라벨로 들고 있어
+      해시태그 목업에서 라벨을 먼저 찾아 비교한다. 없는 ID면 빈 목록을 준다 —
+      전체 목록을 돌려주면 "이 태그가 모든 세계관에 붙어 있다"로 읽힌다.
+    */
+    const hashtagId = url.searchParams.get("hashtagId");
+    if (hashtagId) {
+      const label = hashtags.find(
+        (hashtag) => String(hashtag.hashtagId) === hashtagId,
+      )?.labels.KO;
+
+      rows = label
+        ? rows.filter((universe) => universe.tags.includes(label))
+        : [];
     }
 
     const compare: Record<string, (a: Universe, b: Universe) => number> = {
@@ -317,22 +393,8 @@ export const universeAdminHandlers = [
 
       if (!universe) return notFound();
 
-      if (body.status) {
-        if (
-          !OPERABLE_STATUSES.includes(universe.status) ||
-          !OPERABLE_STATUSES.includes(body.status)
-        ) {
-          return HttpResponse.json(
-            {
-              code: "UNIVERSE_STATUS_TRANSITION_INVALID",
-              message:
-                "이 상태로는 바꿀 수 없습니다. 삭제·파기 상태는 운영에서 직접 바꾸지 않습니다.",
-            },
-            { status: 409 },
-          );
-        }
-        universe.status = body.status;
-      }
+      /* 상태는 ACTIVE ↔ INACTIVE 둘뿐이다. 삭제는 하드 딜리트라 상태로 오지 않는다. */
+      if (body.status) universe.status = body.status;
 
       if (body.visibility) universe.visibility = body.visibility;
       if (body.tendency) universe.tendency = body.tendency;

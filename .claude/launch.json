@@ -7,6 +7,13 @@
       "runtimeArgs": ["run", "dev"],
       "port": 3100,
       "autoPort": true
+    },
+    {
+      "name": "admin-template",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "./plat-admin-template", "run", "dev", "--", "-p", "3200"],
+      "port": 3200,
+      "autoPort": true
     }
   ]
 }

@@ -18,11 +18,11 @@ interface PromptMarkdownProps {
  * react-markdown이 넘기는 AST 노드를 DOM에 흘릴 걱정이 없다.
  */
 const MARKDOWN_CLASS = cn(
-  "overflow-x-auto text-[14px] break-words text-font-1 scrollbar-thin",
+  "overflow-x-auto body-4 break-words text-font-1 scrollbar-thin",
   // 제목
-  "[&_h1]:mt-4 [&_h1]:mb-2 [&_h1]:text-[17px] [&_h1]:font-semibold [&_h1]:text-font-0",
-  "[&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-[15px] [&_h2]:font-semibold [&_h2]:text-font-0",
-  "[&_h3]:mt-3 [&_h3]:mb-1.5 [&_h3]:text-[14px] [&_h3]:font-semibold [&_h3]:text-font-1",
+  "[&_h1]:mt-4 [&_h1]:mb-2 [&_h1]:title-2 [&_h1]:font-semibold [&_h1]:text-font-0",
+  "[&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:body-3 [&_h2]:font-semibold [&_h2]:text-font-0",
+  "[&_h3]:mt-3 [&_h3]:mb-1.5 [&_h3]:body-4 [&_h3]:font-semibold [&_h3]:text-font-1",
   // 본문
   "[&_p]:my-2 [&_strong]:font-semibold [&_strong]:text-font-0 [&_em]:italic",
   "[&_a]:text-brand [&_a]:underline",
@@ -32,12 +32,12 @@ const MARKDOWN_CLASS = cn(
   "[&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5",
   "[&_li]:my-0.5",
   // 코드
-  "[&_code]:rounded-field [&_code]:bg-subtle [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[13px]",
-  "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-field [&_pre]:border [&_pre]:border-border-main [&_pre]:bg-subtle [&_pre]:p-3 [&_pre]:text-[13px] [&_pre]:scrollbar-thin",
+  "[&_code]:rounded-field [&_code]:bg-subtle [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:body-5",
+  "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-field [&_pre]:border [&_pre]:border-border-main [&_pre]:bg-subtle [&_pre]:p-3 [&_pre]:body-5 [&_pre]:scrollbar-thin",
   // pre 안의 code는 pre가 이미 배경을 담당하므로 배경을 지운다.
   "[&_pre>code]:bg-transparent [&_pre>code]:p-0",
   // 표
-  "[&_table]:my-2 [&_table]:w-full [&_table]:border [&_table]:border-border-main [&_table]:text-[13px]",
+  "[&_table]:my-2 [&_table]:w-full [&_table]:border [&_table]:border-border-main [&_table]:body-5",
   "[&_th]:border [&_th]:border-border-main [&_th]:bg-subtle [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-medium [&_th]:text-font-2",
   "[&_td]:border [&_td]:border-border-main [&_td]:px-3 [&_td]:py-2",
 );

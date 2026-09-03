@@ -10,13 +10,13 @@ import { ExternalLink, Eye, EyeOff, Flag } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
 import { formatWithCommas, truncate } from "@/lib/utils";
-import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import {
   COMMENT_STATUS_LABEL,
   COMMENT_TARGET_TYPE_LABEL,
   getCommentTargetHref,
   type Comment,
+  type CommentSort,
   type CommentStatus,
   type CommentTargetType,
 } from "@/type/comment";
@@ -32,6 +32,7 @@ import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import CommentDetailModal from "./CommentDetailModal";
+import CommentHiddenReason from "./CommentHiddenReason";
 import CommentHideModal from "./CommentHideModal";
 import {
   COMMENT_SORT_OPTIONS,
@@ -41,8 +42,6 @@ import {
   COMMENT_TARGET_TYPE_TONE,
 } from "./commentOptions";
 
-type CommentSort = "RECENT" | "REPORTED";
-
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
 const COMMENT_CSV_COLUMNS: CsvColumn<Comment>[] = [
   { header: "ID", value: (row) => row.commentId },
@@ -50,7 +49,7 @@ const COMMENT_CSV_COLUMNS: CsvColumn<Comment>[] = [
     header: "대상 종류",
     value: (row) => COMMENT_TARGET_TYPE_LABEL[row.targetType],
   },
-  { header: "대상", value: (row) => row.targetName },
+  { header: "대상", value: (row) => row.targetName ?? row.targetId },
   { header: "대상 ID", value: (row) => row.targetId },
   { header: "내용", value: (row) => row.content },
   { header: "작성자", value: (row) => row.authorNickname },
@@ -59,6 +58,11 @@ const COMMENT_CSV_COLUMNS: CsvColumn<Comment>[] = [
   { header: "신고 수", value: (row) => row.reportCount },
   { header: "좋아요 수", value: (row) => row.likeCount },
   { header: "숨김 사유", value: (row) => row.hiddenReason ?? "" },
+  {
+    header: "연쇄 조치",
+    // 사유가 빈 숨김 행이 왜 비었는지는 이 칸을 봐야 알 수 있다.
+    value: (row) => (row.cascaded ? "상위 댓글 조치로 함께 숨김" : ""),
+  },
   { header: "작성일", value: (row) => formatDateTime(row.createdAt) },
 ];
 
@@ -69,7 +73,7 @@ const DEFAULT_PARAMS = {
   targetType: "",
   status: "",
   onlyReported: "",
-  sort: "RECENT",
+  sort: "CREATED_DESC",
 };
 
 const CommentManager = () => {
@@ -83,10 +87,14 @@ const CommentManager = () => {
   const onlyReported = params.onlyReported === "true";
   const sort = params.sort as CommentSort;
 
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [hideTargets, setHideTargets] = useState<Comment[] | null>(null);
-  const [detailCommentId, setDetailCommentId] = useState<number | null>(
-    linkedCommentId ? Number(linkedCommentId) : null,
+  /*
+    빈 값(`?commentId=`)은 안 넘어온 것과 같이 다룬다. 그대로 두면 상세 조회가
+    켜진 채로 ID 없는 경로를 부른다 — 열림 여부를 가르는 것은 `null` 하나뿐이다.
+  */
+  const [detailCommentId, setDetailCommentId] = useState<string | null>(
+    linkedCommentId || null,
   );
 
   const { data, isLoading } = useCommentListQuery({
@@ -99,7 +107,8 @@ const CommentManager = () => {
     sort,
   });
 
-  const { statusMutation, bulkStatusMutation } = useCommentMutation();
+  const { hideMutation, restoreMutation, bulkHideMutation } =
+    useCommentMutation();
 
   const comments = data?.content ?? [];
 
@@ -113,7 +122,7 @@ const CommentManager = () => {
     setSelectedIds([]);
   };
 
-  const toggleSelect = (commentId: number) => {
+  const toggleSelect = (commentId: string) => {
     setSelectedIds((prev) =>
       prev.includes(commentId)
         ? prev.filter((id) => id !== commentId)
@@ -144,17 +153,16 @@ const CommentManager = () => {
     if (!hideTargets) return;
 
     if (hideTargets.length === 1) {
-      statusMutation.mutate(
-        { commentId: hideTargets[0].commentId, status: "HIDDEN", reason },
+      hideMutation.mutate(
+        { commentId: hideTargets[0].commentId, reason },
         { onSuccess: () => setHideTargets(null) },
       );
       return;
     }
 
-    bulkStatusMutation.mutate(
+    bulkHideMutation.mutate(
       {
         commentIds: hideTargets.map((comment) => comment.commentId),
-        status: "HIDDEN",
         reason,
       },
       {
@@ -164,19 +172,6 @@ const CommentManager = () => {
         },
       },
     );
-  };
-
-  const handleRestore = (comment: Comment) => {
-    openConfirm({
-      title: "댓글을 다시 노출할까요?",
-      description: `'${truncate(comment.content, 40)}' 댓글이 앱에 다시 보입니다.`,
-      confirmText: "노출",
-      onConfirm: () =>
-        statusMutation.mutateAsync({
-          commentId: comment.commentId,
-          status: "VISIBLE",
-        }),
-    });
   };
 
   const columns: TableColumn<Comment>[] = [
@@ -217,25 +212,39 @@ const CommentManager = () => {
       key: "target",
       header: "대상",
       width: "180px",
-      render: (row) => (
-        // 대상 이름을 누르면 목록이 아니라 그 대상의 상세로 바로 이동한다.
-        <Link
-          href={getCommentTargetHref(row)}
-          onClick={(event) => event.stopPropagation()}
-          className="flex min-w-0 items-center gap-1 text-[13px] text-font-1 transition hover:text-brand"
-        >
-          <span className="truncate">{row.targetName}</span>
-          <ExternalLink size={11} className="shrink-0" />
-        </Link>
-      ),
+      render: (row) => {
+        const href = getCommentTargetHref(row);
+        const label = row.targetName ?? row.targetId;
+
+        // 콘솔에 상세 화면이 없는 대상은 링크를 걸지 않는다. 눌러서 404를 보는 편이 더 혼란스럽다.
+        if (!href) {
+          return <span className="truncate body-5 text-font-2">{label}</span>;
+        }
+
+        return (
+          // 대상 이름을 누르면 목록이 아니라 그 대상의 상세로 바로 이동한다.
+          <Link
+            href={href}
+            onClick={(event) => event.stopPropagation()}
+            className="flex min-w-0 items-center gap-1 body-5 text-font-1 transition hover:text-brand"
+          >
+            <span className="truncate">{label}</span>
+            <ExternalLink size={11} className="shrink-0" />
+          </Link>
+        );
+      },
     },
     {
       key: "content",
       header: "내용",
+      /*
+       * 폭 상한이 있어야 한다. 표가 min-w-max 라 상한이 없으면 긴 숨김 사유가 칸을
+       * 그대로 늘려 표 전체가 가로로 흐른다. 사유는 자르지 않는 대신 여기서 줄을 바꾼다.
+       */
       render: (row) => (
-        <div className="min-w-0">
+        <div className="max-w-md min-w-0">
           {row.parentCommentId && (
-            <span className="mr-1 text-[12px] text-font-disabled">↳ 대댓글</span>
+            <span className="mr-1 body-6 text-font-disabled">↳ 대댓글</span>
           )}
           <span
             className={
@@ -247,11 +256,7 @@ const CommentManager = () => {
             {truncate(row.content, 60)}
           </span>
 
-          {row.hiddenReason && (
-            <p className="mt-1 text-[12px] text-warning">
-              사유: {row.hiddenReason}
-            </p>
-          )}
+          <CommentHiddenReason comment={row} />
         </div>
       ),
     },
@@ -313,9 +318,13 @@ const CommentManager = () => {
       header: "관리",
       align: "right",
       width: "80px",
+      /*
+       * 작성자가 지운 댓글에는 할 일이 없다. 그건 작성자의 것이라 운영이 되살리지 않는다.
+       * 내린 댓글은 되돌릴 수 있다 — 루트를 잘못 내리면 답글까지 함께 내려가기 때문이다.
+       */
       render: (row) => {
         if (row.status === "DELETED") {
-          return <span className="text-[12px] text-font-disabled">-</span>;
+          return <span className="body-6 text-font-disabled">-</span>;
         }
 
         return (
@@ -333,9 +342,10 @@ const CommentManager = () => {
               />
             ) : (
               <IconButton
-                label="다시 노출"
+                label="재노출"
                 icon={<Eye size={16} />}
-                onClick={() => handleRestore(row)}
+                onClick={() => restoreMutation.mutate(row.commentId)}
+                disabled={restoreMutation.isPending}
               />
             )}
           </div>
@@ -346,9 +356,11 @@ const CommentManager = () => {
 
   return (
     <>
-      <Alert tone="info" title="댓글은 전 영역을 한 화면에서 관리합니다.">
-        지금은 세계관에만 댓글이 달리지만, 캐릭터·공지사항에 붙는 댓글도 대상
-        종류만 다를 뿐 같은 방식으로 여기에서 처리합니다.
+      <Alert tone="info" title="루트 댓글을 내리면 답글도 함께 내려갑니다.">
+        함께 내려간 답글에는 사유가 붙지 않습니다. 그 작성자는 직접 제재를 받은
+        것이 아니기 때문입니다. 되돌릴 때도 그렇게 딸려 내려간 답글만 함께
+        올라오고, 따로 내려 둔 답글은 그대로 남습니다. 작성자가 지운 댓글은
+        운영이 되살릴 수 없으며 지운 지 90일이 지나면 원문까지 파기됩니다.
       </Alert>
 
       <Card
@@ -439,7 +451,7 @@ const CommentManager = () => {
         <Table
           columns={columns}
           rows={comments}
-          getRowKey={(row) => String(row.commentId)}
+          getRowKey={(row) => row.commentId}
           isLoading={isLoading}
           onRowClick={(row) => setDetailCommentId(row.commentId)}
           emptyTitle="조회된 댓글이 없습니다."
@@ -463,7 +475,7 @@ const CommentManager = () => {
         targets={hideTargets}
         onClose={() => setHideTargets(null)}
         onSubmit={handleHide}
-        isSubmitting={statusMutation.isPending || bulkStatusMutation.isPending}
+        isSubmitting={hideMutation.isPending || bulkHideMutation.isPending}
       />
     </>
   );

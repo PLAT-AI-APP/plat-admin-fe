@@ -7,6 +7,7 @@ import type {
 import { daysAgo, pickOne, randomInt } from "../utils";
 import { characters } from "./character";
 import { comments, reportableCommentIds } from "./comment";
+import { pickManager } from "./ops";
 import { users } from "./user";
 
 const REASONS: readonly ReportReason[] = [
@@ -87,7 +88,7 @@ const pickTarget = (seed: number, targetType: ReportTargetType) => {
     const comment = comments.find((item) => item.commentId === commentId)!;
 
     return {
-      targetId: comment.commentId,
+      targetId: String(comment.commentId),
       targetName: comment.authorNickname,
       targetSnippet: comment.content,
     };
@@ -106,7 +107,7 @@ const pickTarget = (seed: number, targetType: ReportTargetType) => {
   const character = characters[randomInt(seed, 0, characters.length - 1)];
 
   return {
-    targetId: character.characterId,
+    targetId: String(character.characterId),
     targetName: character.name,
     targetSnippet: `크리에이터 ${character.creatorNickname}`,
   };
@@ -121,6 +122,7 @@ export const reports: Report[] = Array.from({ length: 38 }, (_, index) => {
   const status = pickOne(seed * 9, STATUSES);
   const isHandled = status === "RESOLVED" || status === "REJECTED";
   const createdDaysAgo = Math.floor(index / 2) + 1;
+  const handler = pickManager(seed * 17);
 
   return {
     reportId: 38 - index,
@@ -132,7 +134,8 @@ export const reports: Report[] = Array.from({ length: 38 }, (_, index) => {
     reason,
     detail: pickOne(seed * 11, DETAIL_BY_REASON[reason]),
     status,
-    handlerName: isHandled ? "운영자" : undefined,
+    handlerName: isHandled ? handler.name : undefined,
+    handlerId: isHandled ? handler.managerId : undefined,
     handlerNote: isHandled
       ? pickOne(seed * 13, HANDLER_NOTES[status])
       : undefined,
@@ -149,7 +152,7 @@ export const reports: Report[] = Array.from({ length: 38 }, (_, index) => {
  * 신고가 접수·처리될 때마다 다시 불러 주면 누적 수가 계속 맞는다.
  */
 export const syncReportDerivedCounts = () => {
-  const countFor = (targetType: ReportTargetType, targetId: number) =>
+  const countFor = (targetType: ReportTargetType, targetId: string) =>
     reports.filter(
       (report) =>
         report.targetType === targetType && report.targetId === targetId,
@@ -162,7 +165,7 @@ export const syncReportDerivedCounts = () => {
 
   // 댓글의 "신고 N"과 신고 관리의 "누적 신고"는 같은 값이다.
   comments.forEach((comment) => {
-    comment.reportCount = countFor("COMMENT", comment.commentId);
+    comment.reportCount = countFor("COMMENT", String(comment.commentId));
   });
 
   // 유저의 "누적 신고 접수"는 그 유저를 대상으로 접수된 신고의 수다.

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQnaListQuery } from "@/api/communication/getQnaList";
 import { formatDateTime } from "@/lib/dayjs";
-import { truncate } from "@/lib/utils";
+import { formatAdmin, truncate } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { QnaCategory, QnaItem, QnaStatus } from "@/type/communication";
 import Badge from "@/components/ui/Badge";
@@ -11,11 +11,15 @@ import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, { type TableColumn } from "@/components/ui/Table";
+import Table, {
+  TableCellStack,
+  type TableColumn,
+} from "@/components/ui/Table";
 import Tabs from "@/components/ui/Tabs";
 import {
   QNA_CATEGORY_LABEL,
   QNA_CATEGORY_OPTIONS,
+  QNA_CATEGORY_TONE,
   QNA_STATUS_LABEL,
   QNA_STATUS_TABS,
   QNA_STATUS_TONE,
@@ -59,7 +63,9 @@ const QnaManager = () => {
       header: "카테고리",
       width: "110px",
       render: (row) => (
-        <Badge tone="brand">{QNA_CATEGORY_LABEL[row.category]}</Badge>
+        <Badge tone={QNA_CATEGORY_TONE[row.category]}>
+          {QNA_CATEGORY_LABEL[row.category]}
+        </Badge>
       ),
     },
     {
@@ -98,12 +104,23 @@ const QnaManager = () => {
     },
     {
       key: "answeredAt",
-      header: "답변일",
-      width: "150px",
+      header: "답변일 / 답변자",
+      width: "180px",
       numeric: true,
-      render: (row) => (
-        <span className="text-font-2">{formatDateTime(row.answeredAt)}</span>
-      ),
+      // 답변일과 답변자는 항상 같이 채워지므로 한 칸에 묶어 표 폭을 아낀다.
+      render: (row) =>
+        row.answeredAt ? (
+          <TableCellStack
+            primary={
+              <span className="body-5 text-font-2">
+                {formatDateTime(row.answeredAt)}
+              </span>
+            }
+            secondary={formatAdmin(row.answeredBy, row.answeredById)}
+          />
+        ) : (
+          <span className="text-font-2">-</span>
+        ),
     },
   ];
 

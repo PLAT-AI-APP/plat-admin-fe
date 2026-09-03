@@ -50,7 +50,7 @@ const NotificationTemplateManager = () => {
       header: "템플릿 키",
       width: "180px",
       render: (row) => (
-        <span className="text-[13px] text-font-2">{row.templateKey}</span>
+        <span className="body-5 text-font-2">{row.templateKey}</span>
       ),
     },
     {
@@ -121,7 +121,7 @@ const NotificationTemplateManager = () => {
 
   return (
     <>
-      <Alert tone="warning" title="MVP 제외 기능">
+      <Alert tone="warning" title="MOCK 화면 · 아직 실제 발송으로 이어지지 않습니다">
         알림 발송은 현재 운영에서 Discord 공지로 대체하고 있습니다. 화면은 이후
         전환을 위해 미리 구현해 두었습니다.
       </Alert>

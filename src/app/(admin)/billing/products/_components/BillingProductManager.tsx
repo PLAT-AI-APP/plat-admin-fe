@@ -10,6 +10,7 @@ import { openConfirm } from "@/store/useConfirmStore";
 import type {
   BillingProduct,
   BillingProductFormValues,
+  ProductPlatform,
   ProductStatus,
 } from "@/type/billing";
 import Badge from "@/components/ui/Badge";
@@ -21,6 +22,7 @@ import Table, {
   TableCellStack,
   type TableColumn,
 } from "@/components/ui/Table";
+import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import BillingProductFormModal from "./BillingProductFormModal";
 import {
   PRODUCT_PLATFORM_LABEL,
@@ -31,6 +33,11 @@ import {
 
 const STATUS_ORDER: ProductStatus[] = ["ON_SALE", "HIDDEN", "ENDED"];
 
+/** 플랫폼 탭. 상품이 스토어별로 나뉘어 있어 한 화면에 다 쌓으면 비교가 어렵다. */
+type PlatformTab = ProductPlatform | "ALL";
+
+const PLATFORM_TAB_ORDER: PlatformTab[] = ["ALL", "WEB", "IOS", "AOS"];
+
 const BillingProductManager = () => {
   const { data, isLoading } = useBillingProductListQuery();
   const { createMutation, updateMutation, statusMutation } =
@@ -38,8 +45,27 @@ const BillingProductManager = () => {
 
   const [editingProduct, setEditingProduct] = useState<BillingProduct | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [platformTab, setPlatformTab] = useState<PlatformTab>("ALL");
 
   const products = data ?? [];
+
+  const visibleProducts =
+    platformTab === "ALL"
+      ? products
+      : products.filter((product) => product.platform === platformTab);
+
+  const platformTabs: TabItem<PlatformTab>[] = PLATFORM_TAB_ORDER.map((tab) => ({
+    label: tab === "ALL" ? "전체" : PRODUCT_PLATFORM_LABEL[tab],
+    value: tab,
+    count:
+      tab === "ALL"
+        ? products.length
+        : products.filter((product) => product.platform === tab).length,
+  }));
+
+  /** 새 상품은 목록 맨 뒤에 붙인다. 서버와 같은 규칙(마지막 순서 + 10)이다. */
+  const nextSortOrder =
+    products.reduce((max, product) => Math.max(max, product.sortOrder), 0) + 10;
 
   const handleOpenCreate = () => {
     setEditingProduct(undefined);
@@ -89,26 +115,39 @@ const BillingProductManager = () => {
       render: (product) => (
         <TableCellStack
           primary={product.name}
-          secondary={`#${product.productId}`}
+          secondary={`#${product.productId} · ${product.code}`}
         />
       ),
     },
     {
-      key: "platform",
-      header: "플랫폼",
-      width: "110px",
+      key: "description",
+      header: "설명",
+      width: "200px",
       render: (product) => (
-        <Badge tone={PRODUCT_PLATFORM_TONE[product.platform]}>
-          {PRODUCT_PLATFORM_LABEL[product.platform]}
-        </Badge>
+        <span className="line-clamp-2 text-font-2">{product.description}</span>
       ),
     },
+    // 특정 플랫폼 탭에서는 모든 행이 같은 값이라 열을 뺀다.
+    ...(platformTab === "ALL"
+      ? [
+          {
+            key: "platform",
+            header: "플랫폼",
+            width: "110px",
+            render: (product: BillingProduct) => (
+              <Badge tone={PRODUCT_PLATFORM_TONE[product.platform]}>
+                {PRODUCT_PLATFORM_LABEL[product.platform]}
+              </Badge>
+            ),
+          },
+        ]
+      : []),
     {
-      key: "price",
+      key: "amountMinor",
       header: "결제 금액",
       align: "right",
       numeric: true,
-      render: (product) => formatCurrency(product.price),
+      render: (product) => formatCurrency(product.amountMinor),
     },
     {
       key: "credit",
@@ -153,6 +192,16 @@ const BillingProductManager = () => {
       ),
     },
     {
+      key: "sortOrder",
+      header: "순서",
+      width: "70px",
+      align: "right",
+      numeric: true,
+      render: (product) => (
+        <span className="text-font-2">{product.sortOrder}</span>
+      ),
+    },
+    {
       key: "updatedAt",
       header: "수정일",
       width: "150px",
@@ -191,7 +240,7 @@ const BillingProductManager = () => {
   return (
     <>
       <Card
-        title={`상품 ${products.length}건`}
+        title={`상품 ${visibleProducts.length}건`}
         description="결제 금액과 지급 크레딧 구성을 관리합니다. 금액은 원 단위 정수입니다."
         action={
           <Button
@@ -205,13 +254,24 @@ const BillingProductManager = () => {
         }
         noPadding
       >
+        <Tabs
+          items={platformTabs}
+          value={platformTab}
+          onChange={setPlatformTab}
+          className="px-5"
+        />
+
         <Table
           columns={columns}
-          rows={products}
+          rows={visibleProducts}
           getRowKey={(product) => String(product.productId)}
           isLoading={isLoading}
           skeletonRows={6}
-          emptyTitle="등록된 상품이 없습니다."
+          emptyTitle={
+            platformTab === "ALL"
+              ? "등록된 상품이 없습니다."
+              : `${PRODUCT_PLATFORM_LABEL[platformTab]} 상품이 없습니다.`
+          }
           emptyDescription="첫 크레딧 상품을 추가해 결제 화면을 구성해 보세요."
           emptyAction={
             <Button
@@ -227,7 +287,7 @@ const BillingProductManager = () => {
       </Card>
 
       <Card title="상품 구성 안내">
-        <div className="flex items-start gap-2.5 text-[13px] text-font-2">
+        <div className="flex items-start gap-2.5 body-5 text-font-2">
           <Package size={18} className="mt-px shrink-0 text-font-disabled" />
           <p>
             총 크레딧은 지급 크레딧과 보너스 크레딧의 합입니다. 스토어 심사 정책상
@@ -240,6 +300,8 @@ const BillingProductManager = () => {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         product={editingProduct}
+        defaultSortOrder={nextSortOrder}
+        defaultPlatform={platformTab === "ALL" ? "IOS" : platformTab}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
       />

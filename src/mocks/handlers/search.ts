@@ -21,14 +21,19 @@ export const searchHandlers = [
 
     const userItems: GlobalSearchItem[] = users
       .filter((user) =>
-        matchesKeyword(keyword, user.nickname, user.email, String(user.userId)),
+        matchesKeyword(
+          keyword,
+          user.nickname,
+          user.email ?? "",
+          String(user.userId),
+        ),
       )
       .slice(0, LIMIT_PER_TYPE)
       .map((user) => ({
         type: "USER",
         id: user.userId,
         title: user.nickname,
-        description: user.email,
+        description: user.email ?? "",
         href: `/users/${user.userId}`,
       }));
 
@@ -44,7 +49,7 @@ export const searchHandlers = [
       .slice(0, LIMIT_PER_TYPE)
       .map((character) => ({
         type: "CHARACTER",
-        id: character.characterId,
+        id: String(character.characterId),
         title: character.name,
         description: `크리에이터 ${character.creatorNickname}`,
         href: `/universes/characters/${character.characterId}`,
@@ -62,7 +67,7 @@ export const searchHandlers = [
       .slice(0, LIMIT_PER_TYPE)
       .map((universe) => ({
         type: "UNIVERSE",
-        id: universe.universeId,
+        id: String(universe.universeId),
         title: universe.name,
         description: `캐릭터 ${universe.characters.map((character) => character.name).join(", ")}`,
         href: `/universes/${universe.universeId}`,
@@ -75,7 +80,7 @@ export const searchHandlers = [
       .slice(0, LIMIT_PER_TYPE)
       .map((hashtag) => ({
         type: "HASHTAG",
-        id: hashtag.hashtagId,
+        id: String(hashtag.hashtagId),
         title: `#${hashtag.labels.KO}`,
         description: `${hashtag.usageCount}곳에서 사용 중`,
         href: `/universes/hashtags?keyword=${encodeURIComponent(hashtag.labels.KO)}`,

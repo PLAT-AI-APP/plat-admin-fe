@@ -57,7 +57,7 @@ const Sidebar = () => {
             href={group.href}
             title={isCollapsed ? group.label : undefined}
             className={cn(
-              "flex h-10 items-center gap-2.5 rounded-field px-3 text-[14px] transition",
+              "flex h-10 items-center gap-2.5 rounded-field px-3 body-4 transition",
               isCollapsed && "justify-center px-0",
               isActiveGroup
                 ? "bg-surface-selected font-semibold text-brand"
@@ -69,7 +69,7 @@ const Sidebar = () => {
               <>
                 <span className="flex-1 truncate">{group.label}</span>
                 {group.isMock && (
-                  <Badge tone="neutral" className="px-1.5 py-0.5 text-[11px]">
+                  <Badge tone="neutral" className="px-1.5 py-0.5 caption-3">
                     MOCK
                   </Badge>
                 )}
@@ -95,7 +95,7 @@ const Sidebar = () => {
           title={isCollapsed ? group.label : undefined}
           aria-expanded={isOpen}
           className={cn(
-            "flex h-10 w-full items-center gap-2.5 rounded-field px-3 text-[14px] transition",
+            "flex h-10 w-full items-center gap-2.5 rounded-field px-3 body-4 transition",
             isCollapsed && "justify-center px-0",
             isActiveGroup
               ? "font-semibold text-brand"
@@ -134,7 +134,7 @@ const Sidebar = () => {
                   <Link
                     href={item.href}
                     className={cn(
-                      "mt-0.5 flex h-9 items-center gap-2 rounded-field pr-3 pl-9 text-[13px] transition",
+                      "mt-0.5 flex h-9 items-center gap-2 rounded-field pr-3 pl-9 body-5 transition",
                       isActive
                         ? "bg-surface-selected font-semibold text-brand"
                         : "text-font-2 hover:bg-surface-hover hover:text-font-1",
@@ -145,7 +145,7 @@ const Sidebar = () => {
                     {item.pendingKey && Boolean(pendingCounts?.[item.pendingKey]) && (
                       <Badge
                         tone="danger"
-                        className="min-w-5 justify-center px-1.5 py-0.5 text-[11px] tabular-nums"
+                        className="min-w-5 justify-center px-1.5 py-0.5 caption-3 tabular-nums"
                       >
                         {pendingCounts?.[item.pendingKey]}
                       </Badge>
@@ -154,18 +154,9 @@ const Sidebar = () => {
                     {item.isMock && (
                       <Badge
                         tone="neutral"
-                        className="px-1.5 py-0.5 text-[11px]"
+                        className="px-1.5 py-0.5 caption-3"
                       >
                         MOCK
-                      </Badge>
-                    )}
-
-                    {item.isExcludedFromMvp && (
-                      <Badge
-                        tone="neutral"
-                        className="px-1.5 py-0.5 text-[11px]"
-                      >
-                        MVP 제외
                       </Badge>
                     )}
                   </Link>
@@ -193,10 +184,10 @@ const Sidebar = () => {
       >
         {!isCollapsed && (
           <Link href="/" className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-[8px] bg-brand text-[13px] font-bold text-font-4">
+            <span className="flex size-7 items-center justify-center rounded-chip bg-brand body-5 font-bold text-font-4">
               P
             </span>
-            <span className="text-[15px] font-bold text-font-0">
+            <span className="body-3 font-bold text-font-0">
               PLAT 관리자
             </span>
           </Link>

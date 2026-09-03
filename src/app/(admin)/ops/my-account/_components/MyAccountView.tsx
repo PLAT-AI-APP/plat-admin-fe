@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAdminRoleListQuery } from "@/api/ops/getAdminRoleList";
-import { Key } from "@/icons";
+import { Edit, Key } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { useAdminStore } from "@/store/useAdminStore";
 import {
@@ -17,12 +17,13 @@ import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import ProfileNameModal from "./ProfileNameModal";
 
 /** 정보 한 줄 */
 const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <div className="flex items-center justify-between gap-4 border-b border-border-main py-3 last:border-b-0">
-    <span className="text-[13px] text-font-2">{label}</span>
-    <span className="text-[14px] text-font-1">{value}</span>
+    <span className="body-5 text-font-2">{label}</span>
+    <span className="body-4 text-font-1">{value}</span>
   </div>
 );
 
@@ -35,10 +36,11 @@ const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) =>
 const MyAccountView = () => {
   const admin = useAdminStore((state) => state.admin);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
 
   /* 직책 설명만 목록에서 가져온다. 권한 판정은 언제나 세션의 권한 키로 한다. */
-  const { data: roleData } = useAdminRoleListQuery();
-  const role = roleData?.items.find((item) => item.roleId === admin?.roleId);
+  const { data: roles } = useAdminRoleListQuery();
+  const role = roles?.find((item) => item.roleId === admin?.roleId);
 
   if (!admin) return null;
 
@@ -58,15 +60,18 @@ const MyAccountView = () => {
     <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
       <Card title="계정" className="w-full shrink-0 lg:w-[360px]">
         <div className="flex items-center gap-3 pb-4">
-          <span className="flex size-12 items-center justify-center rounded-full bg-brand-opacity text-[18px] font-semibold text-brand">
+          <span className="flex size-12 items-center justify-center rounded-full bg-brand-opacity body-1 font-semibold text-brand">
             {admin.name.slice(0, 1)}
           </span>
 
           <div className="min-w-0">
-            <p className="truncate text-[16px] font-semibold text-font-0">
+            <p className="truncate body-2 font-semibold text-font-0">
               {admin.name}
+              <span className="ml-1.5 body-6 font-normal text-font-2 tabular-nums">
+                #{admin.managerId}
+              </span>
             </p>
-            <p className="truncate text-[13px] text-font-2">{admin.email}</p>
+            <p className="truncate body-5 text-font-2">{admin.email}</p>
           </div>
         </div>
 
@@ -91,15 +96,25 @@ const MyAccountView = () => {
           value={<span className="tabular-nums">{admin.lastLoginIp ?? "-"}</span>}
         />
 
-        <Button
-          variant="secondary"
-          fullWidth
-          leftIcon={<Key size={15} />}
-          onClick={() => setIsPasswordModalOpen(true)}
-          className="mt-4"
-        >
-          비밀번호 변경
-        </Button>
+        <div className="mt-4 flex flex-col gap-2">
+          <Button
+            variant="secondary"
+            fullWidth
+            leftIcon={<Edit size={15} />}
+            onClick={() => setIsNameModalOpen(true)}
+          >
+            이름 변경
+          </Button>
+
+          <Button
+            variant="secondary"
+            fullWidth
+            leftIcon={<Key size={15} />}
+            onClick={() => setIsPasswordModalOpen(true)}
+          >
+            비밀번호 변경
+          </Button>
+        </div>
       </Card>
 
       <Card
@@ -124,10 +139,10 @@ const MyAccountView = () => {
                 className="flex items-center justify-between gap-4 rounded-field border border-border-main px-3.5 py-2.5"
               >
                 <div className="min-w-0">
-                  <p className="text-[14px] text-font-1">
+                  <p className="body-4 text-font-1">
                     {PERMISSION_RESOURCES[resource].label}
                   </p>
-                  <p className="mt-0.5 truncate text-[12px] text-font-2">
+                  <p className="mt-0.5 truncate body-6 text-font-2">
                     {PERMISSION_RESOURCES[resource].description}
                   </p>
                 </div>
@@ -144,6 +159,12 @@ const MyAccountView = () => {
           </ul>
         )}
       </Card>
+
+      <ProfileNameModal
+        isOpen={isNameModalOpen}
+        onClose={() => setIsNameModalOpen(false)}
+        currentName={admin.name}
+      />
 
       <PasswordChangeModal
         isOpen={isPasswordModalOpen}

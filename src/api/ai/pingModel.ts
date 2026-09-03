@@ -1,12 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AiModelPingResult } from "@/type/ai";
 import type { AppError } from "@/type/api";
 import { showAppToast } from "@/lib/toast";
 import { formatWithCommas } from "@/lib/utils";
 
 export const pingModel = async (model: string) => {
-  const response = await adminAxios.post<AiModelPingResult>(
+  const response = await liveAxios.post<AiModelPingResult>(
     `/admin/ai/models/${model}/ping`,
   );
 
