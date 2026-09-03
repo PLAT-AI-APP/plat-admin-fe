@@ -1,28 +1,22 @@
 import { cn } from "@/lib/utils";
+import {
+  USAGE_TONE_COLOR,
+  USAGE_TONE_TEXT_CLASS,
+  getUsageTone,
+} from "../_constants/serverStatus";
 
 interface UsageBarProps {
   label: string;
   /** 사용률 (%) */
   value: number;
   description?: string;
+  /** 큰 수치를 감춘다. 카드 안에서 여러 줄이 붙을 때 쓴다. */
+  isCompact?: boolean;
 }
 
-/** 임계치. 80% 이상은 주의, 90% 이상은 위험으로 본다. */
-const WARNING_THRESHOLD = 80;
-const DANGER_THRESHOLD = 90;
-
-/** 임계치에 따라 막대와 수치 색을 함께 바꾼다. */
-const getUsageClass = (value: number) => {
-  if (value >= DANGER_THRESHOLD) return { bar: "bg-danger", text: "text-danger" };
-  if (value >= WARNING_THRESHOLD)
-    return { bar: "bg-warning", text: "text-warning" };
-
-  return { bar: "bg-brand", text: "text-font-0" };
-};
-
-/** 자원 사용률을 진행 바 하나로 보여준다. */
-const UsageBar = ({ label, value, description }: UsageBarProps) => {
-  const { bar, text } = getUsageClass(value);
+/** 자원 사용률을 진행 바 하나로 보여준다. 임계치에 따라 막대와 수치 색이 함께 바뀐다. */
+const UsageBar = ({ label, value, description, isCompact }: UsageBarProps) => {
+  const tone = getUsageTone(value);
   // 값이 범위를 벗어나도 막대가 넘치지 않도록 잘라 낸다.
   const width = Math.min(100, Math.max(0, value));
 
@@ -30,8 +24,14 @@ const UsageBar = ({ label, value, description }: UsageBarProps) => {
     <div className="flex flex-col gap-2">
       <div className="flex items-baseline justify-between gap-2">
         <span className="body-5 text-font-2">{label}</span>
-        <span className={cn("title-1 font-bold tabular-nums", text)}>
-          {value}%
+        <span
+          className={cn(
+            "font-bold tabular-nums",
+            isCompact ? "body-4" : "title-1",
+            USAGE_TONE_TEXT_CLASS[tone],
+          )}
+        >
+          {value.toFixed(1)}%
         </span>
       </div>
 
@@ -44,14 +44,12 @@ const UsageBar = ({ label, value, description }: UsageBarProps) => {
         className="h-2 w-full overflow-hidden rounded-full bg-subtle"
       >
         <div
-          className={cn("h-full rounded-full transition", bar)}
-          style={{ width: `${width}%` }}
+          className="h-full rounded-full transition-[width]"
+          style={{ width: `${width}%`, backgroundColor: USAGE_TONE_COLOR[tone] }}
         />
       </div>
 
-      {description && (
-        <p className="body-6 text-font-2">{description}</p>
-      )}
+      {description && <p className="body-6 text-font-2">{description}</p>}
     </div>
   );
 };

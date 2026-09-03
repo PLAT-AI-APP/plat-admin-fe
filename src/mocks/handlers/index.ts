@@ -22,7 +22,8 @@ import { searchHandlers } from "./search";
  * 연동이 끝난 도메인은 목업을 걷어냈다 — 해시태그 · 금지어 · 크레딧 조정 · 장부 ·
  * 시스템 프롬프트(`/admin/ai/prompts`) · AI 모델(`/admin/ai/models`) ·
  * 공지사항(`/admin/notices`) · 유저(`/admin/users`) ·
- * 공식 계정(`/admin/official-accounts`) · 로그(`/admin/logs/**`)는 실서버로 그대로 나간다.
+ * 공식 계정(`/admin/official-accounts`) · 로그(`/admin/logs/**`) ·
+ * 서버 상태(`/admin/server/**`)는 실서버로 그대로 나간다.
  *
  * 관리자 활동 로그는 목업이 모든 변경 요청을 가로채 직접 쌓았지만, 이제 서버가
  * 요청 길목에서 남긴다. 목업이 실서버로 나간 요청은 애초에 보지도 못했으므로

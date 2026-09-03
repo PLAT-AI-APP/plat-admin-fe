@@ -125,31 +125,95 @@ export interface DependencyHealth {
   message?: string;
 }
 
+/** CPU. 사용률과 함께 부하 평균을 준다 — "꽉 찼다"와 "밀려 있다"는 다른 사실이다. */
+export interface CpuHealth {
+  cores: number;
+  systemUsage: number;
+  /** 부하 평균. 코어 수로 나누기 전 원값이라 코어 수와 함께 읽어야 한다. */
+  loadAverage1m: number | null;
+  loadAverage5m: number | null;
+  loadAverage15m: number | null;
+  /** 코어별 사용률. 한 코어만 100%면 병렬화가 안 된 작업이 물려 있다는 뜻이다. */
+  coreUsages: number[];
+}
+
 /**
- * 서버 상태.
+ * 머신 메모리의 갈래.
+ *
+ * `anonymous + cached + free = total`이고 `available`은 그와 다른 절단면이다 —
+ * free에 회수 가능한 캐시를 더한 값이라 **캐시와 겹친다.** 둘을 더하면 안 된다.
+ */
+export interface MemoryHealth {
+  totalBytes: number;
+  /** 경보 기준. 회수해도 돌려받지 못하는 몫(`total - available`)이다. */
+  usedBytes: number;
+  availableBytes: number;
+  /** 프로세스가 실제로 쥔 몫. 파이 차트에서 캐시·free와 합쳐 전체가 된다. */
+  anonymousBytes: number;
+  cachedBytes: number;
+  freeBytes: number;
+  usage: number;
+  /** 스왑이 쓰이기 시작했다는 것 자체가 신호다. 없으면 0. */
+  swapTotalBytes: number;
+  swapUsedBytes: number;
+}
+
+/** 프로세스 한 개의 점유. 컨테이너 안에서는 보이는 것이 우리 프로세스뿐일 수 있다. */
+export interface ProcessUsage {
+  pid: number;
+  name: string;
+  command?: string;
+  /** 실제로 물리 메모리를 차지한 크기(RSS) */
+  residentBytes: number;
+  /** 머신 전체 메모리 대비 % */
+  memoryUsage: number;
+  cpuUsage: number | null;
+  /** 이 어드민을 서빙하는 JVM 자신인가 */
+  isSelf: boolean;
+}
+
+/**
+ * JVM 힙. 머신 메모리와 따로 본다 — 머신에 여유가 있어도 힙이 차면 GC가 돌기
+ * 시작하고, 응답이 느려지는 원인은 그쪽인 경우가 많다.
+ */
+export interface JvmHealth {
+  /** 분모는 max가 아니라 committed다. max는 아직 받지 않은 몫까지 포함한다. */
+  heapUsage: number;
+  heapUsedBytes: number;
+  heapCommittedBytes: number;
+  heapMaxBytes: number;
+}
+
+/** 디스크 마운트 한 곳. 로그가 쌓여 꽉 차면 서버가 조용히 멈춘다. */
+export interface DiskUsage {
+  mountPoint: string;
+  totalBytes: number;
+  usedBytes: number;
+  usableBytes: number;
+  usage: number;
+}
+
+/**
+ * 서버 상태 한 장.
  *
  * 사용률과 절대량이 함께 온다. "메모리 75%"만으로는 조치를 정할 수 없다 —
  * 2GB 중 75%와 64GB 중 75%는 남은 여유가 다르다.
  */
 export interface ServerHealth {
   status: HealthStatus;
+  /** 어느 인스턴스의 값인가. 여러 대로 늘었을 때 화면이 섞이지 않게 한다. */
+  instanceId: string;
+  /** 호스트 OS · JVM. 재현 환경을 맞출 때 먼저 확인하는 값이다. */
+  osName: string;
+  javaVersion: string;
+  startedAt: string;
   uptimeSeconds: number;
-  cpuUsage: number;
-  /** 이 서버에 주어진 코어 수 */
-  cpuCores: number;
-  memoryUsage: number;
-  memoryUsedBytes: number;
-  /** 머신(컨테이너)에 주어진 전체 메모리 */
-  memoryTotalBytes: number;
-  /**
-   * JVM 힙 사용률.
-   *
-   * 머신 메모리와 따로 본다. 머신에 여유가 있어도 힙이 차면 GC가 돌기 시작하고,
-   * 응답이 느려지는 원인은 그쪽인 경우가 많다.
-   */
-  heapUsage: number;
-  heapUsedBytes: number;
-  heapMaxBytes: number;
+  cpu: CpuHealth;
+  memory: MemoryHealth;
+  jvm: JvmHealth;
+  /** 점유 상위 프로세스. 읽을 수 없는 환경이면 빈 배열이다. */
+  processes: ProcessUsage[];
+  disks: DiskUsage[];
   dependencies: DependencyHealth[];
   checkedAt: string;
 }
