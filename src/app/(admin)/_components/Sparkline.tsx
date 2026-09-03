@@ -6,6 +6,8 @@ interface SparklineProps {
   label: string;
   /** 선택된 카드는 브랜드 색, 나머지는 눈에 덜 띄는 색으로 그린다. */
   isActive?: boolean;
+  /** 선 색을 직접 정한다. 임계치에 따라 색이 갈리는 자리(서버 상태)가 쓴다. */
+  color?: string;
   className?: string;
 }
 
@@ -23,7 +25,13 @@ const PADDING = 3;
  * 느려지고, 여기서 필요한 것은 축도 툴팁도 없는 선 하나뿐이다. 정확한 값은
  * 카드에 숫자로 적혀 있고 자세한 추이는 아래 차트가 담당한다.
  */
-const Sparkline = ({ values, label, isActive, className }: SparklineProps) => {
+const Sparkline = ({
+  values,
+  label,
+  isActive,
+  color: colorOverride,
+  className,
+}: SparklineProps) => {
   // 점이 하나뿐이면 선이 되지 않는다. 그릴 것이 없으므로 자리만 비워 둔다.
   if (values.length < 2) return <div className={className} aria-hidden />;
 
@@ -45,7 +53,7 @@ const Sparkline = ({ values, label, isActive, className }: SparklineProps) => {
     .join(" ");
 
   const area = `${line} L${VIEW_WIDTH} ${VIEW_HEIGHT} L0 ${VIEW_HEIGHT} Z`;
-  const color = isActive ? "var(--brand)" : "var(--font-2)";
+  const color = colorOverride ?? (isActive ? "var(--brand)" : "var(--font-2)");
   const lastY = points[points.length - 1].y;
 
   return (
