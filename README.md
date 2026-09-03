@@ -20,21 +20,75 @@ npm install
 ```
 
 ```bash
-cp .env.example .env.local
-```
-
-```bash
 npm run dev
 ```
 
-## 환경 변수
+`.env.local`은 **없어도 된다.** 어느 서버를 볼지는 `.env`가 아니라
+**환경(프로파일)**이 정한다. 예외를 두고 싶을 때만 `cp .env.example .env.local`.
+
+## 환경 구성
+
+`spring.profiles.active`와 같은 자리다. 프로파일 하나가 실서버 주소 · 이미지
+주소 · 목업 여부를 함께 정한다. 값의 출처는 `src/config/appEnv.ts` 하나다.
+
+| 프로파일 | 실서버 · 이미지 | MSW 목업 |
+|---|---|---|
+| `local` | `http://localhost:8080` (로컬 `plat-be`) | 켬 |
+| `develop` | `https://api-dev.plat.so` | 켬 |
+| `main` | `https://api.plat.so` | **끔** |
+
+**브랜치 이름이 곧 프로파일 이름이다.** `main` · `develop` · `local` 브랜치를
+체크아웃하고 `npm run dev`만 치면 그 환경으로 뜬다. `feat/**` 같은 작업
+브랜치는 개발 서버를 본다. 지금 무엇으로 떴는지는 시작 로그에 찍힌다.
+
+```
+▲ 환경 develop(개발) · 브랜치 develop
+  실서버 https://api-dev.plat.so · 이미지 https://api-dev.plat.so · 목업 켬
+```
+
+브랜치와 다른 환경을 보려면 스크립트로 고른다.
+
+```bash
+npm run dev:local
+```
+
+| 스크립트 | 하는 일 |
+|---|---|
+| `npm run dev` | 지금 브랜치에 맞는 환경 |
+| `npm run dev:local` · `dev:develop` · `dev:main` | 환경을 지정해서 띄운다 |
+| `npm run build:local` · `build:develop` · `build:main` | 환경을 지정해서 빌드한다 |
+
+프로파일은 이 순서로 정해진다. 앞의 것이 이긴다.
+
+1. `APP_ENV` 환경 변수 — 배포 · 도커는 이것만 넘긴다 (`APP_ENV=main npm run build`)
+2. CI가 알려 주는 브랜치 (`GITHUB_REF_NAME` · `VERCEL_GIT_COMMIT_REF`) — CI 체크아웃은
+   detached라 git으로 브랜치를 읽지 못한다
+3. 체크아웃된 git 브랜치
+4. 기본값 `develop` — 실수로 운영을 보는 일이 없도록
+
+> 스크립트가 `APP_ENV=...` 앞머리를 쓰므로 Windows(cmd)에서는 그대로 돌지 않는다.
+> `set APP_ENV=local && npx next dev`로 띄우거나 `.env.local`에 `APP_ENV=local`을 적는다.
+
+### 항목별 덮어쓰기
+
+프로파일 기본값은 `.env.local`의 `NEXT_PUBLIC_*`로 **항목만** 덮을 수 있다
+(개발 서버를 보면서 이미지만 로컬에서 받는 식의 예외를 위한 문이다).
 
 | 이름 | 설명 |
 |---|---|
+| `APP_ENV` | 프로파일 고정 (`local` · `develop` · `main`) |
+| `NEXT_PUBLIC_LIVE_BASE_URI` | 실서버(`plat-be`) 베이스 URI |
+| `NEXT_PUBLIC_IMAGE_BASE_URI` | 이미지 서빙 베이스 URI (`GET /images/{fileId}`) |
 | `NEXT_PUBLIC_BASE_URI` | 목업 구간의 관리자 API 베이스 URI. **아무것도 뜨지 않는 포트**를 둔다 |
 | `NEXT_PUBLIC_API_MOCKING` | `enabled`일 때만 MSW 목업 워커가 뜬다 |
-| `NEXT_PUBLIC_LIVE_BASE_URI` | 실서버(`plat-be`) 베이스 URI. `develop`은 개발 서버(`https://api-dev.plat.so`)를 본다 |
-| `NEXT_PUBLIC_IMAGE_BASE_URI` | 이미지 서빙 베이스 URI (`GET /images/{fileId}`). 실서버와 같은 오리진 |
+
+이 값들은 `next.config.ts`가 프로파일에서 계산해 번들에 심는다. 화면 코드는
+지금까지처럼 `process.env.NEXT_PUBLIC_*`만 읽는다.
+
+**운영(`main`)은 목업을 끈다.** 아직 실서버가 열어 주지 않은 도메인은 목업이
+아니라 404로 끝나는 것이 맞다 — 운영에서 가짜 데이터가 그려지면 어느 화면이
+진짜로 붙었는지 아무도 구분하지 못한다. 목업을 끄면 죽은 오리진(`:9090`)을
+둘 이유도 없어서 `adminAxios`도 실서버를 본다.
 
 관리자 API(`/admin/**`)는 별도 서버가 아니라 **`plat-boot`이 서비스 API와 같은
 포트에서 함께 서빙한다.** `SecurityConfig`의 `adminFilterChain`이
