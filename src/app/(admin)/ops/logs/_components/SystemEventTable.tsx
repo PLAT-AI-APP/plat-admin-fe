@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSystemEventListQuery } from "@/api/ops/getSystemEventList";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond, formatFromNow } from "@/lib/dayjs";
@@ -18,6 +19,7 @@ import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import type { LogParams, SetLogParams } from "./LogManager";
+import SystemEventDetailModal from "./SystemEventDetailModal";
 import {
   SYSTEM_EVENT_LEVEL_LABEL,
   SYSTEM_EVENT_LEVEL_OPTIONS,
@@ -31,8 +33,14 @@ const CSV_COLUMNS: CsvColumn<SystemEventLog>[] = [
   { header: "발생원", value: (row) => getSystemEventSourceLabel(row.source) },
   { header: "메시지", value: (row) => row.message },
   { header: "발생 횟수", value: (row) => String(row.occurrenceCount) },
-  { header: "최초 발생", value: (row) => formatDateTimeSecond(row.firstOccurredAt) },
-  { header: "최근 발생", value: (row) => formatDateTimeSecond(row.lastOccurredAt) },
+  {
+    header: "최초 발생",
+    value: (row) => formatDateTimeSecond(row.firstOccurredAt),
+  },
+  {
+    header: "최근 발생",
+    value: (row) => formatDateTimeSecond(row.lastOccurredAt),
+  },
   { header: "traceId", value: (row) => row.traceId ?? "" },
 ];
 
@@ -54,6 +62,8 @@ const SystemEventTable = ({ params, setParams }: SystemEventTableProps) => {
   /* 주소는 문자열만 들고 있다. 서버로 나가기 전에 한 번 좁혀 준다. */
   const level = params.level as SystemEventLevel | "";
   const source = params.source as SystemEventSource | "";
+
+  const [detailEvent, setDetailEvent] = useState<SystemEventLog | null>(null);
 
   const { data, isLoading, isError } = useSystemEventListQuery({
     page,
@@ -110,12 +120,14 @@ const SystemEventTable = ({ params, setParams }: SystemEventTableProps) => {
     },
     {
       key: "lastOccurredAt",
-      header: "최근 발생",
+      header: "발생 시각",
       width: "190px",
       numeric: true,
       render: (row) => (
         <div className="flex flex-col items-end">
-          <span className="text-font-1">{formatFromNow(row.lastOccurredAt)}</span>
+          <span className="text-font-1">
+            {formatFromNow(row.lastOccurredAt)}
+          </span>
           <span className="body-6 text-font-2">
             {formatDateTimeSecond(row.lastOccurredAt)}
           </span>
@@ -169,6 +181,7 @@ const SystemEventTable = ({ params, setParams }: SystemEventTableProps) => {
           rows={data?.content ?? []}
           getRowKey={(row) => String(row.eventId)}
           isLoading={isLoading}
+          onRowClick={setDetailEvent}
           emptyTitle="조회된 이벤트가 없습니다."
           emptyDescription="조치가 필요한 경고 · 오류만 모읍니다. 조용한 것이 정상입니다."
         />
@@ -180,6 +193,11 @@ const SystemEventTable = ({ params, setParams }: SystemEventTableProps) => {
           onChange={(next) => setParams({ page: next })}
         />
       </Card>
+
+      <SystemEventDetailModal
+        event={detailEvent}
+        onClose={() => setDetailEvent(null)}
+      />
     </>
   );
 };
