@@ -33,8 +33,8 @@ npm run dev
 |---|---|
 | `NEXT_PUBLIC_BASE_URI` | 목업 구간의 관리자 API 베이스 URI. **아무것도 뜨지 않는 포트**를 둔다 |
 | `NEXT_PUBLIC_API_MOCKING` | `enabled`일 때만 MSW 목업 워커가 뜬다 |
-| `NEXT_PUBLIC_LIVE_BASE_URI` | 실서버(`plat-be`, 기본 `8080`) 베이스 URI |
-| `NEXT_PUBLIC_IMAGE_BASE_URI` | 이미지 서빙 베이스 URI (`GET /images/{fileId}`) |
+| `NEXT_PUBLIC_LIVE_BASE_URI` | 실서버(`plat-be`) 베이스 URI. `develop`은 개발 서버(`https://api-dev.plat.so`)를 본다 |
+| `NEXT_PUBLIC_IMAGE_BASE_URI` | 이미지 서빙 베이스 URI (`GET /images/{fileId}`). 실서버와 같은 오리진 |
 
 관리자 API(`/admin/**`)는 별도 서버가 아니라 **`plat-boot`이 서비스 API와 같은
 포트에서 함께 서빙한다.** `SecurityConfig`의 `adminFilterChain`이
