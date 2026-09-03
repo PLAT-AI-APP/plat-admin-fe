@@ -4,7 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:local": "APP_ENV=local next dev",
+    "dev:develop": "APP_ENV=develop next dev",
+    "dev:main": "APP_ENV=main next dev",
     "build": "next build",
+    "build:local": "APP_ENV=local next build",
+    "build:develop": "APP_ENV=develop next build",
+    "build:main": "APP_ENV=main next build",
     "start": "next start",
     "lint": "eslint"
   },
