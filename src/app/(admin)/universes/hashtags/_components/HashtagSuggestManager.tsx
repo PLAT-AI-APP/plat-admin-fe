@@ -3,15 +3,21 @@
 import { useState } from "react";
 import { useListParams } from "@/hooks/useListParams";
 import { useHashtagSuggestListQuery } from "@/api/hashtag/getHashtagSuggestList";
+import { useHashtagSuggestMutation } from "@/api/hashtag/mutateHashtagSuggest";
+import { Trash } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
+import { showErrorToast } from "@/lib/toast";
 import { formatWithCommas } from "@/lib/utils";
+import { openConfirm } from "@/store/useConfirmStore";
+import { useHasPermission } from "@/store/useAdminStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { HashtagSuggestGroup, HashtagSuggestSort } from "@/type/hashtag";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import CsvExportButton from "@/components/ui/CsvExportButton";
+import Dropdown, { type DropdownItem } from "@/components/ui/Dropdown";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
@@ -47,7 +53,7 @@ const DEFAULT_PARAMS = {
  *
  * 제안은 **처리하는 자료가 아니다.** 승인·반려 상태를 두지 않고, 운영은 여기서
  * "무엇을 얼마나 원하나"만 읽은 뒤 필요하면 태그 탭에서 직접 등록한다.
- * 그래서 표의 한 줄은 제안 한 건이 아니라 태그 하나다.
+ * 그래서 표의 한 줄은 제안 한 건이 아니라 태그 하나이고, 조치는 삭제뿐이다.
  */
 const HashtagSuggestManager = () => {
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
@@ -57,10 +63,13 @@ const HashtagSuggestManager = () => {
   /**
    * 상세를 연 묶음의 키.
    *
-   * 행 자체가 아니라 키를 들고 목록에서 다시 찾는다. 그래야 목록이 갱신될 때
-   * 모달이 옛 숫자를 계속 보여 주지 않고, 묶음이 사라지면 모달도 닫힌다.
+   * 행 자체를 들고 있지 않는 이유는 **삭제하면 숫자가 바로 어긋나기 때문이다** —
+   * 원문 한 건을 지운 뒤에도 모달 머리말은 지우기 전 건수를 계속 보여 준다.
+   * 목록에서 다시 찾으면 갱신된 줄을 쓰고, 묶음이 통째로 사라지면 모달도 닫힌다.
    */
   const [detailKey, setDetailKey] = useState<string | null>(null);
+
+  const canDelete = useHasPermission("hashtag:delete");
 
   const { data, isLoading } = useHashtagSuggestListQuery({
     page,
@@ -70,6 +79,8 @@ const HashtagSuggestManager = () => {
     sort,
   });
 
+  const { deleteGroupMutation } = useHashtagSuggestMutation();
+
   const groups = data?.content ?? [];
   const detailGroup = groups.find((group) => group.key === detailKey) ?? null;
 
@@ -78,6 +89,28 @@ const HashtagSuggestManager = () => {
     (max, group) => Math.max(max, group.suggestCount),
     0,
   );
+
+  const handleDeleteGroup = (group: HashtagSuggestGroup) => {
+    openConfirm({
+      title: "이 묶음을 통째로 삭제할까요?",
+      description: `'${group.name}' 으로 묶인 제안 ${formatWithCommas(group.suggestCount)}건이 한 번에 사라집니다.`,
+      warning: "표기가 달라 함께 묶인 제안도 지워지며 되돌릴 수 없습니다.",
+      confirmText: "묶음 삭제",
+      tone: "danger",
+      onConfirm: () =>
+        deleteGroupMutation.mutateAsync(group.key).catch(showErrorToast),
+    });
+  };
+
+  /** 행 액션. 제안에 할 수 있는 일은 지우는 것뿐이라 상세 보기는 넣지 않는다(행을 누르면 열린다). */
+  const buildRowActions = (group: HashtagSuggestGroup): DropdownItem[] => [
+    {
+      label: "묶음 삭제",
+      icon: <Trash size={15} />,
+      tone: "danger",
+      onSelect: () => handleDeleteGroup(group),
+    },
+  ];
 
   const columns: TableColumn<HashtagSuggestGroup>[] = [
     {
@@ -137,6 +170,21 @@ const HashtagSuggestManager = () => {
       render: (row) => (
         <span className="text-font-2">{formatDate(row.firstSuggestedAt)}</span>
       ),
+    },
+    {
+      key: "actions",
+      header: "",
+      width: "56px",
+      align: "center",
+      render: (row) =>
+        canDelete ? (
+          <div
+            className="flex justify-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Dropdown items={buildRowActions(row)} />
+          </div>
+        ) : null,
     },
   ];
 
@@ -211,6 +259,7 @@ const HashtagSuggestManager = () => {
         key={detailKey ?? "closed"}
         group={detailGroup}
         onClose={() => setDetailKey(null)}
+        canDelete={canDelete}
       />
     </>
   );

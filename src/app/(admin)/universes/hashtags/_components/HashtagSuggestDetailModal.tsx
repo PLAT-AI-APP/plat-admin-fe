@@ -2,12 +2,17 @@
 
 import { useState } from "react";
 import { useHashtagSuggestItemListQuery } from "@/api/hashtag/getHashtagSuggestItemList";
+import { useHashtagSuggestMutation } from "@/api/hashtag/mutateHashtagSuggest";
+import { Trash } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
+import { showErrorToast } from "@/lib/toast";
 import { formatWithCommas } from "@/lib/utils";
+import { openConfirm } from "@/store/useConfirmStore";
 import type { HashtagSuggestGroup } from "@/type/hashtag";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
+import IconButton from "@/components/ui/IconButton";
 import Modal from "@/components/ui/Modal";
 import Pagination from "@/components/ui/Pagination";
 import Skeleton from "@/components/ui/Skeleton";
@@ -25,6 +30,8 @@ interface HashtagSuggestDetailModalProps {
   /** 목록에서 누른 묶음. null이면 모달이 닫힌 상태다. */
   group: HashtagSuggestGroup | null;
   onClose: () => void;
+  /** 삭제 권한(hashtag:delete)이 있는 계정에만 삭제 버튼을 보인다. */
+  canDelete: boolean;
 }
 
 /**
@@ -36,6 +43,7 @@ interface HashtagSuggestDetailModalProps {
 const HashtagSuggestDetailModal = ({
   group,
   onClose,
+  canDelete,
 }: HashtagSuggestDetailModalProps) => {
   /* 페이지는 묶음마다 처음부터다. 되돌리는 일은 호출부가 묶음 키를 `key`로 물려 remount 로 처리한다. */
   const [page, setPage] = useState(1);
@@ -46,7 +54,37 @@ const HashtagSuggestDetailModal = ({
     size: ITEM_PAGE_SIZE,
   });
 
+  const { deleteMutation, deleteGroupMutation } = useHashtagSuggestMutation();
+
   const suggests = data?.content ?? [];
+
+  const handleDelete = (suggestId: string, nickname: string | null) => {
+    openConfirm({
+      title: "이 제안을 삭제할까요?",
+      description: `${nickname ?? "탈퇴한 회원"} 님이 보낸 제안 한 건이 사라집니다.`,
+      warning: "삭제한 제안은 되돌릴 수 없습니다.",
+      confirmText: "삭제",
+      tone: "danger",
+      onConfirm: () => deleteMutation.mutateAsync(suggestId).catch(showErrorToast),
+    });
+  };
+
+  const handleDeleteGroup = () => {
+    if (!group) return;
+
+    openConfirm({
+      title: "이 묶음을 통째로 삭제할까요?",
+      description: `'${group.name}' 으로 묶인 제안 ${formatWithCommas(group.suggestCount)}건이 한 번에 사라집니다.`,
+      warning: "표기가 달라 함께 묶인 제안도 지워지며 되돌릴 수 없습니다.",
+      confirmText: "묶음 삭제",
+      tone: "danger",
+      onConfirm: () =>
+        deleteGroupMutation
+          .mutateAsync(group.key)
+          .then(() => onClose())
+          .catch(showErrorToast),
+    });
+  };
 
   return (
     <Modal
@@ -61,9 +99,21 @@ const HashtagSuggestDetailModal = ({
       size="lg"
       minHeight="md"
       footer={
-        <Button variant="ghost" onClick={onClose}>
-          닫기
-        </Button>
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            닫기
+          </Button>
+          {canDelete && group && (
+            <Button
+              variant="danger"
+              leftIcon={<Trash size={15} />}
+              onClick={handleDeleteGroup}
+              disabled={deleteGroupMutation.isPending}
+            >
+              묶음 전체 삭제
+            </Button>
+          )}
+        </>
       }
     >
       {group && (
@@ -118,6 +168,18 @@ const HashtagSuggestDetailModal = ({
                   </p>
                 </div>
 
+                {canDelete && (
+                  <IconButton
+                    label="이 제안 삭제"
+                    icon={<Trash size={15} />}
+                    tone="danger"
+                    size="sm"
+                    onClick={() =>
+                      handleDelete(suggest.suggestId, suggest.nickname)
+                    }
+                    disabled={deleteMutation.isPending}
+                  />
+                )}
               </div>
             ))}
 
