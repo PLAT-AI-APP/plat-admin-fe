@@ -124,3 +124,46 @@ export interface HashtagFormValues {
 
 /** 번역이 채워진 언어 수 */
 export const countTranslations = countFilledLanguages;
+
+/**
+ * 사용자가 보낸 해시태그 제안 묶음.
+ *
+ * 제안은 **처리 절차가 없는 자료다.** 승인·반려 상태를 두지 않고, 운영은 "이 태그를
+ * 얼마나 원하나"만 읽는다. 그래서 목록의 단위가 제안 한 건이 아니라 태그 하나다.
+ *
+ * 표기가 조금씩 달라도(`#판타지` · `판타지` · `판 타 지`) 서버가 같은 줄로 묶는다.
+ * 묶는 데 쓴 값이 `key`이고, 화면에 보일 대표 표기가 `name`이다.
+ */
+export interface HashtagSuggestGroup {
+  /** 묶음 식별값. 상세 조회 · 삭제에 이 값을 보낸다. */
+  key: string;
+  /** 가장 많이 쓰인 표기('#'은 뺀 값). 화면에는 이걸 보여 준다. */
+  name: string;
+  /** 제안 건수. 같은 사람이 여러 번 보낼 수 있어 사람 수와 다르다. */
+  suggestCount: number;
+  /** 제안한 사람 수. 얼마나 원하는지는 이쪽이 더 정확하다. */
+  suggesterCount: number;
+  firstSuggestedAt: string;
+  lastSuggestedAt: string;
+  /** 이미 등록된 태그면 그 ID. 등록해 두고도 못 찾아 다시 제안한 경우다. */
+  registeredHashtagId: string | null;
+}
+
+/** 묶음에 들어온 제안 한 건. */
+export interface HashtagSuggest {
+  suggestId: string;
+  /** 제안자가 적은 그대로라 묶음 대표 표기와 다를 수 있다. */
+  name: string;
+  /** 제안 이유. 사용자가 자유롭게 적는다. */
+  content: string;
+  userId: string;
+  nickname: string | null;
+  createdAt: string;
+}
+
+/** 제안 묶음 정렬. 서버 `HashtagSuggestOrderBy` 값을 그대로 쓴다. */
+export type HashtagSuggestSort =
+  | "COUNT_DESC"
+  | "RECENT_DESC"
+  | "RECENT_ASC"
+  | "NAME_ASC";
