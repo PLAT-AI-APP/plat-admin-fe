@@ -49,6 +49,14 @@ export interface AdminMenuItem {
    */
   isMock?: boolean;
   /**
+   * 화면에서 감출 항목.
+   *
+   * **화면이 내려가 편성해도 아무 데도 안 나가는 경우에 쓴다.** 지우지 않는 이유는 지금 없는 것이
+   * 폐기가 아니라 대기이기 때문이다 — 섹션이 돌아오면 이 줄만 지우면 된다. 경로로 직접 들어가면
+   * 화면 자체는 여전히 열린다(상단 제목도 그대로 잡힌다).
+   */
+  hidden?: boolean;
+  /**
    * 처리 대기 건수를 뱃지로 붙일 항목.
    *
    * 운영자가 매일 여는 화면은 정해져 있다. **밀린 일이 있는 화면만** 표시해
@@ -111,17 +119,24 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         permission: "mainExposure:read",
         icon: <Star size={SUB_ICON_SIZE} />,
       },
+      /*
+       * 아래 둘은 MVP 에서 홈 섹션이 내려가 편성 결과가 어디에도 나가지 않는다. 편성 화면을 열어 두면
+       * 운영자가 담아 놓고 왜 안 보이는지 찾게 되므로 메뉴에서만 감춘다. 자세한 배경은
+       * plat-be `docs/decisions/004-mvp-home-section-scope.md` 참고.
+       */
       {
         label: "공식 캐릭터 맛보기",
         href: "/main-exposure/official-pick",
         permission: "mainExposure:read",
         icon: <Crown size={SUB_ICON_SIZE} />,
+        hidden: true,
       },
       {
         label: "에셋 추천",
         href: "/main-exposure/asset-pick",
         permission: "mainExposure:read",
         icon: <Layers size={SUB_ICON_SIZE} />,
+        hidden: true,
       },
     ],
   },

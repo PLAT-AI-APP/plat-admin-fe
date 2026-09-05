@@ -56,14 +56,17 @@ const buildCommandItems = (): CommandItem[] =>
       ];
     }
 
-    return (group.children ?? []).map((child) => ({
-      href: child.href,
-      label: child.label,
-      groupLabel: group.label,
-      permission: child.permission,
-      isMock: Boolean(child.isMock),
-      keywords: `${child.label} ${group.label} ${child.href}`,
-    }));
+    /* 사이드바에서 감춘 항목은 검색으로도 닿지 않아야 한다 — 한쪽만 막으면 감춘 뜻이 없다. */
+    return (group.children ?? [])
+      .filter((child) => !child.hidden)
+      .map((child) => ({
+        href: child.href,
+        label: child.label,
+        groupLabel: group.label,
+        permission: child.permission,
+        isMock: Boolean(child.isMock),
+        keywords: `${child.label} ${group.label} ${child.href}`,
+      }));
   });
 
 const COMMAND_ITEMS = buildCommandItems();
