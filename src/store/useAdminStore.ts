@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { isJwtExpired } from "@/lib/jwt";
 import type { AdminProfile } from "@/type/auth";
 import {
   hasPermission,
@@ -31,6 +32,13 @@ interface AdminState {
    * 구분하지 않으면 새로고침마다 로그인 화면이 한 번 번쩍인다.
    */
   isHydrated: boolean;
+  /**
+   * 복구할 때 이미 만료되어 버린 세션이었는지.
+   *
+   * 로그인 화면에서 "왜 로그아웃됐지"에 답하기 위한 값이다. 처음부터 로그인하지
+   * 않은 것과 앉아 있는 사이 만료된 것은 화면에서 같아 보인다.
+   */
+  isSessionExpired: boolean;
 
   setSession: (session: StoredSession) => void;
   clearSession: () => void;
@@ -80,10 +88,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   refreshToken: null,
   mustChangePassword: false,
   isHydrated: false,
+  isSessionExpired: false,
 
   setSession: (session) => {
     writeStoredSession(session);
-    set({ ...session, isHydrated: true });
+    set({ ...session, isHydrated: true, isSessionExpired: false });
   },
 
   clearSession: () => {
@@ -94,6 +103,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       refreshToken: null,
       mustChangePassword: false,
       isHydrated: true,
+      isSessionExpired: false,
     });
   },
 
@@ -102,12 +112,34 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
     const stored = readStoredSession();
 
+    /*
+      refresh 토큰이 이미 죽었으면 살려 낼 방법이 없는 세션이다. 그대로 복구하면
+      콘솔을 그린 뒤 조회가 401 로 깨지고, 재발급도 실패한 다음에야 로그인
+      화면으로 튕긴다 — 죽은 토큰을 들고 왕복을 한 번 더 도는 셈이다.
+      여기서 끊으면 요청 한 번 없이 곧장 로그인 화면으로 간다.
+    */
+    if (stored && isJwtExpired(stored.refreshToken)) {
+      writeStoredSession(null);
+
+      set({
+        admin: null,
+        accessToken: null,
+        refreshToken: null,
+        mustChangePassword: false,
+        isHydrated: true,
+        isSessionExpired: true,
+      });
+
+      return;
+    }
+
     set({
       admin: stored?.admin ?? null,
       accessToken: stored?.accessToken ?? null,
       refreshToken: stored?.refreshToken ?? null,
       mustChangePassword: stored?.mustChangePassword ?? false,
       isHydrated: true,
+      isSessionExpired: false,
     });
   },
 

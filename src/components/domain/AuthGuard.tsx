@@ -2,8 +2,9 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { LOGIN_PATH } from "@/api";
+import { handleUnauthorized, LOGIN_PATH } from "@/api";
 import { useSyncMyProfile } from "@/api/auth/getMe";
+import { readJwtExpiresAt } from "@/lib/jwt";
 import { useAdminStore } from "@/store/useAdminStore";
 import Spinner from "@/components/ui/Spinner";
 import PasswordChangeModal from "./PasswordChangeModal";
@@ -22,6 +23,8 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const admin = useAdminStore((state) => state.admin);
   const isHydrated = useAdminStore((state) => state.isHydrated);
   const mustChangePassword = useAdminStore((state) => state.mustChangePassword);
+  const refreshToken = useAdminStore((state) => state.refreshToken);
+  const isSessionExpired = useAdminStore((state) => state.isSessionExpired);
   const hydrate = useAdminStore((state) => state.hydrate);
 
   // localStorage는 클라이언트에서만 읽을 수 있다.
@@ -36,12 +39,49 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   */
   useSyncMyProfile();
 
+  /*
+    세션이 만료되는 순간 로그인 화면으로 보낸다.
+
+    콘솔은 한번 열어 두면 하루 종일 그대로 켜져 있다. 다음 클릭까지 기다리면
+    자리를 뜬 사이 만료된 화면이 몇 시간이고 열려 있고, 돌아온 사람은 아무
+    버튼이나 눌러 본 뒤에야 로그아웃된 것을 안다. 그래서 만료 시각에 맞춰
+    타이머를 걸고, 화면이 다시 보이는 순간에도 한 번 확인한다 — 노트북이 자는
+    동안 타이머는 제때 깨어나지 않는다.
+  */
+  useEffect(() => {
+    const expiresAt = readJwtExpiresAt(refreshToken);
+
+    if (expiresAt === null) return;
+
+    const expire = () => {
+      if (Date.now() < expiresAt * 1000) return;
+
+      handleUnauthorized();
+    };
+
+    const timer = window.setTimeout(expire, Math.max(expiresAt * 1000 - Date.now(), 0));
+
+    document.addEventListener("visibilitychange", expire);
+
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", expire);
+    };
+  }, [refreshToken]);
+
   useEffect(() => {
     if (!isHydrated || admin) return;
 
-    // 로그인 후 원래 보려던 화면으로 되돌아갈 수 있게 경로를 실어 보낸다.
-    router.replace(`${LOGIN_PATH}?redirect=${encodeURIComponent(pathname)}`);
-  }, [admin, isHydrated, pathname, router]);
+    /*
+      로그인 후 원래 보려던 화면으로 되돌아갈 수 있게 경로를 실어 보낸다.
+      만료로 끊긴 경우에는 사유도 함께 실어 로그인 화면이 안내 문구를 띄운다.
+    */
+    const reason = isSessionExpired ? "&reason=expired" : "";
+
+    router.replace(
+      `${LOGIN_PATH}?redirect=${encodeURIComponent(pathname)}${reason}`,
+    );
+  }, [admin, isHydrated, isSessionExpired, pathname, router]);
 
   /*
     복구 전에는 "로그인 안 됨"과 구분할 수 없다. 그냥 그리면 새로고침마다
