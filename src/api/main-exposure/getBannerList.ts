@@ -7,15 +7,16 @@ import type { ServiceLanguage } from "@/type/language";
 /**
  * 서버가 내려주는 배너 한 줄.
  *
- * 없는 값은 `null`로 오고 화면은 `undefined`로 다룬다. **이미지 URL은 오지
- * 않는다** — 이미지를 서빙하는 곳은 관리자 API가 아니라 서비스 서버의 공개
- * 경로라서, 화면이 `imageFileId`로 직접 조립한다(`buildImageUrl`).
+ * 없는 값은 `null`로 오고 화면은 `undefined`로 다룬다.
+ * `thumbnailUrl`은 목록용 축소본이라 크게 보여줄 자리에는 `imageUrl`을 쓴다.
  */
 export interface BannerResponse {
   mainBannerId: string;
   language: ServiceLanguage;
   name: string;
   imageFileId: string;
+  imageUrl: string;
+  thumbnailUrl: string;
   linkUrl: string | null;
   isActive: boolean;
   sortOrder: number;
@@ -29,6 +30,8 @@ export const toBanner = (banner: BannerResponse): Banner => ({
   language: banner.language,
   name: banner.name,
   imageFileId: banner.imageFileId,
+  imageUrl: banner.imageUrl,
+  thumbnailUrl: banner.thumbnailUrl,
   linkUrl: banner.linkUrl ?? undefined,
   isActive: banner.isActive,
   sortOrder: banner.sortOrder,
