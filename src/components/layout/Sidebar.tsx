@@ -81,8 +81,8 @@ const Sidebar = () => {
     }
 
     /* 볼 수 있는 하위가 하나도 없으면 그룹 자체를 숨긴다. 눌러도 빈 목록만 열린다. */
-    const visibleChildren = (group.children ?? []).filter((item) =>
-      isAllowed(item.permission),
+    const visibleChildren = (group.children ?? []).filter(
+      (item) => !item.hidden && isAllowed(item.permission),
     );
 
     if (visibleChildren.length === 0) return null;

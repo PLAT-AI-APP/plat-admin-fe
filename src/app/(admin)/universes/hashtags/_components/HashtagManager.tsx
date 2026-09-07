@@ -38,6 +38,7 @@ import {
   HASHTAG_SORT_OPTIONS,
   HASHTAG_STATUS_FILTER_OPTIONS,
 } from "./hashtagOptions";
+import { HASHTAG_TAB_DEFAULT_PARAMS } from "./hashtagTabs";
 
 /**
  * CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다.
@@ -57,8 +58,12 @@ const HASHTAG_CSV_COLUMNS: CsvColumn<Hashtag>[] = [
   { header: "노출", value: (row) => (row.isActive ? "노출" : "중지") },
 ];
 
-/** 주소에 실리는 목록 조건. 전역 검색(⌘K)이 넘겨 주는 keyword도 여기로 들어온다. */
+/**
+ * 주소에 실리는 목록 조건. 전역 검색(⌘K)이 넘겨 주는 keyword도 여기로 들어온다.
+ * 탭 값을 함께 두는 이유는 `hashtagTabs`의 기본값 주석에 있다.
+ */
 const DEFAULT_PARAMS = {
+  ...HASHTAG_TAB_DEFAULT_PARAMS,
   page: 1,
   keyword: "",
   category: "",
