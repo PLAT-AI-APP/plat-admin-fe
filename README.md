@@ -78,7 +78,7 @@ npm run dev:local
 |---|---|
 | `APP_ENV` | 프로파일 고정 (`local` · `develop` · `main`) |
 | `NEXT_PUBLIC_LIVE_BASE_URI` | 실서버(`plat-be`) 베이스 URI |
-| `NEXT_PUBLIC_IMAGE_BASE_URI` | 이미지 서빙 베이스 URI (`GET /images/{fileId}`) |
+| `NEXT_PUBLIC_IMAGE_BASE_URI` | 이미지 서빙 베이스 URI (`GET /images/{type}/{fileId}/{variant}`) |
 | `NEXT_PUBLIC_BASE_URI` | 목업 구간의 관리자 API 베이스 URI. **아무것도 뜨지 않는 포트**를 둔다 |
 | `NEXT_PUBLIC_API_MOCKING` | `enabled`일 때만 MSW 목업 워커가 뜬다 |
 

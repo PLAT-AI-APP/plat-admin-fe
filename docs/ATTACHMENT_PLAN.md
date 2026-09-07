@@ -29,7 +29,7 @@ webp 변형본으로 쪼개 공개 URL로 서빙한다"는 전제가 코드 곳�
 | B1 | 확장자 화이트리스트가 전역·이미지 전용 | `MultipartFileUtil.ALLOWED_EXTENSIONS = {jpg, jpeg, png, webp}` | PDF·로그 파일은 검증 단계에서 바로 `FILE_EXTENSION_UNSUPPORTED` |
 | B2 | 업로드가 곧 이미지 변환 | `FileServiceImpl.storeFiles()` → `converter.decode(origin)` → `toWebp()` | PDF 바이트를 디코드하려 들어 `FILE_CONVERT_FAILED`. 저장 경로에 "원본 그대로" 분기가 없다 |
 | B3 | 정책이 변형본을 **필수**로 요구 | `FileTypePolicy` 컴팩트 생성자: `variants`가 비었거나 `ORIGIN`이 없으면 `ConfigurationException` | "변형본 없이 원본 1개"라는 개념 자체가 표현 불가 |
-| B4 | 서빙이 공개 고정 | `FileServiceImpl.resolveUrl()`의 `case PRIVATE, PROTECTED -> throw InternalServerException`, `ResourceController`가 `Content-Type: image/webp` + `Cache-Control: public, max-age=1년, immutable` 하드코딩 | 첨부에는 결제 화면·대화 캡처 같은 개인정보가 들어간다. 공개 URL + 1년 캐시로 내보내면 안 된다 |
+| B4 | 서빙이 공개 고정 | `FileServiceImpl.resolveStorageUrl()`의 `case PRIVATE, PROTECTED -> throw InternalServerException`, `ResourceController`가 `Content-Type: image/webp` + `Cache-Control: public, max-age=1년, immutable` 하드코딩 | 첨부에는 결제 화면·대화 캡처 같은 개인정보가 들어간다. 공개 URL + 1년 캐시로 내보내면 안 된다 |
 | B5 | 메타데이터 컬럼이 없다 | `FileEntity`에 `original_name` / `content_type` / `byte_size` 없음 | 목록에 "영수증.pdf · 240KB"를 그릴 수 없고, 다운로드 시 원본 파일명을 되돌려줄 수 없다 |
 | B6 | 소유자가 유저 하나뿐 | `confirm(UserId, ...)` / `release(UserId, ...)` | 관리자가 답변에 캡처를 붙이면 소유자에 넣을 값이 없다(관리자는 `ManagerId`) |
 | B7 | 첨부↔대상 연결이 없다 | `reports` 테이블에 첨부 참조 없음. Q&A는 엔티티 자체가 없음 | 어떤 파일이 어느 문의/신고의 것인지 알 방법이 없다 |
@@ -172,7 +172,7 @@ ALTER TABLE files
 
 ### 3-4. 비공개 서빙 — 이번 작업의 본체
 
-`resolveUrl()`의 `case PRIVATE, PROTECTED -> throw` 자리를 실제로 채운다.
+`resolveStorageUrl()`의 `case PRIVATE, PROTECTED -> throw` 자리를 실제로 채운다.
 
 두 가지 방식이 있다.
 
