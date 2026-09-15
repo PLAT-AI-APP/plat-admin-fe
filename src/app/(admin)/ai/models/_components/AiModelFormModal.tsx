@@ -70,6 +70,7 @@ const AiModelFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={model !== null}
       onClose={onClose}
       title="모델 설정 수정"

@@ -36,7 +36,7 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<QnaAnswerSchema>({
     resolver: zodResolver(qnaAnswerSchema),
     defaultValues: { answer: "" },
@@ -77,6 +77,7 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={qnaId !== null}
       onClose={onClose}
       title="문의 상세"

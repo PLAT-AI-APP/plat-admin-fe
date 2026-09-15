@@ -91,7 +91,7 @@ const CreditAdjustmentFormModal = ({
     handleSubmit,
     reset,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreditAdjustmentSchema>({
     resolver: zodResolver(creditAdjustmentSchema),
     defaultValues: EMPTY_VALUES,
@@ -138,6 +138,7 @@ const CreditAdjustmentFormModal = ({
   return (
     <>
       <Modal
+        isDirty={isDirty}
         isOpen={isOpen}
         onClose={onClose}
         title="크레딧 수동 조정"

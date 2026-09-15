@@ -51,7 +51,7 @@ const AppVersionFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<AppVersionSchema>({
     resolver: zodResolver(appVersionSchema),
     defaultValues: EMPTY_VALUES,
@@ -80,6 +80,7 @@ const AppVersionFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={appVersion ? "앱 버전 정책 수정" : "앱 버전 정책 등록"}

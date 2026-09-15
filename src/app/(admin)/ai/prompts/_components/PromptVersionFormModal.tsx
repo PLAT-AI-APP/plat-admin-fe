@@ -74,7 +74,7 @@ const PromptVersionFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<SystemPromptSchema>({
     resolver: zodResolver(systemPromptSchema),
     defaultValues: { content: "" },
@@ -103,6 +103,7 @@ const PromptVersionFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={`새 버전 저장 · v${nextVersion}`}

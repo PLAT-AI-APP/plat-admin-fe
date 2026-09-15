@@ -40,7 +40,7 @@ const UserSuspendModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<UserSuspendSchema>({
     resolver: zodResolver(userSuspendSchema),
     defaultValues: EMPTY_VALUES,
@@ -65,6 +65,7 @@ const UserSuspendModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={user !== null}
       onClose={onClose}
       title="계정 정지"

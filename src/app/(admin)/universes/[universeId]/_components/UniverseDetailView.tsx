@@ -108,7 +108,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<UniverseRejectSchema>({
     resolver: zodResolver(universeRejectSchema),
     defaultValues: { reason: "" },
@@ -428,6 +428,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
 
       {/* 심사 반려 모달. 반려 사유는 필수이며, 반려 시 공개 범위가 비공개로 함께 내려간다. */}
       <Modal
+        isDirty={isDirty}
         isOpen={isRejectOpen}
         onClose={() => setRejectOpen(false)}
         title="심사 반려"

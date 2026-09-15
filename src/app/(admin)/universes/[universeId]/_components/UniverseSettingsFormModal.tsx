@@ -67,7 +67,7 @@ const UniverseSettingsFormModal = ({
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<UniverseSettingsSchema>({
     resolver: zodResolver(universeSettingsSchema),
     values: {
@@ -103,6 +103,7 @@ const UniverseSettingsFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen
       onClose={onClose}
       title={MODE_TEXT[mode].title}

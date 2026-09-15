@@ -39,7 +39,7 @@ const ManagerFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ManagerSchema>({
     resolver: zodResolver(managerSchema),
     defaultValues: EMPTY_VALUES,
@@ -74,6 +74,7 @@ const ManagerFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={manager ? "관리자 수정" : "관리자 초대"}
