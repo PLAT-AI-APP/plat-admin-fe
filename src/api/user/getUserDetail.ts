@@ -11,6 +11,7 @@ import { toUser, type UserSummaryResponse } from "./getUserList";
  * 여기서도 펴 둔다 — 두 겹으로 받으면 화면이 합치는 코드를 따로 들고 있어야 한다.
  */
 export interface UserDetailResponse extends UserSummaryResponse {
+  bio: string | null;
   /** 목록에는 없고 여기에만 있다. 이유는 `UserDetail.isAdultVerified`에 있다. */
   adultVerified: boolean;
   adultVerifiedAt: string | null;
@@ -25,6 +26,9 @@ export interface UserDetailResponse extends UserSummaryResponse {
   followingCount: number;
   /** 이 유저를 **대상으로** 접수된 신고 수. 이 유저가 넣은 신고가 아니다. */
   reportedCount: number;
+  universeCount: number;
+  universeChatCount: number;
+  universeLikeCount: number;
   suspendedReason: string | null;
   /** 비어 있으면 기한 없는 정지다. 운영자가 직접 풀기 전까지 유지된다. */
   suspendedUntil: string | null;
@@ -34,6 +38,7 @@ export interface UserDetailResponse extends UserSummaryResponse {
 
 export const toUserDetail = (user: UserDetailResponse): UserDetail => ({
   ...toUser(user),
+  bio: user.bio ?? undefined,
   isAdultVerified: user.adultVerified,
   adultVerifiedAt: user.adultVerifiedAt ?? undefined,
   phoneNumber: user.phoneNumber ?? undefined,
@@ -44,6 +49,9 @@ export const toUserDetail = (user: UserDetailResponse): UserDetail => ({
   followerCount: user.followerCount,
   followingCount: user.followingCount,
   reportedCount: user.reportedCount,
+  universeCount: user.universeCount,
+  universeChatCount: user.universeChatCount,
+  universeLikeCount: user.universeLikeCount,
   suspendedReason: user.suspendedReason ?? undefined,
   suspendedUntil: user.suspendedUntil ?? undefined,
   withdrawnAt: user.withdrawnAt ?? undefined,

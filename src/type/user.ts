@@ -83,6 +83,8 @@ export interface User {
 }
 
 export interface UserDetail extends User {
+  /** 앱 프로필의 자기소개. 크리에이터 한 줄 소개로도 쓴다. 비워 둔 유저가 많다. */
+  bio?: string;
   /**
    * 성인 인증 여부. NSFW 콘텐츠 노출 판단의 기준이다.
    *
@@ -111,6 +113,16 @@ export interface UserDetail extends User {
   followingCount: number;
   /** 누적 신고 접수 건수. 제재 판단 근거로 쓴다. */
   reportedCount: number;
+  /**
+   * 이 유저가 크리에이터로 **만든** 세계관의 개수와 대화 · 좋아요 합.
+   *
+   * `chatCount`(이 유저가 연 채팅방 수)와 축이 다르다. 한 사람이 플레이어이자
+   * 제작자라, 제작자로서의 성과는 이 셋으로 본다. 서버는 상태로 거르지 않는다 —
+   * 세계관 목록의 유저 필터와 같은 범위다.
+   */
+  universeCount: number;
+  universeChatCount: number;
+  universeLikeCount: number;
 }
 
 /**
