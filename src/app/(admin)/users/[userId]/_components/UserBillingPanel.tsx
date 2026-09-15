@@ -66,10 +66,11 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
   const [detailRecord, setDetailRecord] = useState<PaymentRecord | null>(null);
 
   /*
-    원장은 장부와 권한이 다르다. 없으면 카드 자체를 감춘다 — 빈 표를 남기면
-    "이 유저는 결제 기록이 없다"로 읽혀 장부와 어긋나 보인다.
+    권한이 없으면 카드 자체를 감춘다 — 빈 표를 남기면 "이 유저는 결제 기록이
+    없다"로 읽혀 장부와 어긋나 보인다. 서버 권한 자원에 보존 원장이 따로 없어
+    장부 권한(`ledger:read`)을 함께 쓴다.
   */
-  const canReadRecord = useHasPermission("paymentRecord:read");
+  const canReadRecord = useHasPermission("ledger:read");
 
   const { data: ledger, isLoading: isLedgerLoading } = useLedgerListQuery({
     page: ledgerPage,

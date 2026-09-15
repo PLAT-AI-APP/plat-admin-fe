@@ -49,7 +49,7 @@ export const getPaymentRecordList = async (params: PaymentRecordListParams) => {
  * 누른 적 없는 거부 안내가 뜬다.
  */
 export const usePaymentRecordListQuery = (params: PaymentRecordListParams) => {
-  return usePermittedQuery<PageResponse<PaymentRecord>>("paymentRecord:read", {
+  return usePermittedQuery<PageResponse<PaymentRecord>>("ledger:read", {
     queryKey: ["get-payment-record-list", params],
     queryFn: () => getPaymentRecordList(params),
   });
