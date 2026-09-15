@@ -308,12 +308,9 @@ universes.forEach((universe) => {
 });
 
 /**
- * 캐릭터 지표는 하위 세계관의 합이다.
- * 상세 화면에서 캐릭터 지표와 세계관 목록이 나란히 보이므로 따로 난수를 뿌리면 바로 어긋난다.
- */
-/**
  * 캐릭터 지표는 **그 캐릭터가 등장하는 세계관**의 합이다.
  * 소유가 아니라 등장 기준이라, 다른 사람의 세계관에 초대된 캐릭터도 함께 잡힌다.
+ * 상세 화면에서 캐릭터 지표와 세계관 목록이 나란히 보이므로 따로 난수를 뿌리면 바로 어긋난다.
  */
 export const characters: Character[] = characterBases.map((character) => {
   const appearedUniverses = universes.filter((universe) =>

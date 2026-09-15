@@ -90,14 +90,15 @@ export type ScenarioType = "START" | "NORMAL" | "EVENT" | "ENDING";
 export type ScenarioLifecycle = "ACTIVE" | "HIDDEN" | "DEPRECATED";
 
 /**
- * 시나리오(에피소드) — **목업 큐레이션 구간에서만 쓰는 모양**이다.
+ * 시나리오(에피소드) — **MSW 목업 시드의 모양**이다.
  *
  * 세계관이 "무대"라면 시나리오는 **그 무대에서 시작하는 한 편의 이야기**다.
  * 유저는 세계관에 들어가 시나리오를 고르고, 그 시나리오의 상황과 첫 대사로
  * 대화를 시작한다. (plat-fe의 캐릭터 상세 > 시나리오 선택)
  *
  * 실서버 상세는 상황·첫 대사를 따로 주지 않고 **언어별 본문(`content`)** 하나로 준다.
- * 실연동된 상세 화면은 아래 `UniverseScenarioDetail`을 쓴다.
+ * 실연동된 상세 화면은 아래 `UniverseScenarioDetail`을 쓴다. 이 모양은 이제
+ * 목업 시드(`mocks/db/character`)가 세계관의 `scenarioCount`를 세는 데만 남아 있다.
  */
 export interface UniverseScenario {
   /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
@@ -119,12 +120,6 @@ export interface UniverseScenario {
 }
 
 /**
- * 세계관.
- *
- * 크리에이터가 만드는 콘텐츠의 단위다. **캐릭터 한 명과 시나리오 여러 편**을
- * 품고 있고, 메인 노출 큐레이션이 고르는 대상도 이 세계관이다.
- */
-/**
  * 세계관에 등장하는 캐릭터.
  *
  * **세계관과 캐릭터는 N:M이다.** 한 세계관에 여러 캐릭터가 나올 수 있고,
@@ -139,12 +134,15 @@ export interface UniverseCharacter {
 }
 
 /**
- * 세계관 — **목업 큐레이션 구간의 행 타입**이다.
+ * 세계관 — **MSW 목업 시드의 행 타입**이다.
  *
- * 메인 노출(배너 · 오늘의 PICK · 공식 맛보기 · 에셋 추천)과 세계관 선택 모달이
- * 이 모양을 쓴다. 큐레이션은 아직 MSW 목업이고 슬롯도 목업 ID로 저장되어 있어
- * **여기 타입을 실서버 DTO로 바꾸면 큐레이션 화면이 통째로 깨진다.**
- * 실서버 목록 행은 `UniverseListRow`, 상세는 `UniverseDetail`이다.
+ * 크리에이터가 만드는 콘텐츠의 단위로, 캐릭터와 시나리오 여러 편을 품는다.
+ * 세계관 보드·상세와 메인 노출(홈 섹션·배너)·세계관 선택 모달은 이미 실서버
+ * 계약(`AdminUniverseListItem`·`UniverseDetail`)으로 옮겨 가서 이 모양을 쓰지 않는다.
+ *
+ * 남은 사용처는 아직 목업인 구간뿐이다. 캐릭터 상세(`CharacterDetail.universes`)가
+ * `UniverseSummary`로 이 행을 그리고, 전역 검색·댓글·공식 계정 목업 시드가 이 배열을
+ * 읽는다. 실서버 계약과 필드 이름(`name`·`thumbnailUrl`)이 다른 것은 그 때문이다.
  */
 export interface Universe {
   /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
@@ -193,12 +191,6 @@ export interface Universe {
   createdAt: string;
 }
 
-/**
- * 세계관 상세.
- *
- * 목록에는 시나리오를 싣지 않는다. 한 세계관에 열 편이 넘게 달릴 수 있어
- * 목록 응답이 통째로 무거워진다.
- */
 /** 세계관의 대표 캐릭터. 목록 카드·배너처럼 한 명만 보여 주는 자리에서 쓴다. */
 export const mainCharacterOf = (universe: Universe): UniverseCharacter | undefined =>
   universe.characters[0];

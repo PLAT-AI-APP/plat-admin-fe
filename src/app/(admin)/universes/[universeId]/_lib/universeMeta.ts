@@ -124,9 +124,7 @@ export const isFilledScenarioTranslation = (
 
 /**
  * 채워진 언어 목록. 앱 노출 순서(`SERVICE_LANGUAGES`)를 유지한다.
- *
- * `countFilledLanguages`는 `Record<언어, 문자열>` 모양을 받으므로 번역 배열에는
- * 쓸 수 없다. 배열 응답을 같은 순서로 훑는 것이 이 함수의 역할이다.
+ * 서버가 번역을 언어별 배열로 주므로 같은 순서로 훑어 고른다.
  */
 export const filledLanguagesOf = <T extends { language: ServiceLanguage }>(
   translations: T[],

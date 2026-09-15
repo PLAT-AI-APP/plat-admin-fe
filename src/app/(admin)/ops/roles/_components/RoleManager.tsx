@@ -73,16 +73,6 @@ const ACTION_COLUMN_COUNT = Math.max(
 
 const GRID_TEMPLATE = `minmax(200px,1fr) repeat(${ACTION_COLUMN_COUNT}, 84px)`;
 
-/**
- * 직책 · 권한 설정.
- *
- * **권한은 사람이 아니라 직책이 갖는다.** 관리자는 직책에 들어갈 뿐이다.
- * 사람마다 권한을 주면 관리자가 열 명일 때 설정도 열 번, 점검도 열 번이고,
- * 규칙이 바뀌면 열 곳을 고쳐야 한다. 한 곳만 빠뜨리면 그 사람만 조용히 다른 권한을 갖는다.
- *
- * "크레딧을 지급할 수 있는 사람이 누구인가"를 물었을 때
- * 직책이면 하나만 열어 보면 되고, 사람마다면 전원을 훑어야 한다.
- */
 /** 만들자마자 채워 두는 설명. 서버가 빈 설명을 받지 않으므로 자리라도 있어야 한다. */
 const NEW_ROLE_DESCRIPTION = "새로 만든 직책입니다. 무슨 일을 하는지 적어 주세요.";
 
@@ -100,6 +90,16 @@ const findFormError = (role: AdminRole): string | null => {
   return null;
 };
 
+/**
+ * 직책 · 권한 설정.
+ *
+ * **권한은 사람이 아니라 직책이 갖는다.** 관리자는 직책에 들어갈 뿐이다.
+ * 사람마다 권한을 주면 관리자가 열 명일 때 설정도 열 번, 점검도 열 번이고,
+ * 규칙이 바뀌면 열 곳을 고쳐야 한다. 한 곳만 빠뜨리면 그 사람만 조용히 다른 권한을 갖는다.
+ *
+ * "크레딧을 지급할 수 있는 사람이 누구인가"를 물었을 때
+ * 직책이면 하나만 열어 보면 되고, 사람마다면 전원을 훑어야 한다.
+ */
 const RoleManager = () => {
   const canRead = useHasPermission("role:read");
   const canWrite = useHasPermission("role:write");
