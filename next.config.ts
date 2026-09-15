@@ -82,17 +82,6 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_IMAGE_BASE_URI: appEnv.imageBaseUri,
   },
 
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "picsum.photos",
-        port: "",
-        pathname: "/**",
-      },
-    ],
-  },
-
   /**
    * 목업 구간에서만 실서버를 같은 오리진으로 중계한다.
    * 이유는 `src/config/appEnv.ts`의 `LIVE_PROXY_PATH` 주석에 있다.
