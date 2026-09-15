@@ -56,6 +56,8 @@ interface AssetResponse {
   /**
    * 계약은 문자열이지만 지금 서버는 `{ value: 123 }` 객체로 준다.
    * plat-be `UniverseAssetId`만 다른 ID VO와 달리 `@JsonValue`가 없어서다.
+   * **숫자로 오므로 19자리 값은 JSON 파싱에서 이미 뭉개져 있다** — 서로 다른 에셋이
+   * 같은 ID가 되니, 화면은 에셋을 가를 때 `fileId`를 쓴다.
    * 서버가 고쳐지면 `string`만 남기고 `toAssetId`를 지운다.
    */
   assetId: string | { value: number | string };

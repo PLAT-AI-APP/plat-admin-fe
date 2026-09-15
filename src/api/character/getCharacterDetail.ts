@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { adminAxios } from "..";
 import type { AppError } from "@/type/api";
-import type { CharacterDetail } from "@/type/character";
+import type { CharacterDetail, UniverseAssetView } from "@/type/character";
 
 /**
  * NSFW 판정에 걸린 금지어 한 건.
@@ -40,6 +40,13 @@ export interface CharacterDetailResponse extends CharacterDetail {
    * `EntityImage`로 그리므로, 그날 화면을 고칠 필요가 없다.
    */
   profileImageFileId?: string | null;
+  /**
+   * 이 캐릭터가 등장하는 세계관들의 에셋. 개수는 `assetCount`와 같다.
+   *
+   * 에셋은 세계관에 딸린 것이라 세계관 상세와 같은 모양(`UniverseAssetView`)으로 받는다.
+   * 그래야 두 상세가 같은 갤러리로 그리고, 서버가 붙어도 화면을 고치지 않는다.
+   */
+  assets: UniverseAssetView[];
 }
 
 export const getCharacterDetail = async (characterId: string) => {
