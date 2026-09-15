@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import {
+  toPageRequest,
   toPageResponse,
   type AppError,
   type PageResponse,
@@ -78,8 +79,7 @@ export const toComment = (item: CommentItemResponse): Comment => ({
 /** 빈 문자열 필터는 아예 빼고, 페이지는 0부터로 낮춰 서버가 받는 형태로 만든다. */
 const toRequestParams = (params: CommentListParams) => {
   const clean: Record<string, string | number | boolean> = {
-    page: Math.max(params.page - 1, 0),
-    size: params.size,
+    ...toPageRequest(params),
   };
   if (params.keyword?.trim()) clean.keyword = params.keyword.trim();
   if (params.targetType) clean.targetType = params.targetType;

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import {
+  toPageRequest,
   toPageResponse,
   type AppError,
   type PageResponse,
@@ -43,8 +44,7 @@ const toAdjustableUser = (user: AdjustableUserResponse): AdjustableUser => ({
 
 /** 화면은 1부터, 서버는 0부터 페이지를 센다. 빈 검색어는 서버에 보내지 않는다. */
 const toRequestParams = (params: AdjustableUserListParams) => ({
-  page: Math.max(params.page - 1, 0),
-  size: params.size,
+  ...toPageRequest(params),
   keyword: params.keyword?.trim() || undefined,
 });
 

@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
-import type { AppError, PageResponse } from "@/type/api";
+import {
+  toPageRequest,
+  toPageResponse,
+  type AppError,
+  type PageResponse,
+  type PageWith,
+} from "@/type/api";
 import type {
   AdminUniverseListItem,
   UniverseCategory,
@@ -99,19 +105,6 @@ interface AdminUniverseItemResponse {
   updatedAt: string | null;
 }
 
-/** 서버 페이징 봉투(PageWith). 화면의 `PageResponse`로 정규화한다. */
-interface PageWithResponse<T> {
-  page: {
-    number: number;
-    size: number;
-    numberOfElements: number;
-    hasNext: boolean;
-    totalElements: number;
-    totalPages: number;
-  };
-  content: T[];
-}
-
 const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
   universeId: item.id,
   title: item.title,
@@ -139,10 +132,7 @@ const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
 
 /** 빈 문자열 필터는 아예 빼고, 페이지는 0부터로 낮춰 서버가 받는 형태로 만든다. */
 const toRequestParams = (params: AdminUniverseListParams) => {
-  const clean: Record<string, string | number> = {
-    page: Math.max(params.page - 1, 0),
-    size: params.size,
-  };
+  const clean: Record<string, string | number> = { ...toPageRequest(params) };
   if (params.keyword?.trim()) clean.keyword = params.keyword.trim();
   if (params.category) clean.category = params.category;
   if (params.visibility) clean.visibility = params.visibility;
@@ -162,20 +152,13 @@ const toRequestParams = (params: AdminUniverseListParams) => {
 export const getAdminUniverseList = async (
   params: AdminUniverseListParams,
 ): Promise<PageResponse<AdminUniverseListItem>> => {
-  const response = await liveAxios.get<
-    PageWithResponse<AdminUniverseItemResponse>
-  >("/admin/universes", { params: toRequestParams(params) });
+  const response = await liveAxios.get<PageWith<AdminUniverseItemResponse>>(
+    "/admin/universes",
+    { params: toRequestParams(params) },
+  );
+  const page = toPageResponse(response.data);
 
-  const { page, content } = response.data;
-
-  return {
-    content: content.map(toItem),
-    // 화면은 1부터 센다. 서버의 0-based 번호를 되돌린다.
-    page: page.number + 1,
-    size: page.size,
-    totalCount: page.totalElements,
-    totalPages: page.totalPages,
-  };
+  return { ...page, content: page.content.map(toItem) };
 };
 
 export const useAdminUniverseListQuery = (params: AdminUniverseListParams) => {

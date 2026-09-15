@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import {
+  toPageRequest,
   toPageResponse,
   type AppError,
   type PageResponse,
@@ -68,8 +69,7 @@ const toAdminAuditLog = (log: AdminActivityLogResponse): AdminAuditLog => ({
 
 /** 화면은 1부터, 서버는 0부터 페이지를 센다. 빈 필터는 보내지 않는다(enum 파싱 실패 방지). */
 const toRequestParams = (params: AdminLogListParams) => ({
-  page: Math.max(params.page - 1, 0),
-  size: params.size,
+  ...toPageRequest(params),
   keyword: params.keyword?.trim() || undefined,
   domain: params.domain || undefined,
   result: params.result || undefined,

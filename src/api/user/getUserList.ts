@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import {
+  toPageRequest,
   toPageResponse,
   type AppError,
   type PageResponse,
@@ -68,8 +69,7 @@ export const toUser = (user: UserSummaryResponse): User => ({
 
 /** 빈 필터는 아예 보내지 않는다. 빈 문자열을 보내면 서버가 "빈 값으로 검색"으로 받는다. */
 const toRequestParams = (params: UserListParams) => ({
-  page: Math.max(params.page - 1, 0),
-  size: params.size,
+  ...toPageRequest(params),
   keyword: params.keyword?.trim() || undefined,
   status: params.status || undefined,
 });
