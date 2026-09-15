@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { useNoticeListQuery } from "@/api/notice/getNoticeList";
 import { useNoticeMutation } from "@/api/notice/mutateNotice";
 import { Ban, Edit, Megaphone, Plus, Star, Trash } from "@/icons";
@@ -57,11 +58,19 @@ const NOTICE_CSV_COLUMNS: CsvColumn<NoticeSummary>[] = [
   { header: "수정일", value: (row) => formatDateTime(row.updatedAt) },
 ];
 
+/** 주소에 실리는 목록 조건 */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  category: "",
+  status: "",
+};
+
 const NoticeManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [category, setCategory] = useState<NoticeCategory | "">("");
-  const [status, setStatus] = useState<NoticeStatus | "">("");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const category = params.category as NoticeCategory | "";
+  const status = params.status as NoticeStatus | "";
 
   const [editingNoticeId, setEditingNoticeId] = useState<number | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -79,9 +88,6 @@ const NoticeManager = () => {
     useNoticeMutation();
 
   const notices = data?.content ?? [];
-
-  /** 필터가 바뀌면 이전 페이지 번호가 의미를 잃으므로 1로 되돌린다. */
-  const resetPage = () => setPage(1);
 
   const handleOpenCreate = () => {
     setEditingNoticeId(undefined);
@@ -287,10 +293,7 @@ const NoticeManager = () => {
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
           <SearchInput
             value={keyword}
-            onSearch={(next) => {
-              setKeyword(next);
-              resetPage();
-            }}
+            onSearch={(next) => setParams({ keyword: next })}
             placeholder="제목 · 본문 · ID 검색"
           />
 
@@ -299,10 +302,7 @@ const NoticeManager = () => {
               aria-label="분류 필터"
               options={NOTICE_CATEGORY_FILTER_OPTIONS}
               value={category}
-              onChange={(event) => {
-                setCategory(event.target.value as NoticeCategory | "");
-                resetPage();
-              }}
+              onChange={(event) => setParams({ category: event.target.value })}
               selectBoxClassName="w-36"
             />
 
@@ -310,10 +310,7 @@ const NoticeManager = () => {
               aria-label="상태 필터"
               options={NOTICE_STATUS_FILTER_OPTIONS}
               value={status}
-              onChange={(event) => {
-                setStatus(event.target.value as NoticeStatus | "");
-                resetPage();
-              }}
+              onChange={(event) => setParams({ status: event.target.value })}
               selectBoxClassName="w-36"
             />
           </div>
@@ -343,7 +340,7 @@ const NoticeManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
 

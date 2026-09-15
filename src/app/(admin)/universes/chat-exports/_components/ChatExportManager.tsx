@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { useChatExportJobListQuery } from "@/api/character/getChatExportJobList";
 import { useChatExportMutation } from "@/api/character/mutateChatExport";
 import { Download } from "@/icons";
@@ -25,9 +26,16 @@ import {
 } from "@/constants/universeOptions";
 import ChatExportRequestModal from "./ChatExportRequestModal";
 
+/** 주소에 실리는 목록 조건 */
+const DEFAULT_PARAMS = {
+  page: 1,
+  status: "",
+};
+
 const ChatExportManager = () => {
-  const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<ChatExportStatus | "">("");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page } = params;
+  const status = params.status as ChatExportStatus | "";
   const [isRequestOpen, setIsRequestOpen] = useState(false);
 
   const { data, isLoading } = useChatExportJobListQuery({
@@ -150,10 +158,7 @@ const ChatExportManager = () => {
           <Select
             options={EXPORT_STATUS_FILTER_OPTIONS}
             value={status}
-            onChange={(event) => {
-              setStatus(event.target.value as ChatExportStatus | "");
-              setPage(1);
-            }}
+            onChange={(event) => setParams({ status: event.target.value })}
             selectBoxClassName="w-40"
             aria-label="작업 상태 필터"
           />
@@ -191,7 +196,7 @@ const ChatExportManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { useBannedWordListQuery } from "@/api/word/getBannedWordList";
 import { useBannedWordMutation } from "@/api/word/mutateBannedWord";
 import { Trash } from "@/icons";
@@ -41,11 +41,19 @@ const TAB_GUIDE: Record<BannedWordType, { title: string; body: string }> = {
   },
 };
 
+/** 주소에 실리는 목록 조건. 탭(`type`)도 함께 실어 새로고침해도 보던 사전에 머문다. */
+const DEFAULT_PARAMS = {
+  type: "BAN",
+  page: 1,
+  keyword: "",
+  sort: "CREATED_DESC",
+};
+
 const BannedWordManager = () => {
-  const [type, setType] = useState<BannedWordType>("BAN");
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [sort, setSort] = useState<BannedWordSort>("CREATED_DESC");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const type = params.type as BannedWordType;
+  const sort = params.sort as BannedWordSort;
 
   const isBan = type === "BAN";
 
@@ -58,21 +66,12 @@ const BannedWordManager = () => {
   });
   const { createMutation, deleteMutation } = useBannedWordMutation();
 
-  /** 탭·필터가 바뀌면 이전 페이지 번호가 의미를 잃으므로 항상 1페이지로 되돌린다. */
-  const handleChangeType = (next: BannedWordType) => {
-    setType(next);
-    setPage(1);
-  };
+  /* 탭·필터가 바뀌면 `useListParams`가 페이지를 1로 되돌린다. */
+  const handleChangeType = (next: BannedWordType) => setParams({ type: next });
 
-  const handleSearch = (next: string) => {
-    setKeyword(next);
-    setPage(1);
-  };
+  const handleSearch = (next: string) => setParams({ keyword: next });
 
-  const handleChangeSort = (next: BannedWordSort) => {
-    setSort(next);
-    setPage(1);
-  };
+  const handleChangeSort = (next: BannedWordSort) => setParams({ sort: next });
 
   /** 중복 단어는 서버가 409로 돌려주므로 이 화면에서만 에러 토스트를 붙인다. */
   const handleCreate = (values: BannedWordSchema, onSuccess: () => void) => {
@@ -202,7 +201,7 @@ const BannedWordManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
     </>

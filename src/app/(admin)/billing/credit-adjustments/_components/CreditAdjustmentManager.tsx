@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { useCreditAdjustmentListQuery } from "@/api/billing/getCreditAdjustmentList";
 import { useCreditAdjustmentMutation } from "@/api/billing/mutateCreditAdjustment";
 import { Coin, Plus } from "@/icons";
@@ -59,10 +60,17 @@ const ADJUSTMENT_CSV_COLUMNS: CsvColumn<CreditAdjustment>[] = [
   { header: "일시", value: (row) => formatDateTime(row.createdAt) },
 ];
 
+/** 주소에 실리는 목록 조건 */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  type: "",
+};
+
 const CreditAdjustmentManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [type, setType] = useState<AdjustmentType | "">("");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const type = params.type as AdjustmentType | "";
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   /*
@@ -83,15 +91,11 @@ const CreditAdjustmentManager = () => {
   const adjustments = data?.content ?? [];
   const totalCount = data?.totalCount ?? 0;
 
-  const handleSearch = (nextKeyword: string) => {
-    setKeyword(nextKeyword);
-    setPage(1);
-  };
+  const handleSearch = (nextKeyword: string) =>
+    setParams({ keyword: nextKeyword });
 
-  const handleChangeType = (nextType: AdjustmentType | "") => {
-    setType(nextType);
-    setPage(1);
-  };
+  const handleChangeType = (nextType: AdjustmentType | "") =>
+    setParams({ type: nextType });
 
   /**
    * 조정은 실행 즉시 잔액이 바뀌고 되돌릴 수 없으므로,
@@ -275,7 +279,7 @@ const CreditAdjustmentManager = () => {
             page={page}
             totalCount={totalCount}
             pageSize={DEFAULT_PAGE_SIZE}
-            onChange={setPage}
+            onChange={(next) => setParams({ page: next })}
           />
         )}
       </Card>
