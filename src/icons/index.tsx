@@ -1,4 +1,4 @@
-import React from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 // 1. 방향 및 화살표
 export { default as ArrowDown } from "./ArrowDown";
 export { default as ArrowUp } from "./ArrowUp";
@@ -69,7 +69,7 @@ export { default as Sun } from "./Sun";
 export { default as Warning } from "./Warning";
 
 // 모든 아이콘이 공유할 타입
-export interface IconProps extends React.ComponentPropsWithoutRef<"svg"> {
+export interface IconProps extends ComponentPropsWithoutRef<"svg"> {
   size?: number | string;
 }
 
@@ -79,7 +79,7 @@ export const IconWrapper = ({
   className = "",
   children,
   ...props
-}: IconProps & { children: React.ReactNode }) => (
+}: IconProps & { children: ReactNode }) => (
   <svg
     width={size}
     height={size}
@@ -101,7 +101,7 @@ export const IconWrapper = ({
 export const LineIconWrapper = ({
   children,
   ...props
-}: IconProps & { children: React.ReactNode }) => (
+}: IconProps & { children: ReactNode }) => (
   <IconWrapper
     fill="none"
     stroke="currentColor"

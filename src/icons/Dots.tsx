@@ -1,4 +1,3 @@
-import React from "react";
 import { IconProps, LineIconWrapper } from ".";
 
 const Dots = (props: IconProps) => {

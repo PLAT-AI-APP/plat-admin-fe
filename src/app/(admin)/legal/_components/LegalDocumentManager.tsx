@@ -111,15 +111,23 @@ const LegalDocumentManager = () => {
     {
       key: "content",
       header: "본문 미리보기",
-      render: (legalDocument) => (
-        <div className="max-w-150">
-          {toContentPreviewLines(legalDocument.content).map((line, index) => (
-            <p key={index} className="truncate body-5 text-font-2">
-              {line}
-            </p>
-          ))}
-        </div>
-      ),
+      render: (legalDocument) => {
+        /* 앞 두 줄은 같은 문장일 수 있어 줄 내용으로는 키를 만들 수 없다. 자리로 나눠 그린다. */
+        const [firstLine, secondLine] = toContentPreviewLines(
+          legalDocument.content,
+        );
+
+        return (
+          <div className="max-w-150">
+            {firstLine && (
+              <p className="truncate body-5 text-font-2">{firstLine}</p>
+            )}
+            {secondLine && (
+              <p className="truncate body-5 text-font-2">{secondLine}</p>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "actions",

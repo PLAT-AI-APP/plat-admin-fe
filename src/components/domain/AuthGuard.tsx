@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { handleUnauthorized, LOGIN_PATH } from "@/api";
 import { useSyncMyProfile } from "@/api/auth/getMe";
 import { readJwtExpiresAt } from "@/lib/jwt";
@@ -16,7 +16,7 @@ import PasswordChangeModal from "./PasswordChangeModal";
  * 실제로 막는 것은 서버다. 다만 세션이 없는 상태로 화면을 그리면 모든 조회가
  * 401로 깨지므로, 그 전에 로그인으로 보낸다.
  */
-const AuthGuard = ({ children }: { children: React.ReactNode }) => {
+const AuthGuard = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 

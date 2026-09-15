@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 import { findRoutePermission } from "@/constants/menu";
 import { useAdminStore } from "@/store/useAdminStore";
 import { hasPermission, type PermissionKey } from "@/type/permission";
@@ -18,7 +19,7 @@ import PermissionDenied from "./PermissionDenied";
  *
  * 실제로 막는 것은 서버다. 이 화면은 실수를 줄이는 장치일 뿐이다.
  */
-const RoutePermissionGate = ({ children }: { children: React.ReactNode }) => {
+const RoutePermissionGate = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const admin = useAdminStore((state) => state.admin);
 
