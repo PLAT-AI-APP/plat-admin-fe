@@ -235,7 +235,6 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/ai/catalog",
         permission: "aiModel:read",
         icon: <Cpu size={SUB_ICON_SIZE} />,
-        isMock: true,
       },
       {
         label: "AI 모델 관리",
