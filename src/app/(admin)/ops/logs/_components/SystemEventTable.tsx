@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSystemEventListQuery } from "@/api/ops/getSystemEventList";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond, formatFromNow } from "@/lib/dayjs";
+import { formatWithCommas } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type {
   SystemEventLevel,
@@ -114,7 +115,7 @@ const SystemEventTable = ({ params, setParams }: SystemEventTableProps) => {
       numeric: true,
       render: (row) => (
         <span className="tabular-nums text-font-1">
-          {row.occurrenceCount.toLocaleString()}회
+          {formatWithCommas(row.occurrenceCount)}회
         </span>
       ),
     },

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { formatDateTimeSecond, formatFromNow } from "@/lib/dayjs";
+import { formatWithCommas } from "@/lib/utils";
 import type { SystemEventLog } from "@/type/ops";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
@@ -68,7 +69,7 @@ const SystemEventDetailModal = ({
               label="발생 횟수"
               value={
                 <span className="tabular-nums">
-                  {event.occurrenceCount.toLocaleString()}회
+                  {formatWithCommas(event.occurrenceCount)}회
                 </span>
               }
             />

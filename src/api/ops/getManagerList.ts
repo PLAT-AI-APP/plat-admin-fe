@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
+import { matchesKeyword } from "@/lib/listFilter";
 import type { AppError } from "@/type/api";
 import type { Manager, ManagerStatus } from "@/type/ops";
 
@@ -9,18 +10,6 @@ export interface ManagerListParams {
   /** 직책 필터. 빈 문자열이 "전체"다. */
   roleId?: string;
 }
-
-/** 이름 · 이메일 어느 쪽에 걸려도 찾은 것으로 본다. */
-const matchesKeyword = (manager: Manager, keyword?: string) => {
-  const trimmed = keyword?.trim().toLowerCase();
-
-  if (!trimmed) return true;
-
-  return (
-    manager.name.toLowerCase().includes(trimmed) ||
-    manager.email.toLowerCase().includes(trimmed)
-  );
-};
 
 /**
  * 관리자 목록.
@@ -38,7 +27,8 @@ export const getManagerList = async ({
 
   return response.data.filter(
     (manager) =>
-      matchesKeyword(manager, keyword) &&
+      // 이름 · 이메일 어느 쪽에 걸려도 찾은 것으로 본다.
+      matchesKeyword(keyword, manager.name, manager.email) &&
       (!status || manager.status === status) &&
       (!roleId || String(manager.roleId) === roleId),
   );

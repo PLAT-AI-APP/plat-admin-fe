@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useBatchRunListQuery } from "@/api/ops/getBatchRunList";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond } from "@/lib/dayjs";
-import { cn, formatAdmin } from "@/lib/utils";
+import { cn, formatAdmin, formatWithCommas } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { BatchJobRun, BatchRunStatus, BatchTrigger } from "@/type/ops";
 import Alert from "@/components/ui/Alert";
@@ -183,13 +183,13 @@ const BatchRunTable = ({
           <span className="text-font-disabled">-</span>
         ) : (
           <span className="tabular-nums text-font-1">
-            {row.processedCount.toLocaleString()}
+            {formatWithCommas(row.processedCount)}
             {/* 0건 성공과 실패를 구분하려면 두 수를 나란히 봐야 한다. */}
             <span
               className={row.failedCount ? "text-danger" : "text-font-disabled"}
             >
               {" / "}
-              {(row.failedCount ?? 0).toLocaleString()}
+              {formatWithCommas(row.failedCount ?? 0)}
             </span>
           </span>
         ),

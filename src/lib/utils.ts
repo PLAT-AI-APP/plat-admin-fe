@@ -80,6 +80,26 @@ export const formatCurrency = (amount: number): string =>
 export const formatCredit = (credit: number): string =>
   `${formatWithCommas(Math.trunc(credit))} CR`;
 
+/**
+ * 크레딧 증감을 부호가 붙은 문자열로 변환한다. (ex: +1,000 CR · -500 CR · 0 CR)
+ *
+ * 지급과 차감이 한 열에 섞이는 표에서 `-`만 붙고 `+`가 빠지면 지급이 "잔액"처럼
+ * 읽힌다. 그래서 양수에도 부호를 붙이고, 0에는 붙이지 않는다.
+ *
+ * 같은 표의 다른 열(조정 후 잔액 등)이 단위 없이 숫자만 적는 자리에서는
+ * `withUnit: false`로 " CR"을 뗀다.
+ */
+export const formatSignedCredit = (
+  credit: number,
+  { withUnit = true }: { withUnit?: boolean } = {},
+): string => {
+  const value = Math.trunc(credit);
+  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+  const magnitude = Math.abs(value);
+
+  return `${sign}${withUnit ? formatCredit(magnitude) : formatWithCommas(magnitude)}`;
+};
+
 /** 증감률을 부호가 붙은 문자열로 변환한다. (ex: +12.4%) */
 export const formatDelta = (rate: number): string => {
   const sign = rate > 0 ? "+" : "";

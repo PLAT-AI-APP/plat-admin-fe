@@ -7,7 +7,12 @@ import { useLedgerListQuery } from "@/api/billing/getLedgerList";
 import { usePaymentRecordListQuery } from "@/api/billing/getPaymentRecordList";
 import { ExternalLink } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatAdmin, formatCurrency, formatWithCommas } from "@/lib/utils";
+import {
+  formatAdmin,
+  formatCurrency,
+  formatSignedCredit,
+  formatWithCommas,
+} from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import type {
   CreditAdjustment,
@@ -37,7 +42,10 @@ interface UserBillingPanelProps {
   userId: string;
 }
 
-/** 크레딧 증감은 부호를 앞에 붙이고 색으로 방향을 먼저 읽게 한다. */
+/**
+ * 크레딧 증감은 부호를 앞에 붙이고 색으로 방향을 먼저 읽게 한다.
+ * 이 카드의 다른 크레딧 열(조정 후 잔액 등)이 단위 없이 숫자만 적어 여기도 " CR"을 뗀다.
+ */
 const CreditDelta = ({ value }: { value: number }) => {
   if (value === 0) return <span className="text-font-disabled">-</span>;
 
@@ -49,8 +57,7 @@ const CreditDelta = ({ value }: { value: number }) => {
           : "font-medium text-danger tabular-nums"
       }
     >
-      {value > 0 ? "+" : "-"}
-      {formatWithCommas(Math.abs(value))}
+      {formatSignedCredit(value, { withUnit: false })}
     </span>
   );
 };

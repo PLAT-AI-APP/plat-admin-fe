@@ -3,6 +3,7 @@ import { adminAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { PushCampaign, PushTarget } from "@/type/communication";
 import { showAppToast } from "@/lib/toast";
+import { formatWithCommas } from "@/lib/utils";
 
 /** 푸시 캠페인 생성 요청 본문 */
 export interface PushCampaignFormValues {
@@ -62,7 +63,7 @@ export const usePushCampaignMutation = () => {
     mutationFn: sendPushCampaign,
     onSuccess: (campaign) => {
       showAppToast("success", "푸시를 발송했습니다.", {
-        description: `${campaign.successCount.toLocaleString("ko-KR")}명에게 전달되었습니다.`,
+        description: `${formatWithCommas(campaign.successCount)}명에게 전달되었습니다.`,
       });
       invalidateCampaignList();
     },

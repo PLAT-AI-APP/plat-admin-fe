@@ -1,9 +1,9 @@
 "use client";
 
 import { ReactNode } from "react";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { Copy, ExternalLink } from "@/icons";
 import { formatDate, formatDateTimeSecond } from "@/lib/dayjs";
-import { showAppToast } from "@/lib/toast";
 import { formatCredit, formatCurrency, formatWithCommas } from "@/lib/utils";
 import type { PaymentRecord } from "@/type/billing";
 import Alert from "@/components/ui/Alert";
@@ -69,15 +69,9 @@ const orDash = (value?: ReactNode) =>
  * 한 글자씩 틀린다.** 30자리 거래번호를 눈으로 대조하게 둘 이유가 없다.
  */
 const CopyableValue = ({ value, label }: { value: string; label: string }) => {
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(value);
-      showAppToast("success", `${label}를 복사했습니다.`);
-    } catch {
-      // 클립보드 권한이 없는 환경에서는 직접 선택해 복사해야 한다.
-      showAppToast("warning", "복사에 실패했습니다. 값을 직접 선택해 주세요.");
-    }
-  };
+  const { copy } = useCopyToClipboard();
+
+  const handleCopy = () => copy(value, `${label}를 복사했습니다.`);
 
   return (
     <span className="inline-flex items-center gap-1">

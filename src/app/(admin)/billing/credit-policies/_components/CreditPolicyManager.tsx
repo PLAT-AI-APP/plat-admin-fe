@@ -6,7 +6,7 @@ import { useCreditPolicyMutation } from "@/api/billing/mutateCreditPolicy";
 import { Check, Close, Edit } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { showAppToast } from "@/lib/toast";
-import { cn, formatAdmin, formatCredit } from "@/lib/utils";
+import { cn, formatAdmin, formatSignedCredit } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
 import type { CreditPolicy, CreditPolicyKey } from "@/type/billing";
 import Alert from "@/components/ui/Alert";
@@ -17,10 +17,6 @@ import Input from "@/components/ui/Input";
 import Switch from "@/components/ui/Switch";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
-
-/** 지급은 초록, 차감은 빨강으로 구분해 부호를 눈으로 먼저 읽게 한다. */
-const formatPolicyAmount = (amount: number) =>
-  `${amount > 0 ? "+" : ""}${formatCredit(amount)}`;
 
 const CreditPolicyManager = () => {
   const { data, isLoading } = useCreditPolicyListQuery();
@@ -62,7 +58,7 @@ const CreditPolicyManager = () => {
 
     openConfirm({
       title: "크레딧 정책을 변경할까요?",
-      description: `'${policy.label}' 정책 금액을 ${formatPolicyAmount(policy.amount)} → ${formatPolicyAmount(nextAmount)}로 변경합니다.`,
+      description: `'${policy.label}' 정책 금액을 ${formatSignedCredit(policy.amount)} → ${formatSignedCredit(nextAmount)}로 변경합니다.`,
       warning: "변경 즉시 모든 유저에게 새 금액이 적용됩니다.",
       confirmText: "변경",
       onConfirm: async () => {
@@ -80,7 +76,7 @@ const CreditPolicyManager = () => {
     openConfirm({
       title: isEnabled ? "정책을 활성화할까요?" : "정책을 비활성화할까요?",
       description: isEnabled
-        ? `'${policy.label}' 정책이 다시 동작하며 ${formatPolicyAmount(policy.amount)}가 적용됩니다.`
+        ? `'${policy.label}' 정책이 다시 동작하며 ${formatSignedCredit(policy.amount)}가 적용됩니다.`
         : `'${policy.label}' 정책이 즉시 중단되어 크레딧이 지급·차감되지 않습니다.`,
       confirmText: isEnabled ? "활성화" : "비활성화",
       tone: isEnabled ? "default" : "danger",
@@ -132,7 +128,7 @@ const CreditPolicyManager = () => {
               policy.amount > 0 ? "text-success" : "text-danger",
             )}
           >
-            {formatPolicyAmount(policy.amount)}
+            {formatSignedCredit(policy.amount)}
           </span>
         ),
     },

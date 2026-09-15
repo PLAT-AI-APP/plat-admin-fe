@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Users } from "@/icons";
-import { cn, formatCredit } from "@/lib/utils";
+import { cn, formatCredit, formatSignedCredit } from "@/lib/utils";
 import {
   creditAdjustmentSchema,
   type CreditAdjustmentSchema,
@@ -270,8 +270,7 @@ const CreditAdjustmentFormModal = ({
                   delta >= 0 ? "text-success" : "text-danger",
                 )}
               >
-                {delta > 0 ? "+" : ""}
-                {formatCredit(delta)}
+                {formatSignedCredit(delta)}
               </dd>
             </div>
 

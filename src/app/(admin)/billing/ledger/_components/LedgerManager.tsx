@@ -4,7 +4,12 @@ import { useListParams } from "@/hooks/useListParams";
 import { useLedgerListQuery } from "@/api/billing/getLedgerList";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond } from "@/lib/dayjs";
-import { cn, formatCredit, formatCurrency, formatWithCommas } from "@/lib/utils";
+import {
+  cn,
+  formatCurrency,
+  formatSignedCredit,
+  formatWithCommas,
+} from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { LedgerEntry, LedgerType } from "@/type/billing";
 import Badge from "@/components/ui/Badge";
@@ -112,8 +117,7 @@ const LedgerManager = () => {
               entry.creditDelta > 0 ? "text-success" : "text-danger",
             )}
           >
-            {entry.creditDelta > 0 ? "+" : "-"}
-            {formatCredit(Math.abs(entry.creditDelta))}
+            {formatSignedCredit(entry.creditDelta)}
           </span>
         ),
     },
