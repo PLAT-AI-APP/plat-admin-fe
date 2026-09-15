@@ -5,7 +5,7 @@ import type { AppError } from "@/type/api";
 import type { Report, UpdateReportStatusValues } from "@/type/report";
 
 export interface UpdateReportStatusParams extends UpdateReportStatusValues {
-  reportId: number;
+  reportId: string;
 }
 
 export const updateReportStatus = async ({

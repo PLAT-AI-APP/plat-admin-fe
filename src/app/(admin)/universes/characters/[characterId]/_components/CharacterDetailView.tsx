@@ -44,7 +44,7 @@ import {
 
 
 interface CharacterDetailViewProps {
-  characterId: number;
+  characterId: string;
 }
 
 type DetailTab = "basic" | "universes" | "prompt";
@@ -278,7 +278,7 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
           data && characterImageSrc(data, "ORIGIN")
             ? [
                 {
-                  id: String(data.characterId),
+                  id: data.characterId,
                   url: characterImageSrc(data, "ORIGIN")!,
                   title: data.name,
                   caption: `#${data.characterId} · ${data.creatorNickname}`,

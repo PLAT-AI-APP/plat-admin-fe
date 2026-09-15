@@ -122,7 +122,7 @@ const UserCharacterPanel = ({ userId, nickname }: UserCharacterPanelProps) => {
       <Table
         columns={columns}
         rows={data?.content ?? []}
-        getRowKey={(row) => String(row.characterId)}
+        getRowKey={(row) => row.characterId}
         isLoading={isLoading}
         skeletonRows={4}
         onRowClick={(row) => router.push(`/universes/characters/${row.characterId}`)}

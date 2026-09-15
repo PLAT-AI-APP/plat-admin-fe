@@ -23,7 +23,7 @@ export const reportHandlers = [
         report.targetName,
         report.reporterNickname,
         report.detail,
-        String(report.reportId),
+        report.reportId,
       ),
     );
 
@@ -64,7 +64,7 @@ export const reportHandlers = [
       const { status, handlerNote } =
         (await request.json()) as UpdateReportStatusValues;
       const index = reports.findIndex(
-        (report) => report.reportId === Number(params.reportId),
+        (report) => report.reportId === params.reportId,
       );
 
       if (index < 0) {

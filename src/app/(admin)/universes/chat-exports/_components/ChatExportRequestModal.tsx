@@ -31,7 +31,7 @@ const DEFAULT_PERIOD_DAYS = 7;
 
 const EMPTY_VALUES: ChatExportSchema = {
   targetType: "CHARACTER",
-  targetId: 0,
+  targetId: "",
   startDate: "",
   endDate: "",
 };
@@ -74,7 +74,7 @@ const ChatExportRequestModal = ({
   const characterOptions: SelectOption[] = (data?.content ?? []).map(
     (character) => ({
       label: `${character.name} (#${character.characterId})`,
-      value: String(character.characterId),
+      value: character.characterId,
     }),
   );
 
@@ -115,8 +115,8 @@ const ChatExportRequestModal = ({
                 placeholder="대상 캐릭터를 선택하세요"
                 disabled={isLoading}
                 hasError={Boolean(errors.targetId)}
-                value={field.value ? String(field.value) : ""}
-                onChange={(event) => field.onChange(Number(event.target.value))}
+                value={field.value}
+                onChange={(event) => field.onChange(event.target.value)}
               />
             )}
           />

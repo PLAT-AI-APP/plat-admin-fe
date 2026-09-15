@@ -9,7 +9,7 @@ import type {
 import { showAppToast } from "@/lib/toast";
 
 export const updateCharacterVisibility = async (
-  characterId: number,
+  characterId: string,
   visibility: CharacterVisibility,
 ) => {
   const response = await adminAxios.patch<Character>(
@@ -40,7 +40,7 @@ export interface CharacterStatusBody {
  * 조치라 사유가 함께 남아야 한다.
  */
 export const updateCharacterStatus = async (
-  characterId: number,
+  characterId: string,
   body: CharacterStatusBody,
 ) => {
   const response = await adminAxios.patch<Character>(
@@ -51,7 +51,7 @@ export const updateCharacterStatus = async (
   return response.data;
 };
 
-export const deleteCharacter = async (characterId: number) => {
+export const deleteCharacter = async (characterId: string) => {
   await adminAxios.delete(`/admin/characters/${characterId}`);
 };
 
@@ -67,7 +67,7 @@ export const useCharacterMutation = () => {
   const visibilityMutation = useMutation<
     Character,
     AppError,
-    { characterId: number; visibility: CharacterVisibility }
+    { characterId: string; visibility: CharacterVisibility }
   >({
     mutationFn: ({ characterId, visibility }) =>
       updateCharacterVisibility(characterId, visibility),
@@ -80,7 +80,7 @@ export const useCharacterMutation = () => {
   const statusMutation = useMutation<
     Character,
     AppError,
-    { characterId: number; body: CharacterStatusBody }
+    { characterId: string; body: CharacterStatusBody }
   >({
     mutationFn: ({ characterId, body }) =>
       updateCharacterStatus(characterId, body),
@@ -95,7 +95,7 @@ export const useCharacterMutation = () => {
     },
   });
 
-  const deleteMutation = useMutation<void, AppError, number>({
+  const deleteMutation = useMutation<void, AppError, string>({
     mutationFn: deleteCharacter,
     onSuccess: () => {
       showAppToast("success", "캐릭터를 삭제했습니다.");

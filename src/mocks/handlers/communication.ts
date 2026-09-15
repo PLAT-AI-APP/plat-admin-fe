@@ -186,7 +186,7 @@ export const communicationHandlers = [
 
   http.post(`${BASE_URI}/admin/proactive-messages`, async ({ request }) => {
     const body = (await request.json()) as {
-      characterId?: number;
+      characterId?: string;
       trigger: ProactiveTrigger;
       content: string;
       isEnabled: boolean;
@@ -225,7 +225,7 @@ export const communicationHandlers = [
     async ({ params, request }) => {
       const messageId = Number(params.messageId);
       const body = (await request.json()) as {
-        characterId?: number;
+        characterId?: string;
         trigger: ProactiveTrigger;
         content: string;
         isEnabled: boolean;

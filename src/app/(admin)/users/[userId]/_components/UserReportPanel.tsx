@@ -131,7 +131,7 @@ const UserReportPanel = ({ userId }: UserReportPanelProps) => {
         <Table
           columns={commonColumns}
           rows={received?.content ?? []}
-          getRowKey={(row) => String(row.reportId)}
+          getRowKey={(row) => row.reportId}
           isLoading={isReceivedLoading}
           skeletonRows={3}
           emptyTitle="신고당한 이력이 없습니다."
@@ -154,7 +154,7 @@ const UserReportPanel = ({ userId }: UserReportPanelProps) => {
         <Table
           columns={filedColumns}
           rows={filed?.content ?? []}
-          getRowKey={(row) => String(row.reportId)}
+          getRowKey={(row) => row.reportId}
           isLoading={isFiledLoading}
           skeletonRows={3}
           emptyTitle="접수한 신고가 없습니다."

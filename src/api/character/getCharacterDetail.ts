@@ -42,7 +42,7 @@ export interface CharacterDetailResponse extends CharacterDetail {
   profileImageFileId?: string | null;
 }
 
-export const getCharacterDetail = async (characterId: number) => {
+export const getCharacterDetail = async (characterId: string) => {
   const response = await adminAxios.get<CharacterDetailResponse>(
     `/admin/characters/${characterId}`,
   );
@@ -54,10 +54,10 @@ export const getCharacterDetail = async (characterId: number) => {
  * 캐릭터 상세 모달 · 공식 캐릭터 수정 폼에서 사용합니다.
  * characterId가 없으면(모달이 닫혀 있으면) 조회하지 않습니다.
  */
-export const useCharacterDetailQuery = (characterId: number | null) => {
+export const useCharacterDetailQuery = (characterId: string | null) => {
   return useQuery<CharacterDetailResponse, AppError>({
     queryKey: ["get-character-detail", characterId],
-    queryFn: () => getCharacterDetail(Number(characterId)),
+    queryFn: () => getCharacterDetail(characterId!),
     enabled: characterId !== null,
   });
 };

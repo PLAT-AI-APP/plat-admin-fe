@@ -286,7 +286,7 @@ const ReportManager = () => {
         <Table
           columns={columns}
           rows={reports}
-          getRowKey={(row) => String(row.reportId)}
+          getRowKey={(row) => row.reportId}
           isLoading={isLoading}
           onRowClick={setHandlingReport}
           emptyTitle="조회된 신고가 없습니다."

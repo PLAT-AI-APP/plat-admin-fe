@@ -107,7 +107,7 @@ const pickTarget = (seed: number, targetType: ReportTargetType) => {
   const character = characters[randomInt(seed, 0, characters.length - 1)];
 
   return {
-    targetId: String(character.characterId),
+    targetId: character.characterId,
     targetName: character.name,
     targetSnippet: `크리에이터 ${character.creatorNickname}`,
   };
@@ -125,7 +125,7 @@ export const reports: Report[] = Array.from({ length: 38 }, (_, index) => {
   const handler = pickManager(seed * 17);
 
   return {
-    reportId: 38 - index,
+    reportId: String(38 - index),
     targetType,
     ...target,
     targetReportCount: 0,

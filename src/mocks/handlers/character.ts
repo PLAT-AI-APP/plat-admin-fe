@@ -33,13 +33,14 @@ const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 /** 내보내기 작업이 완료되기까지 걸리는 목업 처리 시간 */
 const EXPORT_PROCESSING_MS = 2_500;
 
-const findCharacter = (characterId: number) =>
+/** 라우트 파라미터는 문자열 그대로 비교한다. Snowflake를 숫자로 바꾸면 끝자리가 뭉개진다. */
+const findCharacter = (characterId: string) =>
   characters.find((character) => character.characterId === characterId);
 
-const findProfile = (characterId: number) =>
+const findProfile = (characterId: string) =>
   characterProfiles.find((profile) => profile.characterId === characterId);
 
-const findModeration = (characterId: number) =>
+const findModeration = (characterId: string) =>
   characterModerations.find((item) => item.characterId === characterId);
 
 /** 삭제 처리된 캐릭터는 목록에서 제외한다. (실제 서버도 soft delete를 쓴다) */
@@ -69,7 +70,11 @@ const sortCharacters = (rows: Character[], sort: string): Character[] => {
     SORT_COMPARATORS[sort as CharacterSort] ?? SORT_COMPARATORS.CREATED_DESC;
 
   return [...rows].sort(
-    (a, b) => comparator(a, b) || a.characterId - b.characterId,
+    /*
+      ID는 문자열이라 빼기로 비교할 수 없다. 사전순으로만 갈라도 순서는 흔들리지 않는다 —
+      여기서 필요한 것은 "항상 같은 순서"지 ID의 크기 순서가 아니다.
+    */
+    (a, b) => comparator(a, b) || a.characterId.localeCompare(b.characterId),
   );
 };
 
@@ -92,7 +97,7 @@ const filterCharacters = (url: URL): Character[] => {
         keyword,
         character.name,
         character.creatorNickname,
-        String(character.characterId),
+        character.characterId,
         ...character.tags,
       )
     ) {
@@ -118,7 +123,7 @@ const filterCharacters = (url: URL): Character[] => {
  * 매칭 ID를 목업 금지어 사전에서 다시 찾아 붙인다. 이 사전은 캐릭터 목업 전용이다 —
  * 금지어 화면은 실서버를 보므로 두 곳의 단어가 같을 이유가 없다.
  */
-const buildNsfwMatches = (characterId: number): CharacterNsfwMatch[] => {
+const buildNsfwMatches = (characterId: string): CharacterNsfwMatch[] => {
   const ids = findModeration(characterId)?.nsfwMatchedKeywordIds ?? [];
 
   return ids.flatMap((keywordId) => {
@@ -176,7 +181,7 @@ export const characterHandlers = [
   }),
 
   http.get(`${BASE_URI}/admin/characters/:characterId`, async ({ params }) => {
-    const character = findCharacter(Number(params.characterId));
+    const character = findCharacter(String(params.characterId));
 
     await delay(MOCK_DELAY_MS);
 
@@ -188,7 +193,7 @@ export const characterHandlers = [
   http.patch(
     `${BASE_URI}/admin/characters/:characterId/visibility`,
     async ({ params, request }) => {
-      const character = findCharacter(Number(params.characterId));
+      const character = findCharacter(String(params.characterId));
       const { visibility } = (await request.json()) as {
         visibility: CharacterVisibility;
       };
@@ -212,7 +217,7 @@ export const characterHandlers = [
   http.patch(
     `${BASE_URI}/admin/characters/:characterId/status`,
     async ({ params, request }) => {
-      const character = findCharacter(Number(params.characterId));
+      const character = findCharacter(String(params.characterId));
       const body = (await request.json()) as CharacterStatusBody;
 
       if (!character) return notFound("존재하지 않는 캐릭터입니다.");
@@ -252,7 +257,7 @@ export const characterHandlers = [
   http.delete(
     `${BASE_URI}/admin/characters/:characterId`,
     async ({ params }) => {
-      const character = findCharacter(Number(params.characterId));
+      const character = findCharacter(String(params.characterId));
 
       if (!character) return notFound("존재하지 않는 캐릭터입니다.");
 

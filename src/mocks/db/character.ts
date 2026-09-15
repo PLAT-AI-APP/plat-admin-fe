@@ -117,7 +117,8 @@ const characterBases = CHARACTER_NAMES.map((name, index) => {
   const status = index % 11 === 0 ? "BLOCKED" : "ACTIVE";
 
   return {
-    characterId: seed,
+    // Snowflake ID 는 문자열이다. 목업도 같은 모양으로 둬야 화면이 실서버와 같게 동작한다.
+    characterId: String(seed),
     name,
     thumbnailUrl: `https://picsum.photos/seed/plat-character-${seed}/160/160`,
     creatorId: creator.userId,
@@ -167,7 +168,7 @@ const REVIEW_REJECTION_REASONS = [
  * 세계관에도 등장한다. 매핑을 따로 두지 않고 세계관에 캐릭터 하나를 박아 두면
  * "이 캐릭터가 어디에 나오나"를 셀 수 없다.
  */
-const universeCharacterIds = (seed: number, ownerIndex: number): number[] => {
+const universeCharacterIds = (seed: number, ownerIndex: number): string[] => {
   const owner = characterBases[ownerIndex].characterId;
   // 3번에 한 번꼴로 다른 세계관의 캐릭터가 함께 등장한다.
   const hasGuest = seed % 3 === 0;
@@ -201,7 +202,7 @@ export const universes: Universe[] = characterBases.flatMap(
       const status: UniverseStatus = seed % 19 === 0 ? "INACTIVE" : "ACTIVE";
 
       return {
-        universeId: seed,
+        universeId: String(seed),
         characters: universeCharacterIds(seed, index).map((characterId) => {
           const item = characterBases.find(
             (base) => base.characterId === characterId,
@@ -285,7 +286,11 @@ const SCENARIO_FIRST_DIALOGUES = [
 export const universeScenarios: UniverseScenario[] = universes.flatMap(
   (universe, index) =>
     Array.from({ length: randomInt(index + 5, 1, 4) }, (_, episodeIndex) => {
-      const seed = universe.universeId * 10 + episodeIndex + 1;
+      /*
+        시드는 배열 순번으로 만든다. ID가 문자열이라 곱셈에 쓸 수 없고,
+        회차가 4편을 넘지 않아 순번 × 10 + 회차면 시나리오끼리 겹치지 않는다.
+      */
+      const seed = (index + 1) * 10 + episodeIndex + 1;
       const isStart = episodeIndex === 0;
 
       const type: ScenarioType = isStart
@@ -306,7 +311,7 @@ export const universeScenarios: UniverseScenario[] = universes.flatMap(
             : "ACTIVE";
 
       return {
-        scenarioId: seed,
+        scenarioId: String(seed),
         universeId: universe.universeId,
         episodeNo: episodeIndex + 1,
         type,
@@ -410,7 +415,7 @@ const CHARACTER_PERSONALITY_POOL = [
  * 목록 응답(Character)에는 포함되지 않으므로 시드를 분리해 둔다.
  */
 export interface CharacterProfile {
-  characterId: number;
+  characterId: string;
   description: string;
   greeting: string;
   personality: string;
@@ -474,7 +479,7 @@ export const banOnlyWords = bannedWords.filter((item) => item.type === "BAN");
  * 어차피 별도 응답으로 붙을 값들이다.
  */
 export interface CharacterModeration {
-  characterId: number;
+  characterId: string;
   /**
    * NSFW 판정에 걸린 금지어. `Character.isNsfw`가 참인 근거다.
    *

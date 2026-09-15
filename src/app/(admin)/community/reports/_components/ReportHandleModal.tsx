@@ -32,7 +32,7 @@ interface ReportHandleModalProps {
 
 /** 편집 중인 값. 어떤 신고를 편집 중인지 함께 들고 있어야 대상이 바뀔 때 초기화된다. */
 interface ReportHandleDraft {
-  reportId: number;
+  reportId: string;
   status: ReportStatus;
   handlerNote: string;
 }

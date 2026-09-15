@@ -11,7 +11,8 @@ export type CharacterVisibility = "PUBLIC" | "PRIVATE" | "HIDDEN";
 export type CharacterStatus = "ACTIVE" | "BLOCKED" | "DELETED";
 
 export interface Character {
-  characterId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  characterId: string;
   name: string;
   thumbnailUrl: string;
   /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
@@ -102,8 +103,10 @@ export type ScenarioLifecycle = "ACTIVE" | "HIDDEN" | "DEPRECATED";
  * 실연동된 상세 화면은 아래 `UniverseScenarioDetail`을 쓴다.
  */
 export interface UniverseScenario {
-  scenarioId: number;
-  universeId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  scenarioId: string;
+  /** Snowflake. 문자열 그대로 다룬다. */
+  universeId: string;
   /** 회차. 목록 정렬 기준이자 유저에게 보이는 번호다. */
   episodeNo: number;
   type: ScenarioType;
@@ -132,7 +135,8 @@ export interface UniverseScenario {
  * 목록 카드에는 첫 번째 캐릭터를 대표로 쓴다.
  */
 export interface UniverseCharacter {
-  characterId: number;
+  /** Snowflake. 문자열 그대로 다룬다. */
+  characterId: string;
   name: string;
   thumbnailUrl: string;
 }
@@ -146,7 +150,8 @@ export interface UniverseCharacter {
  * 실서버 목록 행은 `UniverseListRow`, 상세는 `UniverseDetail`이다.
  */
 export interface Universe {
-  universeId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  universeId: string;
   /** 큐레이션에서 "제목"으로 노출된다. */
   name: string;
   /** 큐레이션에서 "설명"으로 노출된다. */
@@ -440,7 +445,8 @@ export type ChatExportStatus = "PENDING" | "PROCESSING" | "DONE" | "FAILED";
 export interface ChatExportJob {
   jobId: number;
   targetType: "CHARACTER" | "USER";
-  targetId: number;
+  /** 캐릭터·유저 ID. 둘 다 Snowflake라 문자열 그대로 다룬다. */
+  targetId: string;
   targetName: string;
   startDate: string;
   endDate: string;

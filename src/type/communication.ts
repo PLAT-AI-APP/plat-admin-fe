@@ -47,7 +47,11 @@ export type ProactiveTrigger =
 
 export interface ProactiveMessage {
   messageId: number;
-  characterId?: number;
+  /**
+   * 대상 캐릭터. 비어 있으면 모든 캐릭터에 쓰는 공용 메시지다.
+   * 캐릭터 ID는 Snowflake라 문자열 그대로 다룬다 — 이 도메인이 목업이어도 가리키는 대상은 실서버 ID다.
+   */
+  characterId?: string;
   characterName?: string;
   trigger: ProactiveTrigger;
   content: string;

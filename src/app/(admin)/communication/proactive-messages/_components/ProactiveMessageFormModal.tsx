@@ -60,9 +60,7 @@ const ProactiveMessageFormModal = ({
       message
         ? {
             trigger: message.trigger,
-            characterId: message.characterId
-              ? String(message.characterId)
-              : "",
+            characterId: message.characterId ?? "",
             content: message.content,
             isEnabled: message.isEnabled,
           }
@@ -74,7 +72,7 @@ const ProactiveMessageFormModal = ({
     onSubmit({
       trigger: values.trigger,
       // 비워두면 전체 캐릭터 공통 메시지가 된다.
-      characterId: values.characterId ? Number(values.characterId) : undefined,
+      characterId: values.characterId || undefined,
       content: values.content,
       isEnabled: values.isEnabled,
     });

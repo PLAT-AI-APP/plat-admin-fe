@@ -382,7 +382,7 @@ const CharacterManager = () => {
         <Table
           columns={columns}
           rows={rows}
-          getRowKey={(row) => String(row.characterId)}
+          getRowKey={(row) => row.characterId}
           isLoading={isLoading}
           onRowClick={(row) =>
             router.push(`/universes/characters/${row.characterId}`)
