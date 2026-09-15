@@ -16,7 +16,7 @@ export const pushCampaignSchema = z
     scheduledAt: z.string().optional(),
   })
   .refine(({ isScheduled, scheduledAt }) => !isScheduled || Boolean(scheduledAt), {
-    message: "예약 발송을 켜면 예약 일시를 입력해야 합니다.",
+    error: "예약 발송을 켜면 예약 일시를 입력해야 합니다.",
     path: ["scheduledAt"],
   });
 

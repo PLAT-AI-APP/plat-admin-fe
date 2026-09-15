@@ -19,11 +19,11 @@ import ServerOverviewCard from "./ServerOverviewCard";
 import {
   DANGER_THRESHOLD,
   WARNING_THRESHOLD,
-} from "../_constants/serverStatus";
+} from "@/app/(admin)/ops/server/_constants/serverStatus";
 import {
   useAutoRefresh,
   type AutoRefreshSeconds,
-} from "../_hooks/useAutoRefresh";
+} from "@/app/(admin)/ops/server/_hooks/useAutoRefresh";
 
 /** 임계치를 넘은 지표를 한 줄로 모은다. 카드를 다 훑기 전에 먼저 보여야 한다. */
 const collectWarnings = (

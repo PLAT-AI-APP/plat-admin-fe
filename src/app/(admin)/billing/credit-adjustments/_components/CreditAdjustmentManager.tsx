@@ -1,12 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { useCreditAdjustmentListQuery } from "@/api/billing/getCreditAdjustmentList";
 import { useCreditAdjustmentMutation } from "@/api/billing/mutateCreditAdjustment";
 import { Coin, Plus } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
-import { cn, formatAdmin, formatCredit, formatWithCommas } from "@/lib/utils";
+import {
+  cn,
+  formatAdmin,
+  formatCredit,
+  formatSignedCredit,
+  formatWithCommas,
+} from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
@@ -21,21 +28,19 @@ import CsvExportButton from "@/components/ui/CsvExportButton";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import CreditAdjustmentFormModal from "./CreditAdjustmentFormModal";
 import {
   ADJUSTMENT_TYPE_FILTER_OPTIONS,
   ADJUSTMENT_TYPE_LABEL,
   ADJUSTMENT_TYPE_SIGN,
   ADJUSTMENT_TYPE_TONE,
-} from "./adjustmentOptions";
+} from "@/constants/billingOptions";
 
-/** 지급은 +, 차감은 - 부호를 붙여 표기한다. */
-const formatSignedCredit = (type: AdjustmentType, amount: number) =>
-  `${ADJUSTMENT_TYPE_SIGN[type]}${formatCredit(amount)}`;
+/** 서버는 `amount`를 언제나 양수로 주고 방향은 `type`에 싣는다. 표기용으로 부호를 되돌린다. */
+const toSignedAmount = ({ type, amount }: CreditAdjustment) =>
+  type === "DEDUCT" ? -amount : amount;
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
 const ADJUSTMENT_CSV_COLUMNS: CsvColumn<CreditAdjustment>[] = [
@@ -55,10 +60,17 @@ const ADJUSTMENT_CSV_COLUMNS: CsvColumn<CreditAdjustment>[] = [
   { header: "일시", value: (row) => formatDateTime(row.createdAt) },
 ];
 
+/** 주소에 실리는 목록 조건 */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  type: "",
+};
+
 const CreditAdjustmentManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [type, setType] = useState<AdjustmentType | "">("");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const type = params.type as AdjustmentType | "";
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   /*
@@ -79,15 +91,11 @@ const CreditAdjustmentManager = () => {
   const adjustments = data?.content ?? [];
   const totalCount = data?.totalCount ?? 0;
 
-  const handleSearch = (nextKeyword: string) => {
-    setKeyword(nextKeyword);
-    setPage(1);
-  };
+  const handleSearch = (nextKeyword: string) =>
+    setParams({ keyword: nextKeyword });
 
-  const handleChangeType = (nextType: AdjustmentType | "") => {
-    setType(nextType);
-    setPage(1);
-  };
+  const handleChangeType = (nextType: AdjustmentType | "") =>
+    setParams({ type: nextType });
 
   /**
    * 조정은 실행 즉시 잔액이 바뀌고 되돌릴 수 없으므로,
@@ -149,7 +157,7 @@ const CreditAdjustmentManager = () => {
             adjustment.type === "GRANT" ? "text-success" : "text-danger",
           )}
         >
-          {formatSignedCredit(adjustment.type, adjustment.amount)}
+          {formatSignedCredit(toSignedAmount(adjustment))}
         </span>
       ),
     },
@@ -271,7 +279,7 @@ const CreditAdjustmentManager = () => {
             page={page}
             totalCount={totalCount}
             pageSize={DEFAULT_PAGE_SIZE}
-            onChange={setPage}
+            onChange={(next) => setParams({ page: next })}
           />
         )}
       </Card>

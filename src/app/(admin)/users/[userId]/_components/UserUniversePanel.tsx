@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAdminUniverseListQuery } from "@/api/universe/getAdminUniverseList";
 import { formatDate } from "@/lib/dayjs";
@@ -16,12 +15,11 @@ import {
   UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
-} from "../../../universes/_constants/character";
-import UniverseStateBadge from "../../../universes/_components/UniverseStateBadge";
-import UniverseTendencyDot, {
-  UniverseTendencyLegend,
-} from "../../../universes/_components/UniverseTendencyDot";
-import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
+} from "@/constants/universeOptions";
+import UniverseStateBadge from "@/components/universe/UniverseStateBadge";
+import UniverseTendencyDot from "@/components/universe/UniverseTendencyDot";
+import UniverseTendencyLegend from "@/components/universe/UniverseTendencyLegend";
+import { USER_DETAIL_PAGE_SIZE } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
 
 interface UserUniversePanelProps {
   userId: string;
@@ -36,7 +34,6 @@ interface UserUniversePanelProps {
  * 서버가 크리에이터를 한 번 거쳐 세계관을 찾아 준다(`userId` 필터).
  */
 const UserUniversePanel = ({ userId, nickname }: UserUniversePanelProps) => {
-  const router = useRouter();
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useAdminUniverseListQuery({
@@ -167,7 +164,7 @@ const UserUniversePanel = ({ userId, nickname }: UserUniversePanelProps) => {
         getRowKey={(row) => row.universeId}
         isLoading={isLoading}
         skeletonRows={4}
-        onRowClick={(row) => router.push(`/universes/${row.universeId}`)}
+        getRowHref={(row) => `/universes/${row.universeId}`}
         emptyTitle="등록한 세계관이 없습니다."
         emptyDescription={`'${nickname}' 유저가 만든 세계관이 아직 없습니다.`}
       />

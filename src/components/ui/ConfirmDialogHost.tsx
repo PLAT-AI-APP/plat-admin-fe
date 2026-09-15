@@ -13,6 +13,8 @@ const ConfirmDialogHost = () => {
   const { options, isProcessing, closeConfirm, setProcessing } =
     useConfirmStore();
 
+  const isDanger = options?.tone === "danger";
+
   const handleConfirm = async () => {
     if (!options) return;
 
@@ -37,14 +39,24 @@ const ConfirmDialogHost = () => {
       closeOnOverlayClick={false}
       footer={
         <>
-          <Button variant="ghost" onClick={closeConfirm} disabled={isProcessing}>
+          {/*
+            처음 포커스는 위험하지 않은 쪽에 둔다. 일반 확인은 Enter 한 번으로 끝내고,
+            파괴적 작업은 Enter를 무심코 눌러도 취소되게 한다.
+          */}
+          <Button
+            variant="ghost"
+            onClick={closeConfirm}
+            disabled={isProcessing}
+            data-autofocus={isDanger ? "" : undefined}
+          >
             {options?.cancelText ?? "취소"}
           </Button>
 
           <Button
-            variant={options?.tone === "danger" ? "danger" : "primary"}
+            variant={isDanger ? "danger" : "primary"}
             onClick={handleConfirm}
             isLoading={isProcessing}
+            data-autofocus={isDanger ? undefined : ""}
           >
             {options?.confirmText ?? "확인"}
           </Button>

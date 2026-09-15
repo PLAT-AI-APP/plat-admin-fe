@@ -15,7 +15,8 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Select from "@/components/ui/Select";
-import Table, { TableCellStack } from "@/components/ui/Table";
+import Table from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import type { TableColumn } from "@/components/ui/Table";
 import {
   AI_MODEL_STATUS_LABEL,
@@ -23,7 +24,7 @@ import {
   AI_PROVIDER_FILTER_OPTIONS,
   AI_PROVIDER_LABEL,
   AI_PROVIDER_TONE,
-} from "../../_constants/aiOptions";
+} from "@/app/(admin)/ai/_constants/aiOptions";
 
 const ModelCatalogManager = () => {
   const [provider, setProvider] = useState<AiProvider | "">("");

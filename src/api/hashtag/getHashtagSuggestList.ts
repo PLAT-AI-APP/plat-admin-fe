@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import {
+  toPageRequest,
   toPageResponse,
   type AppError,
   type PageResponse,
@@ -42,8 +43,7 @@ const toGroup = (item: HashtagSuggestGroupResponse): HashtagSuggestGroup => ({
 
 /** 빈 문자열 필터는 아예 빼고, 페이지는 0부터로 낮춰 서버가 받는 형태로 만든다. */
 const toRequestParams = (params: HashtagSuggestListParams) => ({
-  page: params.page - 1,
-  size: params.size,
+  ...toPageRequest(params),
   keyword: params.keyword?.trim() || undefined,
   registered: params.registered || undefined,
   sort: params.sort || undefined,

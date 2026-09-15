@@ -1,8 +1,9 @@
 "use client";
 
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { Copy, Refresh } from "@/icons";
 import { formatDateTimeSecond } from "@/lib/dayjs";
-import { showAppToast, showErrorToast } from "@/lib/toast";
+import { showErrorToast } from "@/lib/toast";
 import type { ServerHealth } from "@/type/ops";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -12,13 +13,13 @@ import {
   AUTO_REFRESH_LABEL,
   AUTO_REFRESH_SECONDS,
   type AutoRefreshSeconds,
-} from "../_hooks/useAutoRefresh";
+} from "@/app/(admin)/ops/server/_hooks/useAutoRefresh";
 import {
   HEALTH_STATUS_DESCRIPTION,
   HEALTH_STATUS_LABEL,
   HEALTH_STATUS_TONE,
   formatUptime,
-} from "../_constants/serverStatus";
+} from "@/app/(admin)/ops/server/_constants/serverStatus";
 
 interface ServerOverviewCardProps {
   health: ServerHealth;
@@ -57,15 +58,12 @@ const ServerOverviewCard = ({
   onAutoRefreshChange,
   secondsLeft,
 }: ServerOverviewCardProps) => {
+  /** 스냅샷은 화면에 그대로 보이는 값이 아니라 "직접 선택" 안내 대신 에러 토스트를 띄운다. */
+  const { copy } = useCopyToClipboard({ onError: showErrorToast });
+
   /** 값이 이상할 때 관제 채널에 그대로 붙여 넣을 수 있게 스냅샷을 통째로 준다. */
-  const handleCopySnapshot = async () => {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(health, null, 2));
-      showAppToast("success", "현재 상태를 JSON으로 복사했습니다.");
-    } catch (error) {
-      showErrorToast(error);
-    }
-  };
+  const handleCopySnapshot = () =>
+    copy(JSON.stringify(health, null, 2), "현재 상태를 JSON으로 복사했습니다.");
 
   return (
     <Card

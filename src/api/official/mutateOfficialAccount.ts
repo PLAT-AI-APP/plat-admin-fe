@@ -35,12 +35,12 @@ export const useOfficialAccountMutation = () => {
 
   const invalidateOfficialQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["get-official-account-list"] });
-    queryClient.invalidateQueries({ queryKey: ["get-universe-list"] });
+    queryClient.invalidateQueries({ queryKey: ["get-admin-universe-list"] });
     queryClient.invalidateQueries({ queryKey: ["get-universe-detail"] });
     queryClient.invalidateQueries({ queryKey: ["get-character-list"] });
     queryClient.invalidateQueries({ queryKey: ["get-character-detail"] });
-    // 공식 맛보기 큐레이션의 후보가 바뀐다.
-    queryClient.invalidateQueries({ queryKey: ["get-curation-slot"] });
+    // 홈 섹션 편성 목록의 공식 뱃지 · 노출 판정이 바뀐다.
+    queryClient.invalidateQueries({ queryKey: ["get-home-section"] });
   };
 
   const registerMutation = useMutation<OfficialAccount, AppError, string>({

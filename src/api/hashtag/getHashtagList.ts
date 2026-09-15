@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
+import { paginate } from "@/lib/listFilter";
 import type { AppError, PageResponse } from "@/type/api";
 import type { Hashtag, HashtagCategory, HashtagSort } from "@/type/hashtag";
 
@@ -58,23 +59,6 @@ const toRequestParams = (filters: HashtagFilterParams) => ({
   keyword: filters.keyword?.trim() || undefined,
   sort: filters.sort || undefined,
 });
-
-/** 서버가 조건에 맞는 전체를 한 번에 주므로 페이지 분할도 화면에서 한다. */
-const paginate = (
-  hashtags: Hashtag[],
-  page: number,
-  size: number,
-): PageResponse<Hashtag> => {
-  const start = (page - 1) * size;
-
-  return {
-    content: hashtags.slice(start, start + size),
-    page,
-    size,
-    totalCount: hashtags.length,
-    totalPages: Math.max(1, Math.ceil(hashtags.length / size)),
-  };
-};
 
 /** 조건에 맞는 해시태그 전체. 페이징이 없는 목록 API다. */
 export const getHashtagList = async (

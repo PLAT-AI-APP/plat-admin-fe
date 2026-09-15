@@ -21,6 +21,8 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 | 보조 설명 | `text-font-2` | `#5a6072` | `#989db8` |
 | 비활성 | `text-font-disabled` | `#a1a7b8` | `#5c6180` |
 | 반전(브랜드 위) | `text-font-4` | `#ffffff` | `#0d0e11` |
+| 위험 배경 위 글자 | `text-on-danger` | `#ffffff` | `#ffffff` |
+| 테마 무관 밝은 글자 | `text-on-brand` · `text-overlay-font` | `#ffffff` | `#ffffff` |
 | 경계선 | `border-border-main` | `#e5e7ec` | `#262a3d` |
 | 강한 경계선 | `border-border-strong` | `#d3d7e0` | `#343a52` |
 | 워크스페이스 배경 | `bg-bg-base` | `#f6f7f9` | `#0e1018` |
@@ -32,25 +34,43 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 **상태 색상** — 성공 `success`, 경고 `warning`, 위험 `danger`, 정보 `info`,
 중립 `neutral`. 각각 `text-*` / `bg-*-bg` 쌍으로 쓴다.
 
+**반전 글자 고르는 법.** 브랜드 배경은 다크에서 밝은 보라(`#7c74f2`)로 바뀌므로 글자도
+`text-font-4`로 함께 뒤집는다(검은 글자 대비 약 5:1, 흰 글자는 약 3.7:1). 반면 위험 배경은
+테마와 무관하게 붉어서 글자가 항상 밝아야 한다 — `text-on-danger`. 라이트박스처럼 뒤를
+어둡게 덮는 자리는 `bg-overlay-strong` + `text-overlay-font`.
+
+**용도가 좁은 토큰** — 새 화면에서 다른 뜻으로 빌려 쓰지 않는다.
+
+| 토큰 | 쓰는 곳 |
+|---|---|
+| `bg-control-knob` | 스위치 손잡이 |
+| `bg-preview-bg` · `text-preview-font` · `bg-preview-scrim` · `text-preview-accent` | 배너 미리보기(앱 화면 흉내, 다크 고정) |
+| `bg-provider-google-bg text-provider-google` · `…-kakao…` | 가입 경로 뱃지 |
+| `rounded-chip` (6px) | 사이드바 아바타 · 작은 칩 |
+
 금지: `text-gray-500`, `bg-white`, `border-gray-200` 같은 Tailwind 기본 팔레트
-직접 사용. 다크 테마에서 깨진다.
+직접 사용. 다크 테마에서 깨진다. 없는 토큰 이름(`text-font-3` 등)은 **에러 없이 색이 빠지므로**
+새 클래스를 쓸 때 `globals.css`의 `--color-*`에 있는지 확인한다.
 
 ---
 
 ## 2. 타이포그래피
 
 `letter-spacing: -0.025em`, `line-height: 1.4`는 `body`에 전역 적용되어 있다.
+크기는 `globals.css`의 **위계 유틸리티만** 쓴다(`plat-fe`와 같은 이름 · 같은 값).
+`text-[13px]` 같은 임의값은 쓰지 않는다 — 필요한 위계가 없으면 유틸리티를 추가한다.
 
-| 역할 | 클래스 |
-|---|---|
-| 페이지 타이틀 | `text-[28px] font-bold text-font-0` |
-| 페이지 설명 | `text-[14px] text-font-2` |
-| 섹션 타이틀 | `text-[17px] font-semibold text-font-0` |
-| 카드 타이틀 | `text-[15px] font-semibold text-font-1` |
-| 본문 | `text-[14px] text-font-1` |
-| 보조/캡션 | `text-[13px] text-font-2` |
-| 표 헤더 | `text-[13px] font-medium text-font-2` |
-| 숫자 지표 | `text-[26px] font-bold text-font-0 tabular-nums` |
+| 유틸리티 | 크기 · 굵기 | 쓰는 곳 |
+|---|---|---|
+| `display-1` · `display-2` | 40 · 36px, 700 | 로그인처럼 여백이 넓은 자리 |
+| `heading-1` | 26px, 700 | 페이지 타이틀(`PageHeader`) |
+| `heading-2` · `heading-3` | 24 · 22px, 700 | 큰 숫자 지표 |
+| `title-1` ~ `title-6` | 20 → 13px, 600 | 제목 · 라벨 · 강조된 값 |
+| `body-1` ~ `body-6` | 18 → 12px, 400 | 본문(`body-4` 14px) · 표 셀(`body-5` 13px) · 설명 |
+| `caption-1` ~ `caption-3` | 12 · 12 · 11px | 뱃지 · 보조 설명 · 에러 문구 |
+
+자주 쓰는 조합: 페이지 설명 `body-4 text-font-2`, 카드 타이틀 `body-3 font-semibold text-font-1`,
+표 헤더 `body-5 font-medium text-font-2`.
 
 숫자를 세로로 정렬해야 하는 곳(표의 금액·수량, 지표)은 반드시 `tabular-nums`.
 
@@ -69,7 +89,7 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 | 섹션 사이 간격 | `gap-6` (24px) |
 | 폼 필드 사이 | `gap-4` |
 | 인라인 요소 사이 | `gap-2` (8px) |
-| 표 셀 패딩 | `px-4 py-3.5` |
+| 표 셀 패딩 | 헤더 `px-4 py-3` · 본문 `px-4 py-3.5` |
 
 ---
 
@@ -109,8 +129,10 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 ### 5.2 카드형 클릭 대상
 
 ```
-"cursor-pointer transition hover:border-brand hover:shadow-card-hover active:scale-[0.99]"
+"cursor-pointer transition hover:border-brand hover:bg-surface-hover active:scale-[0.99]"
 ```
+
+`shadow-card-hover` 토큰은 정의만 있고 쓰는 화면이 없다. 경계선 색으로 hover를 알린다.
 
 ### 5.3 표 행
 
@@ -155,14 +177,14 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 | `primary` | 저장·생성 등 주요 행동 | `bg-brand text-font-4 hover:bg-brand-hover` |
 | `secondary` | 보조 행동 | `bg-surface border border-border-main hover:bg-surface-hover` |
 | `ghost` | 표 안 아이콘 버튼, 취소 | `hover:bg-surface-hover` |
-| `danger` | 삭제·차단 | `bg-danger text-white hover:opacity-90` |
+| `danger` | 삭제·차단 | `bg-danger text-on-danger hover:opacity-90` |
 | `dangerGhost` | 표 안 삭제 | `text-danger hover:bg-danger-bg` |
 
 | size | 높이 | 패딩 | 폰트 |
 |---|---|---|---|
-| `sm` | 32px | `px-3` | 13px |
-| `md` | 40px | `px-4` | 14px |
-| `lg` | 48px | `px-6` | 15px |
+| `sm` | 32px | `px-3` | `body-5` |
+| `md` | 40px | `px-4` | `body-4` |
+| `lg` | 48px | `px-6` | `body-3` |
 
 공통: `rounded-field font-medium transition active:scale-[0.98]`,
 로딩 중에는 스피너를 좌측에 두고 `disabled` 처리.
@@ -177,8 +199,9 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 
 ### 7.3 Table
 
-- 컨테이너는 Card 규격. 표 자체는 `w-full text-[14px]`
-- 헤더: `bg-subtle text-font-2 text-[13px] font-medium`, 셀 `px-4 py-3`
+- 컨테이너는 Card 규격. 표 자체는 `w-full`
+- 헤더: `bg-subtle body-5 font-medium text-font-2`, 셀 `px-4 py-3`
+- 본문 셀: `px-4 py-3.5 text-font-1`
 - 행: `border-t border-border-main`, `hover:bg-surface-hover`
 - 빈 상태는 표 안에서 `EmptyState`로 대체한다
 - 로딩은 행 개수만큼 `skeleton` 행을 보여준다(레이아웃 점프 방지)
@@ -211,7 +234,8 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 | `danger` | 실패·장애 |
 | `success` | 완료 상태 |
 
-`rounded-field border px-4 py-3 text-[13px]` + 좌측 아이콘 + `bg-*-bg`.
+`rounded-field border px-4 py-3 body-5` + 좌측 아이콘 + `bg-*-bg`.
+목업 화면 안내는 `tone="warning"`, 제목은 `MOCK 화면 · …`으로 통일한다(개발 가이드 §8).
 
 ### 7.7 Toast (Stack Alarm)
 
@@ -222,7 +246,7 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 
 ### 7.8 Badge
 
-`rounded-full px-2.5 py-1 text-[12px] font-medium` + `bg-*-bg text-*`
+`rounded-full px-2.5 py-1 body-6 font-medium` + `bg-*-bg text-*`
 상태 표기 전용. 클릭 가능한 요소로 쓰지 않는다.
 
 ### 7.9 ImageUploadField
@@ -230,16 +254,18 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 이미지를 받는 곳은 **URL 입력창을 만들지 않고 반드시 이 컴포넌트를 쓴다.**
 
 - 클릭 선택 + 드래그앤드롭 둘 다 지원한다.
-- 파일을 고르면 즉시 업로드하고, 받은 URL을 `onChange`로 넘긴다.
-  폼은 URL 문자열만 다루므로 스키마는 `z.string().min(1)`이면 된다.
+- 파일을 고르면 즉시 업로드하고, 받은 **`fileId`**를 `onChange`로 넘긴다.
+  폼은 ID 문자열만 다루므로 스키마는 `z.string().min(1)`이면 된다.
+  미리보기 URL은 `src/lib/imageUrl.ts`가 `fileId`로 조립한다.
+- `fileType`은 서버에 업로드 경로가 있는 용도만 받는다(지금은 `MAIN_BANNER`).
 - 업로드 전: 점선 테두리 빈 상태 + 허용 형식·용량 안내.
   업로드 중: 스피너. 업로드 후: 미리보기 위에 `변경` / `삭제` 버튼.
 - 검증은 컴포넌트가 한다 — JPG·PNG·WEBP, 10MB 이하. 위반 시 토스트로 알리고 요청을 보내지 않는다.
-- `aspectRatio`로 미리보기 비율을 맞춘다(배너 `1720 / 310`, 프로필 `1 / 1`).
+- `aspectRatio`로 미리보기 비율을 맞춘다(배너 `1720 / 310`).
 
 ### 7.10 EmptyState
 
-아이콘(40px, `text-font-disabled`) + 제목(14px) + 설명(13px) + 선택적 CTA.
+아이콘(40px, `text-font-disabled`) + 제목(`body-4`) + 설명(`body-5`) + 선택적 CTA.
 "데이터가 없습니다"로 끝내지 않고 **다음 행동**을 제시한다.
 
 ---
@@ -283,6 +309,7 @@ CSS 변수를 유틸리티 클래스에 매핑하므로, 화면에서는 **항�
 - `react-hook-form` + `zod`(`@hookform/resolvers`) 조합만 사용한다.
 - 스키마는 `src/schema/`에 도메인별로 둔다.
 - 필수 항목은 라벨 우측에 `*`(`text-font-error`).
-- 에러는 필드 하단 `text-[12px] text-font-error`, 레이아웃이 밀리지 않게 높이를 예약한다.
+- 에러는 필드 하단 `caption-*` + `text-font-error`, 레이아웃이 밀리지 않게 높이를 예약한다.
+- 입력값을 화면에 즉시 반영할 때는 `useWatch`를 쓴다(개발 가이드 §6).
 - 저장 버튼은 `isSubmitting` 동안 로딩 + `disabled`.
 - 값이 바뀌지 않았으면 저장 버튼을 `disabled` 처리한다.

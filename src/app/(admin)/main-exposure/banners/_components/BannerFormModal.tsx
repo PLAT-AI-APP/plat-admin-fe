@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { BANNER_ASPECT_RATIO } from "@/constants/mainExposure";
 import { toDateInputValue } from "@/lib/dayjs";
 import { bannerSchema, type BannerSchema } from "@/schema/banner.schema";
@@ -75,8 +75,7 @@ const BannerFormModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<BannerSchema>({
     resolver: zodResolver(bannerSchema),
     defaultValues: emptyValues(defaultLanguage),
@@ -102,7 +101,7 @@ const BannerFormModal = ({
     });
   }, [isOpen, mode, banner, defaultLanguage, reset]);
 
-  const imageFileId = watch("imageFileId");
+  const imageFileId = useWatch({ control, name: "imageFileId" });
 
   const submit = handleSubmit((formValues) => {
     onSubmit({
@@ -119,6 +118,7 @@ const BannerFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={modalTitle}

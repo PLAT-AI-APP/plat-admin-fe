@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
-import type { AppError, PageResponse } from "@/type/api";
+import {
+  toPageRequest,
+  toPageResponse,
+  type AppError,
+  type PageResponse,
+  type PageWith,
+} from "@/type/api";
 import type {
   AdminUniverseListItem,
   UniverseCategory,
@@ -14,7 +20,7 @@ import type { ServiceLanguage } from "@/type/language";
 /**
  * 실서버(plat-admin) 세계관 목록.
  *
- * 세계관 관리 보드 · 공식 세계관 패널 · 메인 노출 후보 피커가 모두 이 목록을
+ * 세계관 관리 목록 · 공식 세계관 패널 · 메인 노출 후보 피커가 모두 이 목록을
  * 쓴다. **세계관 목록의 출처는 이 하나뿐이라**, 어느 화면에서 고른 세계관이든
  * 같은 실 ID로 상세까지 이어진다.
  */
@@ -24,7 +30,7 @@ import type { ServiceLanguage } from "@/type/language";
  *
  * `TITLE_ASC` · `TITLE_DESC`도 서버가 받기는 하지만, **번역 테이블 조인을 피하려고
  * 실제로는 ID로 정렬한다.** 값을 지우면 서버 enum과 어긋나므로 타입에는 남겨 두고,
- * 화면 정렬 목록에서만 뺀다(`UniverseBoard`의 `ORDER_OPTIONS` 주석 참고).
+ * 화면 정렬 목록에서만 뺀다(`UniverseManager`의 `ORDER_OPTIONS` 주석 참고).
  */
 export type UniverseOrder =
   | "CREATED_DESC"
@@ -99,19 +105,6 @@ interface AdminUniverseItemResponse {
   updatedAt: string | null;
 }
 
-/** 서버 페이징 봉투(PageWith). 화면의 `PageResponse`로 정규화한다. */
-interface PageWithResponse<T> {
-  page: {
-    number: number;
-    size: number;
-    numberOfElements: number;
-    hasNext: boolean;
-    totalElements: number;
-    totalPages: number;
-  };
-  content: T[];
-}
-
 const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
   universeId: item.id,
   title: item.title,
@@ -139,10 +132,7 @@ const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
 
 /** 빈 문자열 필터는 아예 빼고, 페이지는 0부터로 낮춰 서버가 받는 형태로 만든다. */
 const toRequestParams = (params: AdminUniverseListParams) => {
-  const clean: Record<string, string | number> = {
-    page: Math.max(params.page - 1, 0),
-    size: params.size,
-  };
+  const clean: Record<string, string | number> = { ...toPageRequest(params) };
   if (params.keyword?.trim()) clean.keyword = params.keyword.trim();
   if (params.category) clean.category = params.category;
   if (params.visibility) clean.visibility = params.visibility;
@@ -162,25 +152,18 @@ const toRequestParams = (params: AdminUniverseListParams) => {
 export const getAdminUniverseList = async (
   params: AdminUniverseListParams,
 ): Promise<PageResponse<AdminUniverseListItem>> => {
-  const response = await liveAxios.get<
-    PageWithResponse<AdminUniverseItemResponse>
-  >("/admin/universes", { params: toRequestParams(params) });
+  const response = await liveAxios.get<PageWith<AdminUniverseItemResponse>>(
+    "/admin/universes",
+    { params: toRequestParams(params) },
+  );
+  const page = toPageResponse(response.data);
 
-  const { page, content } = response.data;
-
-  return {
-    content: content.map(toItem),
-    // 화면은 1부터 센다. 서버의 0-based 번호를 되돌린다.
-    page: page.number + 1,
-    size: page.size,
-    totalCount: page.totalElements,
-    totalPages: page.totalPages,
-  };
+  return { ...page, content: page.content.map(toItem) };
 };
 
 export const useAdminUniverseListQuery = (params: AdminUniverseListParams) => {
   return useQuery<PageResponse<AdminUniverseListItem>, AppError>({
-    queryKey: ["get-universe-list", params],
+    queryKey: ["get-admin-universe-list", params],
     queryFn: () => getAdminUniverseList(params),
   });
 };
@@ -210,7 +193,7 @@ export const useAdminUniverseCountQuery = (
   const params: AdminUniverseListParams = { page: 1, size: 1, ...filter };
 
   return useQuery<PageResponse<AdminUniverseListItem>, AppError, number>({
-    queryKey: ["get-universe-list", params],
+    queryKey: ["get-admin-universe-list", params],
     queryFn: () => getAdminUniverseList(params),
     select: (page) => page.totalCount,
     staleTime,

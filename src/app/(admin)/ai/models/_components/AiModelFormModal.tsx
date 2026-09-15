@@ -18,7 +18,7 @@ import {
   AI_MODEL_ROLE_TONE,
   AI_PROVIDER_LABEL,
   AI_PROVIDER_TONE,
-} from "../../_constants/aiOptions";
+} from "@/app/(admin)/ai/_constants/aiOptions";
 
 interface AiModelFormModalProps {
   /** 수정 대상. null이면 모달을 닫는다. */
@@ -70,6 +70,7 @@ const AiModelFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={model !== null}
       onClose={onClose}
       title="모델 설정 수정"

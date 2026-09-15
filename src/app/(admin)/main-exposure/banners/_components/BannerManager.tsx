@@ -15,7 +15,6 @@ import { useBannerMutation } from "@/api/main-exposure/mutateBanner";
 import { Copy, Edit, ExternalLink, Grip, ImageIcon, Plus, Trash } from "@/icons";
 import { formatDate } from "@/lib/dayjs";
 import { showErrorToast } from "@/lib/toast";
-import { buildImageUrl } from "@/lib/imageUrl";
 import { cn, reorder } from "@/lib/utils";
 import { SERVICE_LANGUAGE_LABEL, type ServiceLanguage } from "@/type/language";
 import type { Banner, BannerFormValues } from "@/type/mainExposure";
@@ -384,11 +383,7 @@ const BannerManager = () => {
                           {/* 배너의 내용은 전부 이미지 안에 있다. 목록에서도 이미지가 본문이다. */}
                           <div className="hidden w-40 shrink-0 lg:block">
                             <EntityImage
-                              src={buildImageUrl(
-                                banner.imageFileId,
-                                "MAIN_BANNER",
-                                "FIT400",
-                              )}
+                              src={banner.thumbnailUrl}
                               alt={banner.name}
                               ratio="banner"
                               fileId={banner.imageFileId}

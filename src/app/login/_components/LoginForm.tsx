@@ -13,12 +13,24 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 /** 로그인 후 돌아갈 경로. 콘솔 밖이나 절대 URL로는 보내지 않는다. */
 const resolveRedirect = (redirect: string | null) =>
   redirect && redirect.startsWith("/") && !redirect.startsWith("/login")
     ? redirect
     : "/";
+
+/** 마지막으로 로그인한 이메일. 비밀번호는 저장하지 않는다. */
+const LAST_EMAIL_KEY = "plat-admin:last-login-email";
+
+const readLastEmail = () => {
+  try {
+    return localStorage.getItem(LAST_EMAIL_KEY) ?? "";
+  } catch {
+    return "";
+  }
+};
 
 const LoginForm = () => {
   const router = useRouter();
@@ -35,6 +47,8 @@ const LoginForm = () => {
   const {
     register,
     handleSubmit,
+    setValue,
+    setFocus,
     formState: { errors },
   } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
@@ -50,8 +64,34 @@ const LoginForm = () => {
     if (admin) router.replace(redirectTo);
   }, [admin, redirectTo, router]);
 
+  /*
+    매일 같은 계정으로 들어오므로 이메일은 채워 두고 비밀번호 칸에서 시작한다.
+    처음이면 이메일 칸에서 시작한다.
+  */
+  useEffect(() => {
+    const lastEmail = readLastEmail();
+
+    if (lastEmail) {
+      setValue("email", lastEmail);
+      setFocus("password");
+    } else {
+      setFocus("email");
+    }
+  }, [setValue, setFocus]);
+
   const submit = handleSubmit((values) =>
-    submitLogin(values, { onSuccess: () => router.replace(redirectTo) }),
+    submitLogin(values, {
+      onSuccess: () => {
+        try {
+          localStorage.setItem(LAST_EMAIL_KEY, values.email);
+        } catch {
+          // 저장소를 못 쓰는 환경이면 다음에 다시 치면 된다.
+        }
+        router.replace(redirectTo);
+      },
+      // 틀린 비밀번호를 지우고 다시 칠 수 있게 선택해 둔다.
+      onError: () => setFocus("password", { shouldSelect: true }),
+    }),
   );
 
   /**
@@ -111,9 +151,8 @@ const LoginForm = () => {
             htmlFor="login-password"
             error={errors.password?.message}
           >
-            <Input
+            <PasswordInput
               id="login-password"
-              type="password"
               autoComplete="current-password"
               placeholder="비밀번호"
               hasError={Boolean(errors.password)}

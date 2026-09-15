@@ -1,10 +1,10 @@
 import { HttpResponse, delay, http } from "msw";
 import { type AppVersion, type AppVersionFormValues } from "@/type/ops";
-import { appVersions } from "../db/ops";
-import { comments } from "../db/comment";
-import { qnaItems } from "../db/communication";
-import { reports } from "../db/report";
-import { MOCK_DELAY_MS, nextId } from "../utils";
+import { appVersions } from "@/mocks/db/ops";
+import { comments } from "@/mocks/db/comment";
+import { qnaItems } from "@/mocks/db/communication";
+import { reports } from "@/mocks/db/report";
+import { MOCK_DELAY_MS, nextId } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 

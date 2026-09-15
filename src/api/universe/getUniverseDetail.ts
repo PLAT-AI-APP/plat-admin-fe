@@ -53,7 +53,12 @@ interface CharacterResponse {
 }
 
 interface AssetResponse {
-  assetId: string;
+  /**
+   * 계약은 문자열이지만 지금 서버는 `{ value: 123 }` 객체로 준다.
+   * plat-be `UniverseAssetId`만 다른 ID VO와 달리 `@JsonValue`가 없어서다.
+   * 서버가 고쳐지면 `string`만 남기고 `toAssetId`를 지운다.
+   */
+  assetId: string | { value: number | string };
   fileId: string;
   assetName: string;
   assetSituation: string | null;
@@ -97,6 +102,10 @@ interface UniverseDetailResponse {
   assets: AssetResponse[];
   scenarios: ScenarioResponse[];
 }
+
+/** 에셋 ID를 문자열로 맞춘다. 객체로 오는 이유는 `AssetResponse.assetId`에 있다. */
+const toAssetId = (assetId: AssetResponse["assetId"]): string =>
+  typeof assetId === "object" ? String(assetId.value) : String(assetId);
 
 const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
   universeId: response.id,
@@ -143,7 +152,7 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
       }
     : null,
   assets: response.assets.map((a) => ({
-    assetId: a.assetId,
+    assetId: toAssetId(a.assetId),
     fileId: a.fileId,
     assetName: a.assetName,
     assetSituation: a.assetSituation,

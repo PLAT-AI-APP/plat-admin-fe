@@ -7,7 +7,7 @@ import { formatBytes, formatWithCommas } from "@/lib/utils";
 import type { MemoryHealth, ProcessUsage } from "@/type/ops";
 import CompositionDonut, { type CompositionSlice } from "./CompositionDonut";
 import UsageBar from "./UsageBar";
-import { FREE_SLICE_COLOR, SLICE_COLORS } from "../_constants/serverStatus";
+import { FREE_SLICE_COLOR, SLICE_COLORS } from "@/app/(admin)/ops/server/_constants/serverStatus";
 
 interface MemoryDetailCardProps {
   memory: MemoryHealth;

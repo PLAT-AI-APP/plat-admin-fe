@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useDashboardSummaryQuery } from "@/api/dashboard/getDashboardSummary";
 import { useAdminUniverseCountQuery } from "@/api/universe/getAdminUniverseList";
@@ -62,7 +62,7 @@ const PendingCard = ({
   count?: number;
   href: string;
   linkLabel: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) => (
   <Card>
     <div className="flex items-start justify-between gap-3">

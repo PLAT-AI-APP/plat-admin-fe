@@ -20,14 +20,14 @@ import LanguageChips from "./LanguageChips";
 import {
   filledLanguagesOf,
   isFilledScenarioTranslation,
-} from "./universeMeta";
+} from "@/app/(admin)/universes/[universeId]/_lib/universeMeta";
 import {
   SCENARIO_LIFECYCLE_LABEL,
   SCENARIO_LIFECYCLE_TONE,
   SCENARIO_TYPE_HINT,
   SCENARIO_TYPE_LABEL,
   SCENARIO_TYPE_TONE,
-} from "../../_constants/character";
+} from "@/constants/universeOptions";
 
 interface UniverseScenarioPanelProps {
   scenarios: UniverseScenarioDetail[];

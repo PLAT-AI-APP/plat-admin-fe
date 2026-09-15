@@ -16,7 +16,7 @@ import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
-import { PROACTIVE_TRIGGER_OPTIONS } from "../../_constants/labels";
+import { PROACTIVE_TRIGGER_OPTIONS } from "@/app/(admin)/communication/_constants/communicationOptions";
 
 interface ProactiveMessageFormModalProps {
   isOpen: boolean;
@@ -46,7 +46,7 @@ const ProactiveMessageFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ProactiveMessageSchema>({
     resolver: zodResolver(proactiveMessageSchema),
     defaultValues: EMPTY_VALUES,
@@ -60,9 +60,7 @@ const ProactiveMessageFormModal = ({
       message
         ? {
             trigger: message.trigger,
-            characterId: message.characterId
-              ? String(message.characterId)
-              : "",
+            characterId: message.characterId ?? "",
             content: message.content,
             isEnabled: message.isEnabled,
           }
@@ -74,7 +72,7 @@ const ProactiveMessageFormModal = ({
     onSubmit({
       trigger: values.trigger,
       // 비워두면 전체 캐릭터 공통 메시지가 된다.
-      characterId: values.characterId ? Number(values.characterId) : undefined,
+      characterId: values.characterId || undefined,
       content: values.content,
       isEnabled: values.isEnabled,
     });
@@ -82,6 +80,7 @@ const ProactiveMessageFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={message ? "선제 메시지 수정" : "선제 메시지 등록"}

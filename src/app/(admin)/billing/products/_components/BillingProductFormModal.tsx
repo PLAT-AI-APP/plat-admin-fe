@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { formatCredit } from "@/lib/utils";
 import {
   billingProductSchema,
@@ -24,7 +24,7 @@ import Textarea from "@/components/ui/Textarea";
 import {
   PRODUCT_PLATFORM_OPTIONS,
   PRODUCT_STATUS_OPTIONS,
-} from "./productOptions";
+} from "@/app/(admin)/billing/products/_constants/productOptions";
 
 interface BillingProductFormModalProps {
   isOpen: boolean;
@@ -49,11 +49,11 @@ const BillingProductFormModal = ({
   isSubmitting,
 }: BillingProductFormModalProps) => {
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<BillingProductSchema>({
     resolver: zodResolver(billingProductSchema),
   });
@@ -89,16 +89,19 @@ const BillingProductFormModal = ({
     );
   }, [isOpen, product, defaultSortOrder, defaultPlatform, reset]);
 
-  const values = watch();
-  const totalCredit = (values.credit || 0) + (values.bonusCredit || 0);
+  const [credit, bonusCredit, amountMinor] = useWatch({
+    control,
+    name: ["credit", "bonusCredit", "amountMinor"],
+  });
+  const totalCredit = (credit || 0) + (bonusCredit || 0);
   // 크레딧 1개당 실제 결제 단가. 상품 간 가격 균형을 확인하는 용도다.
-  const unitPrice =
-    totalCredit > 0 ? (values.amountMinor || 0) / totalCredit : 0;
+  const unitPrice = totalCredit > 0 ? (amountMinor || 0) / totalCredit : 0;
 
   const submit = handleSubmit((formValues) => onSubmit(formValues));
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={product ? "상품 수정" : "상품 추가"}

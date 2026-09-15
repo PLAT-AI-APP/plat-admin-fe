@@ -1,16 +1,13 @@
 /**
  * 서버 이미지 URL 빌더.
  *
- * 관리자 서버는 파일 저장소 어댑터를 스캔하지 않아 **응답의 `*Url` 필드가
- * 대부분 null로 온다.** 대신 `fileId`는 항상 준다. 서비스 서버의 이미지
- * 엔드포인트는 인증이 필요 없는 공개 경로이므로, 어드민은 fileId만 있으면
- * `<img src>`에 그대로 걸어 실제 이미지를 볼 수 있다.
+ * 서버 응답이 URL을 주지 않는 화면(업로드 직후 미리보기 등)을 위해 fileId로
+ * 공개 경로를 조립한다. 이미지 엔드포인트는 인증이 필요 없다.
  *
- *   GET /images/{fileId}?type={FileType}&v={ImageVariant}
+ *   GET /images/{type}/{fileId}/{variant}
  *
- * 이 파일이 있는 이유: 화면마다 URL을 조립하면 `type`을 빠뜨리거나(422),
- * 그 파일 타입에 없는 variant를 요청해(422) 이미지가 조용히 깨진다.
- * 타입별로 **허용된 variant만** 고를 수 있게 여기서 막는다.
+ * 이 파일이 있는 이유: 화면마다 조립하면 그 타입에 없는 variant를 요청해(400)
+ * 이미지가 조용히 깨진다. 타입별로 **허용된 variant만** 고를 수 있게 여기서 막는다.
  */
 
 /**
@@ -27,7 +24,7 @@ const IMAGE_BASE_URI =
 /**
  * 파일 타입별 허용 variant.
  *
- * **서버 `FileTypePolicy`와 같아야 한다.** 여기 없는 값을 보내면 422가 난다.
+ * **서버 `FileTypePolicy`와 같아야 한다.** 여기 없는 값을 보내면 400이 난다.
  * 예를 들어 `UNIVERSE_PROFILE`에는 `SQ40`이 없다 — 세계관 썸네일을 유저
  * 아바타처럼 40px로 받으려다 깨지는 사고가 실제로 나기 쉬운 자리다.
  */
@@ -63,15 +60,10 @@ export const buildImageUrl = <T extends ImageFileType>(
 ): string | undefined => {
   if (!fileId || !IMAGE_BASE_URI) return undefined;
 
-  return `${IMAGE_BASE_URI}/images/${fileId}?type=${type}&v=${variant}`;
+  return `${IMAGE_BASE_URI}/images/${type.toLowerCase()}/${fileId}/${variant.toLowerCase()}`;
 };
 
-/**
- * 서버가 준 URL을 우선 쓰고, 없으면 fileId로 만든다.
- *
- * 관리자 서버가 나중에 URL을 채워 주기 시작하면 **화면을 고치지 않고도**
- * 그 값을 쓰게 된다. 지금 fileId로만 조립해 두면 그때 전수 수정이 필요하다.
- */
+/** 서버가 준 URL을 우선 쓰고, 없으면 fileId로 만든다. */
 export const resolveImageUrl = <T extends ImageFileType>(
   url: string | null | undefined,
   fileId: string | null | undefined,

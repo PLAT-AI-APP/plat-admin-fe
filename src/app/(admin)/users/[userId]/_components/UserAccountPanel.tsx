@@ -17,7 +17,7 @@ import {
   LOGIN_PROVIDER_LABEL,
   USER_STATUS_LABEL,
   USER_STATUS_TONE,
-} from "../../_constants/userOptions";
+} from "@/app/(admin)/users/_constants/userOptions";
 
 interface UserAccountPanelProps {
   user: UserDetail;
@@ -99,7 +99,7 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
             label="마케팅 수신 동의"
             value={
               user.isMarketingAgreed === undefined ? (
-                <span className="text-font-3">{UNCOLLECTED_LABEL}</span>
+                <span className="text-font-disabled">{UNCOLLECTED_LABEL}</span>
               ) : user.isMarketingAgreed ? (
                 <Badge tone="success">동의</Badge>
               ) : (

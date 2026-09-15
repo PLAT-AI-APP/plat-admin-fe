@@ -7,7 +7,12 @@ import { useLedgerListQuery } from "@/api/billing/getLedgerList";
 import { usePaymentRecordListQuery } from "@/api/billing/getPaymentRecordList";
 import { ExternalLink } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatAdmin, formatCurrency, formatWithCommas } from "@/lib/utils";
+import {
+  formatAdmin,
+  formatCurrency,
+  formatSignedCredit,
+  formatWithCommas,
+} from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import type {
   CreditAdjustment,
@@ -17,33 +22,30 @@ import type {
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
+import PaymentRecordDetailModal from "@/components/billing/PaymentRecordDetailModal";
 import {
   ADJUSTMENT_TYPE_LABEL,
   ADJUSTMENT_TYPE_SIGN,
   ADJUSTMENT_TYPE_TONE,
-} from "../../../billing/credit-adjustments/_components/adjustmentOptions";
-import {
   LEDGER_TYPE_LABEL,
   LEDGER_TYPE_TONE,
-} from "../../../billing/ledger/_components/ledgerOptions";
-import PaymentRecordDetailModal from "../../../billing/retention/_components/PaymentRecordDetailModal";
-import {
   PAYMENT_METHOD_LABEL,
   PG_PROVIDER_LABEL,
   RECORD_STATUS_LABEL,
   RECORD_STATUS_TONE,
-} from "../../../billing/retention/_components/recordOptions";
-import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
+} from "@/constants/billingOptions";
+import { USER_DETAIL_PAGE_SIZE } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
 
 interface UserBillingPanelProps {
   userId: string;
 }
 
-/** 크레딧 증감은 부호를 앞에 붙이고 색으로 방향을 먼저 읽게 한다. */
+/**
+ * 크레딧 증감은 부호를 앞에 붙이고 색으로 방향을 먼저 읽게 한다.
+ * 이 카드의 다른 크레딧 열(조정 후 잔액 등)이 단위 없이 숫자만 적어 여기도 " CR"을 뗀다.
+ */
 const CreditDelta = ({ value }: { value: number }) => {
   if (value === 0) return <span className="text-font-disabled">-</span>;
 
@@ -55,8 +57,7 @@ const CreditDelta = ({ value }: { value: number }) => {
           : "font-medium text-danger tabular-nums"
       }
     >
-      {value > 0 ? "+" : "-"}
-      {formatWithCommas(Math.abs(value))}
+      {formatSignedCredit(value, { withUnit: false })}
     </span>
   );
 };
@@ -72,10 +73,11 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
   const [detailRecord, setDetailRecord] = useState<PaymentRecord | null>(null);
 
   /*
-    원장은 장부와 권한이 다르다. 없으면 카드 자체를 감춘다 — 빈 표를 남기면
-    "이 유저는 결제 기록이 없다"로 읽혀 장부와 어긋나 보인다.
+    권한이 없으면 카드 자체를 감춘다 — 빈 표를 남기면 "이 유저는 결제 기록이
+    없다"로 읽혀 장부와 어긋나 보인다. 서버 권한 자원에 보존 원장이 따로 없어
+    장부 권한(`ledger:read`)을 함께 쓴다.
   */
-  const canReadRecord = useHasPermission("paymentRecord:read");
+  const canReadRecord = useHasPermission("ledger:read");
 
   const { data: ledger, isLoading: isLedgerLoading } = useLedgerListQuery({
     page: ledgerPage,

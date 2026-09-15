@@ -15,8 +15,8 @@ export interface AdminProfile {
   /** 최고관리자는 권한 목록을 보지 않고 전부 통과한다. */
   isSuperAdmin: boolean;
   permissions: PermissionKey[];
-  lastLoginAt?: string;
-  lastLoginIp?: string;
+  lastLoginAt: string | null;
+  lastLoginIp: string | null;
 }
 
 export interface LoginResponse {

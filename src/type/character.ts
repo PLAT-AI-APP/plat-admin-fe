@@ -1,8 +1,5 @@
 import type { HashtagCategory } from "./hashtag";
-import {
-  SERVICE_LANGUAGE_LABEL,
-  type ServiceLanguage,
-} from "./language";
+import type { ServiceLanguage } from "./language";
 
 /** 캐릭터 노출 상태 */
 export type CharacterVisibility = "PUBLIC" | "PRIVATE" | "HIDDEN";
@@ -11,7 +8,8 @@ export type CharacterVisibility = "PUBLIC" | "PRIVATE" | "HIDDEN";
 export type CharacterStatus = "ACTIVE" | "BLOCKED" | "DELETED";
 
 export interface Character {
-  characterId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  characterId: string;
   name: string;
   thumbnailUrl: string;
   /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
@@ -92,18 +90,21 @@ export type ScenarioType = "START" | "NORMAL" | "EVENT" | "ENDING";
 export type ScenarioLifecycle = "ACTIVE" | "HIDDEN" | "DEPRECATED";
 
 /**
- * 시나리오(에피소드) — **목업 큐레이션 구간에서만 쓰는 모양**이다.
+ * 시나리오(에피소드) — **MSW 목업 시드의 모양**이다.
  *
  * 세계관이 "무대"라면 시나리오는 **그 무대에서 시작하는 한 편의 이야기**다.
  * 유저는 세계관에 들어가 시나리오를 고르고, 그 시나리오의 상황과 첫 대사로
  * 대화를 시작한다. (plat-fe의 캐릭터 상세 > 시나리오 선택)
  *
  * 실서버 상세는 상황·첫 대사를 따로 주지 않고 **언어별 본문(`content`)** 하나로 준다.
- * 실연동된 상세 화면은 아래 `UniverseScenarioDetail`을 쓴다.
+ * 실연동된 상세 화면은 아래 `UniverseScenarioDetail`을 쓴다. 이 모양은 이제
+ * 목업 시드(`mocks/db/character`)가 세계관의 `scenarioCount`를 세는 데만 남아 있다.
  */
 export interface UniverseScenario {
-  scenarioId: number;
-  universeId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  scenarioId: string;
+  /** Snowflake. 문자열 그대로 다룬다. */
+  universeId: string;
   /** 회차. 목록 정렬 기준이자 유저에게 보이는 번호다. */
   episodeNo: number;
   type: ScenarioType;
@@ -119,12 +120,6 @@ export interface UniverseScenario {
 }
 
 /**
- * 세계관.
- *
- * 크리에이터가 만드는 콘텐츠의 단위다. **캐릭터 한 명과 시나리오 여러 편**을
- * 품고 있고, 메인 노출 큐레이션이 고르는 대상도 이 세계관이다.
- */
-/**
  * 세계관에 등장하는 캐릭터.
  *
  * **세계관과 캐릭터는 N:M이다.** 한 세계관에 여러 캐릭터가 나올 수 있고,
@@ -132,21 +127,26 @@ export interface UniverseScenario {
  * 목록 카드에는 첫 번째 캐릭터를 대표로 쓴다.
  */
 export interface UniverseCharacter {
-  characterId: number;
+  /** Snowflake. 문자열 그대로 다룬다. */
+  characterId: string;
   name: string;
   thumbnailUrl: string;
 }
 
 /**
- * 세계관 — **목업 큐레이션 구간의 행 타입**이다.
+ * 세계관 — **MSW 목업 시드의 행 타입**이다.
  *
- * 메인 노출(배너 · 오늘의 PICK · 공식 맛보기 · 에셋 추천)과 세계관 선택 모달이
- * 이 모양을 쓴다. 큐레이션은 아직 MSW 목업이고 슬롯도 목업 ID로 저장되어 있어
- * **여기 타입을 실서버 DTO로 바꾸면 큐레이션 화면이 통째로 깨진다.**
- * 실서버 목록 행은 `UniverseListRow`, 상세는 `UniverseDetail`이다.
+ * 크리에이터가 만드는 콘텐츠의 단위로, 캐릭터와 시나리오 여러 편을 품는다.
+ * 세계관 보드·상세와 메인 노출(홈 섹션·배너)·세계관 선택 모달은 이미 실서버
+ * 계약(`AdminUniverseListItem`·`UniverseDetail`)으로 옮겨 가서 이 모양을 쓰지 않는다.
+ *
+ * 남은 사용처는 아직 목업인 구간뿐이다. 캐릭터 상세(`CharacterDetail.universes`)가
+ * `UniverseSummary`로 이 행을 그리고, 전역 검색·댓글·공식 계정 목업 시드가 이 배열을
+ * 읽는다. 실서버 계약과 필드 이름(`name`·`thumbnailUrl`)이 다른 것은 그 때문이다.
  */
 export interface Universe {
-  universeId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  universeId: string;
   /** 큐레이션에서 "제목"으로 노출된다. */
   name: string;
   /** 큐레이션에서 "설명"으로 노출된다. */
@@ -160,14 +160,6 @@ export interface Universe {
    */
   characters: UniverseCharacter[];
   tags: string[];
-  /**
-   * 이 세계관이 **번역을 갖춘 언어**. 한국어는 항상 포함된다.
-   *
-   * 메인 노출(배너 · 오늘의 PICK · 공식 맛보기 · 에셋 추천)은 언어별로 목록을
-   * 따로 관리하는데, 그 후보를 거르는 기준이 이 값이다. 영어 번역이 없는
-   * 세계관을 영어 목록에 실으면 앱에서는 한국어 원문이 그대로 나간다.
-   */
-  supportedLanguages: ServiceLanguage[];
   /**
    * 공식 여부.
    *
@@ -199,12 +191,6 @@ export interface Universe {
   createdAt: string;
 }
 
-/**
- * 세계관 상세.
- *
- * 목록에는 시나리오를 싣지 않는다. 한 세계관에 열 편이 넘게 달릴 수 있어
- * 목록 응답이 통째로 무거워진다.
- */
 /** 세계관의 대표 캐릭터. 목록 카드·배너처럼 한 명만 보여 주는 자리에서 쓴다. */
 export const mainCharacterOf = (universe: Universe): UniverseCharacter | undefined =>
   universe.characters[0];
@@ -233,24 +219,6 @@ export const isExposableUniverse = (universe: UniverseExposureState) =>
   universe.visibility === "PUBLIC" &&
   universe.reviewStatus === "APPROVED";
 
-/** 해당 언어 번역을 갖춘 세계관인지. 언어별 큐레이션 후보를 거를 때 쓴다. */
-export const supportsLanguage = (
-  universe: Pick<Universe, "supportedLanguages">,
-  language: ServiceLanguage,
-) => universe.supportedLanguages.includes(language);
-
-/**
- * 그 언어 화면에 나갈 수 있는 세계관인지.
- *
- * 노출 가능 상태(승인 · 공개 · 활성)만으로는 부족하다. **번역이 없는 언어의
- * 목록에 실리면 앱에서는 그 자리에 한국어 원문이 나간다.** 언어별 목록은
- * 상태와 번역을 함께 본다.
- */
-export const isExposableInLanguage = (
-  universe: Universe,
-  language: ServiceLanguage,
-) => isExposableUniverse(universe) && supportsLanguage(universe, language);
-
 /**
  * 노출될 수 없는 이유. 화면에 그대로 찍는다.
  * 노출 가능하면 `undefined`.
@@ -266,21 +234,6 @@ export const universeBlockReason = (
 
   return undefined;
 };
-
-/**
- * 그 언어 목록에 실을 수 없는 이유.
- *
- * 상태 문제(`universeBlockReason`)를 먼저 보고, 상태가 멀쩡하면 번역 여부를 본다.
- * 번역이 없는 쪽이 더 흔한데 화면에 안 적어 두면 "왜 후보에 없지"를 매번 다시 찾는다.
- */
-export const universeLanguageBlockReason = (
-  universe: Universe,
-  language: ServiceLanguage,
-): string | undefined =>
-  universeBlockReason(universe) ??
-  (supportsLanguage(universe, language)
-    ? undefined
-    : `${SERVICE_LANGUAGE_LABEL[language]} 번역 없음`);
 
 /* ------------------------------------------------------------------ */
 /* 실서버(plat-admin) 세계관 계약                                        */
@@ -440,7 +393,8 @@ export type ChatExportStatus = "PENDING" | "PROCESSING" | "DONE" | "FAILED";
 export interface ChatExportJob {
   jobId: number;
   targetType: "CHARACTER" | "USER";
-  targetId: number;
+  /** 캐릭터·유저 ID. 둘 다 Snowflake라 문자열 그대로 다룬다. */
+  targetId: string;
   targetName: string;
   startDate: string;
   endDate: string;

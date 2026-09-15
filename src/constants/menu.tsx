@@ -235,7 +235,6 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/ai/catalog",
         permission: "aiModel:read",
         icon: <Cpu size={SUB_ICON_SIZE} />,
-        isMock: true,
       },
       {
         label: "AI 모델 관리",
@@ -287,10 +286,14 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
           흐름**을 보는 곳이고, 이쪽은 **탈퇴하고 개인정보까지 파기된 뒤에도
           법이 남기게 하는 기록**을 보는 곳이다. 조회 키부터 다르다 — 유저가
           아니라 결제사 거래번호로 찾는다.
+
+          권한은 장부와 같은 `ledger:read`다. 서버 권한 자원(`AdminResource`)에
+          보존 원장이 따로 없어, 없는 키를 걸면 직책 저장이 400으로 거부된다.
+          열람을 따로 떼려면 서버에 자원이 먼저 생겨야 한다.
         */
         label: "결제 보존 원장",
         href: "/billing/retention",
-        permission: "paymentRecord:read",
+        permission: "ledger:read",
         icon: <Scale size={SUB_ICON_SIZE} />,
         isMock: true,
       },

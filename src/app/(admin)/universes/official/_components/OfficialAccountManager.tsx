@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useOfficialAccountListQuery } from "@/api/official/getOfficialAccountList";
@@ -36,7 +35,6 @@ import OfficialUniversePanel from "./OfficialUniversePanel";
  * 계정을 등록·해제하면 그 계정이 가진 세계관 전부의 공식 표시가 함께 바뀐다.
  */
 const OfficialAccountManager = () => {
-  const router = useRouter();
   const canWrite = useHasPermission("officialAccount:write");
   const canDelete = useHasPermission("officialAccount:delete");
   const { data, isLoading } = useOfficialAccountListQuery();
@@ -46,6 +44,7 @@ const OfficialAccountManager = () => {
     register,
     handleSubmit,
     reset,
+    setFocus,
     formState: { errors },
   } = useForm<OfficialAccountSchema>({
     resolver: zodResolver(officialAccountSchema),
@@ -58,7 +57,11 @@ const OfficialAccountManager = () => {
 
   const handleRegister = (values: OfficialAccountSchema) => {
     registerMutation.mutate(values.userId, {
-      onSuccess: () => reset(),
+      // 연달아 등록할 수 있게 비운 칸으로 포커스를 돌린다.
+      onSuccess: () => {
+        reset();
+        setFocus("userId");
+      },
       // 유저를 못 찾거나 이미 등록된 경우를 입력 자리에서 바로 알려 준다.
       onError: (error) => showErrorToast(error),
     });
@@ -240,7 +243,7 @@ const OfficialAccountManager = () => {
           getRowKey={(row) => row.userId}
           isLoading={isLoading}
           skeletonRows={3}
-          onRowClick={(row) => router.push(`/users/${row.userId}`)}
+          getRowHref={(row) => `/users/${row.userId}`}
           emptyTitle="공식으로 지정된 계정이 없습니다."
           emptyDescription="유저 ID를 등록하면 그 계정의 세계관이 공식으로 표시됩니다."
           emptyAction={

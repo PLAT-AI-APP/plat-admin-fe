@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import {
+  toPageRequest,
   toPageResponse,
   type AppError,
   type PageResponse,
@@ -41,8 +42,7 @@ export const getHashtagSuggestItemList = async (
     {
       params: {
         name: params.name,
-        page: params.page - 1,
-        size: params.size,
+        ...toPageRequest(params),
       },
     },
   );
@@ -68,7 +68,7 @@ export const useHashtagSuggestItemListQuery = ({
   size: number;
 }) => {
   return useQuery<PageResponse<HashtagSuggest>, AppError>({
-    queryKey: ["get-hashtag-suggest-items", name, page, size],
+    queryKey: ["get-hashtag-suggest-item-list", name, page, size],
     queryFn: () => getHashtagSuggestItemList({ name: name ?? "", page, size }),
     enabled: Boolean(name),
   });

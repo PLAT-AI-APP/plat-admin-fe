@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { useQnaListQuery } from "@/api/communication/getQnaList";
 import { formatDateTime } from "@/lib/dayjs";
 import { formatAdmin, truncate } from "@/lib/utils";
@@ -11,10 +12,8 @@ import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import Tabs from "@/components/ui/Tabs";
 import {
   QNA_CATEGORY_LABEL,
@@ -23,14 +22,22 @@ import {
   QNA_STATUS_LABEL,
   QNA_STATUS_TABS,
   QNA_STATUS_TONE,
-} from "../../_constants/labels";
+} from "@/app/(admin)/communication/_constants/communicationOptions";
 import QnaDetailModal from "./QnaDetailModal";
 
+/** 주소에 실리는 목록 조건 */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  status: "",
+  category: "",
+};
+
 const QnaManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState<QnaStatus | "">("");
-  const [category, setCategory] = useState<QnaCategory | "">("");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const status = params.status as QnaStatus | "";
+  const category = params.category as QnaCategory | "";
   const [selectedQnaId, setSelectedQnaId] = useState<number | null>(null);
 
   const { data, isLoading } = useQnaListQuery({
@@ -41,21 +48,13 @@ const QnaManager = () => {
     category,
   });
 
-  /** 필터가 바뀌면 이전 페이지 번호가 의미를 잃으므로 항상 1페이지로 되돌린다. */
-  const handleChangeStatus = (next: QnaStatus | "") => {
-    setStatus(next);
-    setPage(1);
-  };
+  /* 필터가 바뀌면 `useListParams`가 페이지를 1로 되돌린다. */
+  const handleChangeStatus = (next: QnaStatus | "") => setParams({ status: next });
 
-  const handleChangeCategory = (next: QnaCategory | "") => {
-    setCategory(next);
-    setPage(1);
-  };
+  const handleChangeCategory = (next: QnaCategory | "") =>
+    setParams({ category: next });
 
-  const handleSearch = (next: string) => {
-    setKeyword(next);
-    setPage(1);
-  };
+  const handleSearch = (next: string) => setParams({ keyword: next });
 
   const columns: TableColumn<QnaItem>[] = [
     {
@@ -165,7 +164,7 @@ const QnaManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
 

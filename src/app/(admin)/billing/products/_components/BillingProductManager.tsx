@@ -18,10 +18,8 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Dropdown from "@/components/ui/Dropdown";
 import IconButton from "@/components/ui/IconButton";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import BillingProductFormModal from "./BillingProductFormModal";
 import {
@@ -29,7 +27,7 @@ import {
   PRODUCT_PLATFORM_TONE,
   PRODUCT_STATUS_LABEL,
   PRODUCT_STATUS_TONE,
-} from "./productOptions";
+} from "@/app/(admin)/billing/products/_constants/productOptions";
 
 const STATUS_ORDER: ProductStatus[] = ["ON_SALE", "HIDDEN", "ENDED"];
 

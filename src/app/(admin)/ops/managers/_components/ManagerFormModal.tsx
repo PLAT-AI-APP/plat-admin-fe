@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { managerSchema, type ManagerSchema } from "@/schema/manager.schema";
 import { useAdminRoleListQuery } from "@/api/ops/getAdminRoleList";
 import type { Manager, ManagerFormValues } from "@/type/ops";
@@ -39,8 +39,7 @@ const ManagerFormModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ManagerSchema>({
     resolver: zodResolver(managerSchema),
     defaultValues: EMPTY_VALUES,
@@ -68,13 +67,14 @@ const ManagerFormModal = ({
     value: String(role.roleId),
   }));
 
-  const selectedRoleId = watch("roleId");
+  const selectedRoleId = useWatch({ control, name: "roleId" });
   const selectedRole = roles.find((role) => role.roleId === selectedRoleId);
 
   const submit = handleSubmit((formValues) => onSubmit(formValues));
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={manager ? "관리자 수정" : "관리자 초대"}

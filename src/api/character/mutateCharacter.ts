@@ -9,7 +9,7 @@ import type {
 import { showAppToast } from "@/lib/toast";
 
 export const updateCharacterVisibility = async (
-  characterId: number,
+  characterId: string,
   visibility: CharacterVisibility,
 ) => {
   const response = await adminAxios.patch<Character>(
@@ -40,7 +40,7 @@ export interface CharacterStatusBody {
  * 조치라 사유가 함께 남아야 한다.
  */
 export const updateCharacterStatus = async (
-  characterId: number,
+  characterId: string,
   body: CharacterStatusBody,
 ) => {
   const response = await adminAxios.patch<Character>(
@@ -51,26 +51,23 @@ export const updateCharacterStatus = async (
   return response.data;
 };
 
-export const deleteCharacter = async (characterId: number) => {
+export const deleteCharacter = async (characterId: string) => {
   await adminAxios.delete(`/admin/characters/${characterId}`);
 };
 
-/** 캐릭터 노출 상태 변경·차단·삭제 후 전체/공식 목록을 함께 갱신합니다. */
+/** 캐릭터 노출 상태 변경·차단·삭제 후 목록과 상세를 함께 갱신합니다. */
 export const useCharacterMutation = () => {
   const queryClient = useQueryClient();
 
   const invalidateCharacterQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["get-character-list"] });
-    queryClient.invalidateQueries({
-      queryKey: ["get-official-character-list"],
-    });
     queryClient.invalidateQueries({ queryKey: ["get-character-detail"] });
   };
 
   const visibilityMutation = useMutation<
     Character,
     AppError,
-    { characterId: number; visibility: CharacterVisibility }
+    { characterId: string; visibility: CharacterVisibility }
   >({
     mutationFn: ({ characterId, visibility }) =>
       updateCharacterVisibility(characterId, visibility),
@@ -83,7 +80,7 @@ export const useCharacterMutation = () => {
   const statusMutation = useMutation<
     Character,
     AppError,
-    { characterId: number; body: CharacterStatusBody }
+    { characterId: string; body: CharacterStatusBody }
   >({
     mutationFn: ({ characterId, body }) =>
       updateCharacterStatus(characterId, body),
@@ -98,7 +95,7 @@ export const useCharacterMutation = () => {
     },
   });
 
-  const deleteMutation = useMutation<void, AppError, number>({
+  const deleteMutation = useMutation<void, AppError, string>({
     mutationFn: deleteCharacter,
     onSuccess: () => {
       showAppToast("success", "캐릭터를 삭제했습니다.");

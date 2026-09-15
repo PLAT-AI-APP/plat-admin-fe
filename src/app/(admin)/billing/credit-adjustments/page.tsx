@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import PageHeader from "@/components/layout/PageHeader";
+import Skeleton from "@/components/ui/Skeleton";
 import CreditAdjustmentManager from "./_components/CreditAdjustmentManager";
 
 export default function CreditAdjustmentPage() {
@@ -9,7 +11,9 @@ export default function CreditAdjustmentPage() {
         description="운영자가 크레딧을 수동으로 지급하거나 차감합니다."
       />
 
-      <CreditAdjustmentManager />
+      <Suspense fallback={<Skeleton className="h-64 w-full rounded-card" />}>
+        <CreditAdjustmentManager />
+      </Suspense>
     </>
   );
 }

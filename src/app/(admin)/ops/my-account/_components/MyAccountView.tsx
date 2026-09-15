@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useAdminRoleListQuery } from "@/api/ops/getAdminRoleList";
 import { Edit, Key } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
@@ -20,7 +20,7 @@ import Card from "@/components/ui/Card";
 import ProfileNameModal from "./ProfileNameModal";
 
 /** 정보 한 줄 */
-const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
+const InfoRow = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="flex items-center justify-between gap-4 border-b border-border-main py-3 last:border-b-0">
     <span className="body-5 text-font-2">{label}</span>
     <span className="body-4 text-font-1">{value}</span>

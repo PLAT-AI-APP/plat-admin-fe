@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import PageHeader from "@/components/layout/PageHeader";
+import Skeleton from "@/components/ui/Skeleton";
 import Alert from "@/components/ui/Alert";
 import QnaManager from "./_components/QnaManager";
 
@@ -19,7 +21,9 @@ export default function QnaPage() {
         전달되지 않습니다. 문의 API가 붙는 시점에 실제 연동으로 전환합니다.
       </Alert>
 
-      <QnaManager />
+      <Suspense fallback={<Skeleton className="h-64 w-full rounded-card" />}>
+        <QnaManager />
+      </Suspense>
     </>
   );
 }

@@ -45,7 +45,7 @@ interface AppProfilePreset {
   label: string;
   /** 실서버(plat-be) 오리진. */
   liveBaseUri: string;
-  /** 이미지 서빙 오리진(`GET /images/{fileId}`). 보통 실서버와 같다. */
+  /** 이미지 서빙 오리진(`GET /images/{type}/{fileId}/{variant}`). 보통 실서버와 같다. */
   imageBaseUri: string;
   /** MSW 목업 워커를 띄우는가. */
   mocking: boolean;

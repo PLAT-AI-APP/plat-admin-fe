@@ -1,5 +1,5 @@
 import PageHeader from "@/components/layout/PageHeader";
-import ManagerManager from "./_components/ManagerManager";
+import AdminAccountManager from "./_components/AdminAccountManager";
 
 export default function ManagerPage() {
   return (
@@ -9,7 +9,7 @@ export default function ManagerPage() {
         description="관리자 계정과 권한을 관리합니다."
       />
 
-      <ManagerManager />
+      <AdminAccountManager />
     </>
   );
 }

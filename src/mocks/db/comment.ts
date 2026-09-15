@@ -3,7 +3,7 @@ import type {
   CommentStatus,
   CommentTargetType,
 } from "@/type/comment";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
 import { characters, universes } from "./character";
 import { pickManager } from "./ops";
 import { users } from "./user";
@@ -48,12 +48,12 @@ const pickTarget = (seed: number, targetType: CommentTargetType) => {
   if (targetType === "CHARACTER") {
     const character = characters[randomInt(seed, 0, characters.length - 1)];
 
-    return { targetId: String(character.characterId), targetName: character.name };
+    return { targetId: character.characterId, targetName: character.name };
   }
 
   const universe = universes[randomInt(seed, 0, universes.length - 1)];
 
-  return { targetId: String(universe.universeId), targetName: universe.name };
+  return { targetId: universe.universeId, targetName: universe.name };
 };
 
 /**

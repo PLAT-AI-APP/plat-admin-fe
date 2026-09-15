@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import {
+  toPageRequest,
   toPageResponse,
   type AppError,
   type PageResponse,
@@ -53,8 +54,7 @@ export const toBatchJobRun = (run: BatchJobRunResponse): BatchJobRun => ({
 
 /** 화면은 1부터, 서버는 0부터 페이지를 센다. 빈 필터는 서버에 보내지 않는다. */
 const toRequestParams = (params: BatchRunListParams) => ({
-  page: Math.max(params.page - 1, 0),
-  size: params.size,
+  ...toPageRequest(params),
   jobKey: params.jobKey || undefined,
   status: params.status || undefined,
   trigger: params.trigger || undefined,

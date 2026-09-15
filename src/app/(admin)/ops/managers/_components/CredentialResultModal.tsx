@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { Check, Copy } from "@/icons";
-import { showAppToast } from "@/lib/toast";
 import type { ManagerCredentialIssued } from "@/type/ops";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
@@ -28,23 +27,16 @@ const CredentialResultModal = ({
   onClose,
   mode,
 }: CredentialResultModalProps) => {
-  const [isCopied, setIsCopied] = useState(false);
+  const { copy, isCopied, reset } = useCopyToClipboard();
 
   const handleCopy = async () => {
     if (!result) return;
 
-    try {
-      await navigator.clipboard.writeText(result.temporaryPassword);
-      setIsCopied(true);
-      showAppToast("success", "임시 비밀번호를 복사했습니다.");
-    } catch {
-      // 클립보드 권한이 없는 환경에서는 직접 선택해 복사해야 한다.
-      showAppToast("warning", "복사에 실패했습니다. 값을 직접 선택해 주세요.");
-    }
+    await copy(result.temporaryPassword, "임시 비밀번호를 복사했습니다.");
   };
 
   const handleClose = () => {
-    setIsCopied(false);
+    reset();
     onClose();
   };
 

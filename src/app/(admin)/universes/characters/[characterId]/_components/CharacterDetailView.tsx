@@ -26,25 +26,25 @@ import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import UniverseSummary from "@/components/universe/UniverseSummary";
 import CharacterAvatar, {
   characterImageSrc,
-} from "../../_components/CharacterAvatar";
-import CharacterBlockModal from "../../_components/CharacterBlockModal";
-import { buildCharacterActions } from "../../_components/characterActions";
+} from "@/components/universe/CharacterAvatar";
+import CharacterBlockModal from "@/app/(admin)/universes/characters/_components/CharacterBlockModal";
+import { buildCharacterActions } from "@/app/(admin)/universes/characters/_components/characterActions";
 import {
   CHARACTER_STATUS_LABEL,
   CHARACTER_STATUS_TONE,
-} from "../../_constants/characterOptions";
+} from "@/app/(admin)/universes/characters/_constants/characterOptions";
 import {
   characterBlockReason,
   isExposableCharacter,
-} from "../../_lib/characterExposure";
+} from "@/app/(admin)/universes/characters/_lib/characterExposure";
 import {
   VISIBILITY_LABEL,
   VISIBILITY_TONE,
-} from "../../../_constants/character";
+} from "@/constants/universeOptions";
 
 
 interface CharacterDetailViewProps {
-  characterId: number;
+  characterId: string;
 }
 
 type DetailTab = "basic" | "universes" | "prompt";
@@ -278,7 +278,7 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
           data && characterImageSrc(data, "ORIGIN")
             ? [
                 {
-                  id: String(data.characterId),
+                  id: data.characterId,
                   url: characterImageSrc(data, "ORIGIN")!,
                   title: data.name,
                   caption: `#${data.characterId} · ${data.creatorNickname}`,

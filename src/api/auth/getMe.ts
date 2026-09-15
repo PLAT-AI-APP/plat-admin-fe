@@ -28,7 +28,7 @@ export const useSyncMyProfile = () => {
   const patchAdmin = useAdminStore((state) => state.patchAdmin);
 
   const { data } = useQuery<AdminProfile, AppError>({
-    queryKey: ["get-my-profile"],
+    queryKey: ["get-me"],
     queryFn: getMe,
     enabled: Boolean(accessToken),
     // 세션이 살아 있는 동안 다시 부르지 않는다. 목적은 콘솔을 열 때 한 번 맞추는 것이다.

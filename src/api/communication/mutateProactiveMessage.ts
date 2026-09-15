@@ -6,8 +6,8 @@ import { showAppToast } from "@/lib/toast";
 
 /** 선제 메시지 생성·수정 요청 본문 */
 export interface ProactiveMessageFormValues {
-  /** 비워두면 전체 캐릭터에 적용된다. */
-  characterId?: number;
+  /** 비워두면 전체 캐릭터에 적용된다. Snowflake라 문자열 그대로 보낸다. */
+  characterId?: string;
   trigger: ProactiveTrigger;
   content: string;
   isEnabled: boolean;

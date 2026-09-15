@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { adminAxios } from "..";
+import { IS_MOCKING } from "@/api/baseUri";
 import type { AppError } from "@/type/api";
 import type { PendingCounts } from "@/type/ops";
 
@@ -19,11 +20,15 @@ const PENDING_REFETCH_MS = 60_000;
  *
  * 대시보드 요약과 따로 둔다. 대시보드는 화면을 열 때 한 번 보는 값이고,
  * 이 값은 콘솔에 머무는 내내 갱신되어야 한다.
+ *
+ * **실서버에 아직 엔드포인트가 없어 목업이 켜진 환경에서만 부른다.** 목업이 꺼진
+ * 운영(`main`)에서 켜 두면 60초마다 404가 쌓이고 뱃지는 어차피 비어 있다.
  */
 export const usePendingCountsQuery = () => {
   return useQuery<PendingCounts, AppError>({
     queryKey: ["get-pending-counts"],
     queryFn: getPendingCounts,
+    enabled: IS_MOCKING,
     refetchInterval: PENDING_REFETCH_MS,
     // 목록에서 처리하고 돌아오면 바로 줄어들어야 한다.
     refetchOnWindowFocus: true,

@@ -1,8 +1,8 @@
 import { HttpResponse, delay, http } from "msw";
 import type { UpdateReportStatusValues } from "@/type/report";
-import { reports } from "../db/report";
-import { stampAdmin } from "../session";
-import { MOCK_DELAY_MS, matchesKeyword, paginate } from "../utils";
+import { reports } from "@/mocks/db/report";
+import { stampAdmin } from "@/mocks/session";
+import { MOCK_DELAY_MS, matchesKeyword, paginate } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
@@ -23,7 +23,7 @@ export const reportHandlers = [
         report.targetName,
         report.reporterNickname,
         report.detail,
-        String(report.reportId),
+        report.reportId,
       ),
     );
 
@@ -64,7 +64,7 @@ export const reportHandlers = [
       const { status, handlerNote } =
         (await request.json()) as UpdateReportStatusValues;
       const index = reports.findIndex(
-        (report) => report.reportId === Number(params.reportId),
+        (report) => report.reportId === params.reportId,
       );
 
       if (index < 0) {

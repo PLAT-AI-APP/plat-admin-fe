@@ -1,9 +1,9 @@
 import { HttpResponse, delay, http } from "msw";
 import type { GlobalSearchItem } from "@/api/search/getGlobalSearch";
-import { characters, universes } from "../db/character";
-import { hashtags } from "../db/hashtag";
-import { users } from "../db/user";
-import { MOCK_DELAY_MS, matchesKeyword } from "../utils";
+import { characters, universes } from "@/mocks/db/character";
+import { hashtags } from "@/mocks/db/hashtag";
+import { users } from "@/mocks/db/user";
+import { MOCK_DELAY_MS, matchesKeyword } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
@@ -25,7 +25,7 @@ export const searchHandlers = [
           keyword,
           user.nickname,
           user.email ?? "",
-          String(user.userId),
+          user.userId,
         ),
       )
       .slice(0, LIMIT_PER_TYPE)
@@ -43,13 +43,13 @@ export const searchHandlers = [
           keyword,
           character.name,
           character.creatorNickname,
-          String(character.characterId),
+          character.characterId,
         ),
       )
       .slice(0, LIMIT_PER_TYPE)
       .map((character) => ({
         type: "CHARACTER",
-        id: String(character.characterId),
+        id: character.characterId,
         title: character.name,
         description: `크리에이터 ${character.creatorNickname}`,
         href: `/universes/characters/${character.characterId}`,
@@ -61,13 +61,13 @@ export const searchHandlers = [
           keyword,
           universe.name,
           ...universe.characters.map((character) => character.name),
-          String(universe.universeId),
+          universe.universeId,
         ),
       )
       .slice(0, LIMIT_PER_TYPE)
       .map((universe) => ({
         type: "UNIVERSE",
-        id: String(universe.universeId),
+        id: universe.universeId,
         title: universe.name,
         description: `캐릭터 ${universe.characters.map((character) => character.name).join(", ")}`,
         href: `/universes/${universe.universeId}`,

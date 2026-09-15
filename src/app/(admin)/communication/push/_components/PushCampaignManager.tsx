@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { usePushCampaignListQuery } from "@/api/communication/getPushCampaignList";
 import {
   usePushCampaignMutation,
@@ -27,13 +28,20 @@ import {
   PUSH_STATUS_OPTIONS,
   PUSH_STATUS_TONE,
   PUSH_TARGET_LABEL,
-} from "../../_constants/labels";
+} from "@/app/(admin)/communication/_constants/communicationOptions";
 import PushCampaignFormModal from "./PushCampaignFormModal";
 
+/** 주소에 실리는 목록 조건 */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  status: "",
+};
+
 const PushCampaignManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState<PushStatus | "">("");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const status = params.status as PushStatus | "";
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const { data, isLoading } = usePushCampaignListQuery({
@@ -45,16 +53,10 @@ const PushCampaignManager = () => {
   const { createMutation, sendMutation, deleteMutation } =
     usePushCampaignMutation();
 
-  /** 필터가 바뀌면 이전 페이지 번호가 의미를 잃으므로 항상 1페이지로 되돌린다. */
-  const handleSearch = (next: string) => {
-    setKeyword(next);
-    setPage(1);
-  };
+  /* 필터가 바뀌면 `useListParams`가 페이지를 1로 되돌린다. */
+  const handleSearch = (next: string) => setParams({ keyword: next });
 
-  const handleChangeStatus = (next: PushStatus | "") => {
-    setStatus(next);
-    setPage(1);
-  };
+  const handleChangeStatus = (next: PushStatus | "") => setParams({ status: next });
 
   const handleSubmit = (values: PushCampaignFormValues) => {
     createMutation.mutate(values, {
@@ -261,7 +263,7 @@ const PushCampaignManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
 

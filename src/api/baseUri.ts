@@ -1,21 +1,6 @@
-import {
-  DEFAULT_APP_PROFILE,
-  isAppProfile,
-  LIVE_PROXY_PATH,
-  type AppProfile,
-} from "@/config/appEnv";
+import { LIVE_PROXY_PATH } from "@/config/appEnv";
 
 export { LIVE_PROXY_PATH };
-
-/**
- * 지금 뜬 환경. `next.config.ts` 가 브랜치·`APP_ENV` 를 보고 정해 심어 준다.
- * 값 자체를 고르는 규칙은 `src/config/appEnv.ts` 에 있다.
- */
-export const APP_PROFILE: AppProfile = isAppProfile(
-  process.env.NEXT_PUBLIC_APP_ENV,
-)
-  ? process.env.NEXT_PUBLIC_APP_ENV
-  : DEFAULT_APP_PROFILE;
 
 /** 목업 워커를 띄우는가. 실서버 요청이 어느 경로로 나갈지가 여기서 갈린다. */
 export const IS_MOCKING = process.env.NEXT_PUBLIC_API_MOCKING === "enabled";

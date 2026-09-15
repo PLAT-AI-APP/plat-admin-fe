@@ -7,15 +7,13 @@ import { z } from "zod";
 export const chatExportSchema = z
   .object({
     targetType: z.enum(["CHARACTER", "USER"]),
-    targetId: z
-      .number({ error: "대상 캐릭터를 선택해 주세요." })
-      .int()
-      .positive("대상 캐릭터를 선택해 주세요."),
+    /** 캐릭터·유저 ID. Snowflake라 숫자로 바꾸지 않고 문자열 그대로 보낸다. */
+    targetId: z.string().min(1, "대상 캐릭터를 선택해 주세요."),
     startDate: z.string().min(1, "시작일을 선택해 주세요."),
     endDate: z.string().min(1, "종료일을 선택해 주세요."),
   })
   .refine(({ startDate, endDate }) => !startDate || !endDate || startDate <= endDate, {
-    message: "종료일은 시작일 이후여야 합니다.",
+    error: "종료일은 시작일 이후여야 합니다.",
     path: ["endDate"],
   });
 

@@ -8,13 +8,15 @@ import {
 } from "@hello-pangea/dnd";
 import { useState } from "react";
 import {
-  useHomeSectionAddMutation,
-  useHomeSectionLanguageCounts,
+  useHomeSectionLanguageCountQuery,
   useHomeSectionQuery,
+} from "@/api/main-exposure/getHomeSection";
+import {
+  useHomeSectionAddMutation,
   useHomeSectionRemoveMutation,
   useHomeSectionReorderMutation,
   useHomeSectionScenarioMutation,
-} from "@/api/main-exposure/getHomeSection";
+} from "@/api/main-exposure/mutateHomeSection";
 import { HOME_SECTION_CONFIG } from "@/constants/mainExposure";
 import { Grip, MessageSquare, Plus, Star, Trash } from "@/icons";
 import { resolveImageUrl } from "@/lib/imageUrl";
@@ -61,7 +63,7 @@ const HomeSectionBoard = ({ section, guide }: HomeSectionBoardProps) => {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   const { data, isLoading } = useHomeSectionQuery(section, language);
-  const languageCounts = useHomeSectionLanguageCounts(section);
+  const languageCounts = useHomeSectionLanguageCountQuery(section);
 
   const { mutate: addItems, isPending: isAdding } = useHomeSectionAddMutation(
     section,

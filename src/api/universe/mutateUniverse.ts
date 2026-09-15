@@ -94,7 +94,7 @@ export const useUniverseMutation = () => {
   const queryClient = useQueryClient();
 
   const invalidateUniverses = () => {
-    queryClient.invalidateQueries({ queryKey: ["get-universe-list"] });
+    queryClient.invalidateQueries({ queryKey: ["get-admin-universe-list"] });
     queryClient.invalidateQueries({ queryKey: ["get-universe-detail"] });
   };
 

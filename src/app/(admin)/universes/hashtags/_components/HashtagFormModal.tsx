@@ -17,7 +17,7 @@ import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
-import { HASHTAG_CATEGORY_OPTIONS } from "./hashtagOptions";
+import { HASHTAG_CATEGORY_OPTIONS } from "@/app/(admin)/universes/hashtags/_constants/hashtagOptions";
 
 interface HashtagFormModalProps {
   isOpen: boolean;
@@ -57,7 +57,7 @@ const HashtagFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<HashtagSchema>({
     resolver: zodResolver(hashtagSchema),
     defaultValues: EMPTY_VALUES,
@@ -86,6 +86,7 @@ const HashtagFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={hashtagId !== undefined ? "해시태그 수정" : "해시태그 추가"}

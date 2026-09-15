@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useLogoutMutation } from "@/api/auth/logout";
 import { ADMIN_MENU, isMenuItemActive } from "@/constants/menu";
@@ -53,6 +54,15 @@ const Header = () => {
 
   const breadcrumb = findBreadcrumb(pathname);
   const isDark = resolvedTheme === "dark";
+  const pageLabel = breadcrumb[breadcrumb.length - 1];
+
+  /*
+    탭 제목에 지금 화면 이름을 넣는다. 콘솔을 탭 여러 개로 띄워 두면
+    전부 "PLAT 관리자"라 어느 탭이 무엇인지 알 수 없다.
+  */
+  useEffect(() => {
+    document.title = pageLabel ? `${pageLabel} · PLAT 관리자` : "PLAT 관리자";
+  }, [pageLabel, pathname]);
 
   /*
     로그아웃은 되돌릴 수 없는 동작은 아니지만, 작성 중이던 폼이 통째로 사라진다.

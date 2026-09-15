@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSystemEventListQuery } from "@/api/ops/getSystemEventList";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTimeSecond, formatFromNow } from "@/lib/dayjs";
+import { formatWithCommas } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type {
   SystemEventLevel,
@@ -26,7 +27,7 @@ import {
   SYSTEM_EVENT_LEVEL_TONE,
   SYSTEM_EVENT_SOURCE_OPTIONS,
   getSystemEventSourceLabel,
-} from "../_constants/labels";
+} from "@/app/(admin)/ops/logs/_constants/logOptions";
 
 const CSV_COLUMNS: CsvColumn<SystemEventLog>[] = [
   { header: "레벨", value: (row) => SYSTEM_EVENT_LEVEL_LABEL[row.level] },
@@ -114,7 +115,7 @@ const SystemEventTable = ({ params, setParams }: SystemEventTableProps) => {
       numeric: true,
       render: (row) => (
         <span className="tabular-nums text-font-1">
-          {row.occurrenceCount.toLocaleString()}회
+          {formatWithCommas(row.occurrenceCount)}회
         </span>
       ),
     },

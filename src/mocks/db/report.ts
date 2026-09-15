@@ -4,7 +4,7 @@ import type {
   ReportStatus,
   ReportTargetType,
 } from "@/type/report";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
 import { characters } from "./character";
 import { comments, reportableCommentIds } from "./comment";
 import { pickManager } from "./ops";
@@ -107,7 +107,7 @@ const pickTarget = (seed: number, targetType: ReportTargetType) => {
   const character = characters[randomInt(seed, 0, characters.length - 1)];
 
   return {
-    targetId: String(character.characterId),
+    targetId: character.characterId,
     targetName: character.name,
     targetSnippet: `크리에이터 ${character.creatorNickname}`,
   };
@@ -125,7 +125,7 @@ export const reports: Report[] = Array.from({ length: 38 }, (_, index) => {
   const handler = pickManager(seed * 17);
 
   return {
-    reportId: 38 - index,
+    reportId: String(38 - index),
     targetType,
     ...target,
     targetReportCount: 0,

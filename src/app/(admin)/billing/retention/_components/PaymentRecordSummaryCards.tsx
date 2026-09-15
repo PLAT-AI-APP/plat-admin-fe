@@ -5,7 +5,7 @@ import { formatCurrency, formatWithCommas } from "@/lib/utils";
 import type { PaymentRecordSummary } from "@/type/billing";
 import Card from "@/components/ui/Card";
 import Skeleton from "@/components/ui/Skeleton";
-import { EXPIRING_DAYS, RETENTION_YEARS } from "./recordOptions";
+import { EXPIRING_DAYS, RETENTION_YEARS } from "@/constants/billingOptions";
 
 interface SummaryItem {
   key: keyof PaymentRecordSummary;

@@ -6,7 +6,7 @@ const labelSchema = z
   .string()
   .max(30, "해시태그는 30자 이내로 입력해 주세요.")
   .refine((value) => !value.includes("#"), {
-    message: "# 없이 이름만 입력해 주세요.",
+    error: "# 없이 이름만 입력해 주세요.",
   });
 
 export const hashtagSchema = z.object({
@@ -16,7 +16,7 @@ export const hashtagSchema = z.object({
       공백만 넣은 값도 막는다 — 보낼 때 다듬으므로 서버에는 빈 값으로 도착한다.
     */
     KO: labelSchema.refine((value) => value.trim().length > 0, {
-      message: "한국어 해시태그를 입력해 주세요.",
+      error: "한국어 해시태그를 입력해 주세요.",
     }),
     EN: labelSchema,
     JA: labelSchema,

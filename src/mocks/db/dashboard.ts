@@ -5,7 +5,7 @@ import type {
   DashboardTrendPoint,
 } from "@/type/dashboard";
 import { qnaItems } from "./communication";
-import { daysAgo, randomInt } from "../utils";
+import { daysAgo, randomInt } from "@/mocks/utils";
 
 /**
  * 대시보드 추이 구간 (일).

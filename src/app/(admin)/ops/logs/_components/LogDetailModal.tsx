@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { formatDateTimeSecond } from "@/lib/dayjs";
 import { formatAdmin } from "@/lib/utils";
 import type { AdminAuditLog } from "@/type/ops";
@@ -9,14 +10,14 @@ import {
   AUDIT_RESULT_LABEL,
   AUDIT_RESULT_TONE,
   getLogDomainLabel,
-} from "../_constants/labels";
+} from "@/app/(admin)/ops/logs/_constants/logOptions";
 
 interface LogDetailModalProps {
   log: AdminAuditLog | null;
   onClose: () => void;
 }
 
-const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
+const Row = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="flex items-start justify-between gap-4 border-b border-border-main py-2.5 last:border-b-0">
     <span className="shrink-0 body-5 text-font-2">{label}</span>
     <span className="min-w-0 text-right body-5 break-all text-font-1">

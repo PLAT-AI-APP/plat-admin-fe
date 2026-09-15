@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import CommandPalette from "@/components/layout/CommandPalette";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
@@ -14,7 +15,7 @@ import RoutePermissionGate from "@/components/domain/RoutePermissionGate";
 export default function AdminLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <AuthGuard>

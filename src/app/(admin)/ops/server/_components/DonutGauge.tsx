@@ -4,7 +4,7 @@ import {
   USAGE_TONE_COLOR,
   USAGE_TONE_TEXT_CLASS,
   getUsageTone,
-} from "../_constants/serverStatus";
+} from "@/app/(admin)/ops/server/_constants/serverStatus";
 
 interface DonutGaugeProps {
   /** 사용률 (%) */

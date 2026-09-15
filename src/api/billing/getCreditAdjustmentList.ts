@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import {
+  toPageRequest,
   toPageResponse,
   type AppError,
   type PageResponse,
@@ -47,8 +48,7 @@ const toCreditAdjustment = (
 
 /** 화면은 1부터, 서버는 0부터 페이지를 센다. 빈 필터는 서버에 보내지 않는다. */
 const toRequestParams = (params: CreditAdjustmentListParams) => ({
-  page: Math.max(params.page - 1, 0),
-  size: params.size,
+  ...toPageRequest(params),
   keyword: params.keyword?.trim() || undefined,
   type: params.type || undefined,
   userId: params.userId || undefined,

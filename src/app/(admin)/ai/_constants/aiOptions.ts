@@ -1,4 +1,5 @@
-import type { BadgeTone, SelectOption } from "@/components/ui";
+import type { BadgeTone } from "@/components/ui/Badge";
+import type { SelectOption } from "@/components/ui/Select";
 import type { AiModelRole, AiModelStatus, AiProvider } from "@/type/ai";
 
 /** AI 운영 3개 화면(카탈로그·모델 관리·프롬프트)이 공유하는 라벨·옵션 */

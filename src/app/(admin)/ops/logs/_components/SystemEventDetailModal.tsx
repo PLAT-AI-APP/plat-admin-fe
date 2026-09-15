@@ -1,6 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { formatDateTimeSecond, formatFromNow } from "@/lib/dayjs";
+import { formatWithCommas } from "@/lib/utils";
 import type { SystemEventLog } from "@/type/ops";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
@@ -8,14 +10,14 @@ import {
   SYSTEM_EVENT_LEVEL_LABEL,
   SYSTEM_EVENT_LEVEL_TONE,
   getSystemEventSourceLabel,
-} from "../_constants/labels";
+} from "@/app/(admin)/ops/logs/_constants/logOptions";
 
 interface SystemEventDetailModalProps {
   event: SystemEventLog | null;
   onClose: () => void;
 }
 
-const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
+const Row = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="flex items-start justify-between gap-4 border-b border-border-main py-2.5 last:border-b-0">
     <span className="shrink-0 body-5 text-font-2">{label}</span>
     <span className="min-w-0 text-right body-5 break-all text-font-1">
@@ -67,7 +69,7 @@ const SystemEventDetailModal = ({
               label="발생 횟수"
               value={
                 <span className="tabular-nums">
-                  {event.occurrenceCount.toLocaleString()}회
+                  {formatWithCommas(event.occurrenceCount)}회
                 </span>
               }
             />

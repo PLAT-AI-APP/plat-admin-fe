@@ -20,7 +20,7 @@ import {
   QNA_CATEGORY_TONE,
   QNA_STATUS_LABEL,
   QNA_STATUS_TONE,
-} from "../../_constants/labels";
+} from "@/app/(admin)/communication/_constants/communicationOptions";
 
 interface QnaDetailModalProps {
   /** null이면 모달이 닫힌 상태이며 상세도 조회하지 않는다. */
@@ -36,7 +36,7 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<QnaAnswerSchema>({
     resolver: zodResolver(qnaAnswerSchema),
     defaultValues: { answer: "" },
@@ -77,6 +77,7 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={qnaId !== null}
       onClose={onClose}
       title="문의 상세"

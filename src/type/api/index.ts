@@ -62,5 +62,21 @@ export const toPageResponse = <T>(pageWith: PageWith<T>): PageResponse<T> => ({
   totalPages: pageWith.page.totalPages,
 });
 
+/**
+ * 화면의 페이지 조건을 서버가 받는 형태로 바꾼다. {@link toPageResponse}의 반대 방향이다.
+ *
+ * 화면은 1부터, 서버는 0부터 센다. 주소에 `?page=0`이 들어와도 음수를 보내지
+ * 않도록 0 아래로는 내리지 않는다 — 서버는 음수 페이지를 400으로 돌려보낸다.
+ * 도메인 필터는 각 API 파일에서 이 결과 **뒤에** 펼쳐 붙인다. 쿼리스트링 순서가
+ * `page`, `size`로 시작해야 요청을 대조하기 쉽다.
+ */
+export const toPageRequest = ({
+  page,
+  size,
+}: Pick<PageParams, "page" | "size">) => ({
+  page: Math.max(page - 1, 0),
+  size,
+});
+
 /** 목록 화면 기본 페이지 크기 */
 export const DEFAULT_PAGE_SIZE = 20;

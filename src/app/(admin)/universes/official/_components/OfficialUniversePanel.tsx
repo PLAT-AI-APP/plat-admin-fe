@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAdminUniverseListQuery } from "@/api/universe/getAdminUniverseList";
 import { resolveImageUrl } from "@/lib/imageUrl";
@@ -17,7 +16,7 @@ import {
   UNIVERSE_REVIEW_TONE,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
-} from "../../_constants/character";
+} from "@/constants/universeOptions";
 
 /**
  * 지금 공식으로 표시되는 세계관 목록.
@@ -30,7 +29,6 @@ import {
  * 어긋나지 않는다. 비활성으로 내려둔 세계관도 여기 보인다.
  */
 const OfficialUniversePanel = () => {
-  const router = useRouter();
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useAdminUniverseListQuery({
@@ -120,7 +118,7 @@ const OfficialUniversePanel = () => {
         getRowKey={(row) => row.universeId}
         isLoading={isLoading}
         skeletonRows={5}
-        onRowClick={(row) => router.push(`/universes/${row.universeId}`)}
+        getRowHref={(row) => `/universes/${row.universeId}`}
         emptyTitle="공식으로 표시되는 세계관이 없습니다."
         emptyDescription="공식 계정을 등록하거나, 등록한 계정이 세계관을 만들면 여기에 나타납니다."
       />

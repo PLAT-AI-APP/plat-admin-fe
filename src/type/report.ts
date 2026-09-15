@@ -41,7 +41,8 @@ export const REPORT_REASON_LABEL: Record<ReportReason, string> = {
 };
 
 export interface Report {
-  reportId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  reportId: string;
   targetType: ReportTargetType;
   /** 대상은 유저·캐릭터·세계관 등이고 전부 Snowflake다. 문자열 그대로 다룬다. */
   targetId: string;
