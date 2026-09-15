@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import type { PushCampaignFormValues } from "@/api/communication/mutatePushCampaign";
 import dayjs from "@/lib/dayjs";
 import {
@@ -50,7 +50,6 @@ const PushCampaignFormModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<PushCampaignSchema>({
     resolver: zodResolver(pushCampaignSchema),
@@ -64,7 +63,7 @@ const PushCampaignFormModal = ({
     reset(EMPTY_VALUES);
   }, [isOpen, reset]);
 
-  const isScheduled = watch("isScheduled");
+  const isScheduled = useWatch({ control, name: "isScheduled" });
 
   const submit = handleSubmit((values) => {
     onSubmit({

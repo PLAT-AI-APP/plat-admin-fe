@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useNoticeDetailQuery } from "@/api/notice/getNoticeDetail";
 import { noticeSchema, type NoticeSchema } from "@/schema/notice.schema";
 import type { NoticeFormValues } from "@/type/notice";
@@ -52,6 +52,16 @@ const NoticeFormModal = ({
   isSubmitting,
 }: NoticeFormModalProps) => {
   const [tab, setTab] = useState<EditorTab>("WRITE");
+  const [wasOpen, setWasOpen] = useState(isOpen);
+
+  /*
+    열릴 때마다 작성 탭에서 시작한다. 이펙트에서 setState를 부르면 한 번 그린 뒤
+    다시 그리므로, 열림이 바뀐 렌더에서 곧바로 맞춘다.
+  */
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) setTab("WRITE");
+  }
   const { data: notice, isLoading } = useNoticeDetailQuery(
     isOpen && noticeId !== undefined ? noticeId : null,
   );
@@ -61,7 +71,6 @@ const NoticeFormModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<NoticeSchema>({
     resolver: zodResolver(noticeSchema),
@@ -72,7 +81,6 @@ const NoticeFormModal = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    setTab("WRITE");
     reset(
       notice
         ? {
@@ -86,7 +94,7 @@ const NoticeFormModal = ({
     );
   }, [isOpen, notice, reset]);
 
-  const content = watch("content");
+  const content = useWatch({ control, name: "content" });
 
   const submit = handleSubmit((values) => onSubmit(values));
   const isPending = isSubmitting || isLoading;

@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toDateInputValue } from "@/lib/dayjs";
 import {
   legalDocumentSchema,
@@ -34,10 +34,10 @@ const LegalDocumentFormModal = ({
   isSubmitting,
 }: LegalDocumentFormModalProps) => {
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<LegalDocumentSchema>({
     resolver: zodResolver(legalDocumentSchema),
@@ -61,7 +61,7 @@ const LegalDocumentFormModal = ({
     });
   }, [isOpen, documentType, reset]);
 
-  const content = watch("content");
+  const content = useWatch({ control, name: "content" });
 
   const submit = handleSubmit((formValues) => onSubmit(formValues));
 

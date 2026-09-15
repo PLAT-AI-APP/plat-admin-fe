@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   appVersionSchema,
   type AppVersionSchema,
@@ -51,7 +51,6 @@ const AppVersionFormModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<AppVersionSchema>({
     resolver: zodResolver(appVersionSchema),
@@ -75,7 +74,7 @@ const AppVersionFormModal = ({
     );
   }, [isOpen, appVersion, reset]);
 
-  const isForceUpdate = watch("isForceUpdate");
+  const isForceUpdate = useWatch({ control, name: "isForceUpdate" });
 
   const submit = handleSubmit((formValues) => onSubmit(formValues));
 

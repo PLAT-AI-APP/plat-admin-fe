@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   systemPromptSchema,
@@ -58,12 +58,22 @@ const PromptVersionFormModal = ({
   isSubmitting,
 }: PromptVersionFormModalProps) => {
   const [tab, setTab] = useState<EditorTab>("write");
+  const [wasOpen, setWasOpen] = useState(isOpen);
+
+  /*
+    열릴 때마다 작성 탭에서 시작한다. 이펙트에서 setState를 부르면 한 번 그린 뒤
+    다시 그리므로, 열림이 바뀐 렌더에서 곧바로 맞춘다.
+  */
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) setTab("write");
+  }
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<SystemPromptSchema>({
     resolver: zodResolver(systemPromptSchema),
@@ -74,11 +84,10 @@ const PromptVersionFormModal = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    setTab("write");
     reset({ content: initialContent });
   }, [isOpen, initialContent, reset]);
 
-  const content = watch("content");
+  const content = useWatch({ control, name: "content" });
 
   /**
    * 직전 버전과 같은 내용은 서버가 받지 않는다.

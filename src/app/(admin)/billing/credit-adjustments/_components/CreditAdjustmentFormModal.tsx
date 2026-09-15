@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Users } from "@/icons";
 import { cn, formatCredit } from "@/lib/utils";
 import {
@@ -71,31 +71,42 @@ const CreditAdjustmentFormModal = ({
     아예 고정해 두면 두 번째 조정이 영영 409로 막힌다. 그래서 '모달 1회 = 키 1개'다.
   */
   const [idempotencyKey, setIdempotencyKey] = useState(createIdempotencyKey);
+  const [wasOpen, setWasOpen] = useState(isOpen);
+
+  /*
+    조정은 1회성 작업이라 열 때마다 대상 유저와 멱등 키를 새로 잡는다. 이펙트에서
+    setState를 부르면 한 번 그린 뒤 다시 그리므로, 열림이 바뀐 렌더에서 곧바로 맞춘다.
+  */
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) {
+      setSelectedUser(undefined);
+      setIdempotencyKey(createIdempotencyKey());
+    }
+  }
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<CreditAdjustmentSchema>({
     resolver: zodResolver(creditAdjustmentSchema),
     defaultValues: EMPTY_VALUES,
   });
 
-  // 조정은 1회성 작업이므로 모달을 열 때마다 빈 폼에서 시작한다.
+  // 폼 값도 모달을 열 때마다 빈 폼에서 시작한다.
   useEffect(() => {
     if (!isOpen) return;
 
-    setSelectedUser(undefined);
-    setIdempotencyKey(createIdempotencyKey());
     reset(EMPTY_VALUES);
   }, [isOpen, reset]);
 
-  const values = watch();
-  const amount = Number.isFinite(values.amount) ? values.amount : 0;
-  const delta = values.type === "GRANT" ? amount : -amount;
+  const [type, watchedAmount] = useWatch({ control, name: ["type", "amount"] });
+  const amount = Number.isFinite(watchedAmount) ? watchedAmount : 0;
+  const delta = type === "GRANT" ? amount : -amount;
   const expectedBalance = selectedUser
     ? Math.max(0, selectedUser.creditBalance + delta)
     : 0;
@@ -109,7 +120,7 @@ const CreditAdjustmentFormModal = ({
     : 0;
   const isOverDeduction = Boolean(
     selectedUser &&
-      values.type === "DEDUCT" &&
+      type === "DEDUCT" &&
       amount > selectedUser.availableBalance,
   );
 
