@@ -38,9 +38,6 @@ export interface AdminRoleFormValues {
  */
 export type ManagerStatus = "INVITED" | "ACTIVE" | "INACTIVE" | "LOCKED";
 
-/** 로그인 실패가 이 횟수에 닿으면 계정을 잠근다. */
-export const MANAGER_LOCK_THRESHOLD = 5;
-
 /** 관리자 계정. 권한은 직접 갖지 않고 배정된 직책에서 가져온다. */
 export interface Manager {
   managerId: number;
