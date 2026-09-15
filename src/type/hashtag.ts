@@ -1,7 +1,6 @@
 import {
   SERVICE_LANGUAGES,
   SERVICE_LANGUAGE_LABEL,
-  countFilledLanguages,
   type ServiceLanguage,
 } from "./language";
 
@@ -121,9 +120,6 @@ export interface HashtagFormValues {
   isAdult: boolean;
   isActive: boolean;
 }
-
-/** 번역이 채워진 언어 수 */
-export const countTranslations = countFilledLanguages;
 
 /**
  * 사용자가 보낸 해시태그 제안 묶음.

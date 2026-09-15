@@ -37,22 +37,6 @@ export const daysAgo = (days: number, hour = 12): string => {
 };
 
 /**
- * 시드 데이터용 상대 시각(시간 단위).
- *
- * `daysAgo`는 날짜만 빼고 시각을 고정하므로 **오늘 날짜에 늦은 시각을 주면
- * 미래가 된다**(오전에 열면 "3시간 후"로 찍힌다). 최근 몇 시간을 촘촘히
- * 만들어야 하는 시드는 지금 시각에서 빼는 이 함수를 쓴다.
- */
-export const hoursAgo = (hours: number): string => {
-  const date = new Date();
-  date.setMinutes(0, 0, 0);
-  date.setHours(date.getHours() - hours);
-
-  return date.toISOString();
-};
-
-/** 시드 데이터용 의사 난수. 실행마다 값이 바뀌지 않도록 seed 기반으로 만든다. */
-/**
  * 문자열 ID에서 난수 시드를 만든다.
  *
  * 목업은 ID를 시드로 써서 새로고침해도 같은 데이터가 나오게 한다. 유저 ID가
@@ -72,6 +56,7 @@ export const seedOf = (id: string): number => {
   return hash + 1;
 };
 
+/** 시드 데이터용 의사 난수. 실행마다 값이 바뀌지 않도록 seed 기반으로 만든다. */
 export const pseudoRandom = (seed: number): number => {
   const value = Math.sin(seed) * 10_000;
 

@@ -483,11 +483,3 @@ export const normalizePermissions = (
   return ALL_PERMISSIONS.filter((key) => next.has(key));
 };
 
-/** 자료 하나에 걸린 권한만 추린다. 설정 화면에서 줄 단위로 쓴다. */
-export const permissionsOfResource = (
-  permissions: PermissionKey[],
-  resource: PermissionResource,
-): PermissionAction[] =>
-  PERMISSION_RESOURCES[resource].actions.filter((action) =>
-    permissions.includes(permissionKey(resource, action)),
-  );

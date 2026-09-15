@@ -47,12 +47,6 @@ export const USAGE_TONE_TEXT_CLASS: Record<UsageTone, string> = {
   danger: "text-danger",
 };
 
-export const USAGE_TONE_BADGE: Record<UsageTone, BadgeTone> = {
-  normal: "success",
-  warning: "warning",
-  danger: "danger",
-};
-
 /**
  * 구성 차트 슬라이스 색.
  *
@@ -94,6 +88,3 @@ export const formatUptime = (uptimeSeconds: number): string => {
 
   return parts.join(" ");
 };
-
-/** 사용률을 소수점 한 자리로 자른다. 서버가 이미 반올림하지만 목업·계산값도 지나간다. */
-export const formatPercent = (value: number): string => `${value.toFixed(1)}%`;

@@ -10,7 +10,6 @@ import type {
   UniverseStatus,
   UniverseTendency,
 } from "@/type/character";
-import type { ServiceLanguage } from "@/type/language";
 import type { BannedWord, BannedWordType } from "@/type/bannedWord";
 import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
 import { pickManager } from "./ops";
@@ -74,31 +73,6 @@ const buildTags = (seed: number): string[] => {
     pickOne(seed + index * 7, CHARACTER_TAG_POOL),
   ).filter((tag, index, tags) => tags.indexOf(tag) === index);
 };
-
-/**
- * 언어별 번역 보유율(%).
- *
- * **모든 세계관이 6개 언어를 다 갖춘 시드를 넣으면 안 된다.** 그러면 언어별
- * 후보 목록이 전부 똑같아져서, 언어를 나눈 이유(영어 번역이 없는 세계관은
- * 영어 목록에 못 오른다)가 화면에서 확인되지 않는다.
- */
-const TRANSLATION_RATE: Record<Exclude<ServiceLanguage, "KO">, number> = {
-  EN: 62,
-  JA: 45,
-  ZH: 30,
-  TH: 20,
-  VI: 14,
-};
-
-/** seed 기반 번역 보유 언어. 한국어는 원문이라 항상 있다. */
-const buildSupportedLanguages = (seed: number): ServiceLanguage[] => [
-  "KO",
-  ...Object.entries(TRANSLATION_RATE)
-    .filter(
-      ([, rate], index) => randomInt(seed * 13 + index * 7, 0, 99) < rate,
-    )
-    .map(([language]) => language as ServiceLanguage),
-];
 
 /** 캐릭터가 만들어진 날. 세계관 등록일이 이보다 앞서지 않도록 여기서 한 번만 계산한다. */
 const characterCreatedDaysAgo = (index: number) => index * 3 + 2;
@@ -222,7 +196,6 @@ export const universes: Universe[] = characterBases.flatMap(
           "오래전 봉인된 기억을 따라가며, 당신과 함께 잃어버린 조각을 되찾는 이야기입니다.",
         thumbnailUrl: `https://picsum.photos/seed/plat-universe-${seed}/1200/440`,
         tags: buildTags(seed * 2),
-        supportedLanguages: buildSupportedLanguages(seed),
         /* 공식 여부는 공식 계정 목록에서 파생된다. db/official의 syncOfficialFlags가 채운다. */
         isOfficial: false,
         visibility:

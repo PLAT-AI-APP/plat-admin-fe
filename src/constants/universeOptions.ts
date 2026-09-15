@@ -43,12 +43,6 @@ export const OFFICIAL_FILTER_OPTIONS: SelectOption[] = [
   { label: "일반 캐릭터", value: "false" },
 ];
 
-export const UNIVERSE_SORT_OPTIONS: SelectOption[] = [
-  { label: "최신 등록순", value: "RECENT" },
-  { label: "에셋 많은순", value: "ASSET_COUNT" },
-  { label: "대화 많은순", value: "CHAT_COUNT" },
-];
-
 /* ------------------------------------------------------------------ */
 /* 세계관 (서버 Universe 계약)                                           */
 /* ------------------------------------------------------------------ */
