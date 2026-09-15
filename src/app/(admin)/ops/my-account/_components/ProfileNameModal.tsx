@@ -34,7 +34,7 @@ const ProfileNameModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ProfileNameSchema>({
     resolver: zodResolver(profileNameSchema),
     defaultValues: { name: currentName },
@@ -50,6 +50,7 @@ const ProfileNameModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title="이름 변경"

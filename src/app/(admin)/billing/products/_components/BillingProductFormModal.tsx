@@ -53,7 +53,7 @@ const BillingProductFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<BillingProductSchema>({
     resolver: zodResolver(billingProductSchema),
   });
@@ -101,6 +101,7 @@ const BillingProductFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={product ? "상품 수정" : "상품 추가"}

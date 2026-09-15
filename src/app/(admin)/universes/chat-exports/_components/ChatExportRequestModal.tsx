@@ -52,7 +52,7 @@ const ChatExportRequestModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ChatExportSchema>({
     resolver: zodResolver(chatExportSchema),
     defaultValues: EMPTY_VALUES,
@@ -82,6 +82,7 @@ const ChatExportRequestModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title="채팅 내보내기 요청"

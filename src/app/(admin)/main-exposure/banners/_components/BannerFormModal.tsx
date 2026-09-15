@@ -75,7 +75,7 @@ const BannerFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<BannerSchema>({
     resolver: zodResolver(bannerSchema),
     defaultValues: emptyValues(defaultLanguage),
@@ -118,6 +118,7 @@ const BannerFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={modalTitle}

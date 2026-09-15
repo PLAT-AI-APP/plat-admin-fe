@@ -38,7 +38,7 @@ const LegalDocumentFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<LegalDocumentSchema>({
     resolver: zodResolver(legalDocumentSchema),
     defaultValues: {
@@ -67,6 +67,7 @@ const LegalDocumentFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={`${LEGAL_DOCUMENT_LABEL[documentType]} 새 버전 등록`}

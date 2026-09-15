@@ -46,7 +46,7 @@ const ProactiveMessageFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ProactiveMessageSchema>({
     resolver: zodResolver(proactiveMessageSchema),
     defaultValues: EMPTY_VALUES,
@@ -80,6 +80,7 @@ const ProactiveMessageFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={message ? "선제 메시지 수정" : "선제 메시지 등록"}

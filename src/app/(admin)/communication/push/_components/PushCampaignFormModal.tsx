@@ -50,7 +50,7 @@ const PushCampaignFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<PushCampaignSchema>({
     resolver: zodResolver(pushCampaignSchema),
     defaultValues: EMPTY_VALUES,
@@ -80,6 +80,7 @@ const PushCampaignFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title="푸시 작성"

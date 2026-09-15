@@ -71,7 +71,7 @@ const NoticeFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<NoticeSchema>({
     resolver: zodResolver(noticeSchema),
     defaultValues: EMPTY_VALUES,
@@ -101,6 +101,7 @@ const NoticeFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={noticeId !== undefined ? "공지사항 수정" : "공지사항 등록"}

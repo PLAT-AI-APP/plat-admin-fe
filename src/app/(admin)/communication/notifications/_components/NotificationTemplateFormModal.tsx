@@ -45,7 +45,7 @@ const NotificationTemplateFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<NotificationTemplateSchema>({
     resolver: zodResolver(notificationTemplateSchema),
     defaultValues: EMPTY_VALUES,
@@ -66,6 +66,7 @@ const NotificationTemplateFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title="알림 템플릿 수정"
