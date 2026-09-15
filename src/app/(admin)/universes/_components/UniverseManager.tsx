@@ -227,9 +227,6 @@ const UniverseManager = () => {
 
   const clearDrilldown = () => setParams({ creatorId: "", hashtagId: "" });
 
-  const openDetail = (universeId: string) =>
-    router.push(`/universes/${universeId}`);
-
   /*
     제작자를 누르면 그 사람의 유저 상세로 간다.
 
@@ -586,7 +583,7 @@ const UniverseManager = () => {
               rows={rows}
               getRowKey={(row) => row.universeId}
               isLoading={isLoading}
-              onRowClick={(row) => openDetail(row.universeId)}
+              getRowHref={(row) => `/universes/${row.universeId}`}
               emptyTitle="조건에 맞는 세계관이 없습니다."
               emptyDescription="검색어나 필터를 바꿔 보세요."
             />

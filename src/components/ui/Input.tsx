@@ -16,6 +16,7 @@ const Input = ({
   inputBoxClassName,
   className,
   ref,
+  onWheel,
   ...props
 }: InputProps) => {
   return (
@@ -34,6 +35,14 @@ const Input = ({
 
       <input
         ref={ref}
+        /*
+          숫자 칸에 포커스가 있는 채로 휠을 굴리면 페이지 대신 값이 바뀐다.
+          크레딧 · 가격 칸에서 스크롤하다 모르고 금액이 달라지므로 휠이 오면 포커스를 놓는다.
+        */
+        onWheel={(event) => {
+          if (props.type === "number") event.currentTarget.blur();
+          onWheel?.(event);
+        }}
         className={cn(
           "min-w-0 flex-1 bg-transparent body-4 text-font-1 outline-none",
           "placeholder:text-font-disabled disabled:cursor-not-allowed",

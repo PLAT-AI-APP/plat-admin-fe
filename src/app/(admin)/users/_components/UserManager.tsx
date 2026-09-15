@@ -295,7 +295,7 @@ const UserManager = () => {
           rows={data?.content ?? []}
           getRowKey={(user) => String(user.userId)}
           isLoading={isLoading}
-          onRowClick={(user) => router.push(`/users/${user.userId}`)}
+          getRowHref={(user) => `/users/${user.userId}`}
           emptyTitle="조건에 맞는 유저가 없습니다."
           emptyDescription="검색어나 상태 필터를 바꿔서 다시 찾아보세요."
         />

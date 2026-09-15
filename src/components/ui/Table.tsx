@@ -1,4 +1,7 @@
-import { Fragment, ReactNode } from "react";
+"use client";
+
+import { Fragment, MouseEvent, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import EmptyState from "./EmptyState";
 import Skeleton from "./Skeleton";
@@ -35,6 +38,13 @@ interface TableProps<T> {
   emptyDescription?: string;
   emptyAction?: ReactNode;
   onRowClick?: (row: T) => void;
+  /**
+   * 행이 상세 화면으로 가는 경우 그 주소.
+   *
+   * 주면 클릭은 이동, ⌘/Ctrl/Shift+클릭과 휠 클릭은 새 탭으로 연다.
+   * 목록을 띄워 둔 채 여러 건을 탭으로 열어 비교하는 일이 잦다.
+   */
+  getRowHref?: (row: T) => string;
   /**
    * 펼친 행 아래에 붙는 내용.
    *
@@ -83,11 +93,13 @@ const Table = <T,>({
   emptyDescription,
   emptyAction,
   onRowClick,
+  getRowHref,
   renderExpanded,
   expandedKeys,
   onToggleExpand,
   className,
 }: TableProps<T>) => {
+  const router = useRouter();
   const isEmpty = !isLoading && rows.length === 0;
   const isExpandable = Boolean(renderExpanded);
   const floorRows = minRows ?? skeletonRows;
@@ -139,16 +151,55 @@ const Table = <T,>({
               const rowKey = getRowKey(row, rowIndex);
               const isExpanded = Boolean(expandedKeys?.includes(rowKey));
 
-              const handleClick = isExpandable
+              const href = !isExpandable ? getRowHref?.(row) : undefined;
+
+              const runClick = isExpandable
                 ? () => onToggleExpand?.(rowKey)
-                : onRowClick
-                  ? () => onRowClick(row)
-                  : undefined;
+                : href
+                  ? () => router.push(href)
+                  : onRowClick
+                    ? () => onRowClick(row)
+                    : undefined;
+
+              const handleClick = runClick
+                ? (event: MouseEvent<HTMLTableRowElement>) => {
+                    /*
+                      이메일 · ID를 긁어 복사하려고 드래그했을 뿐인데 상세로 넘어가면
+                      복사할 수가 없다. 행 안에 선택된 글자가 있으면 클릭으로 치지 않는다.
+                    */
+                    const selection = window.getSelection();
+
+                    if (
+                      selection &&
+                      !selection.isCollapsed &&
+                      event.currentTarget.contains(selection.anchorNode)
+                    ) {
+                      return;
+                    }
+
+                    if (
+                      href &&
+                      (event.metaKey || event.ctrlKey || event.shiftKey)
+                    ) {
+                      window.open(href, "_blank", "noopener");
+                      return;
+                    }
+
+                    runClick();
+                  }
+                : undefined;
 
               return (
                 <Fragment key={rowKey}>
                   <tr
                     onClick={handleClick}
+                    onAuxClick={
+                      href
+                        ? (event) => {
+                            if (event.button === 1) window.open(href, "_blank", "noopener");
+                          }
+                        : undefined
+                    }
                     aria-expanded={isExpandable ? isExpanded : undefined}
                     className={cn(
                       "border-t border-border-main transition-colors hover:bg-surface-hover",
