@@ -49,16 +49,16 @@ export interface Manager {
   status: ManagerStatus;
   /** 로그인 실패 누적. 성공하면 0으로 돌아간다. */
   failedLoginCount: number;
-  lastLoginAt?: string;
+  lastLoginAt: string | null;
   /** 마지막 접속 IP. 낯선 접속을 알아채는 최소 단서다. */
-  lastLoginIp?: string;
-  lockedAt?: string;
-  invitedAt?: string;
+  lastLoginIp: string | null;
+  lockedAt: string | null;
+  invitedAt: string | null;
   /**
    * 마지막으로 비밀번호를 바꾼 시각.
    * **값이 없으면 아직 임시 비밀번호를 쓰는 계정이다.**
    */
-  passwordUpdatedAt?: string;
+  passwordUpdatedAt: string | null;
   createdAt: string;
 }
 
@@ -119,7 +119,7 @@ export interface DependencyHealth {
   status: HealthStatus;
   /** 응답 시간(ms). 같은 서버의 Redis는 1ms가 안 되므로 소수점이 올 수 있다. */
   latencyMs: number;
-  message?: string;
+  message: string | null;
 }
 
 /** CPU. 사용률과 함께 부하 평균을 준다 — "꽉 찼다"와 "밀려 있다"는 다른 사실이다. */
@@ -159,7 +159,7 @@ export interface MemoryHealth {
 export interface ProcessUsage {
   pid: number;
   name: string;
-  command?: string;
+  command: string | null;
   /** 실제로 물리 메모리를 차지한 크기(RSS) */
   residentBytes: number;
   /** 머신 전체 메모리 대비 % */
@@ -377,10 +377,10 @@ export interface BatchJob {
    * 아무도 알 수 없게 된다.
    */
   isEnabled: boolean;
-  lastRunStatus?: BatchRunStatus;
-  lastRunAt?: string;
+  lastRunStatus: BatchRunStatus | null;
+  lastRunAt: string | null;
   /** 다음 실행 예정. 꺼져 있으면 값이 없다. */
-  nextRunAt?: string;
+  nextRunAt: string | null;
 }
 
 /**

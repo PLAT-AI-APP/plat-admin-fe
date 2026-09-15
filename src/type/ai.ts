@@ -66,7 +66,8 @@ export interface AiModel {
   maxOutputTokens: number;
   temperature: number;
   memo: string;
-  updatedAt: string;
+  /** 한 번도 고친 적 없는 모델은 서버가 `null`을 준다. */
+  updatedAt: string | null;
 }
 
 /**

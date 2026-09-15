@@ -102,7 +102,7 @@ export const buildServerHealth = () => {
           : randomInt(dependencySeed * 2, 3, 180),
         message: isDegraded
           ? "평균 응답 시간이 임계치(400ms)를 초과했습니다."
-          : undefined,
+          : null,
       };
     },
   );
