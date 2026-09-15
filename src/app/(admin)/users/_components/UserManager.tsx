@@ -212,7 +212,7 @@ const UserManager = () => {
             {LOGIN_PROVIDER_LABEL[user.provider]}
           </Badge>
         ) : (
-          <span className="body-5 text-font-3">-</span>
+          <span className="body-5 text-font-disabled">-</span>
         ),
     },
     {
