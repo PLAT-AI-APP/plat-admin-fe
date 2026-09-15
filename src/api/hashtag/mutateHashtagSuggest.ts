@@ -31,7 +31,7 @@ export const useHashtagSuggestMutation = () => {
   /* 묶음 목록의 건수와 원문 목록이 함께 달라진다. 한쪽만 비우면 지운 뒤 숫자가 어긋난다. */
   const invalidateSuggests = () => {
     queryClient.invalidateQueries({ queryKey: ["get-hashtag-suggest-list"] });
-    queryClient.invalidateQueries({ queryKey: ["get-hashtag-suggest-items"] });
+    queryClient.invalidateQueries({ queryKey: ["get-hashtag-suggest-item-list"] });
   };
 
   const deleteMutation = useMutation<void, AppError, string>({

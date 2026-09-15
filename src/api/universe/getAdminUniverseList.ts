@@ -163,7 +163,7 @@ export const getAdminUniverseList = async (
 
 export const useAdminUniverseListQuery = (params: AdminUniverseListParams) => {
   return useQuery<PageResponse<AdminUniverseListItem>, AppError>({
-    queryKey: ["get-universe-list", params],
+    queryKey: ["get-admin-universe-list", params],
     queryFn: () => getAdminUniverseList(params),
   });
 };
@@ -193,7 +193,7 @@ export const useAdminUniverseCountQuery = (
   const params: AdminUniverseListParams = { page: 1, size: 1, ...filter };
 
   return useQuery<PageResponse<AdminUniverseListItem>, AppError, number>({
-    queryKey: ["get-universe-list", params],
+    queryKey: ["get-admin-universe-list", params],
     queryFn: () => getAdminUniverseList(params),
     select: (page) => page.totalCount,
     staleTime,

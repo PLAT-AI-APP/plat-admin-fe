@@ -35,7 +35,7 @@ export const useOfficialAccountMutation = () => {
 
   const invalidateOfficialQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["get-official-account-list"] });
-    queryClient.invalidateQueries({ queryKey: ["get-universe-list"] });
+    queryClient.invalidateQueries({ queryKey: ["get-admin-universe-list"] });
     queryClient.invalidateQueries({ queryKey: ["get-universe-detail"] });
     queryClient.invalidateQueries({ queryKey: ["get-character-list"] });
     queryClient.invalidateQueries({ queryKey: ["get-character-detail"] });
