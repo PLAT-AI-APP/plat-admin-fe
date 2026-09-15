@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCharacterListQuery } from "@/api/character/getCharacterList";
 import { formatDate } from "@/lib/dayjs";
@@ -24,7 +23,6 @@ interface UserCharacterPanelProps {
 
 /** 이 유저가 크리에이터로 만든 캐릭터 목록. 행을 누르면 캐릭터 상세로 넘어간다. */
 const UserCharacterPanel = ({ userId, nickname }: UserCharacterPanelProps) => {
-  const router = useRouter();
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useCharacterListQuery({
@@ -125,7 +123,7 @@ const UserCharacterPanel = ({ userId, nickname }: UserCharacterPanelProps) => {
         getRowKey={(row) => row.characterId}
         isLoading={isLoading}
         skeletonRows={4}
-        onRowClick={(row) => router.push(`/universes/characters/${row.characterId}`)}
+        getRowHref={(row) => `/universes/characters/${row.characterId}`}
         emptyTitle="등록한 캐릭터가 없습니다."
         emptyDescription={`'${nickname}' 유저가 만든 캐릭터가 아직 없습니다.`}
       />

@@ -140,12 +140,57 @@ const Dropdown = ({
     */
     const handleReposition = () => place();
 
+    /*
+      ESC는 메뉴만 닫는다(모달 안에서 연 메뉴라도 모달은 그대로). 위아래 방향키로
+      항목을 옮기고 Tab으로 벗어나면 닫는다.
+    */
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const buttons = Array.from(
+        menuRef.current?.querySelectorAll<HTMLButtonElement>(
+          "button:not([disabled])",
+        ) ?? [],
+      );
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsOpen(false);
+        triggerRef.current?.querySelector<HTMLElement>("button")?.focus();
+        return;
+      }
+
+      if (event.key === "Tab") {
+        setIsOpen(false);
+        return;
+      }
+
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+      if (buttons.length === 0) return;
+
+      event.preventDefault();
+
+      const current = buttons.indexOf(
+        document.activeElement as HTMLButtonElement,
+      );
+      const delta = event.key === "ArrowDown" ? 1 : -1;
+      const next =
+        current < 0
+          ? delta > 0
+            ? 0
+            : buttons.length - 1
+          : (current + delta + buttons.length) % buttons.length;
+
+      buttons[next].focus();
+    };
+
     document.addEventListener("mousedown", handleClickAway);
+    // 모달의 ESC(window)보다 먼저 받도록 캡처 단계로 듣는다.
+    document.addEventListener("keydown", handleKeyDown, true);
     window.addEventListener("scroll", handleReposition, true);
     window.addEventListener("resize", handleReposition);
 
     return () => {
       document.removeEventListener("mousedown", handleClickAway);
+      document.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("scroll", handleReposition, true);
       window.removeEventListener("resize", handleReposition);
     };

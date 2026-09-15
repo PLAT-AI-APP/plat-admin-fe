@@ -57,6 +57,7 @@ const BannedWordAddForm = ({
     register,
     handleSubmit,
     reset,
+    setFocus,
     formState: { errors },
   } = useForm<BannedWordSchema>({
     resolver: zodResolver(bannedWordSchema),
@@ -68,9 +69,15 @@ const BannedWordAddForm = ({
     reset(emptyValues(type));
   }, [type, reset]);
 
-  // 등록에 성공했을 때만 입력값을 비운다. 실패하면 다시 입력하지 않아도 되게 남겨 둔다.
+  /*
+    등록에 성공했을 때만 입력값을 비운다. 실패하면 다시 입력하지 않아도 되게 남겨 둔다.
+    단어는 몰아서 여러 개 넣으므로 비운 칸에 포커스를 돌려 바로 다음 단어를 치게 한다.
+  */
   const submit = handleSubmit((values) =>
-    onSubmit(values, () => reset(emptyValues(type))),
+    onSubmit(values, () => {
+      reset(emptyValues(type));
+      setFocus("word");
+    }),
   );
 
   return (

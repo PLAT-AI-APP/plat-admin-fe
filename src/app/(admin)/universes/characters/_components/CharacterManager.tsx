@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useListParams } from "@/hooks/useListParams";
 import {
@@ -80,7 +79,6 @@ const DEFAULT_PARAMS = {
 };
 
 const CharacterManager = () => {
-  const router = useRouter();
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
   const { page, keyword, isOfficial, creatorId } = params;
   const visibility = params.visibility as CharacterVisibility | "";
@@ -384,9 +382,7 @@ const CharacterManager = () => {
           rows={rows}
           getRowKey={(row) => row.characterId}
           isLoading={isLoading}
-          onRowClick={(row) =>
-            router.push(`/universes/characters/${row.characterId}`)
-          }
+          getRowHref={(row) => `/universes/characters/${row.characterId}`}
           emptyTitle={
             isError
               ? "목록을 불러오지 못했습니다."
