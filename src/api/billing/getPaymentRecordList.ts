@@ -1,5 +1,5 @@
 import { adminAxios } from "..";
-import { usePermittedQuery } from "../usePermittedQuery";
+import { usePermittedQuery } from "@/api/usePermittedQuery";
 import type { PageResponse } from "@/type/api";
 import type {
   PaymentRecord,

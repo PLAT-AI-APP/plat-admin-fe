@@ -7,7 +7,7 @@ import type {
   LedgerType,
 } from "@/type/billing";
 import type { UserDetail } from "@/type/user";
-import { daysAgo, pickOne, randomInt, seedOf } from "../utils";
+import { daysAgo, pickOne, randomInt, seedOf } from "@/mocks/utils";
 import { pickManager } from "./ops";
 import { users } from "./user";
 

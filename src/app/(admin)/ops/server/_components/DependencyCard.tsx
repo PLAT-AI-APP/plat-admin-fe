@@ -6,7 +6,7 @@ import type { DependencyHealth } from "@/type/ops";
 import {
   HEALTH_STATUS_LABEL,
   HEALTH_STATUS_TONE,
-} from "../_constants/serverStatus";
+} from "@/app/(admin)/ops/server/_constants/serverStatus";
 
 interface DependencyCardProps {
   dependencies: DependencyHealth[];

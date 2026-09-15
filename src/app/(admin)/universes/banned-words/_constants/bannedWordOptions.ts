@@ -3,7 +3,8 @@ import {
   type BannedWordSort,
   type BannedWordType,
 } from "@/type/bannedWord";
-import type { SelectOption, TabItem } from "@/components/ui";
+import type { SelectOption } from "@/components/ui/Select";
+import type { TabItem } from "@/components/ui/Tabs";
 
 /**
  * 유형 탭.

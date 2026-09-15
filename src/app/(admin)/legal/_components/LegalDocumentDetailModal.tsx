@@ -12,7 +12,7 @@ import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 
-interface LegalDocumentViewModalProps {
+interface LegalDocumentDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   /** 목록에서 클릭한 문서. 본문은 상세 API로 다시 조회한다. */
@@ -20,12 +20,12 @@ interface LegalDocumentViewModalProps {
   onActivate: (legalDocument: LegalDocument) => void;
 }
 
-const LegalDocumentViewModal = ({
+const LegalDocumentDetailModal = ({
   isOpen,
   onClose,
   legalDocument,
   onActivate,
-}: LegalDocumentViewModalProps) => {
+}: LegalDocumentDetailModalProps) => {
   const { data, isLoading } = useLegalDocumentQuery(
     isOpen ? legalDocument?.documentId : undefined,
   );
@@ -93,4 +93,4 @@ const LegalDocumentViewModal = ({
   );
 };
 
-export default LegalDocumentViewModal;
+export default LegalDocumentDetailModal;

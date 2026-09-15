@@ -22,8 +22,8 @@ import Tabs from "@/components/ui/Tabs";
 import {
   USER_STATUS_LABEL,
   USER_STATUS_TONE,
-} from "../../_constants/userOptions";
-import UserSuspendModal from "../../_components/UserSuspendModal";
+} from "@/app/(admin)/users/_constants/userOptions";
+import UserSuspendModal from "@/app/(admin)/users/_components/UserSuspendModal";
 import UserAccountPanel from "./UserAccountPanel";
 import UserBillingPanel from "./UserBillingPanel";
 import UserCharacterPanel from "./UserCharacterPanel";
@@ -33,7 +33,7 @@ import UserUniversePanel from "./UserUniversePanel";
 import {
   USER_DETAIL_TABS,
   type UserDetailTab,
-} from "./userDetailConstants";
+} from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
 
 interface UserDetailViewProps {
   userId: string;

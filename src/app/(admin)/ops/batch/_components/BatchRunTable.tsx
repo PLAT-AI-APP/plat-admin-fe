@@ -23,7 +23,7 @@ import {
   BATCH_TRIGGER_LABEL,
   BATCH_TRIGGER_OPTIONS,
   formatDuration,
-} from "../_constants/labels";
+} from "@/app/(admin)/ops/batch/_constants/batchOptions";
 
 const CSV_COLUMNS: CsvColumn<BatchJobRun>[] = [
   { header: "잡", value: (row) => row.jobName },

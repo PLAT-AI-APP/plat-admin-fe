@@ -17,7 +17,7 @@ import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
-import { HASHTAG_CATEGORY_OPTIONS } from "./hashtagOptions";
+import { HASHTAG_CATEGORY_OPTIONS } from "@/app/(admin)/universes/hashtags/_constants/hashtagOptions";
 
 interface HashtagFormModalProps {
   isOpen: boolean;

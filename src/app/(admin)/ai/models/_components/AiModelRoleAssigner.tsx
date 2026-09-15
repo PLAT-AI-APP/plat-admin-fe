@@ -13,7 +13,7 @@ import {
   AI_MODEL_ROLES,
   AI_MODEL_ROLE_DESCRIPTION,
   AI_MODEL_ROLE_LABEL,
-} from "../../_constants/aiOptions";
+} from "@/app/(admin)/ai/_constants/aiOptions";
 
 /** 역할을 한눈에 구분하기 위한 아이콘. 라벨과 달리 화면 장식이라 여기에 둔다. */
 const ROLE_ICON: Record<AiModelRole, ReactNode> = {

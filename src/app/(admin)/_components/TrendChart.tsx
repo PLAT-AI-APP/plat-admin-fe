@@ -22,7 +22,7 @@ import {
   formatMetricValue,
   isAdditiveMetric,
   resolveDelta,
-} from "./dashboardMetric";
+} from "@/app/(admin)/_lib/dashboardMetric";
 
 interface TrendChartProps {
   /** 지표별 일자 계열. 뒤쪽이 최신이다. */

@@ -7,7 +7,7 @@ import {
   SCENARIO_LIFECYCLE_TONE,
   SCENARIO_TYPE_LABEL,
   SCENARIO_TYPE_TONE,
-} from "@/app/(admin)/universes/_constants/character";
+} from "@/constants/universeOptions";
 import { MessageSquare } from "@/icons";
 import { cn } from "@/lib/utils";
 import type { UniverseScenarioDetail } from "@/type/character";

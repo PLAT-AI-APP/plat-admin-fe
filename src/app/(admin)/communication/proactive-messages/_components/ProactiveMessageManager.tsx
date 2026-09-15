@@ -18,11 +18,12 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
 import Switch from "@/components/ui/Switch";
-import Table, { TableCellStack, type TableColumn } from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import {
   PROACTIVE_TRIGGER_LABEL,
   PROACTIVE_TRIGGER_TONE,
-} from "../../_constants/labels";
+} from "@/app/(admin)/communication/_constants/communicationOptions";
 import ProactiveMessageFormModal from "./ProactiveMessageFormModal";
 
 const ProactiveMessageManager = () => {

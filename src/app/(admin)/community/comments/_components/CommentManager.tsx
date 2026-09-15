@@ -32,7 +32,7 @@ import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import CommentDetailModal from "./CommentDetailModal";
-import CommentHiddenReason from "./CommentHiddenReason";
+import CommentHiddenReason from "@/components/comment/CommentHiddenReason";
 import CommentHideModal from "./CommentHideModal";
 import {
   COMMENT_SORT_OPTIONS,
@@ -40,7 +40,7 @@ import {
   COMMENT_STATUS_TONE,
   COMMENT_TARGET_TYPE_FILTER_OPTIONS,
   COMMENT_TARGET_TYPE_TONE,
-} from "./commentOptions";
+} from "@/constants/commentOptions";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
 const COMMENT_CSV_COLUMNS: CsvColumn<Comment>[] = [

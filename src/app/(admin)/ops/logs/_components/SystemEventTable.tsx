@@ -26,7 +26,7 @@ import {
   SYSTEM_EVENT_LEVEL_TONE,
   SYSTEM_EVENT_SOURCE_OPTIONS,
   getSystemEventSourceLabel,
-} from "../_constants/labels";
+} from "@/app/(admin)/ops/logs/_constants/logOptions";
 
 const CSV_COLUMNS: CsvColumn<SystemEventLog>[] = [
   { header: "레벨", value: (row) => SYSTEM_EVENT_LEVEL_LABEL[row.level] },

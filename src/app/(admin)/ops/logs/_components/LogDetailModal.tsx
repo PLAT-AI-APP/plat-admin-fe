@@ -9,7 +9,7 @@ import {
   AUDIT_RESULT_LABEL,
   AUDIT_RESULT_TONE,
   getLogDomainLabel,
-} from "../_constants/labels";
+} from "@/app/(admin)/ops/logs/_constants/logOptions";
 
 interface LogDetailModalProps {
   log: AdminAuditLog | null;

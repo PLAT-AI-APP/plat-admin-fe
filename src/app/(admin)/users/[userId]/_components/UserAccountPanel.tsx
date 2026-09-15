@@ -17,7 +17,7 @@ import {
   LOGIN_PROVIDER_LABEL,
   USER_STATUS_LABEL,
   USER_STATUS_TONE,
-} from "../../_constants/userOptions";
+} from "@/app/(admin)/users/_constants/userOptions";
 
 interface UserAccountPanelProps {
   user: UserDetail;

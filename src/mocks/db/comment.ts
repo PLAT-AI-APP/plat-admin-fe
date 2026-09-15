@@ -3,7 +3,7 @@ import type {
   CommentStatus,
   CommentTargetType,
 } from "@/type/comment";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
 import { characters, universes } from "./character";
 import { pickManager } from "./ops";
 import { users } from "./user";

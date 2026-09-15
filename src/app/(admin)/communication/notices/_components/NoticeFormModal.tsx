@@ -18,7 +18,7 @@ import Textarea from "@/components/ui/Textarea";
 import {
   NOTICE_CATEGORY_OPTIONS,
   NOTICE_STATUS_OPTIONS,
-} from "./noticeOptions";
+} from "@/app/(admin)/communication/notices/_constants/noticeOptions";
 
 interface NoticeFormModalProps {
   isOpen: boolean;

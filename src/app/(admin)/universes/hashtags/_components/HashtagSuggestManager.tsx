@@ -26,8 +26,8 @@ import HashtagSuggestDetailModal from "./HashtagSuggestDetailModal";
 import {
   HASHTAG_SUGGEST_REGISTERED_OPTIONS,
   HASHTAG_SUGGEST_SORT_OPTIONS,
-} from "./hashtagSuggestOptions";
-import { HASHTAG_TAB_DEFAULT_PARAMS } from "./hashtagTabs";
+} from "@/app/(admin)/universes/hashtags/_constants/hashtagSuggestOptions";
+import { HASHTAG_TAB_DEFAULT_PARAMS } from "@/app/(admin)/universes/hashtags/_constants/hashtagTabOptions";
 
 /** CSV는 표와 같은 순서로 둔다. 제안 원문은 묶음당 여러 건이라 여기 담지 않는다. */
 const SUGGEST_CSV_COLUMNS: CsvColumn<HashtagSuggestGroup>[] = [

@@ -7,21 +7,21 @@ import type {
   PushTarget,
   QnaStatus,
 } from "@/type/communication";
-import { characters } from "../db/character";
+import { characters } from "@/mocks/db/character";
 import {
   notificationTemplates,
   proactiveMessages,
   pushCampaigns,
   qnaItems,
-} from "../db/communication";
-import { stampAdmin } from "../session";
+} from "@/mocks/db/communication";
+import { stampAdmin } from "@/mocks/session";
 import {
   MOCK_DELAY_MS,
   matchesKeyword,
   nextId,
   paginate,
   randomInt,
-} from "../utils";
+} from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 

@@ -30,7 +30,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import Skeleton from "@/components/ui/Skeleton";
 import Textarea from "@/components/ui/Textarea";
-import { PermissionDenied } from "@/components/domain/PermissionGate";
+import PermissionDenied from "@/components/domain/PermissionDenied";
 
 /** 자료 한 줄에 걸린 권한 수를 센다. 갈래 머리에 "3/7"로 붙인다. */
 const countGranted = (

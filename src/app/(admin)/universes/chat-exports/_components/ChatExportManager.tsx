@@ -16,15 +16,13 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import Select from "@/components/ui/Select";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import {
   EXPORT_STATUS_FILTER_OPTIONS,
   EXPORT_STATUS_LABEL,
   EXPORT_STATUS_TONE,
-} from "../../_constants/character";
+} from "@/constants/universeOptions";
 import ChatExportRequestModal from "./ChatExportRequestModal";
 
 const ChatExportManager = () => {

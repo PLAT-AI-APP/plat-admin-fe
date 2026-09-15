@@ -6,7 +6,8 @@ import {
   type SystemEventLevel,
   type SystemEventSource,
 } from "@/type/ops";
-import type { BadgeTone, SelectOption } from "@/components/ui";
+import type { BadgeTone } from "@/components/ui/Badge";
+import type { SelectOption } from "@/components/ui/Select";
 
 /**
  * 로그 화면 라벨 맵.

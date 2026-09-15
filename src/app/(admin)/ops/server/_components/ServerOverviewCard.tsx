@@ -12,13 +12,13 @@ import {
   AUTO_REFRESH_LABEL,
   AUTO_REFRESH_SECONDS,
   type AutoRefreshSeconds,
-} from "../_hooks/useAutoRefresh";
+} from "@/app/(admin)/ops/server/_hooks/useAutoRefresh";
 import {
   HEALTH_STATUS_DESCRIPTION,
   HEALTH_STATUS_LABEL,
   HEALTH_STATUS_TONE,
   formatUptime,
-} from "../_constants/serverStatus";
+} from "@/app/(admin)/ops/server/_constants/serverStatus";
 
 interface ServerOverviewCardProps {
   health: ServerHealth;

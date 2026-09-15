@@ -1,4 +1,5 @@
-import type { BadgeTone, SelectOption } from "@/components/ui";
+import type { BadgeTone } from "@/components/ui/Badge";
+import type { SelectOption } from "@/components/ui/Select";
 import {
   COMMENT_STATUS_LABEL,
   COMMENT_TARGET_TYPE_LABEL,

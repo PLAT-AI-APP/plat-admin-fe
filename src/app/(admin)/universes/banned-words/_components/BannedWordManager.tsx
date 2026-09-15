@@ -26,7 +26,7 @@ import Tabs from "@/components/ui/Tabs";
 import {
   BANNED_WORD_SORT_OPTIONS,
   BANNED_WORD_TYPE_TABS,
-} from "../../_constants/bannedWord";
+} from "@/app/(admin)/universes/banned-words/_constants/bannedWordOptions";
 import BannedWordAddForm from "./BannedWordAddForm";
 
 /** 탭마다 안내가 다르다. 두 표에서 운영자가 하는 일이 다르기 때문이다. */

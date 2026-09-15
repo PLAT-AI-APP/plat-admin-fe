@@ -1,9 +1,9 @@
 import { HttpResponse, delay, http } from "msw";
 import type { GlobalSearchItem } from "@/api/search/getGlobalSearch";
-import { characters, universes } from "../db/character";
-import { hashtags } from "../db/hashtag";
-import { users } from "../db/user";
-import { MOCK_DELAY_MS, matchesKeyword } from "../utils";
+import { characters, universes } from "@/mocks/db/character";
+import { hashtags } from "@/mocks/db/hashtag";
+import { users } from "@/mocks/db/user";
+import { MOCK_DELAY_MS, matchesKeyword } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 

@@ -1,4 +1,5 @@
-import type { BadgeTone, SelectOption } from "@/components/ui";
+import type { BadgeTone } from "@/components/ui/Badge";
+import type { SelectOption } from "@/components/ui/Select";
 import type { LoginProvider, UserStatus } from "@/type/user";
 
 /**

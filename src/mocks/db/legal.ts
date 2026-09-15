@@ -1,5 +1,5 @@
 import type { LegalDocument, LegalDocumentType } from "@/type/legal";
-import { daysAgo } from "../utils";
+import { daysAgo } from "@/mocks/utils";
 import { pickManager } from "./ops";
 
 /** 이용약관 본문. 실제 문서처럼 장·조 구조를 갖춘 마크다운으로 만든다. */

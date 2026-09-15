@@ -16,7 +16,7 @@ import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
-import { COMMENT_STATUS_TONE, COMMENT_TARGET_TYPE_TONE } from "./commentOptions";
+import { COMMENT_STATUS_TONE, COMMENT_TARGET_TYPE_TONE } from "@/constants/commentOptions";
 
 interface CommentDetailModalProps {
   /** null이면 모달이 닫힌 상태다. */

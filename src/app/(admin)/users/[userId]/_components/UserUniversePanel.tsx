@@ -16,12 +16,11 @@ import {
   UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
-} from "../../../universes/_constants/character";
-import UniverseStateBadge from "../../../universes/_components/UniverseStateBadge";
-import UniverseTendencyDot, {
-  UniverseTendencyLegend,
-} from "../../../universes/_components/UniverseTendencyDot";
-import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
+} from "@/constants/universeOptions";
+import UniverseStateBadge from "@/components/universe/UniverseStateBadge";
+import UniverseTendencyDot from "@/components/universe/UniverseTendencyDot";
+import UniverseTendencyLegend from "@/components/universe/UniverseTendencyLegend";
+import { USER_DETAIL_PAGE_SIZE } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
 
 interface UserUniversePanelProps {
   userId: string;

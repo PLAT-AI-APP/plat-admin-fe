@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { findRoutePermission } from "@/constants/menu";
 import { useAdminStore } from "@/store/useAdminStore";
 import { hasPermission, type PermissionKey } from "@/type/permission";
-import { PermissionDenied } from "./PermissionGate";
+import PermissionDenied from "./PermissionDenied";
 
 /**
  * 권한 없는 주소 접근을 막는다.

@@ -20,7 +20,7 @@ import {
   QNA_CATEGORY_TONE,
   QNA_STATUS_LABEL,
   QNA_STATUS_TONE,
-} from "../../_constants/labels";
+} from "@/app/(admin)/communication/_constants/communicationOptions";
 
 interface QnaDetailModalProps {
   /** null이면 모달이 닫힌 상태이며 상세도 조회하지 않는다. */

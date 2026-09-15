@@ -17,7 +17,7 @@ import {
   UNIVERSE_REVIEW_TONE,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
-} from "../../_constants/character";
+} from "@/constants/universeOptions";
 
 /**
  * 지금 공식으로 표시되는 세계관 목록.

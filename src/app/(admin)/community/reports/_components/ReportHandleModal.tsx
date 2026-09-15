@@ -20,7 +20,7 @@ import {
   REPORT_REASON_TONE,
   REPORT_STATUS_OPTIONS,
   REPORT_TARGET_TYPE_TONE,
-} from "./reportOptions";
+} from "@/constants/reportOptions";
 
 interface ReportHandleModalProps {
   /** null이면 모달이 닫힌 상태다. */

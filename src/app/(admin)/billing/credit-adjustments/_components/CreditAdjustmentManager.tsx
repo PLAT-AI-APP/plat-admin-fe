@@ -21,17 +21,15 @@ import CsvExportButton from "@/components/ui/CsvExportButton";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import CreditAdjustmentFormModal from "./CreditAdjustmentFormModal";
 import {
   ADJUSTMENT_TYPE_FILTER_OPTIONS,
   ADJUSTMENT_TYPE_LABEL,
   ADJUSTMENT_TYPE_SIGN,
   ADJUSTMENT_TYPE_TONE,
-} from "./adjustmentOptions";
+} from "@/constants/billingOptions";
 
 /** 지급은 +, 차감은 - 부호를 붙여 표기한다. */
 const formatSignedCredit = (type: AdjustmentType, amount: number) =>

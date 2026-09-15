@@ -8,7 +8,7 @@ import {
   HASHTAG_TABS,
   HASHTAG_TAB_DEFAULT_PARAMS,
   type HashtagTab,
-} from "./hashtagTabs";
+} from "@/app/(admin)/universes/hashtags/_constants/hashtagTabOptions";
 
 /**
  * 해시태그 화면의 탭.

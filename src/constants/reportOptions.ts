@@ -1,4 +1,6 @@
-import type { BadgeTone, SelectOption, TabItem } from "@/components/ui";
+import type { BadgeTone } from "@/components/ui/Badge";
+import type { SelectOption } from "@/components/ui/Select";
+import type { TabItem } from "@/components/ui/Tabs";
 import {
   REPORT_REASON_LABEL,
   REPORT_STATUS_LABEL,

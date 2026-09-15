@@ -18,7 +18,7 @@ import Card from "@/components/ui/Card";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import LegalDocumentFormModal from "./LegalDocumentFormModal";
-import LegalDocumentViewModal from "./LegalDocumentViewModal";
+import LegalDocumentDetailModal from "./LegalDocumentDetailModal";
 
 const LEGAL_TABS: TabItem<LegalDocumentType>[] = [
   { label: LEGAL_DOCUMENT_LABEL.TERMS_OF_SERVICE, value: "TERMS_OF_SERVICE" },
@@ -204,7 +204,7 @@ const LegalDocumentManager = () => {
         isSubmitting={createMutation.isPending}
       />
 
-      <LegalDocumentViewModal
+      <LegalDocumentDetailModal
         isOpen={Boolean(viewingDocument)}
         onClose={() => setViewingDocument(undefined)}
         legalDocument={viewingDocument}

@@ -1,5 +1,6 @@
 import type { BatchRunStatus, BatchTrigger } from "@/type/ops";
-import type { BadgeTone, SelectOption } from "@/components/ui";
+import type { BadgeTone } from "@/components/ui/Badge";
+import type { SelectOption } from "@/components/ui/Select";
 
 export const BATCH_RUN_STATUS_LABEL: Record<BatchRunStatus, string> = {
   RUNNING: "실행 중",

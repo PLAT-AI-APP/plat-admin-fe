@@ -16,12 +16,12 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import Table, { type TableColumn } from "@/components/ui/Table";
-import CommentHiddenReason from "../../../community/comments/_components/CommentHiddenReason";
+import CommentHiddenReason from "@/components/comment/CommentHiddenReason";
 import {
   COMMENT_STATUS_TONE,
   COMMENT_TARGET_TYPE_TONE,
-} from "../../../community/comments/_components/commentOptions";
-import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
+} from "@/constants/commentOptions";
+import { USER_DETAIL_PAGE_SIZE } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
 
 interface UserCommentPanelProps {
   userId: string;

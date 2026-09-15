@@ -26,15 +26,16 @@ import Dropdown, { type DropdownItem } from "@/components/ui/Dropdown";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, { TableCellStack, type TableColumn } from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import NoticeFormModal from "./NoticeFormModal";
-import NoticeViewModal from "./NoticeViewModal";
+import NoticeDetailModal from "./NoticeDetailModal";
 import {
   NOTICE_CATEGORY_FILTER_OPTIONS,
   NOTICE_CATEGORY_TONE,
   NOTICE_STATUS_FILTER_OPTIONS,
   NOTICE_STATUS_TONE,
-} from "./noticeOptions";
+} from "@/app/(admin)/communication/notices/_constants/noticeOptions";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
 const NOTICE_CSV_COLUMNS: CsvColumn<NoticeSummary>[] = [
@@ -354,7 +355,7 @@ const NoticeManager = () => {
         isSubmitting={createMutation.isPending || updateMutation.isPending}
       />
 
-      <NoticeViewModal
+      <NoticeDetailModal
         noticeId={viewingNoticeId}
         onClose={() => setViewingNoticeId(null)}
         onEdit={handleOpenEdit}

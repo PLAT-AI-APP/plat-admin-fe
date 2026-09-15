@@ -16,8 +16,8 @@ import Table, { type TableColumn } from "@/components/ui/Table";
 import {
   NOTIFICATION_CHANNEL_LABEL,
   NOTIFICATION_CHANNEL_TONE,
-} from "../../_constants/labels";
-import NotificationTemplateModal from "./NotificationTemplateModal";
+} from "@/app/(admin)/communication/_constants/communicationOptions";
+import NotificationTemplateFormModal from "./NotificationTemplateFormModal";
 
 const NotificationTemplateManager = () => {
   const { data, isLoading } = useNotificationTemplateListQuery();
@@ -142,7 +142,7 @@ const NotificationTemplateManager = () => {
         />
       </Card>
 
-      <NotificationTemplateModal
+      <NotificationTemplateFormModal
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         template={editingTemplate}

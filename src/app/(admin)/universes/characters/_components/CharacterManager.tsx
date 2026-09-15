@@ -32,16 +32,16 @@ import {
   VISIBILITY_FILTER_OPTIONS,
   VISIBILITY_LABEL,
   VISIBILITY_TONE,
-} from "../../_constants/character";
+} from "@/constants/universeOptions";
 import {
   CHARACTER_SORT_OPTIONS,
   CHARACTER_STATUS_FILTER_OPTIONS,
   CHARACTER_STATUS_LABEL,
   CHARACTER_STATUS_TONE,
   DEFAULT_CHARACTER_SORT,
-} from "../_constants/characterOptions";
+} from "@/app/(admin)/universes/characters/_constants/characterOptions";
 import CharacterBlockModal from "./CharacterBlockModal";
-import CharacterCell from "./CharacterCell";
+import CharacterCell from "@/components/universe/CharacterCell";
 import { buildCharacterActions } from "./characterActions";
 
 /**

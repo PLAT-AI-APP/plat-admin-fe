@@ -17,7 +17,7 @@ import type { TabItem } from "@/components/ui/Tabs";
 import Textarea from "@/components/ui/Textarea";
 import PromptMarkdown from "./PromptMarkdown";
 
-interface PromptVersionModalProps {
+interface PromptVersionFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   /** 화면에 표시할 프롬프트 이름 */
@@ -46,7 +46,7 @@ const EDITOR_TABS: TabItem<EditorTab>[] = [
   { label: "미리보기", value: "preview" },
 ];
 
-const PromptVersionModal = ({
+const PromptVersionFormModal = ({
   isOpen,
   onClose,
   promptLabel,
@@ -56,7 +56,7 @@ const PromptVersionModal = ({
   latestVersion,
   onSubmit,
   isSubmitting,
-}: PromptVersionModalProps) => {
+}: PromptVersionFormModalProps) => {
   const [tab, setTab] = useState<EditorTab>("write");
 
   const {
@@ -164,4 +164,4 @@ const PromptVersionModal = ({
   );
 };
 
-export default PromptVersionModal;
+export default PromptVersionFormModal;

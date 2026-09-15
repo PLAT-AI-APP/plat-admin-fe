@@ -15,7 +15,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
-import { HASHTAG_CATEGORY_TONE } from "./hashtagOptions";
+import { HASHTAG_CATEGORY_TONE } from "@/app/(admin)/universes/hashtags/_constants/hashtagOptions";
 
 interface HashtagDetailModalProps {
   /** 목록에서 누른 행. null이면 모달이 닫힌 상태다. */

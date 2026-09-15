@@ -10,7 +10,7 @@ import {
   normalizePermissions,
   type PermissionKey,
 } from "@/type/permission";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
 
 /* -------------------------------------------------------------------------
  * 직책 · 관리자 계정

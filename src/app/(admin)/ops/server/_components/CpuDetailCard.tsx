@@ -1,7 +1,7 @@
 import Card from "@/components/ui/Card";
 import type { CpuHealth } from "@/type/ops";
 import DonutGauge from "./DonutGauge";
-import { USAGE_TONE_COLOR, getUsageTone } from "../_constants/serverStatus";
+import { USAGE_TONE_COLOR, getUsageTone } from "@/app/(admin)/ops/server/_constants/serverStatus";
 
 interface CpuDetailCardProps {
   cpu: CpuHealth;

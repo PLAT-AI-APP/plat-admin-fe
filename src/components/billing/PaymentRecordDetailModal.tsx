@@ -20,7 +20,7 @@ import {
   RECORD_STATUS_TONE,
   RETENTION_BASIS,
   retentionDaysLeft,
-} from "./recordOptions";
+} from "@/constants/billingOptions";
 
 interface PaymentRecordDetailModalProps {
   record: PaymentRecord | null;

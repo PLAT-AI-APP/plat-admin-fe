@@ -17,9 +17,9 @@ import {
   BATCH_RUN_STATUS_LABEL,
   BATCH_RUN_STATUS_TONE,
   describeCron,
-} from "../_constants/labels";
+} from "@/app/(admin)/ops/batch/_constants/batchOptions";
 
-interface BatchJobBoardProps {
+interface BatchJobTableProps {
   /** 잡을 누르면 아래 이력이 그 잡으로 좁혀진다. */
   selectedJobKey: string;
   onSelectJob: (jobKey: string) => void;
@@ -32,7 +32,7 @@ interface BatchJobBoardProps {
  * 켜고 끄는 것과 지금 한 번 돌리는 것만 한다. 어드민에서 잡을 만들 수 있게 하면
  * 코드에 없는 배치가 생겨 어디를 봐야 하는지 알 수 없게 된다.
  */
-const BatchJobBoard = ({ selectedJobKey, onSelectJob }: BatchJobBoardProps) => {
+const BatchJobTable = ({ selectedJobKey, onSelectJob }: BatchJobTableProps) => {
   const { data, isLoading, isError } = useBatchJobListQuery();
   const { runMutation, toggleMutation } = useBatchJobMutation();
 
@@ -204,4 +204,4 @@ const BatchJobBoard = ({ selectedJobKey, onSelectJob }: BatchJobBoardProps) => {
   );
 };
 
-export default BatchJobBoard;
+export default BatchJobTable;

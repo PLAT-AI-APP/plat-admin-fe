@@ -1,8 +1,8 @@
 import { HttpResponse, delay, http } from "msw";
 import type { CreditPolicy, CreditPolicyKey } from "@/type/billing";
-import { creditPolicies } from "../db/billing";
-import { stampAdmin } from "../session";
-import { MOCK_DELAY_MS } from "../utils";
+import { creditPolicies } from "@/mocks/db/billing";
+import { stampAdmin } from "@/mocks/session";
+import { MOCK_DELAY_MS } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 

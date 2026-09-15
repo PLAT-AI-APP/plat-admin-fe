@@ -15,7 +15,7 @@ import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
-import { SUSPEND_PERIOD_OPTIONS } from "../_constants/userOptions";
+import { SUSPEND_PERIOD_OPTIONS } from "@/app/(admin)/users/_constants/userOptions";
 
 interface UserSuspendModalProps {
   /** null이면 모달이 닫힌 상태다. */

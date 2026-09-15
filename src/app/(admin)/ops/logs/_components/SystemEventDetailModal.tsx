@@ -8,7 +8,7 @@ import {
   SYSTEM_EVENT_LEVEL_LABEL,
   SYSTEM_EVENT_LEVEL_TONE,
   getSystemEventSourceLabel,
-} from "../_constants/labels";
+} from "@/app/(admin)/ops/logs/_constants/logOptions";
 
 interface SystemEventDetailModalProps {
   event: SystemEventLog | null;

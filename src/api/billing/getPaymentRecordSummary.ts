@@ -1,5 +1,5 @@
 import { adminAxios } from "..";
-import { usePermittedQuery } from "../usePermittedQuery";
+import { usePermittedQuery } from "@/api/usePermittedQuery";
 import type { PaymentRecordSummary } from "@/type/billing";
 
 export const getPaymentRecordSummary = async () => {

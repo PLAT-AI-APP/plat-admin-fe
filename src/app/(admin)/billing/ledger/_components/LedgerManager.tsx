@@ -14,12 +14,14 @@ import DateRangeFilter from "@/components/ui/DateRangeFilter";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import LedgerSummaryCards from "./LedgerSummaryCards";
-import { LEDGER_TYPE_FILTER_OPTIONS, LEDGER_TYPE_LABEL, LEDGER_TYPE_TONE } from "./ledgerOptions";
+import {
+  LEDGER_TYPE_FILTER_OPTIONS,
+  LEDGER_TYPE_LABEL,
+  LEDGER_TYPE_TONE,
+} from "@/constants/billingOptions";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
 const LEDGER_CSV_COLUMNS: CsvColumn<LedgerEntry>[] = [

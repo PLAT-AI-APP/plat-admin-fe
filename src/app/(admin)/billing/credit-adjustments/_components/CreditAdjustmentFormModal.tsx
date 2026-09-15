@@ -19,7 +19,7 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
 import UserPickerModal from "./UserPickerModal";
-import { ADJUSTMENT_TYPE_OPTIONS } from "./adjustmentOptions";
+import { ADJUSTMENT_TYPE_OPTIONS } from "@/constants/billingOptions";
 
 interface CreditAdjustmentFormModalProps {
   isOpen: boolean;

@@ -2,7 +2,7 @@
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { formatBytes } from "@/lib/utils";
-import { DONUT_SIZE } from "../_constants/serverStatus";
+import { DONUT_SIZE } from "@/app/(admin)/ops/server/_constants/serverStatus";
 
 export interface CompositionSlice {
   key: string;

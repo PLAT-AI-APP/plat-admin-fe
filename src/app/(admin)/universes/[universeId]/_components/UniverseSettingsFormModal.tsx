@@ -17,12 +17,12 @@ import {
   UNIVERSE_CATEGORY_OPTIONS,
   UNIVERSE_TENDENCY_OPTIONS,
   UNIVERSE_VISIBILITY_OPTIONS,
-} from "./universeMeta";
+} from "@/app/(admin)/universes/[universeId]/_lib/universeMeta";
 
 /** 무엇을 바꾸러 열었는지. 한 번에 한 가지만 바꾸게 해 오조작을 줄인다. */
 export type UniverseSettingsMode = "visibility" | "classification";
 
-interface UniverseSettingsModalProps {
+interface UniverseSettingsFormModalProps {
   mode: UniverseSettingsMode | null;
   universe: Pick<UniverseDetail, "visibility" | "category" | "tendency">;
   isPending: boolean;
@@ -57,13 +57,13 @@ const MODE_TEXT: Record<
  * 폼 값은 `values`로 서버 값과 동기화한다. `defaultValues`만 주면 조치 후 상세를
  * 다시 불러와도 폼이 옛 값을 들고 있어, 방금 바꾼 값을 되돌려 보내게 된다.
  */
-const UniverseSettingsModal = ({
+const UniverseSettingsFormModal = ({
   mode,
   universe,
   isPending,
   onClose,
   onSubmit,
-}: UniverseSettingsModalProps) => {
+}: UniverseSettingsFormModalProps) => {
   const {
     control,
     handleSubmit,
@@ -171,4 +171,4 @@ const UniverseSettingsModal = ({
   );
 };
 
-export default UniverseSettingsModal;
+export default UniverseSettingsFormModal;

@@ -27,7 +27,7 @@ import {
   PUSH_STATUS_OPTIONS,
   PUSH_STATUS_TONE,
   PUSH_TARGET_LABEL,
-} from "../../_constants/labels";
+} from "@/app/(admin)/communication/_constants/communicationOptions";
 import PushCampaignFormModal from "./PushCampaignFormModal";
 
 const PushCampaignManager = () => {

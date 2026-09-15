@@ -24,7 +24,7 @@ import Textarea from "@/components/ui/Textarea";
 import {
   PRODUCT_PLATFORM_OPTIONS,
   PRODUCT_STATUS_OPTIONS,
-} from "./productOptions";
+} from "@/app/(admin)/billing/products/_constants/productOptions";
 
 interface BillingProductFormModalProps {
   isOpen: boolean;

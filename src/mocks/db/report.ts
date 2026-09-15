@@ -4,7 +4,7 @@ import type {
   ReportStatus,
   ReportTargetType,
 } from "@/type/report";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
 import { characters } from "./character";
 import { comments, reportableCommentIds } from "./comment";
 import { pickManager } from "./ops";

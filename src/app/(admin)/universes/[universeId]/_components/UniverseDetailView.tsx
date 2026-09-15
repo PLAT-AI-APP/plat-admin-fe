@@ -35,9 +35,9 @@ import Skeleton from "@/components/ui/Skeleton";
 import Textarea from "@/components/ui/Textarea";
 import UniverseAssetGallery from "./UniverseAssetGallery";
 import UniverseScenarioPanel from "./UniverseScenarioPanel";
-import UniverseSettingsModal, {
+import UniverseSettingsFormModal, {
   type UniverseSettingsMode,
-} from "./UniverseSettingsModal";
+} from "./UniverseSettingsFormModal";
 import UniverseTranslationPanel from "./UniverseTranslationPanel";
 import { buildUniverseActions } from "./universeActions";
 import {
@@ -46,7 +46,7 @@ import {
   creatorStatusTone,
   isRiskyCreatorStatus,
   universeTitleOf,
-} from "./universeMeta";
+} from "@/app/(admin)/universes/[universeId]/_lib/universeMeta";
 import {
   UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_REVIEW_LABEL,
@@ -56,7 +56,7 @@ import {
   UNIVERSE_TENDENCY_LABEL,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
-} from "../../_constants/character";
+} from "@/constants/universeOptions";
 
 interface UniverseDetailViewProps {
   universeId: string;
@@ -465,7 +465,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
       </Modal>
 
       {data && (
-        <UniverseSettingsModal
+        <UniverseSettingsFormModal
           mode={settingsMode}
           universe={data}
           isPending={patchMutation.isPending}

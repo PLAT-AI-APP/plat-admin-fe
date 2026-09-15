@@ -21,8 +21,8 @@ import {
   REPORT_REASON_TONE,
   REPORT_STATUS_TONE,
   REPORT_TARGET_TYPE_TONE,
-} from "../../../community/reports/_components/reportOptions";
-import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
+} from "@/constants/reportOptions";
+import { USER_DETAIL_PAGE_SIZE } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
 
 interface UserReportPanelProps {
   userId: string;

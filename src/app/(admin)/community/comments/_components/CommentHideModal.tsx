@@ -10,7 +10,7 @@ import Textarea from "@/components/ui/Textarea";
 import {
   COMMENT_HIDE_REASON_MAX_LENGTH,
   COMMENT_HIDE_REASONS,
-} from "./commentOptions";
+} from "@/constants/commentOptions";
 
 interface CommentHideModalProps {
   /** null이면 모달이 닫힌 상태다. 여러 건이면 일괄 처리다. */

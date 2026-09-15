@@ -12,9 +12,9 @@ import EmptyState from "@/components/ui/EmptyState";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
-import { NOTICE_CATEGORY_TONE, NOTICE_STATUS_TONE } from "./noticeOptions";
+import { NOTICE_CATEGORY_TONE, NOTICE_STATUS_TONE } from "@/app/(admin)/communication/notices/_constants/noticeOptions";
 
-interface NoticeViewModalProps {
+interface NoticeDetailModalProps {
   /** null이면 모달이 닫힌 상태다. */
   noticeId: number | null;
   onClose: () => void;
@@ -28,7 +28,7 @@ interface NoticeViewModalProps {
  * 앱에 노출되는 형태 그대로 본문을 확인한다.
  * 댓글 관리에서 대상 공지로 바로 넘어올 수 있어 목록 행이 아니라 ID로 조회한다.
  */
-const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) => {
+const NoticeDetailModal = ({ noticeId, onClose, onEdit }: NoticeDetailModalProps) => {
   const { data, isLoading, isError } = useNoticeDetailQuery(noticeId);
 
   return (
@@ -130,4 +130,4 @@ const NoticeViewModal = ({ noticeId, onClose, onEdit }: NoticeViewModalProps) =>
   );
 };
 
-export default NoticeViewModal;
+export default NoticeDetailModal;

@@ -23,11 +23,9 @@ import DateRangeFilter from "@/components/ui/DateRangeFilter";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
-import PaymentRecordDetailModal from "./PaymentRecordDetailModal";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
+import PaymentRecordDetailModal from "@/components/billing/PaymentRecordDetailModal";
 import PaymentRecordSummaryCards from "./PaymentRecordSummaryCards";
 import {
   EXPIRING_DAYS,
@@ -41,7 +39,7 @@ import {
   RETENTION_BASIS,
   RETENTION_YEARS,
   retentionDaysLeft,
-} from "./recordOptions";
+} from "@/constants/billingOptions";
 
 /**
  * CSV 컬럼.

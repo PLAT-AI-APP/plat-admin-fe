@@ -11,10 +11,8 @@ import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import Tabs from "@/components/ui/Tabs";
 import {
   QNA_CATEGORY_LABEL,
@@ -23,7 +21,7 @@ import {
   QNA_STATUS_LABEL,
   QNA_STATUS_TABS,
   QNA_STATUS_TONE,
-} from "../../_constants/labels";
+} from "@/app/(admin)/communication/_constants/communicationOptions";
 import QnaDetailModal from "./QnaDetailModal";
 
 const QnaManager = () => {

@@ -19,14 +19,14 @@ import {
   bannedWords,
   universes,
   syncCharacterDerivedCounts,
-} from "../db/character";
+} from "@/mocks/db/character";
 import {
   MOCK_DELAY_MS,
   matchesKeyword,
   nextId,
   paginate,
   randomInt,
-} from "../utils";
+} from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 

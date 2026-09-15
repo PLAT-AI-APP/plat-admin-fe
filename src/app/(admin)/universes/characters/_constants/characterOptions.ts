@@ -7,7 +7,7 @@ import type { CharacterStatus } from "@/type/character";
  * 캐릭터 화면 전용 라벨 · 옵션.
  *
  * 노출 상태(`VISIBILITY_*`)는 유저 상세의 보유 캐릭터 표도 함께 쓰므로
- * 상위의 `_constants/character.ts`에 그대로 둔다. 여기 있는 값은 캐릭터
+ * 공용 `src/constants/universeOptions.ts`에 둔다. 여기 있는 값은 캐릭터
  * 목록 · 상세만 쓰는 것들이라 화면 폴더 안에 둔다.
  */
 

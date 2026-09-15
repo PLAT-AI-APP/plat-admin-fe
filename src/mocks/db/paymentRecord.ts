@@ -8,7 +8,7 @@ import type {
   ProductPlatform,
 } from "@/type/billing";
 import type { UserDetail } from "@/type/user";
-import { daysAgo, pickOne, randomInt, seedOf } from "../utils";
+import { daysAgo, pickOne, randomInt, seedOf } from "@/mocks/utils";
 import { billingProducts, creditUsers, ledgerEntries } from "./billing";
 
 /**

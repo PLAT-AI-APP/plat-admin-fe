@@ -10,12 +10,12 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import Table, { type TableColumn } from "@/components/ui/Table";
-import CharacterCell from "../../../universes/characters/_components/CharacterCell";
+import CharacterCell from "@/components/universe/CharacterCell";
 import {
   VISIBILITY_LABEL,
   VISIBILITY_TONE,
-} from "../../../universes/_constants/character";
-import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
+} from "@/constants/universeOptions";
+import { USER_DETAIL_PAGE_SIZE } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
 
 interface UserCharacterPanelProps {
   userId: string;

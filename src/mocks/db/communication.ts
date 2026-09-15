@@ -10,7 +10,7 @@ import type {
   QnaItem,
   QnaStatus,
 } from "@/type/communication";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
 import { characters } from "./character";
 import { pickManager } from "./ops";
 import { users } from "./user";

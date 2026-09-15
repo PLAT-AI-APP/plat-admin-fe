@@ -4,9 +4,9 @@ import type {
   LegalDocumentFormValues,
   LegalDocumentType,
 } from "@/type/legal";
-import { legalDocuments } from "../db/legal";
-import { stampAdmin } from "../session";
-import { MOCK_DELAY_MS, nextId } from "../utils";
+import { legalDocuments } from "@/mocks/db/legal";
+import { stampAdmin } from "@/mocks/session";
+import { MOCK_DELAY_MS, nextId } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 

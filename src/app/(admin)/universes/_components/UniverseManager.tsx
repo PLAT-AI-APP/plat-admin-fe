@@ -40,11 +40,10 @@ import {
   UNIVERSE_VISIBILITY_FILTER_OPTIONS,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
-} from "../_constants/character";
-import UniverseStateBadge from "./UniverseStateBadge";
-import UniverseTendencyDot, {
-  UniverseTendencyLegend,
-} from "./UniverseTendencyDot";
+} from "@/constants/universeOptions";
+import UniverseStateBadge from "@/components/universe/UniverseStateBadge";
+import UniverseTendencyDot from "@/components/universe/UniverseTendencyDot";
+import UniverseTendencyLegend from "@/components/universe/UniverseTendencyLegend";
 
 /** 주소에 실리는 목록 조건. 전역 검색(⌘K)이 넘겨 주는 keyword도 여기로 들어온다. */
 const DEFAULT_PARAMS = {
@@ -86,7 +85,7 @@ const isSupportedOrder = (value: string): value is UniverseOrder =>
 /*
   성향 필터.
 
-  `_constants/character.ts`는 세계관 도메인 화면이 함께 쓰는 파일이라 보드 전용
+  `src/constants/universeOptions.ts`는 세계관 도메인 화면이 함께 쓰는 파일이라 목록 전용
   옵션은 여기에 둔다. 라벨은 공용 상수를 그대로 쓰되 `ALL`만 바꾼다 —
   `UNIVERSE_TENDENCY_LABEL.ALL`이 "전체"라서 "성향 전체"(= 필터 없음)와 나란히
   놓으면 둘을 구분할 수 없다.
@@ -160,12 +159,12 @@ const resolveTab = (status: string, reviewStatus: string): BoardTabValue => {
 };
 
 /**
- * 세계관 관리 보드(실서버 plat-admin).
+ * 세계관 관리 목록(실서버 plat-admin).
  *
  * 후보 피커 · 공식 패널과 같은 실서버 목록(`useAdminUniverseListQuery`)을 쓴다.
  * 행을 누르면 같은 실 ID로 상세가 열린다.
  */
-const UniverseBoard = () => {
+const UniverseManager = () => {
   const router = useRouter();
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
   const { page, keyword, creatorId, hashtagId } = params;
@@ -605,4 +604,4 @@ const UniverseBoard = () => {
   );
 };
 
-export default UniverseBoard;
+export default UniverseManager;

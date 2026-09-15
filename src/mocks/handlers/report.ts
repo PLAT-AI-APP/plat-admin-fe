@@ -1,8 +1,8 @@
 import { HttpResponse, delay, http } from "msw";
 import type { UpdateReportStatusValues } from "@/type/report";
-import { reports } from "../db/report";
-import { stampAdmin } from "../session";
-import { MOCK_DELAY_MS, matchesKeyword, paginate } from "../utils";
+import { reports } from "@/mocks/db/report";
+import { stampAdmin } from "@/mocks/session";
+import { MOCK_DELAY_MS, matchesKeyword, paginate } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 

@@ -15,10 +15,8 @@ import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
 import Input from "@/components/ui/Input";
 import Switch from "@/components/ui/Switch";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 
 /** 지급은 초록, 차감은 빨강으로 구분해 부호를 눈으로 먼저 읽게 한다. */
 const formatPolicyAmount = (amount: number) =>

@@ -16,7 +16,7 @@ import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
-import { PUSH_TARGET_OPTIONS } from "../../_constants/labels";
+import { PUSH_TARGET_OPTIONS } from "@/app/(admin)/communication/_constants/communicationOptions";
 
 interface PushCampaignFormModalProps {
   isOpen: boolean;

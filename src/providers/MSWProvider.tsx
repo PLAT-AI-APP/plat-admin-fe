@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 const isMockingEnabled = process.env.NEXT_PUBLIC_API_MOCKING === "enabled";
 let workerReadyPromise: Promise<void> | null = null;
@@ -20,11 +20,11 @@ const startWorker = async () => {
   return workerReadyPromise;
 };
 
-export default function MSWProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+interface MSWProviderProps {
+  children: ReactNode;
+}
+
+const MSWProvider = ({ children }: MSWProviderProps) => {
   const [isReady, setIsReady] = useState(!isMockingEnabled);
 
   useEffect(() => {
@@ -42,4 +42,6 @@ export default function MSWProvider({
   if (!isReady) return null;
 
   return <>{children}</>;
-}
+};
+
+export default MSWProvider;

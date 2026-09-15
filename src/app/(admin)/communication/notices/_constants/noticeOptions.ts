@@ -1,4 +1,5 @@
-import type { BadgeTone, SelectOption } from "@/components/ui";
+import type { BadgeTone } from "@/components/ui/Badge";
+import type { SelectOption } from "@/components/ui/Select";
 import {
   NOTICE_CATEGORY_LABEL,
   NOTICE_STATUS_LABEL,

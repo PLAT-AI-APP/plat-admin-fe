@@ -4,8 +4,8 @@ import type {
   PaymentRecordSummary,
   PgProvider,
 } from "@/type/billing";
-import { paymentRecords, userKeyOf } from "../db/paymentRecord";
-import { MOCK_DELAY_MS, matchesKeyword, paginate } from "../utils";
+import { paymentRecords, userKeyOf } from "@/mocks/db/paymentRecord";
+import { MOCK_DELAY_MS, matchesKeyword, paginate } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 

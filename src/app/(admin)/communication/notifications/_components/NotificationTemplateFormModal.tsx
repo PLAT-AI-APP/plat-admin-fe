@@ -18,9 +18,9 @@ import {
   NOTIFICATION_CHANNEL_LABEL,
   NOTIFICATION_CHANNEL_TONE,
   NOTIFICATION_VARIABLES,
-} from "../../_constants/labels";
+} from "@/app/(admin)/communication/_constants/communicationOptions";
 
-interface NotificationTemplateModalProps {
+interface NotificationTemplateFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   /** 수정 대상. 모달은 수정 전용이라 항상 값이 있어야 열린다. */
@@ -34,13 +34,13 @@ const EMPTY_VALUES: NotificationTemplateSchema = {
   body: "",
 };
 
-const NotificationTemplateModal = ({
+const NotificationTemplateFormModal = ({
   isOpen,
   onClose,
   template,
   onSubmit,
   isSubmitting,
-}: NotificationTemplateModalProps) => {
+}: NotificationTemplateFormModalProps) => {
   const {
     register,
     handleSubmit,
@@ -137,4 +137,4 @@ const NotificationTemplateModal = ({
   );
 };
 
-export default NotificationTemplateModal;
+export default NotificationTemplateFormModal;

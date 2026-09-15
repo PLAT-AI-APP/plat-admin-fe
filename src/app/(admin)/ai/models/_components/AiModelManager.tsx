@@ -14,7 +14,8 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
 import Switch from "@/components/ui/Switch";
-import Table, { TableCellStack } from "@/components/ui/Table";
+import Table from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import type { TableColumn } from "@/components/ui/Table";
 import {
   AI_MODEL_ROLES,
@@ -22,7 +23,7 @@ import {
   AI_MODEL_ROLE_TONE,
   AI_PROVIDER_LABEL,
   AI_PROVIDER_TONE,
-} from "../../_constants/aiOptions";
+} from "@/app/(admin)/ai/_constants/aiOptions";
 import AiModelFormModal from "./AiModelFormModal";
 import AiModelRoleAssigner from "./AiModelRoleAssigner";
 

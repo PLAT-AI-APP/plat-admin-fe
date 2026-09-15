@@ -1,13 +1,13 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
-export default function ReactQueryProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+interface ReactQueryProviderProps {
+  children: ReactNode;
+}
+
+const ReactQueryProvider = ({ children }: ReactQueryProviderProps) => {
   // useState를 사용해야 렌더링 시 인스턴스가 새로 생성되는 것을 방지
   const [queryClient] = useState(
     () =>
@@ -27,4 +27,6 @@ export default function ReactQueryProvider({
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-}
+};
+
+export default ReactQueryProvider;

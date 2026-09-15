@@ -10,12 +10,12 @@ import {
   UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_TENDENCY_LABEL,
   UNIVERSE_VISIBILITY_LABEL,
-} from "../../_constants/character";
+} from "@/constants/universeOptions";
 
 /**
  * 세계관 상세 화면에서만 쓰는 라벨 · 계산.
  *
- * 도메인 공통 라벨은 `_constants/character.ts`에 있다. 여기에는 **상세 화면이
+ * 도메인 공통 라벨은 `src/constants/universeOptions.ts`에 있다. 여기에는 **상세 화면이
  * 처음 쓰기 시작한 것**만 둔다 — 크리에이터 등급·상태 뱃지, 조치 폼의 선택지처럼
  * 목록에는 없는 값들이다.
  */

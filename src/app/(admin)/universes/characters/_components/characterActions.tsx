@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Ban, Eye, EyeOff, ShieldAlert, Trash, Unlock } from "@/icons";
 import type { DropdownItem } from "@/components/ui/Dropdown";
 import type { Character, CharacterVisibility } from "@/type/character";
-import { VISIBILITY_LABEL } from "../../_constants/character";
+import { VISIBILITY_LABEL } from "@/constants/universeOptions";
 
 /** 노출 상태 변경 메뉴에 노출할 순서 */
 const VISIBILITY_ACTIONS: CharacterVisibility[] = [

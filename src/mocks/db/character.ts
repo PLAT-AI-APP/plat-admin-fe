@@ -12,7 +12,7 @@ import type {
 } from "@/type/character";
 import type { ServiceLanguage } from "@/type/language";
 import type { BannedWord, BannedWordType } from "@/type/bannedWord";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
 import { pickManager } from "./ops";
 import { CHARACTER_TAG_POOL, hashtags } from "./hashtag";
 import { creatorUsers, officialCreatorUsers, users } from "./user";

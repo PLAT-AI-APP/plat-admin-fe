@@ -6,7 +6,9 @@ import type {
   QnaCategory,
   QnaStatus,
 } from "@/type/communication";
-import type { BadgeTone, SelectOption, TabItem } from "@/components/ui";
+import type { BadgeTone } from "@/components/ui/Badge";
+import type { SelectOption } from "@/components/ui/Select";
+import type { TabItem } from "@/components/ui/Tabs";
 
 /**
  * 커뮤니케이션 화면 공통 라벨 맵.

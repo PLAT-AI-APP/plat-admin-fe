@@ -27,7 +27,8 @@ import type { DropdownItem } from "@/components/ui/Dropdown";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, { TableCellStack } from "@/components/ui/Table";
+import Table from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import type { TableColumn } from "@/components/ui/Table";
 import {
   LOGIN_PROVIDER_BADGE_CLASS,
@@ -35,7 +36,7 @@ import {
   USER_STATUS_FILTER_OPTIONS,
   USER_STATUS_LABEL,
   USER_STATUS_TONE,
-} from "../_constants/userOptions";
+} from "@/app/(admin)/users/_constants/userOptions";
 import UserSuspendModal from "./UserSuspendModal";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */

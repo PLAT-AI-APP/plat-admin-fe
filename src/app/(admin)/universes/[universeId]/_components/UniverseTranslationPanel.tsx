@@ -13,7 +13,7 @@ import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import CollapsibleText from "./CollapsibleText";
 import LanguageChips from "./LanguageChips";
-import { filledLanguagesOf, isFilledUniverseTranslation } from "./universeMeta";
+import { filledLanguagesOf, isFilledUniverseTranslation } from "@/app/(admin)/universes/[universeId]/_lib/universeMeta";
 
 interface UniverseTranslationPanelProps {
   translations: UniverseTranslationView[];

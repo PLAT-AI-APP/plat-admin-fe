@@ -27,7 +27,8 @@ import CsvExportButton from "@/components/ui/CsvExportButton";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, { TableCellStack, type TableColumn } from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import Tabs from "@/components/ui/Tabs";
 import ReportHandleModal from "./ReportHandleModal";
 import {
@@ -38,7 +39,7 @@ import {
   REPORT_STATUS_TONE,
   REPORT_TARGET_TYPE_FILTER_OPTIONS,
   REPORT_TARGET_TYPE_TONE,
-} from "./reportOptions";
+} from "@/constants/reportOptions";
 
 type ReportSort = "RECENT" | "REPORTED";
 

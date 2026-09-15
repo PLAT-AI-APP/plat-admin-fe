@@ -5,7 +5,7 @@ import type {
   UserDetail,
   UserStatus,
 } from "@/type/user";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
 
 const NICKNAME_POOL = [
   "달빛산책",

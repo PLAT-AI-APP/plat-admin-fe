@@ -3,7 +3,7 @@ import Badge, { type BadgeTone } from "@/components/ui/Badge";
 import {
   UNIVERSE_REVIEW_LABEL,
   UNIVERSE_STATUS_LABEL,
-} from "../_constants/character";
+} from "@/constants/universeOptions";
 
 type UniverseState = Pick<AdminUniverseListItem, "status" | "reviewStatus">;
 

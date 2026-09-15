@@ -1,7 +1,7 @@
 "use client";
 
 import { useListParams } from "@/hooks/useListParams";
-import BatchJobBoard from "./BatchJobBoard";
+import BatchJobTable from "./BatchJobTable";
 import BatchRunTable from "./BatchRunTable";
 
 /** 잡 선택과 이력 필터를 한 벌로 모아 주소에 싣는다. */
@@ -24,7 +24,7 @@ const BatchManager = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <BatchJobBoard
+      <BatchJobTable
         selectedJobKey={params.jobKey}
         onSelectJob={(jobKey) => setParams({ jobKey })}
       />

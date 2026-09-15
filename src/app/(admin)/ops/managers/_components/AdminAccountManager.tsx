@@ -25,13 +25,14 @@ import Dropdown from "@/components/ui/Dropdown";
 import IconButton from "@/components/ui/IconButton";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, { TableCellStack, type TableColumn } from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import {
   MANAGER_STATUS_FILTER_OPTIONS,
   MANAGER_STATUS_HINT,
   MANAGER_STATUS_LABEL,
   MANAGER_STATUS_TONE,
-} from "../_constants/manager";
+} from "@/app/(admin)/ops/managers/_constants/managerOptions";
 import CredentialResultModal from "./CredentialResultModal";
 import ManagerFormModal from "./ManagerFormModal";
 
@@ -44,7 +45,7 @@ import ManagerFormModal from "./ManagerFormModal";
 const roleTone = (isSuperAdminRole: boolean): BadgeTone =>
   isSuperAdminRole ? "brand" : "neutral";
 
-const ManagerManager = () => {
+const AdminAccountManager = () => {
   const router = useRouter();
   const currentAdmin = useAdminStore((state) => state.admin);
   const canWrite = useHasPermission("manager:write");
@@ -427,4 +428,4 @@ const ManagerManager = () => {
   );
 };
 
-export default ManagerManager;
+export default AdminAccountManager;

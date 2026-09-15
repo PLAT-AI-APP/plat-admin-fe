@@ -20,7 +20,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import Table from "@/components/ui/Table";
 import type { TableColumn } from "@/components/ui/Table";
 import PromptMarkdown from "./PromptMarkdown";
-import PromptVersionModal from "./PromptVersionModal";
+import PromptVersionFormModal from "./PromptVersionFormModal";
 
 const SystemPromptManager = () => {
   // 선택 전에는 첫 번째 프롬프트를 자동으로 보여준다. (useEffect로 서버 값을 복사하지 않는다)
@@ -362,7 +362,7 @@ const SystemPromptManager = () => {
       </div>
 
       {detail && (
-        <PromptVersionModal
+        <PromptVersionFormModal
           isOpen={isVersionModalOpen}
           onClose={() => setIsVersionModalOpen(false)}
           promptLabel={detail.label}

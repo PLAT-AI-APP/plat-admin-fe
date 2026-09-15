@@ -17,27 +17,21 @@ import type {
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
+import PaymentRecordDetailModal from "@/components/billing/PaymentRecordDetailModal";
 import {
   ADJUSTMENT_TYPE_LABEL,
   ADJUSTMENT_TYPE_SIGN,
   ADJUSTMENT_TYPE_TONE,
-} from "../../../billing/credit-adjustments/_components/adjustmentOptions";
-import {
   LEDGER_TYPE_LABEL,
   LEDGER_TYPE_TONE,
-} from "../../../billing/ledger/_components/ledgerOptions";
-import PaymentRecordDetailModal from "../../../billing/retention/_components/PaymentRecordDetailModal";
-import {
   PAYMENT_METHOD_LABEL,
   PG_PROVIDER_LABEL,
   RECORD_STATUS_LABEL,
   RECORD_STATUS_TONE,
-} from "../../../billing/retention/_components/recordOptions";
-import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
+} from "@/constants/billingOptions";
+import { USER_DETAIL_PAGE_SIZE } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
 
 interface UserBillingPanelProps {
   userId: string;
