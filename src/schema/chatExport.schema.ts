@@ -15,7 +15,7 @@ export const chatExportSchema = z
     endDate: z.string().min(1, "종료일을 선택해 주세요."),
   })
   .refine(({ startDate, endDate }) => !startDate || !endDate || startDate <= endDate, {
-    message: "종료일은 시작일 이후여야 합니다.",
+    error: "종료일은 시작일 이후여야 합니다.",
     path: ["endDate"],
   });
 

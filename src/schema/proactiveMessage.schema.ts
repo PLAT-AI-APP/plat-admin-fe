@@ -15,7 +15,7 @@ export const proactiveMessageSchema = z.object({
     .string()
     .optional()
     .refine((value) => !value || /^[0-9]+$/.test(value), {
-      message: "캐릭터 ID는 숫자만 입력해 주세요.",
+      error: "캐릭터 ID는 숫자만 입력해 주세요.",
     }),
   content: z
     .string()
