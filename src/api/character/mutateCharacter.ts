@@ -55,15 +55,12 @@ export const deleteCharacter = async (characterId: number) => {
   await adminAxios.delete(`/admin/characters/${characterId}`);
 };
 
-/** 캐릭터 노출 상태 변경·차단·삭제 후 전체/공식 목록을 함께 갱신합니다. */
+/** 캐릭터 노출 상태 변경·차단·삭제 후 목록과 상세를 함께 갱신합니다. */
 export const useCharacterMutation = () => {
   const queryClient = useQueryClient();
 
   const invalidateCharacterQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["get-character-list"] });
-    queryClient.invalidateQueries({
-      queryKey: ["get-official-character-list"],
-    });
     queryClient.invalidateQueries({ queryKey: ["get-character-detail"] });
   };
 
