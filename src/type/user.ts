@@ -4,16 +4,16 @@
  * 역할(role) 개념은 두지 않는다. 비즈니스상 **모든 유저가 곧 크리에이터**라
  * 구분할 값이 없다. 크리에이터라는 말은 캐릭터·세계관 등 창작 데이터를 가리킬 때만 쓴다.
  *
- * **다섯 개 모두 서버가 실제로 내려줄 수 있는 값이다.** 콘솔에서 거는 제재는
- * 정지(`SUSPENDED`)와 해제(`ACTIVE`)뿐이지만, `BANNED`·`WARNED`를 타입에서 빼면
+ * **넷 모두 서버(`UserStatusType`)가 실제로 내려줄 수 있는 값이다.** 콘솔에서 거는
+ * 제재는 정지(`SUSPENDED`)와 해제(`ACTIVE`)뿐이지만, `BANNED`를 타입에서 빼면
  * 그 상태인 계정을 열었을 때 라벨과 뱃지 색이 `undefined`로 깨진다 —
  * 화면이 모르는 상태는 "없는 상태"가 아니라 **읽을 수 없는 상태**가 된다.
+ * (`WARNED`는 서버가 없앴다 — plat-be `docs/decisions/005-user-suspension-expiry.md`)
  */
 export type UserStatus =
   | "ACTIVE"
   | "SUSPENDED"
   | "BANNED"
-  | "WARNED"
   | "WITHDRAWN";
 /** 지금 지원하는 가입 경로. 애플 로그인은 아직 붙이지 않았다. */
 export type LoginProvider = "GOOGLE" | "KAKAO" | "EMAIL";
