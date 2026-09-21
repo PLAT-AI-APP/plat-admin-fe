@@ -117,7 +117,30 @@ const PG_TRANSACTION_COLUMNS: TableColumn<PgTransaction>[] = [
     width: "110px",
     align: "right",
     numeric: true,
-    render: (row) => formatCurrency(row.amount),
+    render: (row) => {
+      /*
+        돈이 실제로 오간 줄만 부호를 붙인다 — 승인 성공은 들어온 돈(+), 취소 성공은 나간 돈(-).
+        준비 · 조회 · 실패 · 판정 불가는 요청한 금액일 뿐이라 부호 없이 흐리게 둔다.
+      */
+      const direction =
+        row.result !== "SUCCESS"
+          ? 0
+          : row.type === "CONFIRM"
+            ? 1
+            : row.type === "CANCEL" || row.type === "PARTIAL_CANCEL"
+              ? -1
+              : 0;
+
+      if (direction === 0) {
+        return <span className="text-font-2">{formatCurrency(row.amount)}</span>;
+      }
+      return (
+        <span className={cn("font-semibold", direction < 0 && "text-danger")}>
+          {direction > 0 ? "+" : "-"}
+          {formatCurrency(row.amount)}
+        </span>
+      );
+    },
   },
   {
     key: "pg",
