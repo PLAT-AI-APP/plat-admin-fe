@@ -845,7 +845,19 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
 
           <Card
             title="크레딧 원장"
-            description="이 결제로 유저 잔액이 움직인 줄입니다. 결제와 무관한 사용 · 조정은 유저 상세에서 봅니다."
+            description="이 결제로 받은 노트의 지급 · 사용 · 만료 · 회수입니다. 사용 줄의 증감은 원장 금액이 아니라 이 결제의 노트가 낸 몫입니다."
+            action={
+              /* 줄을 다 더하면 이 결제로 받은 노트 중 지금 남은 양이다. 환불 판단 전에 한눈에 보인다. */
+              <span className="body-5 text-font-2 tabular-nums">
+                남은 노트{" "}
+                <b className="text-font-1">
+                  {formatCredit(
+                    order.creditEntries.reduce((sum, entry) => sum + entry.creditDelta, 0),
+                  )}
+                </b>{" "}
+                / {formatCredit(order.creditAmount)}
+              </span>
+            }
             noPadding
           >
             <Table
