@@ -83,7 +83,8 @@ const DetailSectionTabs = ({ items, className }: DetailSectionTabsProps) => {
   return (
     <div
       ref={barRef}
-      className={cn("sticky top-0 z-10 bg-surface", className)}
+      // 섹션 카드가 뒤로 지나가므로 배경은 카드가 아니라 워크스페이스 색이다.
+      className={cn("sticky top-0 z-10 bg-bg-base py-3", className)}
     >
       <Tabs items={items} value={active} onChange={handleChange} />
     </div>

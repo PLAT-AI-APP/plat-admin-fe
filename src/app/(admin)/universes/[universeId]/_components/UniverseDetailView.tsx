@@ -233,8 +233,8 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
       )}
 
       {data && (
-        <Card bodyClassName="flex flex-col gap-10 p-8">
-          <div className="flex flex-col gap-4">
+        <>
+          <Card bodyClassName="flex flex-col gap-4">
             <DetailHero
               image={
                 <EntityImage
@@ -325,76 +325,74 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                 {data.reviewRejectionReason}
               </Alert>
             )}
-          </div>
+          </Card>
 
-          <div className="-mt-4 flex flex-col gap-12">
-            <DetailSectionTabs
-              items={[
-                { label: "번역언어", value: SECTION.translation },
-                { label: "제작자", value: SECTION.creator },
-                {
-                  label: "에셋",
-                  value: SECTION.assets,
-                  count: data.assets.length,
-                },
-                {
-                  label: "등장 캐릭터",
-                  value: SECTION.characters,
-                  count: data.character ? 1 : 0,
-                },
-                {
-                  label: "시나리오",
-                  value: SECTION.scenarios,
-                  count: data.scenarios.length,
-                },
-              ]}
-            />
+          <DetailSectionTabs
+            items={[
+              { label: "번역언어", value: SECTION.translation },
+              { label: "제작자", value: SECTION.creator },
+              {
+                label: "에셋",
+                value: SECTION.assets,
+                count: data.assets.length,
+              },
+              {
+                label: "등장 캐릭터",
+                value: SECTION.characters,
+                count: data.character ? 1 : 0,
+              },
+              {
+                label: "시나리오",
+                value: SECTION.scenarios,
+                count: data.scenarios.length,
+              },
+            ]}
+          />
 
-            <UniverseTranslationPanel
-              id={SECTION.translation}
-              translations={data.translations}
-            />
+          <UniverseTranslationPanel
+            id={SECTION.translation}
+            translations={data.translations}
+          />
 
-            <CreatorProfileSection
-              id={SECTION.creator}
-              userId={data.creator.userId}
-              fallbackNickname={data.creator.nickname}
-              fallbackId={data.creator.creatorId}
-              chips={
-                <>
-                  <Badge tone="neutral">
-                    {creatorGradeLabel(data.creator.grade)}
-                  </Badge>
-                  <Badge tone={creatorStatusTone(data.creator.status)}>
-                    {creatorStatusLabel(data.creator.status)}
-                  </Badge>
-                </>
-              }
-            />
+          <CreatorProfileSection
+            id={SECTION.creator}
+            userId={data.creator.userId}
+            fallbackNickname={data.creator.nickname}
+            fallbackId={data.creator.creatorId}
+            chips={
+              <>
+                <Badge tone="neutral">
+                  {creatorGradeLabel(data.creator.grade)}
+                </Badge>
+                <Badge tone={creatorStatusTone(data.creator.status)}>
+                  {creatorStatusLabel(data.creator.status)}
+                </Badge>
+              </>
+            }
+          />
 
-            <AssetGridSection id={SECTION.assets} assets={data.assets} />
+          <AssetGridSection id={SECTION.assets} assets={data.assets} />
 
-            <DetailSection
-              id={SECTION.characters}
-              title="등장 캐릭터"
-              meta={`총 ${data.character ? 1 : 0}개`}
-            >
-              {data.character ? (
-                <CharacterRow character={data.character} />
-              ) : (
-                <EmptyState
-                  title="등장하는 캐릭터가 없습니다."
-                  description="캐릭터가 없는 세계관은 유저가 대화를 시작할 상대가 없습니다."
-                />
-              )}
-            </DetailSection>
+          <DetailSection
+            id={SECTION.characters}
+            title="등장 캐릭터"
+            meta={`총 ${data.character ? 1 : 0}개`}
+          >
+            {data.character ? (
+              <CharacterRow character={data.character} />
+            ) : (
+              <EmptyState
+                title="등장하는 캐릭터가 없습니다."
+                description="캐릭터가 없는 세계관은 유저가 대화를 시작할 상대가 없습니다."
+              />
+            )}
+          </DetailSection>
 
-            <UniverseScenarioPanel
-              id={SECTION.scenarios}
-              scenarios={data.scenarios}
-            />
-          </div>
-        </Card>
+          <UniverseScenarioPanel
+            id={SECTION.scenarios}
+            scenarios={data.scenarios}
+          />
+        </>
       )}
 
       {/* 심사 반려 모달. 반려 사유는 필수이며, 반려 시 공개 범위가 비공개로 함께 내려간다. */}

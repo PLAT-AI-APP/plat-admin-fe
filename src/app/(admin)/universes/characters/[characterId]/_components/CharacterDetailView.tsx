@@ -175,8 +175,8 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
       )}
 
       {data && (
-        <Card bodyClassName="flex flex-col gap-10 p-8">
-          <div className="flex flex-col gap-4">
+        <>
+          <Card bodyClassName="flex flex-col gap-4">
             <DetailHero
               image={
                 <CharacterImage character={data} onClick={openImage} />
@@ -227,59 +227,57 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
                 {data.blockedAt && ` (${formatDateTime(data.blockedAt)} 차단)`}
               </Alert>
             )}
-          </div>
+          </Card>
 
-          <div className="-mt-4 flex flex-col gap-12">
-            <DetailSectionTabs
-              items={[
-                { label: "캐릭터", value: SECTION.character },
-                { label: "제작자", value: SECTION.creator },
-                {
-                  label: "에셋",
-                  value: SECTION.assets,
-                  count: data.assets.length,
-                },
-                {
-                  label: "등장 세계관",
-                  value: SECTION.universes,
-                  count: data.universes.length,
-                },
-                { label: "첫 인사말", value: SECTION.greeting },
-                { label: "NSFW 판정 근거", value: SECTION.nsfw },
-              ]}
-            />
+          <DetailSectionTabs
+            items={[
+              { label: "캐릭터", value: SECTION.character },
+              { label: "제작자", value: SECTION.creator },
+              {
+                label: "에셋",
+                value: SECTION.assets,
+                count: data.assets.length,
+              },
+              {
+                label: "등장 세계관",
+                value: SECTION.universes,
+                count: data.universes.length,
+              },
+              { label: "첫 인사말", value: SECTION.greeting },
+              { label: "NSFW 판정 근거", value: SECTION.nsfw },
+            ]}
+          />
 
-            <ProfileSection character={data} onOpenImage={openImage} />
+          <ProfileSection character={data} onOpenImage={openImage} />
 
-            {/*
-              목업의 크리에이터 ID는 유저 ID 자리를 겸한다(유저 상세 링크도 이 값으로 걸었다).
-              실서버 유저가 아니라 조회는 실패하고, 이름과 ID만 남는다.
-            */}
-            <CreatorProfileSection
-              id={SECTION.creator}
-              userId={data.creatorId}
-              fallbackNickname={data.creatorNickname}
-            />
+          {/*
+            목업의 크리에이터 ID는 유저 ID 자리를 겸한다(유저 상세 링크도 이 값으로 걸었다).
+            실서버 유저가 아니라 조회는 실패하고, 이름과 ID만 남는다.
+          */}
+          <CreatorProfileSection
+            id={SECTION.creator}
+            userId={data.creatorId}
+            fallbackNickname={data.creatorNickname}
+          />
 
-            <AssetGridSection id={SECTION.assets} assets={data.assets} />
+          <AssetGridSection id={SECTION.assets} assets={data.assets} />
 
-            <UniverseSection character={data} />
+          <UniverseSection character={data} />
 
-            {/* 유저에게 그대로 읽히는 원문이라 검수할 때 전체를 펼쳐 봐야 한다. */}
-            <DetailSection
-              id={SECTION.greeting}
-              title="첫 인사말"
-              meta={`${formatWithCommas(data.greeting.length)}자`}
-              description="대화를 시작하면 캐릭터가 먼저 건네는 말입니다."
-            >
-              <div className="rounded-field bg-subtle px-4 py-3">
-                <CollapsibleText text={data.greeting} />
-              </div>
-            </DetailSection>
+          {/* 유저에게 그대로 읽히는 원문이라 검수할 때 전체를 펼쳐 봐야 한다. */}
+          <DetailSection
+            id={SECTION.greeting}
+            title="첫 인사말"
+            meta={`${formatWithCommas(data.greeting.length)}자`}
+            description="대화를 시작하면 캐릭터가 먼저 건네는 말입니다."
+          >
+            <div className="rounded-field bg-subtle px-4 py-3">
+              <CollapsibleText text={data.greeting} />
+            </div>
+          </DetailSection>
 
-            <NsfwSection character={data} />
-          </div>
-        </Card>
+          <NsfwSection character={data} />
+        </>
       )}
 
       <CharacterBlockModal
