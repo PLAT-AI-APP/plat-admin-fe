@@ -30,6 +30,8 @@ export type PermissionResource =
   | "creditPolicy"
   | "creditAdjustment"
   | "ledger"
+  | "payment"
+  | "refund"
   | "notice"
   | "qna"
   | "notification"
@@ -67,6 +69,13 @@ interface ResourceDef {
   actions: PermissionAction[];
   /** 개인정보 · 금전처럼 특별히 좁게 열어야 하는 자료 */
   isSensitive?: boolean;
+  /**
+   * 이 자료에서만 행위를 다르게 부르는 이름.
+   *
+   * 표의 열 이름은 갈래가 함께 쓰지만, 거부 안내는 자료 하나를 짚어 말한다.
+   * `환불 > 지급 · 차감 · 환불`처럼 읽히면 무엇이 막혔는지 다시 해석해야 한다.
+   */
+  actionLabels?: Partial<Record<PermissionAction, string>>;
 }
 
 export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
@@ -182,6 +191,24 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     actions: ["read"],
     isSensitive: true,
   },
+  payment: {
+    label: "결제 내역",
+    description: "PG 결제 주문과 거래 기록. 돈이 오간 사실이라 고치지 않는다.",
+    actions: ["read"],
+    isSensitive: true,
+  },
+  refund: {
+    label: "환불",
+    /*
+      `write`가 아니라 `adjust`다. 승인하면 PG로 실제 돈이 나가고 노트가 회수된다.
+      되돌릴 수 없어 크레딧 수동 조정과 같은 무게로 둔다. 거절도 같은 권한이다 —
+      유저에게 사유가 그대로 나가는 결정이라 승인과 떼어 줄 이유가 없다.
+    */
+    description: "유저 환불 요청을 승인 · 거절한다. 승인하면 PG로 돈이 나간다.",
+    actions: ["read", "adjust"],
+    isSensitive: true,
+    actionLabels: { adjust: "승인 · 거절" },
+  },
   notice: {
     label: "공지사항",
     description: "공지 작성과 게시",
@@ -263,7 +290,7 @@ export const PERMISSION_ACTION_LABEL: Record<PermissionAction, string> = {
   write: "등록 · 수정",
   delete: "삭제",
   publish: "게시",
-  adjust: "지급 · 차감",
+  adjust: "지급 · 차감 · 환불",
   send: "발송",
 };
 
@@ -273,7 +300,8 @@ export const PERMISSION_ACTION_HINT: Record<PermissionAction, string> = {
   write: "새로 만들고 고칩니다.",
   delete: "지웁니다. 되돌릴 수 없습니다.",
   publish: "앱에 공개합니다. 모든 이용자가 보게 됩니다.",
-  adjust: "유저 크레딧을 실제로 지급하거나 차감합니다.",
+  adjust:
+    "유저 크레딧을 실제로 지급 · 차감하거나 환불을 승인 · 거절합니다. 돈과 잔액이 움직입니다.",
   send: "외부(이용자)에게 내보냅니다.",
 };
 
@@ -356,8 +384,8 @@ export const PERMISSION_CATEGORIES = [
     id: "money",
     label: "돈이 오가는 자료",
     description:
-      "유저 잔액에 곧바로 반영됩니다. 되돌릴 수 없어 따로 뗐습니다.",
-    resources: ["creditAdjustment"],
+      "유저 잔액과 PG 결제에 곧바로 반영됩니다. 되돌릴 수 없어 따로 뗐습니다.",
+    resources: ["creditAdjustment", "refund"],
   },
   {
     id: "record",
@@ -367,6 +395,7 @@ export const PERMISSION_CATEGORIES = [
     resources: [
       "dashboard",
       "ledger",
+      "payment",
       "server",
       "log",
       "systemLog",
@@ -430,8 +459,10 @@ export const permissionLabel = (key: PermissionKey): string => {
     PermissionAction,
   ];
 
-  return `${PERMISSION_RESOURCES[resource]?.label ?? resource} > ${
-    PERMISSION_ACTION_LABEL[action] ?? action
+  const def = PERMISSION_RESOURCES[resource];
+
+  return `${def?.label ?? resource} > ${
+    def?.actionLabels?.[action] ?? PERMISSION_ACTION_LABEL[action] ?? action
   }`;
 };
 

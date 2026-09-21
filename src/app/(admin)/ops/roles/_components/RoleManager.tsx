@@ -482,7 +482,7 @@ const RoleManager = () => {
                                     >
                                       {supported ? (
                                         <Checkbox
-                                          aria-label={`${def.label} ${PERMISSION_ACTION_LABEL[action]}`}
+                                          aria-label={`${def.label} ${def.actionLabels?.[action] ?? PERMISSION_ACTION_LABEL[action]}`}
                                           disabled={!canWrite}
                                           checked={granted.includes(action)}
                                           onChange={() =>
