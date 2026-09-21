@@ -37,6 +37,7 @@ import Table, { type TableColumn } from "@/components/ui/Table";
 import RefundRejectModal from "./RefundRejectModal";
 import PaymentStatusCell from "../../_components/PaymentStatusCell";
 import AdminRefundModal from "./AdminRefundModal";
+import ForceRefundModal from "./ForceRefundModal";
 import AnomalyResolveModal, { type AnomalyCloseMode } from "./AnomalyResolveModal";
 import ManualCancelModal from "./ManualCancelModal";
 import {
@@ -116,7 +117,30 @@ const PG_TRANSACTION_COLUMNS: TableColumn<PgTransaction>[] = [
     width: "110px",
     align: "right",
     numeric: true,
-    render: (row) => formatCurrency(row.amount),
+    render: (row) => {
+      /*
+        돈이 실제로 오간 줄만 부호를 붙인다 — 승인 성공은 들어온 돈(+), 취소 성공은 나간 돈(-).
+        준비 · 조회 · 실패 · 판정 불가는 요청한 금액일 뿐이라 부호 없이 흐리게 둔다.
+      */
+      const direction =
+        row.result !== "SUCCESS"
+          ? 0
+          : row.type === "CONFIRM"
+            ? 1
+            : row.type === "CANCEL" || row.type === "PARTIAL_CANCEL"
+              ? -1
+              : 0;
+
+      if (direction === 0) {
+        return <span className="text-font-2">{formatCurrency(row.amount)}</span>;
+      }
+      return (
+        <span className={cn("font-semibold", direction < 0 && "text-danger")}>
+          {direction > 0 ? "+" : "-"}
+          {formatCurrency(row.amount)}
+        </span>
+      );
+    },
   },
   {
     key: "pg",
@@ -236,6 +260,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
   } | null>(null);
   const [rejectTarget, setRejectTarget] = useState<PaymentOrderRefund | null>(null);
   const [isAdminRefundOpen, setIsAdminRefundOpen] = useState(false);
+  const [isForceRefundOpen, setIsForceRefundOpen] = useState(false);
   const [isManualCancelOpen, setIsManualCancelOpen] = useState(false);
 
   /*
@@ -243,6 +268,8 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
     '결제 쓰기'가 따로 생기기 전까지는 환불 권한으로 묶는다.
   */
   const canAct = useHasPermission("refund:adjust");
+  /* 강제 환불은 일반 환불 담당에게 딸려 가지 않는 별도 권한이다. */
+  const canForce = useHasPermission("refundForce:adjust");
   const { data: order, isLoading, isError, error } =
     usePaymentOrderDetailQuery(orderId);
   const {
@@ -252,6 +279,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
     retryMutation,
     inquiryMutation,
     adminRefundMutation,
+    forceRefundMutation,
     acceptCaptureMutation,
     manualCancelMutation,
     restoreCreditMutation,
@@ -272,16 +300,32 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
     관리자 환불은 돈이 들어와 있고 진행 중인 환불이 없을 때만 연다. 유저 요청이
     대기 중이면 그걸 승인하는 것이 맞다 — 둘 다 열어 두면 같은 결제가 두 번 나간다.
   */
-  const canAdminRefund =
+  /*
+    이 결제로 받은 노트가 한 개라도 쓰였는가. 원장 줄을 더하면 남은 양이 된다.
+    전액 회수만 되므로 쓰인 결제에는 관리자 환불을 걸어도 서버가 거절로 끝낸다 — 누를 수 있게 두지 않는다.
+  */
+  const isNoteUsed =
+    order !== undefined &&
+    order.creditEntries.reduce((sum, entry) => sum + entry.creditDelta, 0) < order.creditAmount;
+  /*
+    새 환불을 걸 수 있는 결제인가. 돈이 들어와 노트까지 나갔고, 걸려 있는 환불이 없어야 한다.
+    PG가 거절해 노트만 빠진 환불이 남아 있으면 서버가 새 환불을 막는다. 복구 · 직접 취소가 먼저다.
+  */
+  const isRefundable =
     order?.paymentStatus === "CAPTURED" &&
-    // 노트가 이미 빠진 건(환불 실패 등)에 걸면 한 번 더 회수된다. 지급된 상태에서만 연다.
     order.fulfillmentStatus === "GRANTED" &&
+    order.refundedAmount === 0 &&
     !order.refunds.some(
       (refund) =>
         ["REQUESTED", "PROCESSING"].includes(refund.status) ||
-        // PG가 거절해 노트만 빠진 환불이 남아 있으면 서버가 새 환불을 막는다. 복구 · 직접 취소가 먼저다.
         (refund.status === "FAILED" && refund.clawbackStatus === "DONE"),
     );
+  const canAdminRefund = isRefundable && !isNoteUsed;
+  /*
+    강제 환불은 규칙상 막힌 결제(노트를 이미 씀)에만 낸다. 안 쓴 결제는 일반 관리자 환불로 손실 없이 끝난다 —
+    두 버튼을 같이 두면 손실이 나는 쪽을 습관처럼 누르게 된다.
+  */
+  const canForceRefund = canForce && isRefundable && isNoteUsed;
   const nickname = order?.userNickname ?? (order ? `탈퇴 회원 #${order.userId}` : "");
 
   const handleApprove = (target: PaymentOrderDetail, refund: PaymentOrderRefund) => {
@@ -323,6 +367,22 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
   };
 
   const openAdminRefund = () => setIsAdminRefundOpen(true);
+
+  const handleForceRefund = (input: {
+    reasonCode: AdminRefundReasonCode;
+    reason: string;
+    adminMemo: string;
+  }) => {
+    if (!order) return;
+
+    forceRefundMutation.mutate(
+      { orderId: order.paymentOrderId, ...input },
+      {
+        onSuccess: () => setIsForceRefundOpen(false),
+        onError: (caught) => showErrorToast(caught),
+      },
+    );
+  };
 
   const handleAdminRefund = (input: {
     reasonCode: AdminRefundReasonCode;
@@ -426,10 +486,18 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
         }
         action={
           order &&
-          canAct &&
-          (pendingRefund || canAdminRefund) && (
+          ((canAct && (pendingRefund || canAdminRefund)) || canForceRefund) && (
             <div className="flex items-center gap-2">
-              {canAdminRefund && (
+              {canForceRefund && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => setIsForceRefundOpen(true)}
+                >
+                  강제 환불
+                </Button>
+              )}
+              {canAct && canAdminRefund && (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -438,7 +506,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
                   관리자 환불
                 </Button>
               )}
-              {pendingRefund && (
+              {canAct && pendingRefund && (
                 <>
               <Button
                 variant="secondary"
@@ -737,17 +805,21 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
                       }[item.tone],
                     )}
                   />
-                  {/* 날짜 · 대상 · 내용을 고정 폭 열로 맞춰 탭으로 띄운 것처럼 읽히게 한다. */}
-                  <div className="grid grid-cols-[8.5rem_4.5rem_minmax(0,1fr)] items-center gap-x-6">
+                  {/*
+                    날짜와 대상은 한 덩어리("언제 · 누가")로 붙이고, 내용만 띄운다. 날짜 열은 글자 폭에
+                    맞춘다 — 날짜는 자릿수가 같아(tabular-nums) 폭을 고정하지 않아도 세로로 맞는다.
+                    대상 열만 고정 폭으로 두어 배지 길이(PG · 시스템)와 상관없이 내용이 한 줄로 선다.
+                  */}
+                  <div className="grid grid-cols-[max-content_4rem_minmax(0,1fr)] items-center gap-x-2">
                     <span className="body-6 text-font-2 tabular-nums">
                       {formatDateTime(item.occurredAt)}
                     </span>
                     <span>
                       <Badge tone="neutral">{PAYMENT_EVENT_ACTOR_LABEL[item.actor]}</Badge>
                     </span>
-                    <span className="body-5 font-medium text-font-1">{item.title}</span>
+                    <span className="pl-3 body-5 font-medium text-font-1">{item.title}</span>
                     {item.description && (
-                      <p className="col-start-3 mt-1 body-6 break-all text-font-2">
+                      <p className="col-start-3 mt-1 pl-3 body-6 break-all text-font-2">
                         {item.description}
                       </p>
                     )}
@@ -762,17 +834,37 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
               <InfoRow
                 label="상태"
                 value={
-                  <Badge tone={REFUND_STATUS_TONE[refund.status]}>
-                    {REFUND_STATUS_LABEL[refund.status]}
-                  </Badge>
+                  <span className="flex items-center gap-1.5">
+                    <Badge tone={REFUND_STATUS_TONE[refund.status]}>
+                      {REFUND_STATUS_LABEL[refund.status]}
+                    </Badge>
+                    {refund.forced && <Badge tone="danger">강제</Badge>}
+                  </span>
                 }
               />
               <InfoRow label="경위" value={REFUND_REASON_CODE_LABEL[refund.reasonCode]} />
               <InfoRow label="사유" value={refund.reason ?? "-"} />
+              {refund.forced && <InfoRow label="내부 사유" value={refund.adminMemo ?? "-"} />}
               <InfoRow
                 label="금액 · 노트"
                 value={`${formatCurrency(refund.refundAmount)} · ${formatCredit(refund.refundCredit)} (${CLAWBACK_STATUS_LABEL[refund.clawbackStatus]})`}
               />
+              {/* 강제 환불이 되찾지 못한 노트. 회수가 끝나야 값이 온다. */}
+              {refund.forced && refund.lostCredit !== undefined && (
+                <InfoRow
+                  label="손실 (회수 못 한 노트)"
+                  value={
+                    <span
+                      className={cn(
+                        "tabular-nums",
+                        refund.lostCredit > 0 && "font-semibold text-danger",
+                      )}
+                    >
+                      {refund.lostCredit > 0 ? formatCredit(refund.lostCredit) : "없음"}
+                    </span>
+                  }
+                />
+              )}
               <InfoRow label="신청일" value={formatDateTime(refund.requestedAt)} />
               {refund.status === "REQUESTED" && (
                 <RefundJudgment
@@ -845,7 +937,19 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
 
           <Card
             title="크레딧 원장"
-            description="이 결제로 유저 잔액이 움직인 줄입니다. 결제와 무관한 사용 · 조정은 유저 상세에서 봅니다."
+            description="이 결제로 받은 노트의 지급 · 사용 · 만료 · 회수입니다. 사용 줄의 증감은 원장 금액이 아니라 이 결제의 노트가 낸 몫입니다."
+            action={
+              /* 줄을 다 더하면 이 결제로 받은 노트 중 지금 남은 양이다. 환불 판단 전에 한눈에 보인다. */
+              <span className="body-5 text-font-2 tabular-nums">
+                남은 노트{" "}
+                <b className="text-font-1">
+                  {formatCredit(
+                    order.creditEntries.reduce((sum, entry) => sum + entry.creditDelta, 0),
+                  )}
+                </b>{" "}
+                / {formatCredit(order.creditAmount)}
+              </span>
+            }
             noPadding
           >
             <Table
@@ -889,6 +993,13 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
             onClose={() => setIsManualCancelOpen(false)}
             onSubmit={handleManualCancel}
             isSubmitting={manualCancelMutation.isPending}
+          />
+
+          <ForceRefundModal
+            order={isForceRefundOpen ? order : null}
+            onClose={() => setIsForceRefundOpen(false)}
+            onSubmit={handleForceRefund}
+            isSubmitting={forceRefundMutation.isPending}
           />
 
           <AdminRefundModal

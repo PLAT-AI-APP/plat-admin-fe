@@ -73,6 +73,27 @@ export interface AdminRefundRequest {
   reason: string;
 }
 
+export interface ForceRefundRequest extends AdminRefundRequest {
+  /** 운영자끼리만 보는 사유. 규칙을 건너뛴 근거(CS 티켓 · 결재자)를 남긴다. */
+  adminMemo: string;
+}
+
+export const createForceRefund = async ({ orderId, ...body }: ForceRefundRequest) => {
+  const response = await liveAxios.post<unknown>(
+    `/admin/payment-orders/${orderId}/refunds/force`,
+    body,
+  );
+
+  return toPaymentOrderDetail(response.data);
+};
+
+/** 방금 건 환불. 서버는 최근 접수 순으로 주지만 순서에 기대지 않고 신청 시각으로 고른다. */
+const latestRefundOf = (order: PaymentOrderDetail) =>
+  order.refunds.reduce<PaymentOrderDetail["refunds"][number] | undefined>(
+    (newest, refund) => (!newest || refund.requestedAt > newest.requestedAt ? refund : newest),
+    undefined,
+  );
+
 export const retryPaymentFulfillment = async (orderId: string) => {
   const response = await liveAxios.post<unknown>(
     `/admin/payment-orders/${orderId}/fulfillment/retry`,
@@ -232,7 +253,59 @@ export const usePaymentOrderMutation = () => {
     AdminRefundRequest
   >({
     mutationFn: createAdminRefund,
-    onSuccess: () => showAppToast("success", "환불했습니다. PG 취소까지 끝났습니다."),
+    /*
+      관리자 환불은 요청이 성공해도 환불이 안 될 수 있다. 노트를 이미 썼으면 서버가 거절로 확정하고 200을 준다.
+      결과를 보지 않고 "환불했습니다"를 띄우면 운영자는 돈이 나간 줄 안다. 방금 만든 환불(가장 최근)로 판단한다.
+    */
+    onSuccess: (order) => {
+      const latest = latestRefundOf(order);
+
+      if (latest?.status === "REJECTED") {
+        showAppToast("warning", "노트를 이미 사용해 환불하지 않았습니다.", {
+          description: "돈과 노트는 그대로입니다. 거절 기록만 남았습니다.",
+        });
+        return;
+      }
+      if (latest?.status === "PROCESSING") {
+        showAppToast("info", "노트를 회수했고 PG 취소 결과를 확인하고 있습니다.", {
+          description: "결과를 모르는 상태라 배치가 다시 확인합니다. 다시 환불하지 마세요.",
+        });
+        return;
+      }
+      if (latest?.status === "FAILED") {
+        showAppToast("error", "PG가 취소를 거절했습니다.", {
+          description: "노트만 회수된 상태입니다. 상세의 조치로 정리해 주세요.",
+        });
+        return;
+      }
+      showAppToast("success", "환불했습니다. PG 취소까지 끝났습니다.");
+    },
+    onSettled: invalidate,
+  });
+
+  /* 강제 환불은 거절이 없다. 알릴 것은 돈이 나갔는지와, 되찾지 못한 노트(손실)가 얼마인지다. */
+  const forceRefundMutation = useMutation<PaymentOrderDetail, AppError, ForceRefundRequest>({
+    mutationFn: createForceRefund,
+    onSuccess: (order) => {
+      const latest = latestRefundOf(order);
+      const lost = latest?.lostCredit ?? 0;
+      const lossText =
+        lost > 0 ? `이미 쓴 ${lost.toLocaleString()} CR은 회수하지 못했습니다.` : "노트는 전부 회수했습니다.";
+
+      if (latest?.status === "COMPLETED") {
+        showAppToast("success", "강제 환불했습니다. PG 취소까지 끝났습니다.", { description: lossText });
+        return;
+      }
+      if (latest?.status === "PROCESSING") {
+        showAppToast("info", "강제 환불을 걸었고 PG 취소 결과를 확인하고 있습니다.", {
+          description: "결과를 모르는 상태라 배치가 다시 확인합니다. 다시 환불하지 마세요.",
+        });
+        return;
+      }
+      showAppToast("error", "PG가 취소를 거절했습니다.", {
+        description: "회수한 노트만 빠진 상태입니다. 상세의 조치로 정리해 주세요.",
+      });
+    },
     onSettled: invalidate,
   });
 
@@ -268,5 +341,6 @@ export const usePaymentOrderMutation = () => {
     retryMutation,
     inquiryMutation,
     adminRefundMutation,
+    forceRefundMutation,
   };
 };
