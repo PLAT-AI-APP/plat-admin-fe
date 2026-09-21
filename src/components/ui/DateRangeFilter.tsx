@@ -56,13 +56,13 @@ const DateRangeFilter = ({
   const isEmpty = !value.startDate && !value.endDate;
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <div className="flex items-center rounded-field border border-border-main p-0.5">
+    <div className={cn("flex shrink-0 items-center gap-2", className)}>
+      <div className="flex shrink-0 items-center rounded-field border border-border-main p-0.5">
         <button
           type="button"
           onClick={() => onChange({ startDate: "", endDate: "" })}
           className={cn(
-            "rounded-chip px-2.5 py-1 body-5 transition",
+            "rounded-chip px-2.5 py-1 whitespace-nowrap body-5 transition",
             isEmpty
               ? "bg-surface-selected font-medium text-brand"
               : "text-font-2 hover:bg-surface-hover hover:text-font-1",
@@ -77,7 +77,7 @@ const DateRangeFilter = ({
             type="button"
             onClick={() => onChange(toRange(preset))}
             className={cn(
-              "rounded-chip px-2.5 py-1 body-5 transition",
+              "rounded-chip px-2.5 py-1 whitespace-nowrap body-5 transition",
               activePreset?.label === preset.label
                 ? "bg-surface-selected font-medium text-brand"
                 : "text-font-2 hover:bg-surface-hover hover:text-font-1",
@@ -99,7 +99,7 @@ const DateRangeFilter = ({
         inputBoxClassName="w-38"
       />
 
-      <span className="text-font-disabled">~</span>
+      <span className="shrink-0 text-font-disabled">~</span>
 
       <Input
         type="date"
