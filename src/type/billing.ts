@@ -441,6 +441,15 @@ export interface PaymentPoolUsage {
 export type PaymentOrderRefund = PaymentOrderRefundBase & {
   /** 이 결제가 만든 풀의 사용 내역. 노트 지급 전이라 풀이 없으면 비어 있다. */
   poolUsage?: PaymentPoolUsage;
+  /**
+   * 강제 환불. 사용 여부 · 기한을 건너뛰고 전액을 돌려줬다. `refundCredit`은 접수 때 값이 아니라
+   * 실제로 회수한 양이다.
+   */
+  forced: boolean;
+  /** 강제 환불의 내부 사유. 운영자끼리만 본다. */
+  adminMemo?: string;
+  /** 강제 환불이 회수하지 못한 노트(이미 쓴 몫). 회수가 끝나기 전엔 비어 있다. */
+  lostCredit?: number;
 };
 
 type PaymentOrderRefundBase = Pick<

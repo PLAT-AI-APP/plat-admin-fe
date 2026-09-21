@@ -37,6 +37,7 @@ import Table, { type TableColumn } from "@/components/ui/Table";
 import RefundRejectModal from "./RefundRejectModal";
 import PaymentStatusCell from "../../_components/PaymentStatusCell";
 import AdminRefundModal from "./AdminRefundModal";
+import ForceRefundModal from "./ForceRefundModal";
 import AnomalyResolveModal, { type AnomalyCloseMode } from "./AnomalyResolveModal";
 import ManualCancelModal from "./ManualCancelModal";
 import {
@@ -236,6 +237,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
   } | null>(null);
   const [rejectTarget, setRejectTarget] = useState<PaymentOrderRefund | null>(null);
   const [isAdminRefundOpen, setIsAdminRefundOpen] = useState(false);
+  const [isForceRefundOpen, setIsForceRefundOpen] = useState(false);
   const [isManualCancelOpen, setIsManualCancelOpen] = useState(false);
 
   /*
@@ -243,6 +245,8 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
     '결제 쓰기'가 따로 생기기 전까지는 환불 권한으로 묶는다.
   */
   const canAct = useHasPermission("refund:adjust");
+  /* 강제 환불은 일반 환불 담당에게 딸려 가지 않는 별도 권한이다. */
+  const canForce = useHasPermission("refundForce:adjust");
   const { data: order, isLoading, isError, error } =
     usePaymentOrderDetailQuery(orderId);
   const {
@@ -252,6 +256,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
     retryMutation,
     inquiryMutation,
     adminRefundMutation,
+    forceRefundMutation,
     acceptCaptureMutation,
     manualCancelMutation,
     restoreCreditMutation,
@@ -279,17 +284,25 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
   const isNoteUsed =
     order !== undefined &&
     order.creditEntries.reduce((sum, entry) => sum + entry.creditDelta, 0) < order.creditAmount;
-  const canAdminRefund =
+  /*
+    새 환불을 걸 수 있는 결제인가. 돈이 들어와 노트까지 나갔고, 걸려 있는 환불이 없어야 한다.
+    PG가 거절해 노트만 빠진 환불이 남아 있으면 서버가 새 환불을 막는다. 복구 · 직접 취소가 먼저다.
+  */
+  const isRefundable =
     order?.paymentStatus === "CAPTURED" &&
-    // 노트가 이미 빠진 건(환불 실패 등)에 걸면 한 번 더 회수된다. 지급된 상태에서만 연다.
     order.fulfillmentStatus === "GRANTED" &&
-    !isNoteUsed &&
+    order.refundedAmount === 0 &&
     !order.refunds.some(
       (refund) =>
         ["REQUESTED", "PROCESSING"].includes(refund.status) ||
-        // PG가 거절해 노트만 빠진 환불이 남아 있으면 서버가 새 환불을 막는다. 복구 · 직접 취소가 먼저다.
         (refund.status === "FAILED" && refund.clawbackStatus === "DONE"),
     );
+  const canAdminRefund = isRefundable && !isNoteUsed;
+  /*
+    강제 환불은 규칙상 막힌 결제(노트를 이미 씀)에만 낸다. 안 쓴 결제는 일반 관리자 환불로 손실 없이 끝난다 —
+    두 버튼을 같이 두면 손실이 나는 쪽을 습관처럼 누르게 된다.
+  */
+  const canForceRefund = canForce && isRefundable && isNoteUsed;
   const nickname = order?.userNickname ?? (order ? `탈퇴 회원 #${order.userId}` : "");
 
   const handleApprove = (target: PaymentOrderDetail, refund: PaymentOrderRefund) => {
@@ -331,6 +344,22 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
   };
 
   const openAdminRefund = () => setIsAdminRefundOpen(true);
+
+  const handleForceRefund = (input: {
+    reasonCode: AdminRefundReasonCode;
+    reason: string;
+    adminMemo: string;
+  }) => {
+    if (!order) return;
+
+    forceRefundMutation.mutate(
+      { orderId: order.paymentOrderId, ...input },
+      {
+        onSuccess: () => setIsForceRefundOpen(false),
+        onError: (caught) => showErrorToast(caught),
+      },
+    );
+  };
 
   const handleAdminRefund = (input: {
     reasonCode: AdminRefundReasonCode;
@@ -434,10 +463,18 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
         }
         action={
           order &&
-          canAct &&
-          (pendingRefund || canAdminRefund) && (
+          ((canAct && (pendingRefund || canAdminRefund)) || canForceRefund) && (
             <div className="flex items-center gap-2">
-              {canAdminRefund && (
+              {canForceRefund && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => setIsForceRefundOpen(true)}
+                >
+                  강제 환불
+                </Button>
+              )}
+              {canAct && canAdminRefund && (
                 <Button
                   variant="secondary"
                   size="sm"
@@ -446,7 +483,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
                   관리자 환불
                 </Button>
               )}
-              {pendingRefund && (
+              {canAct && pendingRefund && (
                 <>
               <Button
                 variant="secondary"
@@ -774,17 +811,37 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
               <InfoRow
                 label="상태"
                 value={
-                  <Badge tone={REFUND_STATUS_TONE[refund.status]}>
-                    {REFUND_STATUS_LABEL[refund.status]}
-                  </Badge>
+                  <span className="flex items-center gap-1.5">
+                    <Badge tone={REFUND_STATUS_TONE[refund.status]}>
+                      {REFUND_STATUS_LABEL[refund.status]}
+                    </Badge>
+                    {refund.forced && <Badge tone="danger">강제</Badge>}
+                  </span>
                 }
               />
               <InfoRow label="경위" value={REFUND_REASON_CODE_LABEL[refund.reasonCode]} />
               <InfoRow label="사유" value={refund.reason ?? "-"} />
+              {refund.forced && <InfoRow label="내부 사유" value={refund.adminMemo ?? "-"} />}
               <InfoRow
                 label="금액 · 노트"
                 value={`${formatCurrency(refund.refundAmount)} · ${formatCredit(refund.refundCredit)} (${CLAWBACK_STATUS_LABEL[refund.clawbackStatus]})`}
               />
+              {/* 강제 환불이 되찾지 못한 노트. 회수가 끝나야 값이 온다. */}
+              {refund.forced && refund.lostCredit !== undefined && (
+                <InfoRow
+                  label="손실 (회수 못 한 노트)"
+                  value={
+                    <span
+                      className={cn(
+                        "tabular-nums",
+                        refund.lostCredit > 0 && "font-semibold text-danger",
+                      )}
+                    >
+                      {refund.lostCredit > 0 ? formatCredit(refund.lostCredit) : "없음"}
+                    </span>
+                  }
+                />
+              )}
               <InfoRow label="신청일" value={formatDateTime(refund.requestedAt)} />
               {refund.status === "REQUESTED" && (
                 <RefundJudgment
@@ -913,6 +970,13 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
             onClose={() => setIsManualCancelOpen(false)}
             onSubmit={handleManualCancel}
             isSubmitting={manualCancelMutation.isPending}
+          />
+
+          <ForceRefundModal
+            order={isForceRefundOpen ? order : null}
+            onClose={() => setIsForceRefundOpen(false)}
+            onSubmit={handleForceRefund}
+            isSubmitting={forceRefundMutation.isPending}
           />
 
           <AdminRefundModal

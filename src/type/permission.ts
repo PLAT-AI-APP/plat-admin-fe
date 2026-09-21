@@ -32,6 +32,7 @@ export type PermissionResource =
   | "ledger"
   | "payment"
   | "refund"
+  | "refundForce"
   | "notice"
   | "qna"
   | "notification"
@@ -209,6 +210,18 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     isSensitive: true,
     actionLabels: { adjust: "승인 · 거절" },
   },
+  refundForce: {
+    label: "강제 환불",
+    /*
+      일반 환불 담당에게 딸려 가지 않도록 `refund`와 따로 뗐다. 노트를 이미 썼어도 결제 금액 전액이
+      나가고 쓴 노트는 회사 손실로 남는다. 보기는 결제 내역 권한으로 충분해 조회 행위가 없다.
+    */
+    description:
+      "사용 여부 · 기한을 건너뛰고 전액 환불한다. 이미 쓴 노트는 회수하지 않고 손실로 남는다.",
+    actions: ["adjust"],
+    isSensitive: true,
+    actionLabels: { adjust: "강제 환불" },
+  },
   notice: {
     label: "공지사항",
     description: "공지 작성과 게시",
@@ -385,7 +398,7 @@ export const PERMISSION_CATEGORIES = [
     label: "돈이 오가는 자료",
     description:
       "유저 잔액과 PG 결제에 곧바로 반영됩니다. 되돌릴 수 없어 따로 뗐습니다.",
-    resources: ["creditAdjustment", "refund"],
+    resources: ["creditAdjustment", "refund", "refundForce"],
   },
   {
     id: "record",
