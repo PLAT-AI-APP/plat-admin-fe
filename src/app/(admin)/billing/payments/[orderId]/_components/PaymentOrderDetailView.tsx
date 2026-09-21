@@ -721,12 +721,13 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
             title="진행 기록"
             description="주문 · PG 호출 · 노트 지급 · 환불 · 관리자 조치를 시간순으로 합쳤습니다."
           >
-            <ol className="relative flex flex-col gap-4 border-l border-border-main pl-5">
+            <ol className="relative flex flex-col gap-6 border-l border-border-main pl-6">
               {order.timeline.map((item, index) => (
-                <li key={`${item.occurredAt}-${index}`} className="relative">
+                /* 부가정보가 있는 항목 높이에 맞춰 두어, 설명 유무로 간격이 들쭉날쭉하지 않게 한다. */
+                <li key={`${item.occurredAt}-${index}`} className="relative min-h-11">
                   <span
                     className={cn(
-                      "absolute top-1.5 -left-[25px] size-2.5 rounded-full ring-4 ring-surface",
+                      "absolute top-1.5 -left-[29px] size-2.5 rounded-full ring-4 ring-surface",
                       {
                         neutral: "bg-neutral",
                         info: "bg-info",
@@ -736,16 +737,21 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
                       }[item.tone],
                     )}
                   />
-                  <div className="flex flex-wrap items-center gap-2">
+                  {/* 날짜 · 대상 · 내용을 고정 폭 열로 맞춰 탭으로 띄운 것처럼 읽히게 한다. */}
+                  <div className="grid grid-cols-[8.5rem_4.5rem_minmax(0,1fr)] items-center gap-x-6">
                     <span className="body-6 text-font-2 tabular-nums">
                       {formatDateTime(item.occurredAt)}
                     </span>
-                    <Badge tone="neutral">{PAYMENT_EVENT_ACTOR_LABEL[item.actor]}</Badge>
+                    <span>
+                      <Badge tone="neutral">{PAYMENT_EVENT_ACTOR_LABEL[item.actor]}</Badge>
+                    </span>
                     <span className="body-5 font-medium text-font-1">{item.title}</span>
+                    {item.description && (
+                      <p className="col-start-3 mt-1 body-6 break-all text-font-2">
+                        {item.description}
+                      </p>
+                    )}
                   </div>
-                  {item.description && (
-                    <p className="mt-0.5 body-6 break-all text-font-2">{item.description}</p>
-                  )}
                 </li>
               ))}
             </ol>
