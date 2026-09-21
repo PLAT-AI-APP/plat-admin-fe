@@ -272,10 +272,18 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
     관리자 환불은 돈이 들어와 있고 진행 중인 환불이 없을 때만 연다. 유저 요청이
     대기 중이면 그걸 승인하는 것이 맞다 — 둘 다 열어 두면 같은 결제가 두 번 나간다.
   */
+  /*
+    이 결제로 받은 노트가 한 개라도 쓰였는가. 원장 줄을 더하면 남은 양이 된다.
+    전액 회수만 되므로 쓰인 결제에는 관리자 환불을 걸어도 서버가 거절로 끝낸다 — 누를 수 있게 두지 않는다.
+  */
+  const isNoteUsed =
+    order !== undefined &&
+    order.creditEntries.reduce((sum, entry) => sum + entry.creditDelta, 0) < order.creditAmount;
   const canAdminRefund =
     order?.paymentStatus === "CAPTURED" &&
     // 노트가 이미 빠진 건(환불 실패 등)에 걸면 한 번 더 회수된다. 지급된 상태에서만 연다.
     order.fulfillmentStatus === "GRANTED" &&
+    !isNoteUsed &&
     !order.refunds.some(
       (refund) =>
         ["REQUESTED", "PROCESSING"].includes(refund.status) ||

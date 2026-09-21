@@ -232,7 +232,37 @@ export const usePaymentOrderMutation = () => {
     AdminRefundRequest
   >({
     mutationFn: createAdminRefund,
-    onSuccess: () => showAppToast("success", "환불했습니다. PG 취소까지 끝났습니다."),
+    /*
+      관리자 환불은 요청이 성공해도 환불이 안 될 수 있다. 노트를 이미 썼으면 서버가 거절로 확정하고 200을 준다.
+      결과를 보지 않고 "환불했습니다"를 띄우면 운영자는 돈이 나간 줄 안다. 방금 만든 환불(가장 최근)로 판단한다.
+    */
+    onSuccess: (order) => {
+      const latest = order.refunds.reduce<PaymentOrderDetail["refunds"][number] | undefined>(
+        (newest, refund) =>
+          !newest || refund.requestedAt > newest.requestedAt ? refund : newest,
+        undefined,
+      );
+
+      if (latest?.status === "REJECTED") {
+        showAppToast("warning", "노트를 이미 사용해 환불하지 않았습니다.", {
+          description: "돈과 노트는 그대로입니다. 거절 기록만 남았습니다.",
+        });
+        return;
+      }
+      if (latest?.status === "PROCESSING") {
+        showAppToast("info", "노트를 회수했고 PG 취소 결과를 확인하고 있습니다.", {
+          description: "결과를 모르는 상태라 배치가 다시 확인합니다. 다시 환불하지 마세요.",
+        });
+        return;
+      }
+      if (latest?.status === "FAILED") {
+        showAppToast("error", "PG가 취소를 거절했습니다.", {
+          description: "노트만 회수된 상태입니다. 상세의 조치로 정리해 주세요.",
+        });
+        return;
+      }
+      showAppToast("success", "환불했습니다. PG 취소까지 끝났습니다.");
+    },
     onSettled: invalidate,
   });
 
