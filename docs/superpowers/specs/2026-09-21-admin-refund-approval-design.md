@@ -133,3 +133,24 @@ plat-be는 조회만 했고 수정하지 않았다. 조회 결과, 현재 BE는 
 - `next build`는 dev 서버를 죽이지 않도록 사본 + node_modules 하드링크로 확인한다(메모리 절차).
 - BE API가 아직 없고 `liveAxios`라 MSW 목업을 쓸 수 없다. 또 브라우저 패널에는 서비스 워커가 없다. 그래서 **화면 동작 검증은 BE 준비 후** 실서버 어드민 검증 절차로 한다: 3000 포트 주인 확인 → 로그인은 사용자에게 부탁 → 목록 탭·필터 → 상세 → 승인·거절·자동 거절·409 문구 확인.
 - 그 전에는 권한 없는 계정에서 메뉴와 버튼이 숨는지, 새 권한 키가 직책 편집 화면에 나오는지를 로컬에서 확인한다.
+
+---
+
+## 통합 결과 (2026-09-21)
+
+위 Part A의 별도 환불 화면(`/billing/refunds`)은 만들지 않고 **결제 내역**(`/billing/payments`)에 합쳤다. 결제 장부 · 환불 관리 · 보존 원장이 결제 주문 한 줄을 공유하기 때문이다. Part B는 plat-be에 이렇게 들어갔다.
+
+| 설계 | 실제 |
+|---|---|
+| `/admin/refunds/{id}/approve` · `/reject` | `/admin/payment-orders/{orderId}/refunds/{refundId}/approve` · `/reject` (`refund:adjust`) |
+| 신청 = 접수만 | `requestRefund`가 기한 · 미사용만 확인하고 `REQUESTED`로 저장. 회수 · PG 취소는 승인 때 |
+| 승인 시 사용했으면 거절 | 예외 대신 `REJECTED(CREDIT_USED)` 200. 기한은 **신청 시각**으로 판정 |
+| 채팅 중이면 막기 | 409 `PAYMENT_REFUND_CHAT_IN_PROGRESS`, 승인을 무르고 `REQUESTED`로 되돌림 |
+| 재개 배치 | `PROCESSING`만(기준은 승인 시각). `REQUESTED`를 집으면 승인 없이 돈이 나간다 |
+| "신청 뒤 사용" 근거 | 새 표 `credit_pool_deductions`로 그 결제 풀에서 빠진 원장 줄을 준다(`poolUsage`). 기록 이전 사용은 `unrecordedAmount` |
+
+추가로 들어간 것: 관리자 환불 · 지급 재시도 · PG 결과 조회 · PG 승인 반영 · PG 직접 취소 기록 · 회수 노트 복구 · 이상 확인 처리. 이상은 저장하지 않고 상태에서 판정한다(`PaymentAnomalyRules`).
+
+**같은 상품을 짧은 간격에 여러 번 결제한 건은 이상으로 보지 않는다.** 유저가 각각 승인한 별개 결제라 돈 · 노트가 어긋나지 않았고, 필요 없으면 유저가 건마다 환불을 신청한다. 한때 `DUPLICATE` → `REPEATED_PURCHASE`로 판정했다가 운영이 챙길 일이 아니라서 통째로 뺐다. 한 결제가 두 번 청구되는 진짜 중복은 `PG_MISMATCH` · `IN_DOUBT`로 잡힌다.
+
+탈퇴 모델: 회원 해시 · 파기 단계는 BE에 없다. 결제 기록의 `userId`는 FK 없는 회계 키라 탈퇴 뒤에도 남고, `isWithdrawn`(users 행 없음)만 준다. 같은 사람의 결제는 `userId`로 모은다.
