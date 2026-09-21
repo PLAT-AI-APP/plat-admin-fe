@@ -745,17 +745,21 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
                       }[item.tone],
                     )}
                   />
-                  {/* 날짜 · 대상 · 내용을 고정 폭 열로 맞춰 탭으로 띄운 것처럼 읽히게 한다. */}
-                  <div className="grid grid-cols-[8.5rem_4.5rem_minmax(0,1fr)] items-center gap-x-6">
+                  {/*
+                    날짜와 대상은 한 덩어리("언제 · 누가")로 붙이고, 내용만 띄운다. 날짜 열은 글자 폭에
+                    맞춘다 — 날짜는 자릿수가 같아(tabular-nums) 폭을 고정하지 않아도 세로로 맞는다.
+                    대상 열만 고정 폭으로 두어 배지 길이(PG · 시스템)와 상관없이 내용이 한 줄로 선다.
+                  */}
+                  <div className="grid grid-cols-[max-content_4rem_minmax(0,1fr)] items-center gap-x-2">
                     <span className="body-6 text-font-2 tabular-nums">
                       {formatDateTime(item.occurredAt)}
                     </span>
                     <span>
                       <Badge tone="neutral">{PAYMENT_EVENT_ACTOR_LABEL[item.actor]}</Badge>
                     </span>
-                    <span className="body-5 font-medium text-font-1">{item.title}</span>
+                    <span className="pl-3 body-5 font-medium text-font-1">{item.title}</span>
                     {item.description && (
-                      <p className="col-start-3 mt-1 body-6 break-all text-font-2">
+                      <p className="col-start-3 mt-1 pl-3 body-6 break-all text-font-2">
                         {item.description}
                       </p>
                     )}
