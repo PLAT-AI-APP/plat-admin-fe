@@ -9,13 +9,15 @@ import {
   type ServiceLanguage,
 } from "@/type/language";
 import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
+import DetailSection from "@/components/detail/DetailSection";
 import CollapsibleText from "./CollapsibleText";
 import LanguageChips from "./LanguageChips";
 import { filledLanguagesOf, isFilledUniverseTranslation } from "@/app/(admin)/universes/[universeId]/_lib/universeMeta";
 
 interface UniverseTranslationPanelProps {
+  /** 상세의 섹션 탭이 이 id로 스크롤한다. */
+  id: string;
   translations: UniverseTranslationView[];
 }
 
@@ -93,6 +95,7 @@ const TranslationBody = ({
  *    일이 잦다. 한국어를 옆에 붙여 두 열로 대조한다.
  */
 const UniverseTranslationPanel = ({
+  id,
   translations,
 }: UniverseTranslationPanelProps) => {
   const filled = filledLanguagesOf(translations, isFilledUniverseTranslation);
@@ -113,8 +116,10 @@ const UniverseTranslationPanel = ({
   const isSideBySide = isComparing && canCompare;
 
   return (
-    <Card
-      title={`번역 · ${SERVICE_LANGUAGES.length}개 언어 중 ${filled.length}개`}
+    <DetailSection
+      id={id}
+      title="번역언어"
+      meta={`${SERVICE_LANGUAGES.length}개 언어 중 ${filled.length}개`}
       description="detailSetting은 유저에게 보이지 않는 프롬프트성 설정입니다. 검수 시 함께 봅니다."
       action={
         canCompare ? (
@@ -127,7 +132,6 @@ const UniverseTranslationPanel = ({
           </Button>
         ) : undefined
       }
-      bodyClassName="flex flex-col gap-4"
     >
       {translations.length === 0 ? (
         <EmptyState
@@ -135,7 +139,7 @@ const UniverseTranslationPanel = ({
           description="한국어 본문조차 없는 세계관입니다. 앱에서는 제목이 비어 보입니다."
         />
       ) : (
-        <>
+        <div className="flex flex-col gap-4">
           <LanguageChips
             filled={filled}
             value={language}
@@ -166,9 +170,9 @@ const UniverseTranslationPanel = ({
               translation={translationOf(language)}
             />
           </div>
-        </>
+        </div>
       )}
-    </Card>
+    </DetailSection>
   );
 };
 

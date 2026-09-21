@@ -13,8 +13,8 @@ import {
 } from "@/type/language";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
+import DetailSection from "@/components/detail/DetailSection";
 import CollapsibleText from "./CollapsibleText";
 import LanguageChips from "./LanguageChips";
 import {
@@ -30,6 +30,8 @@ import {
 } from "@/constants/universeOptions";
 
 interface UniverseScenarioPanelProps {
+  /** 상세의 섹션 탭이 이 id로 스크롤한다. */
+  id: string;
   scenarios: UniverseScenarioDetail[];
 }
 
@@ -90,7 +92,10 @@ const ScenarioText = ({
  * 선택 상태는 `useState` 초기값이 아니라 파생 + 폴백으로 둔다. 조치 후 상세를
  * 다시 불러와 회차 구성이 바뀌어도 화면이 빈 본문을 가리키지 않는다.
  */
-const UniverseScenarioPanel = ({ scenarios }: UniverseScenarioPanelProps) => {
+const UniverseScenarioPanel = ({
+  id,
+  scenarios,
+}: UniverseScenarioPanelProps) => {
   const [pickedScenarioId, setPickedScenarioId] = useState<string | null>(null);
   const [pickedLanguage, setPickedLanguage] = useState<ServiceLanguage | null>(
     null,
@@ -122,11 +127,13 @@ const UniverseScenarioPanel = ({ scenarios }: UniverseScenarioPanelProps) => {
   const isSideBySide = isComparing && canCompare;
 
   return (
-    <Card
-      title={
+    <DetailSection
+      id={id}
+      title="시나리오"
+      meta={
         playable.length === scenarios.length
-          ? `시나리오 ${scenarios.length}편`
-          : `시나리오 ${scenarios.length}편 · 사용 중 ${playable.length}편`
+          ? `총 ${scenarios.length}편`
+          : `총 ${scenarios.length}편 · 사용 중 ${playable.length}편`
       }
       description="유저는 세계관에 들어와 이 중 하나를 골라 대화를 시작합니다."
       action={
@@ -274,7 +281,7 @@ const UniverseScenarioPanel = ({ scenarios }: UniverseScenarioPanelProps) => {
           </div>
         </div>
       )}
-    </Card>
+    </DetailSection>
   );
 };
 

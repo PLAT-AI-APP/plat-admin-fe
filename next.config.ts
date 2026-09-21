@@ -83,6 +83,29 @@ const nextConfig: NextConfig = {
   },
 
   /**
+   * 결제 장부 · 환불 관리 · 결제 보존 원장은 결제 내역으로 합쳤다.
+   *
+   * 옛 주소를 404로 끊지 않고 결제 내역의 같은 자리로 보낸다. 알림 · 북마크 · 공유된
+   * 링크가 옛 주소를 들고 있다. 환불 상세는 환불 ID만으로 결제를 찾을 수 없어 환불
+   * 요청 탭으로 보낸다. 쿼리(`userId` 등)는 Next가 그대로 넘긴다.
+   */
+  async redirects() {
+    return [
+      { source: "/billing/ledger", destination: "/billing/payments", permanent: false },
+      {
+        source: "/billing/refunds/:path*",
+        destination: "/billing/payments?tab=REFUND_REQUESTED",
+        permanent: false,
+      },
+      {
+        source: "/billing/retention",
+        destination: "/billing/payments?tab=WITHDRAWN",
+        permanent: false,
+      },
+    ];
+  },
+
+  /**
    * 목업 구간에서만 실서버를 같은 오리진으로 중계한다.
    * 이유는 `src/config/appEnv.ts`의 `LIVE_PROXY_PATH` 주석에 있다.
    */

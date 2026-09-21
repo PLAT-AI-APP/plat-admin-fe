@@ -141,7 +141,7 @@ export interface UniverseCharacter {
  * 계약(`AdminUniverseListItem`·`UniverseDetail`)으로 옮겨 가서 이 모양을 쓰지 않는다.
  *
  * 남은 사용처는 아직 목업인 구간뿐이다. 캐릭터 상세(`CharacterDetail.universes`)가
- * `UniverseSummary`로 이 행을 그리고, 전역 검색·댓글·공식 계정 목업 시드가 이 배열을
+ * "등장 세계관" 목록으로 이 행을 그리고, 전역 검색·댓글·공식 계정 목업 시드가 이 배열을
  * 읽는다. 실서버 계약과 필드 이름(`name`·`thumbnailUrl`)이 다른 것은 그 때문이다.
  */
 export interface Universe {

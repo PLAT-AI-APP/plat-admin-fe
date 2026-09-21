@@ -19,8 +19,14 @@ import Badge from "@/components/ui/Badge";
 
 const Sidebar = () => {
   const pathname = usePathname();
-  const { isCollapsed, openGroupKeys, toggleCollapsed, toggleGroup, openGroup } =
-    useSidebarStore();
+  const {
+    isCollapsed,
+    openGroupKeys,
+    toggleCollapsed,
+    toggleGroup,
+    openGroup,
+    expandToGroup,
+  } = useSidebarStore();
 
   const admin = useAdminStore((state) => state.admin);
   // 밀린 일이 있는 메뉴에만 건수를 붙인다. 0이면 뱃지를 그리지 않는다.
@@ -91,9 +97,10 @@ const Sidebar = () => {
       <li key={group.key}>
         <button
           type="button"
-          onClick={() => toggleGroup(group.key)}
+          // 접힌 상태에선 서브메뉴가 안 보이므로 펼치면서 이 그룹을 연다.
+          onClick={() => (isCollapsed ? expandToGroup(group.key) : toggleGroup(group.key))}
           title={isCollapsed ? group.label : undefined}
-          aria-expanded={isOpen}
+          aria-expanded={isOpen && !isCollapsed}
           className={cn(
             "flex h-10 w-full items-center gap-2.5 rounded-field px-3 body-4 transition",
             isCollapsed && "justify-center px-0",

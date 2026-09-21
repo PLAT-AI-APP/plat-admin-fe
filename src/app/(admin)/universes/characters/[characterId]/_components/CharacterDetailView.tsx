@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import {
   useCharacterDetailQuery,
   type CharacterDetailResponse,
@@ -10,23 +10,26 @@ import {
 import { useCharacterMutation } from "@/api/character/mutateCharacter";
 import { ChevronRight, Globe, ShieldAlert } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
-import { cn, formatStatCount, formatWithCommas } from "@/lib/utils";
+import { formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
-import type { CharacterVisibility } from "@/type/character";
+import type { CharacterVisibility, Universe } from "@/type/character";
 import BackLink from "@/components/layout/BackLink";
-import PageHeader from "@/components/layout/PageHeader";
 import Alert from "@/components/ui/Alert";
-import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Dropdown from "@/components/ui/Dropdown";
 import EmptyState from "@/components/ui/EmptyState";
+import EntityImage from "@/components/ui/EntityImage";
 import Lightbox from "@/components/ui/Lightbox";
 import Skeleton from "@/components/ui/Skeleton";
-import Tabs, { type TabItem } from "@/components/ui/Tabs";
-import UniverseSummary from "@/components/universe/UniverseSummary";
-import CharacterAvatar, {
-  characterImageSrc,
-} from "@/components/universe/CharacterAvatar";
+import AssetGridSection from "@/components/detail/AssetGridSection";
+import CreatorProfileSection from "@/components/detail/CreatorProfileSection";
+import DetailHero from "@/components/detail/DetailHero";
+import DetailSection from "@/components/detail/DetailSection";
+import DetailSectionTabs from "@/components/detail/DetailSectionTabs";
+import HashtagLine from "@/components/detail/HashtagLine";
+import StatusChip from "@/components/detail/StatusChip";
+import { characterImageSrc } from "@/components/universe/CharacterAvatar";
+import CollapsibleText from "@/app/(admin)/universes/[universeId]/_components/CollapsibleText";
 import CharacterBlockModal from "@/app/(admin)/universes/characters/_components/CharacterBlockModal";
 import { buildCharacterActions } from "@/app/(admin)/universes/characters/_components/characterActions";
 import {
@@ -38,94 +41,40 @@ import {
   isExposableCharacter,
 } from "@/app/(admin)/universes/characters/_lib/characterExposure";
 import {
+  UNIVERSE_REVIEW_LABEL,
+  UNIVERSE_REVIEW_TONE,
+  UNIVERSE_STATUS_LABEL,
+  UNIVERSE_STATUS_TONE,
+  UNIVERSE_VISIBILITY_LABEL,
+  UNIVERSE_VISIBILITY_TONE,
   VISIBILITY_LABEL,
   VISIBILITY_TONE,
 } from "@/constants/universeOptions";
-
 
 interface CharacterDetailViewProps {
   characterId: string;
 }
 
-type DetailTab = "basic" | "universes" | "prompt";
+/** 섹션 탭이 스크롤할 DOM id */
+const SECTION = {
+  character: "character-profile",
+  creator: "character-creator",
+  assets: "character-assets",
+  universes: "character-universes",
+  greeting: "character-greeting",
+  nsfw: "character-nsfw",
+} as const;
 
-/** 캐릭터 지표 한 칸. 축약값을 크게 쓰고 원래 숫자는 툴팁으로 남긴다. */
-const StatBox = ({ label, value }: { label: string; value: number }) => (
-  <div
-    className="rounded-field border border-border-main px-3 py-2.5"
-    title={formatWithCommas(value)}
-  >
-    <p className="body-6 text-font-2">{label}</p>
-    <p className="title-4 mt-1 text-font-1 tabular-nums">
-      {formatStatCount(value)}
-    </p>
-  </div>
-);
-
-/** 상세 항목 한 줄 */
-const DetailRow = ({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) => (
-  <div className="flex flex-col gap-1">
-    <p className="title-6 text-font-1">{label}</p>
-    <div className="body-5 text-font-2">{children}</div>
-  </div>
-);
-
-/**
- * 프롬프트 원문 블록.
- *
- * 설명 · 인사말 · 성격은 유저에게 그대로 읽히거나 모델에 그대로 들어가는
- * 원문이라, 검수할 때는 잘린 세 줄이 아니라 전체를 봐야 한다. 세계관 상세의
- * `detailSetting`과 같은 방식으로 접었다 펼친다.
- */
-const PromptBlock = ({ label, text }: { label: string; text: string }) => {
-  const [isOpen, setOpen] = useState(false);
-  // 세 줄쯤 넘어가야 접는 의미가 있다.
-  const isLong = text.length > 160;
-
-  return (
-    <div className="rounded-field border border-border-main bg-subtle p-3">
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <p className="title-6 text-font-1">{label}</p>
-        <span className="caption-3 text-font-disabled tabular-nums">
-          {formatWithCommas(text.length)}자
-        </span>
-      </div>
-
-      <p
-        className={cn(
-          "body-5 whitespace-pre-line text-font-1",
-          !isOpen && isLong && "line-clamp-3",
-        )}
-      >
-        {text || "-"}
-      </p>
-
-      {isLong && (
-        <button
-          type="button"
-          onClick={() => setOpen((prev) => !prev)}
-          className="body-6 mt-1 text-brand hover:underline"
-        >
-          {isOpen ? "접기" : "전체 보기"}
-        </button>
-      )}
-    </div>
-  );
-};
+/** 이미지가 없을 때 자리에 넣을 이름 첫 글자 */
+const initialOf = (name: string) => name.trim().charAt(0) || "?";
 
 /**
  * 캐릭터 상세 화면.
  *
- * 표에서 확인할 수 없는 설명 · 인사말 · 성격과, 이 캐릭터가 등장하는 세계관
- * 목록을 보여준다. 세계관 ↔ 캐릭터는 N:M이라 한 캐릭터가 여러 세계관에
- * 나올 수 있고, 세계관에서 다시 세계관 상세로 넘어갈 수 있어야 하므로
- * 모달이 아닌 페이지다.
+ * 세계관 상세와 같은 뼈대다 — 히어로 아래 섹션 탭, 그 아래로 캐릭터 · 제작자 ·
+ * 에셋 · 등장 세계관을 한 페이지에 쌓는다. 세계관 ↔ 캐릭터는 N:M이라 한 캐릭터가
+ * 여러 세계관에 나올 수 있고, 거기서 다시 세계관 상세로 넘어가야 해서 모달이 아닌
+ * 페이지다.
  *
  * **아직 서버 연동 전이다.** 관리자 캐릭터 API가 없어(`CharacterController`가
  * 빈 껍데기) 조회 · 조치가 모두 목업이다. 그래도 화면 구조는 세계관 상세와
@@ -137,7 +86,6 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
   const { visibilityMutation, statusMutation, deleteMutation } =
     useCharacterMutation();
 
-  const [tab, setTab] = useState<DetailTab>("basic");
   const [isBlockOpen, setBlockOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -197,37 +145,13 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
     });
   };
 
-  const tabs: TabItem<DetailTab>[] = [
-    { label: "기본 정보", value: "basic" },
-    {
-      label: "등장 세계관",
-      value: "universes",
-      count: data?.universes.length,
-    },
-    { label: "프롬프트", value: "prompt" },
-  ];
+  const originImage = data ? characterImageSrc(data, "ORIGIN") : undefined;
+  // 이미지가 없으면 확대해도 볼 것이 없다.
+  const openImage = originImage ? () => setLightboxIndex(0) : undefined;
 
   return (
     <>
       <BackLink href="/universes/characters" label="캐릭터" />
-
-      <PageHeader
-        title={data?.name ?? "캐릭터 상세"}
-        description={data ? `#${data.characterId}` : undefined}
-        action={
-          data && (
-            <Dropdown
-              items={buildCharacterActions({
-                character: data,
-                onChangeVisibility: handleChangeVisibility,
-                onBlock: () => setBlockOpen(true),
-                onUnblock: handleUnblock,
-                onDelete: handleDelete,
-              })}
-            />
-          )
-        }
-      />
 
       {/*
         세 갈래 중 하나는 반드시 그린다. `isLoading`만 보면 조회가 실패한 뒤
@@ -252,16 +176,107 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
 
       {data && (
         <>
-          <CharacterHeaderCard
-            character={data}
-            onOpenImage={() => setLightboxIndex(0)}
+          <Card bodyClassName="flex flex-col gap-4">
+            <DetailHero
+              image={
+                <CharacterImage character={data} onClick={openImage} />
+              }
+              chips={<CharacterChips character={data} />}
+              title={data.name}
+              idLabel={`#${data.characterId}`}
+              subtitle={data.description.trim() || undefined}
+              hashtags={
+                <HashtagLine
+                  items={data.tags.map((tag) => ({ key: tag, label: tag }))}
+                />
+              }
+              stats={[
+                { label: "대화", value: formatWithCommas(data.chatCount) },
+                { label: "좋아요", value: formatWithCommas(data.likeCount) },
+              ]}
+              action={
+                <Dropdown
+                  items={buildCharacterActions({
+                    character: data,
+                    onChangeVisibility: handleChangeVisibility,
+                    onBlock: () => setBlockOpen(true),
+                    onUnblock: handleUnblock,
+                    onDelete: handleDelete,
+                  })}
+                />
+              }
+              createdAt={data.createdAt}
+              updatedAt={data.updatedAt}
+            />
+
+            {/* 왜 앱에 안 보이는지를 칩 조합 대신 한 줄로 명시한다. */}
+            {isExposableCharacter(data) ? (
+              <p className="body-5 text-success">
+                앱에 정상 노출 가능한 상태입니다.
+              </p>
+            ) : (
+              <p className="body-5 text-warning">
+                현재 앱에 노출되지 않습니다 · 사유: {characterBlockReason(data)}
+              </p>
+            )}
+
+            {/* 차단은 운영자가 내린 조치라 사유가 화면에 남아야 문의에 답할 수 있다. */}
+            {data.status === "BLOCKED" && (
+              <Alert tone="danger" title="운영 차단됨">
+                {data.blockedReason ?? "차단 사유가 기록되지 않았습니다."}
+                {data.blockedAt && ` (${formatDateTime(data.blockedAt)} 차단)`}
+              </Alert>
+            )}
+          </Card>
+
+          <DetailSectionTabs
+            items={[
+              { label: "캐릭터", value: SECTION.character },
+              { label: "제작자", value: SECTION.creator },
+              {
+                label: "에셋",
+                value: SECTION.assets,
+                count: data.assets.length,
+              },
+              {
+                label: "등장 세계관",
+                value: SECTION.universes,
+                count: data.universes.length,
+              },
+              { label: "첫 인사말", value: SECTION.greeting },
+              { label: "NSFW 판정 근거", value: SECTION.nsfw },
+            ]}
           />
 
-          <Tabs items={tabs} value={tab} onChange={setTab} />
+          <ProfileSection character={data} onOpenImage={openImage} />
 
-          {tab === "basic" && <BasicInfoPanel character={data} />}
-          {tab === "universes" && <UniversePanel character={data} />}
-          {tab === "prompt" && <PromptPanel character={data} />}
+          {/*
+            목업의 크리에이터 ID는 유저 ID 자리를 겸한다(유저 상세 링크도 이 값으로 걸었다).
+            실서버 유저가 아니라 조회는 실패하고, 이름과 ID만 남는다.
+          */}
+          <CreatorProfileSection
+            id={SECTION.creator}
+            userId={data.creatorId}
+            fallbackNickname={data.creatorNickname}
+          />
+
+          <AssetGridSection id={SECTION.assets} assets={data.assets} />
+
+          <UniverseSection character={data} />
+
+          {/* 유저에게 그대로 읽히는 원문이라 검수할 때 전체를 펼쳐 봐야 한다. */}
+          <DetailSection
+            id={SECTION.greeting}
+            title="첫 인사말"
+            meta={`${formatWithCommas(data.greeting.length)}자`}
+            description="대화를 시작하면 캐릭터가 먼저 건네는 말입니다."
+          >
+            <div className="rounded-field bg-subtle px-4 py-3">
+              <CollapsibleText text={data.greeting} />
+            </div>
+          </DetailSection>
+
+          <NsfwSection character={data} />
         </>
       )}
 
@@ -275,11 +290,11 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
       {/* 프로필 원본 확대. 저작권 · 선정성 검수는 그림을 실제로 봐야 판단할 수 있다. */}
       <Lightbox
         items={
-          data && characterImageSrc(data, "ORIGIN")
+          data && originImage
             ? [
                 {
                   id: data.characterId,
-                  url: characterImageSrc(data, "ORIGIN")!,
+                  url: originImage,
                   title: data.name,
                   caption: `#${data.characterId} · ${data.creatorNickname}`,
                 },
@@ -295,267 +310,239 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
 };
 
 /* ------------------------------------------------------------------ */
-/* 헤더 — 어느 탭에서도 보이는 상태 요약                                  */
+/* 히어로                                                              */
 /* ------------------------------------------------------------------ */
 
-const CharacterHeaderCard = ({
+const CharacterImage = ({
+  character,
+  onClick,
+  className,
+}: {
+  character: CharacterDetailResponse;
+  onClick?: () => void;
+  className?: string;
+}) => (
+  <EntityImage
+    src={characterImageSrc(character, "SQ140")}
+    alt={character.name}
+    fileId={character.profileImageFileId}
+    ratio="square"
+    shape="chip"
+    fallback={
+      <span className="title-1 text-font-2">{initialOf(character.name)}</span>
+    }
+    onClick={onClick}
+    className={className}
+  />
+);
+
+const CharacterChips = ({
+  character,
+}: {
+  character: CharacterDetailResponse;
+}) => {
+  const matchedKeywords = character.nsfwMatches.map((match) => match.keyword);
+
+  return (
+    <>
+      {character.isOfficial && <StatusChip tone="brand">공식</StatusChip>}
+      <StatusChip tone={VISIBILITY_TONE[character.visibility]}>
+        {VISIBILITY_LABEL[character.visibility]}
+      </StatusChip>
+      {character.isNsfw && (
+        <StatusChip
+          tone="danger"
+          // 근거를 칩에 바로 붙인다. 자세한 내역은 아래 NSFW 판정 근거 섹션에 있다.
+          title={
+            matchedKeywords.length > 0
+              ? `걸린 금지어: ${matchedKeywords.join(", ")}`
+              : "자동 판정 근거가 없습니다. 수동 지정으로 보입니다."
+          }
+        >
+          NSFW
+        </StatusChip>
+      )}
+      <StatusChip tone={CHARACTER_STATUS_TONE[character.status]}>
+        {CHARACTER_STATUS_LABEL[character.status]}
+      </StatusChip>
+    </>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* 캐릭터                                                              */
+/* ------------------------------------------------------------------ */
+
+const ProfileSection = ({
   character,
   onOpenImage,
 }: {
   character: CharacterDetailResponse;
-  onOpenImage: () => void;
-}) => {
-  const blockReason = characterBlockReason(character);
-  const hasImage = Boolean(characterImageSrc(character, "ORIGIN"));
+  onOpenImage?: () => void;
+}) => (
+  <DetailSection id={SECTION.character} title="캐릭터">
+    <div className="flex gap-5">
+      <CharacterImage
+        character={character}
+        onClick={onOpenImage}
+        className="w-40 shrink-0 self-start"
+      />
 
-  return (
-    <Card>
-      <div className="flex items-start gap-4">
-        <CharacterAvatar
-          character={character}
-          size="lg"
-          // 이미지가 없으면 확대해도 볼 것이 없다.
-          onClick={hasImage ? onOpenImage : undefined}
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <p className="title-4 text-font-0">{character.name}</p>
+
+        <CollapsibleText
+          text={character.description}
+          clampClassName="line-clamp-2"
+          threshold={120}
         />
 
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {character.isOfficial && <Badge tone="brand">공식</Badge>}
-            <Badge tone={VISIBILITY_TONE[character.visibility]}>
-              {VISIBILITY_LABEL[character.visibility]}
-            </Badge>
-            <Badge tone={CHARACTER_STATUS_TONE[character.status]}>
-              {CHARACTER_STATUS_LABEL[character.status]}
-            </Badge>
-            {character.isNsfw && (
-              <Badge
-                tone="danger"
-                // 근거를 뱃지에 바로 붙인다. 자세한 내역은 기본 정보 탭에 있다.
-                title={
-                  character.nsfwMatches.length > 0
-                    ? `걸린 금지어: ${character.nsfwMatches
-                        .map((match) => match.keyword)
-                        .join(", ")}`
-                    : "자동 판정 근거가 없습니다. 수동 지정으로 보입니다."
-                }
-              >
-                NSFW
-                {character.nsfwMatches.length > 0 &&
-                  ` · ${character.nsfwMatches.map((match) => match.keyword).join(", ")}`}
-              </Badge>
-            )}
-          </div>
-
-          {/* 왜 앱에 안 보이는지를 뱃지 조합 대신 한 줄로 명시한다. */}
-          {isExposableCharacter(character) ? (
-            <p className="body-5 mt-2.5 text-success">
-              앱에 정상 노출 가능한 상태입니다.
-            </p>
-          ) : (
-            <p className="body-5 mt-2.5 text-warning">
-              현재 앱에 노출되지 않습니다 · 사유: {blockReason}
-            </p>
-          )}
-
-          {/* 크리에이터는 문의 · 제재의 실제 대상이라 계정으로 바로 이어 준다. */}
-          <p className="body-6 mt-2 text-font-2">
-            크리에이터{" "}
-            <Link
-              href={`/users/${character.creatorId}`}
-              className="text-brand hover:underline"
-            >
-              {character.creatorNickname}
-            </Link>
-            <span className="tabular-nums"> #{character.creatorId}</span>
-          </p>
-
-          <p className="body-6 mt-1 text-font-2 tabular-nums">
-            등록 {formatDateTime(character.createdAt)} · 최근 수정{" "}
-            {formatDateTime(character.updatedAt)}
-          </p>
+        {/* 유저에게 보이지 않고 모델에 그대로 들어가는 원문이다. */}
+        <div>
+          <p className="mb-1 caption-2 text-font-2">상세 설정</p>
+          <CollapsibleText
+            text={character.personality}
+            clampClassName="line-clamp-3"
+            threshold={240}
+          />
         </div>
       </div>
-
-      {/* 차단은 운영자가 내린 조치라 사유가 화면에 남아야 문의에 답할 수 있다. */}
-      {character.status === "BLOCKED" && (
-        <Alert tone="danger" title="운영 차단됨" className="mt-4">
-          {character.blockedReason ?? "차단 사유가 기록되지 않았습니다."}
-          {character.blockedAt &&
-            ` (${formatDateTime(character.blockedAt)} 차단)`}
-        </Alert>
-      )}
-
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <StatBox label="등장 세계관" value={character.universeCount} />
-        <StatBox label="에셋" value={character.assetCount} />
-        <StatBox label="대화" value={character.chatCount} />
-        <StatBox label="좋아요" value={character.likeCount} />
-      </div>
-    </Card>
-  );
-};
+    </div>
+  </DetailSection>
+);
 
 /* ------------------------------------------------------------------ */
-/* 탭 1 — 기본 정보                                                     */
+/* 등장 세계관                                                          */
 /* ------------------------------------------------------------------ */
 
-const BasicInfoPanel = ({
+const UniverseSection = ({
   character,
 }: {
   character: CharacterDetailResponse;
 }) => (
-  <>
-    <Card title="식별 정보">
-      <div className="flex flex-col gap-4">
-        <DetailRow label="캐릭터 ID">
-          <span className="tabular-nums">#{character.characterId}</span>
-        </DetailRow>
+  <DetailSection
+    id={SECTION.universes}
+    title="등장 세계관"
+    meta={`총 ${formatWithCommas(character.universes.length)}개`}
+    description="세계관과 캐릭터는 N:M이라, 다른 크리에이터의 세계관에 초대된 경우도 함께 나옵니다."
+  >
+    {character.universes.length === 0 ? (
+      <EmptyState
+        icon={<Globe size={40} />}
+        title="등장하는 세계관이 없습니다."
+        description="이 캐릭터를 세계관에 넣으면 여기에 표시됩니다."
+      />
+    ) : (
+      <ul className="flex flex-col gap-2">
+        {character.universes.map((universe) => (
+          <li key={universe.universeId}>
+            <UniverseRow universe={universe} />
+          </li>
+        ))}
+      </ul>
+    )}
+  </DetailSection>
+);
 
-        <DetailRow label="태그">
-          {character.tags.length === 0 ? (
-            "-"
-          ) : (
-            <div className="flex flex-wrap items-center gap-1">
-              {character.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="caption-3 rounded-chip bg-subtle px-1.5 py-0.5 text-font-2"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </DetailRow>
+/**
+ * 등장 세계관 한 줄. 누르면 세계관 상세로 넘어간다.
+ *
+ * 칩은 세계관 상세 히어로와 같은 셋(운영 상태 · 공개 범위 · 심사)을 같은 순서로 둔다.
+ * 목록에서 본 칩이 상세에서 다른 모양이면 같은 세계관인지 다시 확인하게 된다.
+ */
+const UniverseRow = ({ universe }: { universe: Universe }) => (
+  <Link
+    href={`/universes/${universe.universeId}`}
+    className="-mx-2 flex items-center gap-5 rounded-field p-2 transition hover:bg-surface-hover"
+  >
+    <EntityImage
+      src={universe.thumbnailUrl}
+      alt={universe.name}
+      ratio="square"
+      shape="chip"
+      className="w-36 shrink-0"
+    />
 
-        <DetailRow label="프로필 이미지 파일">
-          {/*
-            실서버는 URL 없이 fileId만 준다. 이미지를 못 본 채 문의를 받는
-            일이 있어, 최소한 어떤 파일을 찾아야 하는지는 화면에 남긴다.
-          */}
-          <span className="break-all tabular-nums">
-            {character.profileImageFileId
-              ? `#${character.profileImageFileId}`
-              : character.thumbnailUrl || "등록된 이미지가 없습니다."}
-          </span>
-        </DetailRow>
+    <div className="flex min-w-0 flex-1 flex-col self-stretch py-1">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <StatusChip tone={UNIVERSE_STATUS_TONE[universe.status]}>
+          {UNIVERSE_STATUS_LABEL[universe.status]}
+        </StatusChip>
+        <StatusChip tone={UNIVERSE_VISIBILITY_TONE[universe.visibility]}>
+          {UNIVERSE_VISIBILITY_LABEL[universe.visibility]}
+        </StatusChip>
+        <StatusChip tone={UNIVERSE_REVIEW_TONE[universe.reviewStatus]}>
+          {UNIVERSE_REVIEW_LABEL[universe.reviewStatus]}
+        </StatusChip>
+        {universe.isOfficial && <StatusChip tone="brand">공식</StatusChip>}
       </div>
-    </Card>
 
-    {/*
-      NSFW 뱃지의 근거. 어떤 금지어에 걸렸는지 없으면 오탐인지 판단할 수 없다.
-      단어 자체는 `/universes/banned-words`에서 관리한다.
-    */}
-    <Card
-      title="NSFW 판정 근거"
-      description="캐릭터 원문에서 검출된 금지어입니다."
-      action={
-        <Link
-          href="/universes/banned-words"
-          className="title-6 text-brand hover:underline"
-        >
-          금지어 관리
-        </Link>
-      }
-    >
-      {!character.isNsfw ? (
-        <p className="body-5 text-font-2">
-          NSFW로 판정되지 않았습니다. 등록된 금지어에 걸린 내용이 없습니다.
-        </p>
-      ) : character.nsfwMatches.length === 0 ? (
-        <Alert tone="warning" title="자동 판정 근거가 없습니다.">
-          등록된 금지어에 걸리지 않았는데 NSFW로 표시되어 있습니다. 운영자가 직접
-          지정했거나, 판정 이후 해당 금지어가 삭제된 경우입니다.
-        </Alert>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {character.nsfwMatches.map((match) => (
-            <li
-              key={match.keywordId}
-              className="flex items-center gap-2 rounded-field border border-border-main px-3 py-2"
-            >
-              <ShieldAlert size={16} className="shrink-0 text-font-2" />
-              <span className="body-5 flex-1 text-font-1">
-                #{match.keyword}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
-  </>
+      <p className="mt-1.5 truncate title-4 text-font-0">{universe.name}</p>
+      <p className="mt-1 line-clamp-1 body-5 text-font-1">
+        {universe.description}
+      </p>
+
+      <HashtagLine
+        className="mt-1.5"
+        items={universe.tags.map((tag) => ({ key: tag, label: tag }))}
+      />
+
+      <p className="mt-auto flex flex-wrap gap-x-4 pt-2 body-6 text-font-2 tabular-nums">
+        <span>등장 캐릭터 {formatWithCommas(universe.characters.length)}명</span>
+        <span>대화량 {formatWithCommas(universe.chatCount)}</span>
+        <span>좋아요 {formatWithCommas(universe.likeCount)}</span>
+      </p>
+    </div>
+
+    <ChevronRight size={18} className="shrink-0 text-font-2" />
+  </Link>
 );
 
 /* ------------------------------------------------------------------ */
-/* 탭 2 — 등장 세계관                                                   */
+/* NSFW 판정 근거                                                       */
 /* ------------------------------------------------------------------ */
 
-const UniversePanel = ({
-  character,
-}: {
-  character: CharacterDetailResponse;
-}) => {
-  const exposableCount = character.universes.filter(
-    (universe) =>
-      universe.status === "ACTIVE" &&
-      universe.visibility === "PUBLIC" &&
-      universe.reviewStatus === "APPROVED",
-  ).length;
-
-  return (
-    <Card
-      title={`등장 세계관 ${formatWithCommas(character.universes.length)}건`}
-      description={`앱에 노출 가능한 세계관 ${formatWithCommas(exposableCount)}건. 세계관과 캐릭터는 N:M이라 같은 캐릭터가 여러 세계관에 등장하고, 다른 크리에이터의 세계관에 초대된 경우도 함께 나옵니다.`}
-      noPadding
-    >
-      {character.universes.length === 0 ? (
-        <EmptyState
-          icon={<Globe size={40} />}
-          title="등장하는 세계관이 없습니다."
-          description="이 캐릭터를 세계관에 넣으면 여기에 표시됩니다."
-        />
-      ) : (
-        <ul className="flex flex-col">
-          {character.universes.map((universe) => (
-            <li
-              key={universe.universeId}
-              className="border-b border-border-main last:border-b-0"
-            >
-              <Link
-                href={`/universes/${universe.universeId}`}
-                className="flex items-center gap-3 px-5 py-3.5 transition hover:bg-surface-hover"
-              >
-                <UniverseSummary
-                  universe={universe}
-                  showStats
-                  showExposure
-                  className="flex-1"
-                />
-                <ChevronRight size={16} className="shrink-0 text-font-2" />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
-  );
-};
-
-/* ------------------------------------------------------------------ */
-/* 탭 3 — 프롬프트 원문                                                 */
-/* ------------------------------------------------------------------ */
-
-const PromptPanel = ({ character }: { character: CharacterDetailResponse }) => (
-  <Card
-    title="프롬프트 원문"
-    description="유저에게 그대로 읽히거나 모델에 그대로 들어가는 원문입니다. NSFW · 인젝션 검수 시 전체를 펼쳐 확인하세요."
+/**
+ * NSFW 칩의 근거. 어떤 금지어에 걸렸는지 없으면 오탐인지 판단할 수 없다.
+ * 단어 자체는 `/universes/banned-words`에서 관리한다.
+ */
+const NsfwSection = ({ character }: { character: CharacterDetailResponse }) => (
+  <DetailSection
+    id={SECTION.nsfw}
+    title="NSFW 판정 근거"
+    description="캐릭터 원문에서 검출된 금지어입니다."
+    action={
+      <Link
+        href="/universes/banned-words"
+        className="title-6 text-brand hover:underline"
+      >
+        금지어 관리
+      </Link>
+    }
   >
-    <div className="flex flex-col gap-3">
-      <PromptBlock label="설명 (description)" text={character.description} />
-      <PromptBlock label="첫 인사말 (greeting)" text={character.greeting} />
-      <PromptBlock label="성격 (personality)" text={character.personality} />
-    </div>
-  </Card>
+    {!character.isNsfw ? (
+      <p className="body-5 text-font-2">
+        NSFW로 판정되지 않았습니다. 등록된 금지어에 걸린 내용이 없습니다.
+      </p>
+    ) : character.nsfwMatches.length === 0 ? (
+      <Alert tone="warning" title="자동 판정 근거가 없습니다.">
+        등록된 금지어에 걸리지 않았는데 NSFW로 표시되어 있습니다. 운영자가 직접
+        지정했거나, 판정 이후 해당 금지어가 삭제된 경우입니다.
+      </Alert>
+    ) : (
+      <ul className="flex flex-wrap gap-2">
+        {character.nsfwMatches.map((match) => (
+          <li
+            key={match.keywordId}
+            className="flex items-center gap-1.5 rounded-field border border-border-main px-3 py-2"
+          >
+            <ShieldAlert size={16} className="shrink-0 text-font-2" />
+            <span className="body-5 text-font-1">#{match.keyword}</span>
+          </li>
+        ))}
+      </ul>
+    )}
+  </DetailSection>
 );
 
 export default CharacterDetailView;

@@ -128,6 +128,9 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
     followerCount: randomInt(seed * 9, 0, 1_800),
     followingCount: randomInt(seed * 11, 0, 320),
     reportedCount: 0,
+    universeCount: 0,
+    universeChatCount: 0,
+    universeLikeCount: 0,
   };
 });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useTheme } from "next-themes";
@@ -79,19 +80,23 @@ const Header = () => {
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border-main bg-surface px-6">
-      <nav className="flex min-w-0 items-center gap-1.5 body-5 text-font-2">
-        {breadcrumb.map((label, index) => (
-          <span key={label} className="flex items-center gap-1.5">
-            {index > 0 && <ChevronRight size={13} />}
+      {/*
+        좁아져도 글자를 세로로 쪼개지 않는다. 상위 메뉴는 그대로 두고 마지막(현재 화면)만 말줄임한다.
+      */}
+      <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap body-5 text-font-2">
+        {breadcrumb.map((label, index) => {
+          const isLast = index === breadcrumb.length - 1;
+
+          return (
             <span
-              className={
-                index === breadcrumb.length - 1 ? "text-font-1" : undefined
-              }
+              key={label}
+              className={cn("flex items-center gap-1.5", isLast ? "min-w-0" : "shrink-0")}
             >
-              {label}
+              {index > 0 && <ChevronRight size={13} className="shrink-0" />}
+              <span className={isLast ? "truncate text-font-1" : undefined}>{label}</span>
             </span>
-          </span>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="flex shrink-0 items-center gap-3">
