@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { useCreditAdjustmentListQuery } from "@/api/billing/getCreditAdjustmentList";
 import { useLedgerListQuery } from "@/api/billing/getLedgerList";
-import { usePaymentRecordListQuery } from "@/api/billing/getPaymentRecordList";
+import { usePaymentOrderListQuery } from "@/api/billing/getPaymentOrderList";
+import { usePaymentOrderSummaryQuery } from "@/api/billing/getPaymentOrderSummary";
 import { ExternalLink } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import {
   formatAdmin,
+  formatCredit,
   formatCurrency,
   formatSignedCredit,
   formatWithCommas,
@@ -17,24 +19,21 @@ import { useHasPermission } from "@/store/useAdminStore";
 import type {
   CreditAdjustment,
   LedgerEntry,
-  PaymentRecord,
+  PaymentOrderListItem,
 } from "@/type/billing";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
-import PaymentRecordDetailModal from "@/components/billing/PaymentRecordDetailModal";
+import PaymentStatusCell from "@/app/(admin)/billing/payments/_components/PaymentStatusCell";
 import {
   ADJUSTMENT_TYPE_LABEL,
   ADJUSTMENT_TYPE_SIGN,
   ADJUSTMENT_TYPE_TONE,
   LEDGER_TYPE_LABEL,
   LEDGER_TYPE_TONE,
-  PAYMENT_METHOD_LABEL,
-  PG_PROVIDER_LABEL,
-  RECORD_STATUS_LABEL,
-  RECORD_STATUS_TONE,
+  PAYMENT_PG_PROVIDER_LABEL,
 } from "@/constants/billingOptions";
 import { USER_DETAIL_PAGE_SIZE } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
 
@@ -63,21 +62,19 @@ const CreditDelta = ({ value }: { value: number }) => {
 };
 
 /**
- * 이 유저의 결제 장부 · 크레딧 수동 조정 이력 · 결제 보존 원장.
+ * 이 유저의 결제 내역 · 크레딧 원장 · 크레딧 수동 조정 이력.
  * 세 목록의 성격이 달라 한 탭 안에서 카드로 나눠 보여준다.
  */
 const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
   const [ledgerPage, setLedgerPage] = useState(1);
   const [adjustmentPage, setAdjustmentPage] = useState(1);
-  const [recordPage, setRecordPage] = useState(1);
-  const [detailRecord, setDetailRecord] = useState<PaymentRecord | null>(null);
+  const [paymentPage, setPaymentPage] = useState(1);
 
   /*
     권한이 없으면 카드 자체를 감춘다 — 빈 표를 남기면 "이 유저는 결제 기록이
-    없다"로 읽혀 장부와 어긋나 보인다. 서버 권한 자원에 보존 원장이 따로 없어
-    장부 권한(`ledger:read`)을 함께 쓴다.
+    없다"로 읽혀 장부와 어긋나 보인다.
   */
-  const canReadRecord = useHasPermission("ledger:read");
+  const canReadPayment = useHasPermission("payment:read");
 
   const { data: ledger, isLoading: isLedgerLoading } = useLedgerListQuery({
     page: ledgerPage,
@@ -92,15 +89,17 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
       userId,
     });
 
-  const { data: records, isLoading: isRecordLoading } =
-    usePaymentRecordListQuery({
-      page: recordPage,
+  const { data: payments, isLoading: isPaymentLoading } =
+    usePaymentOrderListQuery({
+      page: paymentPage,
       size: USER_DETAIL_PAGE_SIZE,
+      tab: "ALL",
       userId,
     });
 
-  /* 파기가 끝나면 해시가 유일한 조회 키다. 전체 원장으로 건너갈 때도 이 값을 쓴다. */
-  const userKey = records?.content[0]?.userKey;
+  const { data: paymentSummary } = usePaymentOrderSummaryQuery(userId);
+  const issueCount = paymentSummary?.issueCount ?? 0;
+  const refundRequestedCount = paymentSummary?.refundRequestedCount ?? 0;
 
   const ledgerColumns: TableColumn<LedgerEntry>[] = [
     {
@@ -126,7 +125,21 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
     {
       key: "memo",
       header: "메모",
-      render: (row) => <span className="body-5">{row.memo}</span>,
+      render: (row) => (
+        <span className="flex items-center gap-2 body-5">
+          {row.memo}
+          {/* 결제에서 나온 줄은 그 결제로 건너간다. 환불 · 이상 여부는 결제 상세가 원본이다. */}
+          {row.paymentOrderId && (
+            <Link
+              href={`/billing/payments/${row.paymentOrderId}`}
+              className="inline-flex shrink-0 items-center gap-0.5 body-6 text-font-2 transition hover:text-brand"
+            >
+              결제 보기
+              <ExternalLink size={11} />
+            </Link>
+          )}
+        </span>
+      ),
     },
     {
       key: "amount",
@@ -231,98 +244,141 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
   ];
 
   /**
-   * 보존 원장 컬럼.
+   * 결제 내역 컬럼.
    *
-   * 원장 화면과 달리 회원 컬럼을 두지 않는다 — 이미 이 유저의 화면이다.
-   * 대신 **PG 거래번호를 앞에 세운다.** 여기서 이 카드를 여는 이유가
-   * "이 유저의 결제를 결제사에 문의해야 한다"이기 때문이다.
+   * 회원 컬럼을 두지 않는다 — 이미 이 유저의 화면이다. 대신 **PG 거래번호를 함께 세운다.**
+   * 여기서 이 카드를 여는 흔한 이유가 "이 유저의 결제를 결제사에 문의해야 한다"이기 때문이다.
    */
-  const recordColumns: TableColumn<PaymentRecord>[] = [
+  const paymentColumns: TableColumn<PaymentOrderListItem>[] = [
     {
-      key: "status",
-      header: "상태",
-      width: "90px",
-      render: (row) => (
-        <Badge tone={RECORD_STATUS_TONE[row.status]}>
-          {RECORD_STATUS_LABEL[row.status]}
-        </Badge>
-      ),
-    },
-    {
-      key: "pgTid",
-      header: "PG 거래번호",
-      width: "230px",
-      render: (row) => (
-        <TableCellStack
-          primary={
-            <code className="body-5 break-all text-font-1">{row.pgTid}</code>
-          }
-          secondary={row.merchantOrderId}
-        />
-      ),
-    },
-    {
-      key: "provider",
-      header: "결제사 · 수단",
+      key: "requestedAt",
+      header: "주문일",
       width: "140px",
+      numeric: true,
       render: (row) => (
-        <TableCellStack
-          primary={PG_PROVIDER_LABEL[row.pgProvider]}
-          secondary={
-            row.cardIssuer
-              ? `${PAYMENT_METHOD_LABEL[row.method]} · ${row.cardIssuer}`
-              : PAYMENT_METHOD_LABEL[row.method]
-          }
-        />
+        <span className="body-5 text-font-2">{formatDateTime(row.requestedAt)}</span>
       ),
     },
     {
-      key: "product",
-      header: "상품",
+      key: "order",
+      header: "주문",
       render: (row) => (
-        <TableCellStack primary={row.productName} secondary={row.productCode} />
+        <TableCellStack
+          primary={row.productName}
+          secondary={
+            <code className="break-all">{row.pgTransactionId ?? row.orderUid}</code>
+          }
+        />
       ),
     },
     {
       key: "amount",
-      header: "결제 금액",
+      header: "금액",
       align: "right",
       numeric: true,
       width: "120px",
       render: (row) => (
         <TableCellStack
-          primary={
-            <span className="font-medium">{formatCurrency(row.amount)}</span>
-          }
+          primary={<span className="font-medium">{formatCurrency(row.amount)}</span>}
           secondary={
             row.refundedAmount > 0 ? (
-              <span className="text-danger">
-                -{formatCurrency(row.refundedAmount)}
-              </span>
-            ) : undefined
+              <span className="text-danger">-{formatCurrency(row.refundedAmount)}</span>
+            ) : (
+              formatCredit(row.creditAmount)
+            )
           }
         />
       ),
     },
     {
-      key: "approvedAt",
-      header: "승인일시",
-      align: "right",
-      numeric: true,
-      width: "150px",
+      key: "pg",
+      header: "PG",
+      width: "110px",
       render: (row) => (
-        <span className="body-5 text-font-2">
-          {formatDateTime(row.approvedAt)}
-        </span>
+        <span className="body-5">{PAYMENT_PG_PROVIDER_LABEL[row.pgProvider]}</span>
       ),
+    },
+    {
+      key: "status",
+      header: "상태",
+      width: "170px",
+      render: (row) => <PaymentStatusCell order={row} />,
     },
   ];
 
   return (
     <div className="flex flex-col gap-4">
+      {/*
+        결제 한 건의 승인 · 지급 · 환불 · 보존은 결제 내역이 원본이다. 이 카드에서 행을 누르면
+        그 결제의 상세로 간다. 탈퇴하면 이 유저 화면은 사라지지만 결제 기록은 5년간 남는다.
+      */}
+      {canReadPayment && (
+        <Card
+          title={
+            /*
+              처리할 일이 있으면 제목 옆에 바로 보인다. 이 탭은 유저 문의를 받고 여는 일이 많아,
+              표를 훑기 전에 "이 유저에게 걸린 게 있나"부터 알아야 한다.
+            */
+            <span className="flex flex-wrap items-center gap-2">
+              결제 내역 {formatWithCommas(payments?.totalCount ?? 0)}건
+              {issueCount > 0 && (
+                <Link href={`/billing/payments?tab=ISSUE&userId=${encodeURIComponent(userId)}`}>
+                  <Badge tone="danger">확인 필요 {formatWithCommas(issueCount)}</Badge>
+                </Link>
+              )}
+              {refundRequestedCount > 0 && (
+                <Link
+                  href={`/billing/payments?tab=REFUND_REQUESTED&userId=${encodeURIComponent(userId)}`}
+                >
+                  <Badge tone="warning">환불 대기 {formatWithCommas(refundRequestedCount)}</Badge>
+                </Link>
+              )}
+            </span>
+          }
+          description="승인 · 노트 지급 · 환불 · 보존을 결제 한 건 단위로 봅니다. 행을 누르면 결제 상세로 갑니다."
+          action={
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/billing/payments?tab=REFUND_REQUESTED&userId=${encodeURIComponent(userId)}`}
+                className="flex items-center gap-1 body-5 text-font-2 transition hover:text-brand"
+              >
+                환불 요청
+                <ExternalLink size={12} />
+              </Link>
+              <Link
+                href={`/billing/payments?userId=${encodeURIComponent(userId)}`}
+                className="flex items-center gap-1 body-5 text-font-2 transition hover:text-brand"
+              >
+                결제 내역에서 보기
+                <ExternalLink size={12} />
+              </Link>
+            </div>
+          }
+          noPadding
+        >
+          <Table
+            columns={paymentColumns}
+            rows={payments?.content ?? []}
+            getRowKey={(row) => row.paymentOrderId}
+            isLoading={isPaymentLoading}
+            skeletonRows={3}
+            getRowHref={(row) => `/billing/payments/${row.paymentOrderId}`}
+            emptyTitle="결제 기록이 없습니다."
+            emptyDescription="이 유저가 결제한 적이 없거나, 보존 기간(5년)이 지나 파기되었습니다."
+          />
+
+          <Pagination
+            page={paymentPage}
+            totalCount={payments?.totalCount ?? 0}
+            pageSize={USER_DETAIL_PAGE_SIZE}
+            onChange={setPaymentPage}
+          />
+        </Card>
+      )}
+
       <Card
-        title={`결제 장부 ${formatWithCommas(ledger?.totalCount ?? 0)}건`}
-        description="결제 · 충전 · 사용 · 환불이 시간순으로 쌓입니다."
+        title={`크레딧 원장 ${formatWithCommas(ledger?.totalCount ?? 0)}건`}
+        description="충전 · 사용 · 만료 · 환불 회수 · 수동 조정으로 잔액이 움직인 줄이 시간순으로 쌓입니다."
         noPadding
       >
         <Table
@@ -366,53 +422,6 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
         />
       </Card>
 
-      {/*
-        장부와 겹쳐 보이지만 답하는 질문이 다르다. 장부는 "크레딧이 어떻게 오갔나"고,
-        원장은 "이 결제를 결제사에 어떻게 특정하나"다. 결제사 거래번호 · 승인번호는
-        장부에 없어서, 이 카드가 없으면 문의 한 건마다 원장 화면에서 다시 찾아야 한다.
-        탈퇴하면 이 유저 화면은 사라지지만 아래 기록은 5년간 남는다.
-      */}
-      {canReadRecord && (
-        <Card
-          title={`결제 보존 원장 ${formatWithCommas(records?.totalCount ?? 0)}건`}
-          description="법정 보존 기록입니다. 탈퇴 · 파기 후에도 결제사 거래번호로 조회할 수 있습니다."
-          action={
-            userKey && (
-              <Link
-                href={`/billing/retention?keyword=${encodeURIComponent(userKey)}`}
-                className="flex items-center gap-1 body-5 text-font-2 transition hover:text-brand"
-              >
-                보존 원장에서 보기
-                <ExternalLink size={12} />
-              </Link>
-            )
-          }
-          noPadding
-        >
-          <Table
-            columns={recordColumns}
-            rows={records?.content ?? []}
-            getRowKey={(row) => String(row.recordId)}
-            isLoading={isRecordLoading}
-            skeletonRows={3}
-            onRowClick={setDetailRecord}
-            emptyTitle="보존 중인 결제 기록이 없습니다."
-            emptyDescription="이 유저가 결제한 적이 없거나, 보존 기간(5년)이 지나 파기되었습니다."
-          />
-
-          <Pagination
-            page={recordPage}
-            totalCount={records?.totalCount ?? 0}
-            pageSize={USER_DETAIL_PAGE_SIZE}
-            onChange={setRecordPage}
-          />
-        </Card>
-      )}
-
-      <PaymentRecordDetailModal
-        record={detailRecord}
-        onClose={() => setDetailRecord(null)}
-      />
     </div>
   );
 };

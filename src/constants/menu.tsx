@@ -20,7 +20,6 @@ import {
   MessageSquare,
   Package,
   QuestionCircle,
-  Receipt,
   Robot,
   Scale,
   Server,
@@ -275,27 +274,15 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Coin size={SUB_ICON_SIZE} />,
       },
       {
-        label: "결제 장부",
-        href: "/billing/ledger",
-        permission: "ledger:read",
-        icon: <Receipt size={SUB_ICON_SIZE} />,
-      },
-      {
         /*
-          장부와 나란히 두지만 다른 화면이다. 장부는 **지금 운영 중인 유저의 돈
-          흐름**을 보는 곳이고, 이쪽은 **탈퇴하고 개인정보까지 파기된 뒤에도
-          법이 남기게 하는 기록**을 보는 곳이다. 조회 키부터 다르다 — 유저가
-          아니라 결제사 거래번호로 찾는다.
-
-          권한은 장부와 같은 `ledger:read`다. 서버 권한 자원(`AdminResource`)에
-          보존 원장이 따로 없어, 없는 키를 걸면 직책 저장이 400으로 거부된다.
-          열람을 따로 떼려면 서버에 자원이 먼저 생겨야 한다.
+          결제 장부 · 환불 관리 · 결제 보존 원장을 결제 한 건 기준으로 합쳤다.
+          환불 승인 · 이상 조치 · 5년 보존 열람이 모두 여기서 끝난다. 결제와 무관한
+          크레딧 흐름(사용 · 만료 · 조정)은 유저 상세의 크레딧 원장에서 본다.
         */
-        label: "결제 보존 원장",
-        href: "/billing/retention",
-        permission: "ledger:read",
-        icon: <Scale size={SUB_ICON_SIZE} />,
-        isMock: true,
+        label: "결제 내역",
+        href: "/billing/payments",
+        permission: "payment:read",
+        icon: <CreditCard size={SUB_ICON_SIZE} />,
       },
     ],
   },

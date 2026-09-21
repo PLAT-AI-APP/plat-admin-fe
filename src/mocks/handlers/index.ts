@@ -2,7 +2,6 @@ import { billingHandlers } from "./billing";
 import { characterHandlers } from "./character";
 import { communicationHandlers } from "./communication";
 import { dashboardHandlers } from "./dashboard";
-import { paymentRecordHandlers } from "./paymentRecord";
 import { reportHandlers } from "./report";
 import { legalHandlers } from "./legal";
 import { opsHandlers } from "./ops";
@@ -35,7 +34,6 @@ export const handlers = [
   ...characterHandlers,
   ...reportHandlers,
   ...billingHandlers,
-  ...paymentRecordHandlers,
   ...communicationHandlers,
   ...legalHandlers,
   ...opsHandlers,

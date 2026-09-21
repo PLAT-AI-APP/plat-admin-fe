@@ -35,6 +35,8 @@ interface LedgerEntryResponse {
   amount: number;
   creditDelta: number;
   productName: string | null;
+  /** 결제에서 나온 줄이면 그 결제. 서버가 아직 안 주면 필드가 없다. */
+  paymentOrderId?: string | null;
   memo: string | null;
   createdAt: string;
 }
@@ -43,6 +45,7 @@ const toLedgerEntry = (entry: LedgerEntryResponse): LedgerEntry => ({
   ...entry,
   userNickname: entry.userNickname ?? `#${entry.userId}`,
   productName: entry.productName ?? undefined,
+  paymentOrderId: entry.paymentOrderId ?? undefined,
   memo: entry.memo ?? "",
 });
 
