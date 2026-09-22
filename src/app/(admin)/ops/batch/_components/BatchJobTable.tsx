@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useBatchJobListQuery } from "@/api/ops/getBatchJobList";
 import { useBatchJobMutation } from "@/api/ops/mutateBatchJob";
 import { formatDateTime } from "@/lib/dayjs";
@@ -12,11 +13,16 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Switch from "@/components/ui/Switch";
 import Table, { type TableColumn } from "@/components/ui/Table";
+import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import { Refresh } from "@/icons";
 import {
+  BATCH_JOB_CATEGORY_LABEL,
+  BATCH_JOB_CATEGORY_ORDER,
   BATCH_RUN_STATUS_LABEL,
   BATCH_RUN_STATUS_TONE,
+  batchJobCategory,
   describeCron,
+  type BatchJobCategory,
 } from "@/app/(admin)/ops/batch/_constants/batchOptions";
 
 interface BatchJobTableProps {
@@ -38,6 +44,41 @@ const BatchJobTable = ({ selectedJobKey, onSelectJob }: BatchJobTableProps) => {
 
   const canWrite = useHasPermission("batch:write");
 
+  const [category, setCategory] = useState<BatchJobCategory | "all">("all");
+
+  /**
+   * 갈래 순서로 세운 잡 목록. `전체`에서도 같은 갈래끼리 붙어 있어야
+   * 분류 열을 따라 내려가며 덩어리로 읽힌다. 같은 갈래 안은 서버 순서를 지킨다.
+   */
+  const sortedJobs = useMemo(
+    () =>
+      [...(data ?? [])].sort(
+        (a, b) =>
+          BATCH_JOB_CATEGORY_ORDER.indexOf(batchJobCategory(a.jobKey)) -
+          BATCH_JOB_CATEGORY_ORDER.indexOf(batchJobCategory(b.jobKey)),
+      ),
+    [data],
+  );
+
+  /* 잡이 없는 갈래는 탭을 세우지 않는다. 눌러 봐야 빈 표뿐이다. (`기타`가 평소 숨는 이유) */
+  const tabs: TabItem<BatchJobCategory | "all">[] = [
+    { label: "전체", value: "all", count: sortedJobs.length },
+    ...BATCH_JOB_CATEGORY_ORDER.flatMap((value) => {
+      const count = sortedJobs.filter(
+        (job) => batchJobCategory(job.jobKey) === value,
+      ).length;
+
+      return count > 0
+        ? [{ label: BATCH_JOB_CATEGORY_LABEL[value], value, count }]
+        : [];
+    }),
+  ];
+
+  const rows =
+    category === "all"
+      ? sortedJobs
+      : sortedJobs.filter((job) => batchJobCategory(job.jobKey) === category);
+
   /**
    * 수동 실행은 반드시 확인을 받는다.
    *
@@ -56,6 +97,21 @@ const BatchJobTable = ({ selectedJobKey, onSelectJob }: BatchJobTableProps) => {
     });
 
   const columns: TableColumn<BatchJob>[] = [
+    /* 한 갈래만 볼 때는 모든 행이 같은 값이라 열을 뺀다. */
+    ...(category === "all"
+      ? [
+          {
+            key: "category",
+            header: "분류",
+            width: "120px",
+            render: (row: BatchJob) => (
+              <Badge tone="neutral">
+                {BATCH_JOB_CATEGORY_LABEL[batchJobCategory(row.jobKey)]}
+              </Badge>
+            ),
+          },
+        ]
+      : []),
     {
       key: "name",
       header: "잡",
@@ -190,9 +246,18 @@ const BatchJobTable = ({ selectedJobKey, onSelectJob }: BatchJobTableProps) => {
           )}
         </div>
 
+        {!isLoading && sortedJobs.length > 0 && (
+          <Tabs
+            items={tabs}
+            value={category}
+            onChange={setCategory}
+            className="px-5"
+          />
+        )}
+
         <Table
           columns={columns}
-          rows={data ?? []}
+          rows={rows}
           getRowKey={(row) => row.jobKey}
           isLoading={isLoading}
           skeletonRows={6}

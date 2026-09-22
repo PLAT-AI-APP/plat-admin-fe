@@ -331,92 +331,91 @@ export const PERMISSION_ACTION_HINT: Record<PermissionAction, string> = {
 /**
  * 자료를 묶는 갈래.
  *
- * **행위 구성이 같은 자료끼리 묶는다.** 업무 영역(캐릭터 · 유저 · 결제)이 아니다.
+ * **업무 영역(도메인)으로 묶는다.** 사이드바 메뉴와 같은 순서 · 같은 이름이다.
  *
- * 이 표는 자료(행) × 행위(열)인데, 자료마다 할 수 있는 행위가 다르다.
- * 스물일곱 개를 한 표에 넣으면 행위 여섯 개를 전부 열로 세워야 하고,
- * 그러면 `지급 · 차감` 열은 스물일곱 칸 중 스물여섯 칸이 빈칸이 된다.
- * 크레딧에만 있는 행위가 캐릭터 줄에도 자리를 차지하는 셈이다.
+ * 직책을 설정하는 사람은 "이 직책은 결제를 맡는다"처럼 영역으로 생각한다.
+ * 행위 구성(지우는 자료 · 발송하는 자료)으로 묶으면 결제 권한이 세 갈래에 흩어져,
+ * 결제 담당 직책 하나를 만들려고 카드 여러 장을 오가야 했다.
  *
- * 갈래를 행위 구성으로 나누면 **갈래마다 열 이름이 달라진다.**
- * 돈 갈래의 열은 `조회 · 지급 · 차감`이고, 거기에만 있다.
- * 빈칸이 사라지고, 갈래 이름이 곧 "이 자료들로 무엇을 할 수 있는가"가 된다.
+ * 갈래마다 행위 구성이 달라 **열은 갈래에서 뽑는다**(`categoryActions`).
+ * 위험한 자료는 갈래가 아니라 자료 줄의 `민감` 표시로 드러낸다.
  */
 export interface PermissionCategoryDef {
   id: string;
   label: string;
-  /** 이 갈래의 행위 구성이 왜 이런지. 설정 화면에서 그대로 보여 준다. */
+  /** 이 갈래가 어떤 업무를 다루는지. 설정 화면에서 그대로 보여 준다. */
   description: string;
   resources: readonly PermissionResource[];
 }
 
 export const PERMISSION_CATEGORIES = [
   {
-    id: "general",
-    label: "만들고 고치고 지우는 자료",
-    description: "조회 · 등록 · 삭제. 대부분의 자료가 여기에 해당합니다.",
+    id: "main",
+    label: "대시보드 · 메인 노출",
+    description: "운영 지표와 앱 메인 화면에 걸리는 콘텐츠",
+    resources: ["dashboard", "mainExposure"],
+  },
+  {
+    id: "universe",
+    label: "세계관",
+    description: "세계관 · 캐릭터와 이를 둘러싼 태그 · 금지어 · 대화 기록",
     resources: [
-      "mainExposure",
+      "universe",
       "character",
       "officialAccount",
       "hashtag",
       "bannedWord",
-      "systemPrompt",
+      "chatExport",
+    ],
+  },
+  {
+    id: "community",
+    label: "커뮤니티",
+    description: "댓글과 신고 처리",
+    resources: ["comment", "report"],
+  },
+  {
+    id: "user",
+    label: "유저",
+    description: "유저 계정 조회와 제재",
+    resources: ["user"],
+  },
+  {
+    id: "ai",
+    label: "AI 운영",
+    description: "모델 설정과 시스템 프롬프트. 전체 대화 품질에 바로 반영됩니다.",
+    resources: ["aiModel", "systemPrompt"],
+  },
+  {
+    id: "billing",
+    label: "결제 · 크레딧",
+    description: "상품 · 크레딧 · 결제 · 환불. 돈과 잔액이 움직이는 자료가 모여 있습니다.",
+    resources: [
       "billingProduct",
-      "faq",
+      "creditPolicy",
+      "creditAdjustment",
+      "payment",
+      "refund",
+      "refundForce",
+      "ledger",
+    ],
+  },
+  {
+    id: "communication",
+    label: "커뮤니케이션",
+    description: "공지 · 문의 · 알림 · 푸시와 법적 고지. 게시 · 발송하면 이용자가 바로 봅니다.",
+    resources: ["notice", "qna", "faq", "notification", "push", "legal"],
+  },
+  {
+    id: "ops",
+    label: "운영",
+    description: "직책 · 관리자 계정과 앱 버전, 서버 · 배치 · 로그",
+    resources: [
       "role",
       "manager",
-    ],
-  },
-  {
-    id: "keep",
-    label: "지우지 않는 자료",
-    description:
-      "상태만 바꾸거나 기준이 되는 자료라 삭제가 없습니다. 숨기거나 새로 받습니다.",
-    resources: [
-      "comment",
-      "report",
-      "user",
-      "chatExport",
-      "aiModel",
-      "creditPolicy",
-      "notification",
       "appVersion",
-      "universe",
-      "batch",
-    ],
-  },
-  {
-    id: "publish",
-    label: "앱에 공개하는 자료",
-    description:
-      "게시하면 모든 이용자가 봅니다. 되돌리기 어려워 '게시'를 따로 뗐습니다.",
-    resources: ["notice", "legal"],
-  },
-  {
-    id: "outbound",
-    label: "밖으로 나가는 자료",
-    description:
-      "이용자에게 발송합니다. 나가면 되돌릴 수 없어 '발송'을 따로 뗐습니다.",
-    resources: ["push", "qna"],
-  },
-  {
-    id: "money",
-    label: "돈이 오가는 자료",
-    description:
-      "유저 잔액과 PG 결제에 곧바로 반영됩니다. 되돌릴 수 없어 따로 뗐습니다.",
-    resources: ["creditAdjustment", "refund", "refundForce"],
-  },
-  {
-    id: "record",
-    label: "보기만 하는 자료",
-    description:
-      "지표와 기록입니다. 고칠 수 있으면 기록이 아니라 조회만 둡니다.",
-    resources: [
-      "dashboard",
-      "ledger",
-      "payment",
       "server",
+      "batch",
       "log",
       "systemLog",
     ],

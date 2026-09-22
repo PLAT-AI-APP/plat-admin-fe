@@ -87,3 +87,75 @@ export const formatDuration = (durationMs?: number): string => {
 
   return `${Math.floor(seconds / 60)}분 ${seconds % 60}초`;
 };
+
+/* ------------------------------------------------------------------ */
+/* 분류                                                                 */
+/* ------------------------------------------------------------------ */
+
+export type BatchJobCategory =
+  | "payment"
+  | "credit"
+  | "content"
+  | "cleanup"
+  | "etc";
+
+/**
+ * 잡을 묶는 갈래. **화면에서만 쓰는 분류다.**
+ *
+ * 서버는 잡에 분류를 붙이지 않는다. 잡이 스무 개 가까이 되면 한 줄로 늘어놓은 표에서
+ * "결제 쪽 잡이 다 돌았나"를 보려면 이름을 하나씩 읽어야 해서, 화면이 jobKey로 갈래를 정한다.
+ *
+ * 무엇을 건드리는 잡인가로 나눈다. `purge-payment-data`처럼 지우는 잡이라도 결제 데이터를
+ * 다루면 결제에 둔다 — 결제에 문제가 생겼을 때 함께 봐야 하는 잡이기 때문이다.
+ * 기록 정리는 운영 기록(로그 · 이력 · 표본)만 지우는 잡이라 서비스에 닿지 않는다.
+ */
+export const BATCH_JOB_CATEGORY_LABEL: Record<BatchJobCategory, string> = {
+  payment: "결제 · 환불",
+  credit: "크레딧",
+  content: "유저 · 콘텐츠",
+  cleanup: "기록 정리",
+  etc: "기타",
+};
+
+/** 탭과 `전체` 정렬에 쓰는 순서. 돈이 걸린 잡부터 둔다. */
+export const BATCH_JOB_CATEGORY_ORDER: readonly BatchJobCategory[] = [
+  "payment",
+  "credit",
+  "content",
+  "cleanup",
+  "etc",
+];
+
+const BATCH_JOB_CATEGORY_BY_KEY: Record<string, BatchJobCategory> = {
+  "relay-payment-outbox": "payment",
+  "reconcile-captured-orders": "payment",
+  "confirm-in-doubt-payments": "payment",
+  "resume-stale-refunds": "payment",
+  "expire-pending-orders": "payment",
+  "apply-pg-notifications": "payment",
+  "purge-payment-data": "payment",
+
+  "expire-credits": "credit",
+  "cancel-expired-reservations": "credit",
+
+  "release-expired-suspensions": "content",
+  "purge-expired-files": "content",
+  "purge-expired-drafts": "content",
+  "purge-deleted-comments": "content",
+  "refresh-stat-rankings": "content",
+
+  "purge-admin-logs": "cleanup",
+  "purge-admin-activity-logs": "cleanup",
+  "purge-system-events": "cleanup",
+  "purge-server-metrics": "cleanup",
+  "purge-batch-runs": "cleanup",
+};
+
+/**
+ * 잡의 갈래.
+ *
+ * 서버에 잡이 새로 생겨도 화면이 모르면 **`기타`로 떨어진다.** 목록에서 사라지면
+ * 켜고 끌 수도 없게 되므로, 모르는 잡은 숨기지 않고 따로 모아 둔다.
+ */
+export const batchJobCategory = (jobKey: string): BatchJobCategory =>
+  BATCH_JOB_CATEGORY_BY_KEY[jobKey] ?? "etc";
