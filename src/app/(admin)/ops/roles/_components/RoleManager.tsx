@@ -387,7 +387,7 @@ const RoleManager = () => {
               {/*
                 갈래마다 **카드를 따로 둔다.**
 
-                하나의 긴 표 안에 머리글을 여섯 번 끼워 넣으면, 지금 보고 있는 줄이
+                하나의 긴 표 안에 갈래 머리글을 여러 번 끼워 넣으면, 지금 보고 있는 줄이
                 어느 갈래에 속하는지 위로 되짚어 올라가야 안다. 카드로 끊으면
                 갈래가 곧 덩어리라 되짚을 일이 없다.
 
@@ -417,8 +417,9 @@ const RoleManager = () => {
                         자료 이름 칸에 바닥을 준다. 없으면 열이 많은 갈래에서
                         이름 칸이 먼저 줄어들어 '크레딧 수동 조정'이 두 줄로 깨진다.
                         좁은 화면에서는 표만 안쪽에서 가로로 밀린다.
+                        (이름 200 + 체크칸 84 × 최대 5열 + 간격 · 여백)
                       */}
-                      <div className="min-w-[560px]">
+                      <div className="min-w-[700px]">
                         <div
                           className="grid items-center gap-2 border-b border-border-main bg-subtle px-5 py-2 body-6 font-medium text-font-2"
                           style={{ gridTemplateColumns: GRID_TEMPLATE }}
