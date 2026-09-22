@@ -1,19 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
-import { adminAxios } from "..";
-import type { AppError } from "@/type/api";
+import { liveAxios } from "..";
+import { usePermittedQuery } from "@/api/usePermittedQuery";
 import type { QnaItem } from "@/type/communication";
 
-export const getQnaDetail = async (qnaId: number) => {
-  const response = await adminAxios.get<QnaItem>(`/admin/qna/${qnaId}`);
+export const getQnaDetail = async (qnaId: string) => {
+  const response = await liveAxios.get<QnaItem>(`/admin/qna/${qnaId}`);
 
   return response.data;
 };
 
 /** 문의 상세 모달에서 사용합니다. 모달이 닫혀 있으면 조회하지 않습니다. */
-export const useQnaDetailQuery = (qnaId: number | null) => {
-  return useQuery<QnaItem, AppError>({
+export const useQnaDetailQuery = (qnaId: string | null) => {
+  return usePermittedQuery<QnaItem>("qna:read", {
     queryKey: ["get-qna-detail", qnaId],
-    queryFn: () => getQnaDetail(Number(qnaId)),
+    queryFn: () => getQnaDetail(qnaId as string),
     enabled: qnaId !== null,
   });
 };

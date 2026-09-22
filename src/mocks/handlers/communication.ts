@@ -5,14 +5,12 @@ import type {
   PushCampaign,
   PushStatus,
   PushTarget,
-  QnaStatus,
 } from "@/type/communication";
 import { characters } from "@/mocks/db/character";
 import {
   notificationTemplates,
   proactiveMessages,
   pushCampaigns,
-  qnaItems,
 } from "@/mocks/db/communication";
 import { stampAdmin } from "@/mocks/session";
 import {
@@ -44,81 +42,6 @@ const PUSH_TARGET_COUNT: Record<PushTarget, number> = {
 };
 
 export const communicationHandlers = [
-  /* ---------------------------------------------------------------- */
-  /* Q&A                                                               */
-  /* ---------------------------------------------------------------- */
-
-  http.get(`${BASE_URI}/admin/qna`, async ({ request }) => {
-    const url = new URL(request.url);
-    const keyword = url.searchParams.get("keyword") ?? "";
-    const status = url.searchParams.get("status") ?? "";
-    const category = url.searchParams.get("category") ?? "";
-
-    const filtered = qnaItems
-      .filter((item) => (status ? item.status === status : true))
-      .filter((item) => (category ? item.category === category : true))
-      .filter((item) =>
-        matchesKeyword(keyword, item.title, item.content, item.userNickname),
-      )
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(paginate(filtered, url));
-  }),
-
-  http.get(`${BASE_URI}/admin/qna/:qnaId`, async ({ params }) => {
-    const qnaId = Number(params.qnaId);
-    const item = qnaItems.find((qna) => qna.qnaId === qnaId);
-
-    await delay(MOCK_DELAY_MS);
-
-    if (!item) return notFound();
-
-    return HttpResponse.json(item);
-  }),
-
-  http.post(
-    `${BASE_URI}/admin/qna/:qnaId/answer`,
-    async ({ params, request }) => {
-      const qnaId = Number(params.qnaId);
-      const { answer } = (await request.json()) as { answer: string };
-      const item = qnaItems.find((qna) => qna.qnaId === qnaId);
-
-      if (!item) return notFound();
-
-      const answerer = stampAdmin();
-
-      item.answer = answer;
-      item.answeredBy = answerer.name;
-      item.answeredById = answerer.managerId;
-      item.answeredAt = new Date().toISOString();
-
-      // 답변을 저장하면 상태를 자동으로 올린다. 이미 종료된 문의는 종료 상태를 유지한다.
-      if (item.status === "OPEN") item.status = "ANSWERED";
-
-      await delay(MOCK_DELAY_MS);
-
-      return HttpResponse.json(item);
-    },
-  ),
-
-  http.patch(
-    `${BASE_URI}/admin/qna/:qnaId/status`,
-    async ({ params, request }) => {
-      const qnaId = Number(params.qnaId);
-      const { status } = (await request.json()) as { status: QnaStatus };
-      const item = qnaItems.find((qna) => qna.qnaId === qnaId);
-
-      if (!item) return notFound();
-
-      item.status = status;
-      await delay(MOCK_DELAY_MS);
-
-      return HttpResponse.json(item);
-    },
-  ),
-
   /* ---------------------------------------------------------------- */
   /* 알림 템플릿                                                        */
   /* ---------------------------------------------------------------- */

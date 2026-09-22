@@ -4,8 +4,15 @@ import type {
   DashboardSummary,
   DashboardTrendPoint,
 } from "@/type/dashboard";
-import { qnaItems } from "./communication";
 import { daysAgo, randomInt } from "@/mocks/utils";
+
+/**
+ * 답변 대기 Q&A 건수.
+ *
+ * Q&A 목록은 실서버로 나가 목업 시드가 없다. 대기 건수(대시보드 · 사이드바 뱃지)를 실서버로
+ * 옮기는 일은 아직 범위 밖이라 고정값으로 둔다. 실제 대기 건수와 다를 수 있다.
+ */
+export const MOCK_PENDING_QNA_COUNT = 7;
 
 /**
  * 대시보드 추이 구간 (일).
@@ -141,5 +148,5 @@ export const dashboardSummary: DashboardSummary = {
   trend: dashboardTrend,
   creditUsage: dashboardCreditUsage,
   serverStatus: "UP",
-  pendingQnaCount: qnaItems.filter((qna) => qna.status === "OPEN").length,
+  pendingQnaCount: MOCK_PENDING_QNA_COUNT,
 };

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useListParams } from "@/hooks/useListParams";
 import { useQnaListQuery } from "@/api/communication/getQnaList";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatAdmin, truncate } from "@/lib/utils";
+import { formatAdmin, formatCurrency, truncate } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { QnaCategory, QnaItem, QnaStatus } from "@/type/communication";
 import Badge from "@/components/ui/Badge";
@@ -23,6 +24,7 @@ import {
   QNA_STATUS_TABS,
   QNA_STATUS_TONE,
 } from "@/app/(admin)/communication/_constants/communicationOptions";
+import { getRefundResult } from "@/app/(admin)/communication/qna/_lib/refundResult";
 import QnaDetailModal from "./QnaDetailModal";
 
 /** 주소에 실리는 목록 조건 */
@@ -38,7 +40,7 @@ const QnaManager = () => {
   const { page, keyword } = params;
   const status = params.status as QnaStatus | "";
   const category = params.category as QnaCategory | "";
-  const [selectedQnaId, setSelectedQnaId] = useState<number | null>(null);
+  const [selectedQnaId, setSelectedQnaId] = useState<string | null>(null);
 
   const { data, isLoading } = useQnaListQuery({
     page,
@@ -70,16 +72,40 @@ const QnaManager = () => {
     {
       key: "title",
       header: "제목",
-      render: (row) => (
-        <p className="max-w-100 truncate text-font-1">{row.title}</p>
-      ),
+      // 환불 문의는 금액과 환불 상태를 함께 보여 줘야 목록에서 바로 처리 순서를 잡을 수 있다. 표기는 상세와 같다.
+      render: (row) => {
+        if (!row.refund) {
+          return <p className="max-w-100 truncate text-font-1">{row.title}</p>;
+        }
+
+        const result = getRefundResult(row.refund);
+
+        return (
+          <TableCellStack
+            primary={<span className="block max-w-100 truncate">{row.title}</span>}
+            secondary={
+              <span className="flex items-center gap-1.5">
+                <Badge tone={result.tone}>{result.label}</Badge>
+                {formatCurrency(row.refund.refundAmount)}
+              </span>
+            }
+          />
+        );
+      },
     },
     {
       key: "user",
       header: "작성자",
       width: "140px",
+      // 행을 누르면 문의 상세가 열리므로 작성자 링크는 클릭이 행으로 번지지 않게 막는다.
       render: (row) => (
-        <span className="text-font-2">{truncate(row.userNickname, 12)}</span>
+        <Link
+          href={`/users/${row.userId}`}
+          onClick={(event) => event.stopPropagation()}
+          className="text-font-2 transition hover:text-brand"
+        >
+          {truncate(row.userNickname, 12)}
+        </Link>
       ),
     },
     {
@@ -115,7 +141,7 @@ const QnaManager = () => {
                 {formatDateTime(row.answeredAt)}
               </span>
             }
-            secondary={formatAdmin(row.answeredBy, row.answeredById)}
+            secondary={formatAdmin(row.answeredBy ?? undefined, row.answeredById ?? undefined)}
           />
         ) : (
           <span className="text-font-2">-</span>
@@ -137,7 +163,7 @@ const QnaManager = () => {
           <SearchInput
             value={keyword}
             onSearch={handleSearch}
-            placeholder="제목 · 내용 · 작성자로 검색"
+            placeholder="제목 · 내용 · 작성자 · ID로 검색"
           />
 
           <Select
@@ -153,7 +179,7 @@ const QnaManager = () => {
         <Table
           columns={columns}
           rows={data?.content ?? []}
-          getRowKey={(row) => String(row.qnaId)}
+          getRowKey={(row) => row.qnaId}
           isLoading={isLoading}
           onRowClick={(row) => setSelectedQnaId(row.qnaId)}
           emptyTitle="조회된 문의가 없습니다."

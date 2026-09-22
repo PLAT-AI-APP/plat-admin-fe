@@ -298,10 +298,14 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
       {
         label: "Q&A 관리",
         href: "/communication/qna",
-        pendingKey: "qna",
         permission: "qna:read",
         icon: <QuestionCircle size={SUB_ICON_SIZE} />,
-        isMock: true,
+      },
+      {
+        label: "FAQ 관리",
+        href: "/communication/faq",
+        permission: "faq:read",
+        icon: <ListLines size={SUB_ICON_SIZE} />,
       },
       {
         label: "알림 관리",
