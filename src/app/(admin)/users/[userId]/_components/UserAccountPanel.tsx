@@ -15,9 +15,8 @@ import Card from "@/components/ui/Card";
 import {
   LOGIN_PROVIDER_BADGE_CLASS,
   LOGIN_PROVIDER_LABEL,
-  USER_STATUS_LABEL,
-  USER_STATUS_TONE,
 } from "@/app/(admin)/users/_constants/userOptions";
+import { USER_STATUS_LABEL, USER_STATUS_TONE } from "@/constants/userOptions";
 
 interface UserAccountPanelProps {
   user: UserDetail;

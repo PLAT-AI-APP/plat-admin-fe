@@ -19,10 +19,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import EntityImage from "@/components/ui/EntityImage";
 import Skeleton from "@/components/ui/Skeleton";
 import Tabs from "@/components/ui/Tabs";
-import {
-  USER_STATUS_LABEL,
-  USER_STATUS_TONE,
-} from "@/app/(admin)/users/_constants/userOptions";
+import { USER_STATUS_LABEL, USER_STATUS_TONE } from "@/constants/userOptions";
 import UserSuspendModal from "@/app/(admin)/users/_components/UserSuspendModal";
 import UserAccountPanel from "./UserAccountPanel";
 import UserBillingPanel from "./UserBillingPanel";

@@ -1,27 +1,8 @@
-import type { BadgeTone } from "@/components/ui/Badge";
 import type { SelectOption } from "@/components/ui/Select";
-import type { LoginProvider, UserStatus } from "@/type/user";
+import type { LoginProvider } from "@/type/user";
+import { USER_STATUS_LABEL } from "@/constants/userOptions";
 
-/**
- * 유저 화면 전용 라벨·옵션. 표·모달·필터가 같은 문구를 공유한다.
- *
- * 네 상태를 모두 적는다. 콘솔에서 거는 것은 정지·해제뿐이지만 `BANNED`도
- * 서버가 내려줄 수 있는 값이라, 빠뜨리면 그 계정의 뱃지가 빈칸으로 그려진다.
- */
-export const USER_STATUS_LABEL: Record<UserStatus, string> = {
-  ACTIVE: "정상",
-  SUSPENDED: "정지",
-  BANNED: "영구 정지",
-  WITHDRAWN: "탈퇴",
-};
-
-/** 상태 뱃지 색. */
-export const USER_STATUS_TONE: Record<UserStatus, BadgeTone> = {
-  ACTIVE: "success",
-  SUSPENDED: "danger",
-  BANNED: "danger",
-  WITHDRAWN: "neutral",
-};
+/** 유저 화면 전용 라벨·옵션. 표·모달·필터가 같은 문구를 공유한다. */
 
 export const LOGIN_PROVIDER_LABEL: Record<LoginProvider, string> = {
   GOOGLE: "구글",
