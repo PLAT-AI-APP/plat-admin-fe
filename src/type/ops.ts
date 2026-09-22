@@ -421,9 +421,12 @@ export interface BatchJobRun {
   log?: string;
 }
 
-/** 처리 대기 건수. 사이드바 · 헤더 뱃지가 쓴다. */
+/**
+ * 처리 대기 건수. 사이드바 · 헤더 뱃지가 쓴다.
+ *
+ * 신고는 여기서 뺐다. 실서버로 옮겨 목업 신고가 없어졌고, 이 값은 아직 목업에서만 나온다.
+ */
 export interface PendingCounts {
-  report: number;
   qna: number;
   comment: number;
 }

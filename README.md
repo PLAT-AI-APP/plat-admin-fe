@@ -116,10 +116,10 @@ MSW 목업을 쓴다. 목업 핸들러는 전부 `NEXT_PUBLIC_BASE_URI`(아무�
 (`/admin/notices`), AI 모델 · 카탈로그(`/admin/ai/models/**`), 시스템 프롬프트
 (`/admin/ai/prompts`), 상품(`/admin/billing/products`), 크레딧 수동 조정
 (`/admin/credits/adjustments` · `/admin/credits/users`), 장부(`/admin/ledgers/**`), 운영 · 시스템 로그(`/admin/logs/**`), 배치(`/admin/batch/**`),
-서버 상태(`/admin/server/**`).
+서버 상태(`/admin/server/**`), 신고(`/admin/reports/**`).
 
 **목업(`adminAxios` + MSW)** — 메뉴에 MOCK 배지가 붙고 화면 위에 안내가 뜬다
-(`src/constants/menu.tsx`의 `isMock`). 대시보드, 캐릭터, 채팅 내보내기, 신고, 크레딧
+(`src/constants/menu.tsx`의 `isMock`). 대시보드, 캐릭터, 채팅 내보내기, 크레딧
 정책, 결제 보존 원장, Q&A, 알림 템플릿, 선제 메시지, 푸시, 약관, 앱 버전.
 메뉴가 아닌 **처리 대기 뱃지(`/admin/ops/pending-counts`)와 ⌘K 엔티티 검색
 (`/admin/search`)도 목업**이라, 목업이 꺼진 운영(`main`)에서는 부르지 않는다.
@@ -157,7 +157,7 @@ sonner · recharts · MSW v2
 |---|---|
 | 로그인 · 세션 | `/login` · 새로고침 유지 · 401 시 자동 로그아웃 · 권한 없는 주소는 본문만 차단 |
 | 내 계정 | 헤더 프로필 → 비밀번호 변경 · 내 직책이 가진 권한 확인 |
-| 처리 대기 알림 | 사이드바 메뉴 뱃지 + 헤더 종 (신고 · Q&A · 신고된 댓글, 60초 갱신 · **목업 전용**) |
+| 처리 대기 알림 | 사이드바 메뉴 뱃지 + 헤더 종 (Q&A · 신고된 댓글, 60초 갱신 · **목업 전용**) |
 | 전역 검색 (`⌘K` / `Ctrl+K`) | 메뉴 검색 + 유저·캐릭터·세계관·해시태그 통합 검색(**목업 전용**) 후 이동 |
 | 목록 조건 URL 동기화 | 검색·필터·페이지가 주소에 남아 새로고침·공유·뒤로가기에도 유지 |
 | CSV 내보내기 | 유저 관리 · 결제 장부 · 크레딧 수동 조정 · 운영 로그 · 해시태그 |

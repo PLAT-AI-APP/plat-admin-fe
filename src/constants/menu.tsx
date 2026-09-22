@@ -204,10 +204,8 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
       {
         label: "신고 관리",
         href: "/community/reports",
-        pendingKey: "report",
         permission: "report:read",
         icon: <Flag size={SUB_ICON_SIZE} />,
-        isMock: true,
       },
     ],
   },

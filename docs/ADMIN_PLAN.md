@@ -75,7 +75,7 @@
 | | | 금지어 관리 | `/universes/banned-words` | |
 | | | 채팅 내보내기 | `/universes/chat-exports` | **MOCK** |
 | 4 | 커뮤니티 | 댓글 관리 | `/community/comments` | 전 영역 댓글 통합 |
-| | | 신고 관리 | `/community/reports` | 대상 다형화 · **MOCK** |
+| | | 신고 관리 | `/community/reports` | 대상별 케이스 · 상세 `/community/reports/[caseId]` |
 | 5 | 유저/크리에이터 | 유저 관리 | `/users` | 상세 `/users/[userId]` |
 | 6 | AI 운영 | 모델 카탈로그 | `/ai/catalog` | |
 | | | AI 모델 관리 | `/ai/models` | |
@@ -111,12 +111,12 @@ MVP에서 앱이 그 섹션을 읽지 않아 **담아도 어디에도 나가지 
 
 그래서 배지가 붙는 기준은 "MVP 범위인가"가 아니라 **"지금 실서버에 붙어 있는가"**다.
 MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. 현재 배지가 붙은 화면은
-아래 12개이며, 기준 목록은 `src/constants/menu.tsx`의 `isMock`이다.
+아래 11개이며, 기준 목록은 `src/constants/menu.tsx`의 `isMock`이다.
 
 | 배지가 붙은 이유 | 화면 |
 |---|---|
 | 아직 실서버에 연결되지 않음 | 대시보드 · 캐릭터 · 채팅 내보내기 · 크레딧 정책 관리 · 결제 보존 원장 · Q&A 관리 |
-| 현재 다른 도구(Discord)로 운영 | 신고 관리 · 알림 관리 · 선제 메시지 · 푸시 발송 |
+| 현재 다른 도구(Discord)로 운영 | 알림 관리 · 선제 메시지 · 푸시 발송 |
 | 현재 다른 도구(Notion)로 운영 | 법적 고지 |
 | 앱이 아직 이 정책을 읽어 가지 않음 | 앱 버전 관리 |
 
@@ -130,7 +130,7 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 - 분류 기준(1뎁스 = 운영 대상 도메인)에 따르면 UGC 모더레이션은 독립 도메인이다.
 
 같은 이유로 기존 `캐릭터 > 캐릭터 신고 관리`를 **`커뮤니티 > 신고 관리`로 옮기고
-신고 대상을 다형화**했다. 캐릭터만 신고 대상이던 구조로는 댓글·유저 신고를 받을 수 없고,
+신고 대상을 다형화**했다. 캐릭터만 신고 대상이던 구조로는 다른 대상의 신고를 받을 수 없고,
 신고가 대상별로 흩어지면 운영자가 여러 화면을 오가야 한다.
 향후 게시글 등 UGC가 늘어도 `targetType`에 값만 추가하면 같은 화면에서 처리한다.
 
@@ -346,9 +346,9 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 | 관리자 활동 · 시스템 로그 | 실서버 | `/admin/logs/**` | `src/api/ops/` |
 | 배치 | 실서버 | `/admin/batch/**` | `src/api/ops/` |
 | 서버 상태 | 실서버 | `/admin/server/**` | `src/api/ops/` |
+| 신고 | 실서버 | `/admin/reports/**` | `src/api/report/` |
 | 대시보드 | 목업 | `/admin/dashboard/summary` | `src/api/dashboard/` |
 | 캐릭터 · 채팅 내보내기 | 목업 | `/admin/characters` · `/admin/chat-exports` | `src/api/character/` |
-| 신고 | 목업 | `/admin/reports` | `src/api/report/` |
 | 크레딧 정책 | 목업 | `/admin/credits/policies` | `src/api/billing/` |
 | 결제 보존 원장 | 목업 | `/admin/payment-records/**` | `src/api/billing/` |
 | Q&A · 알림 템플릿 · 선제 메시지 · 푸시 | 목업 | `/admin/qna` · `/admin/notifications/templates` · `/admin/proactive-messages` · `/admin/push/campaigns` | `src/api/communication/` |
@@ -528,17 +528,26 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
   올라온다. 작성자가 지운 댓글(`DELETED`)은 운영이 되살리지 않는다.
 - 일괄 숨김 응답의 건수는 보낸 건수와 다를 수 있다. 이미 내려갔거나 지워진 댓글은 서버가 건너뛴다.
 
-신고(**MOCK**)는 캐릭터 · 댓글 · 유저 신고를 같은 흐름으로 처리하도록 다형 구조로 통합했다.
+신고는 **대상 단위의 케이스**로 묶어 처리한다. 계약의 원본은 plat-be `docs/19-Report-Guide.md`다.
+같은 대상(`targetType` + `targetId`)의 신고가 열린 케이스 하나에 모이고, 판정 · 조치 · 처리자는 케이스에 붙는다.
 
-| Method | Path | 목적 |
-|---|---|---|
-| GET | `/admin/reports` | 신고 목록/검색 (대상·상태·사유 필터) |
-| PATCH | `/admin/reports/{reportId}/status` | 처리 상태·메모 변경 |
+| Method | Path | 권한 | 목적 |
+|---|---|---|---|
+| GET | `/admin/reports` | `report:read` | 케이스 목록 (상태 · 대상 · 사유 · 검색 · 피신고자 필터, 누적 신고순 / 최근 신고순) |
+| GET | `/admin/reports/{caseId}` | `report:read` | 케이스 상세 (최신 스냅샷 · 대상 현재 상태 · 사유별 건수 · 처리 결과 · 지난 케이스) |
+| GET | `/admin/reports/{caseId}/reports` | `report:read` | 케이스에 묶인 개별 신고 (신고 시점 스냅샷 포함) |
+| GET | `/admin/reports/items?reporterUserId=` | `report:read` | 유저 상세의 "넣은 신고" |
+| POST | `/admin/reports/{caseId}/resolve` | `report:write` + 조치별 권한 | 판정 · 조치 · 제재 · 메모로 케이스를 닫는다 (204) |
 
-- `targetType`: `CHARACTER` | `COMMENT` | `USER`
-- 상태: `PENDING`(접수) | `REVIEWING`(검토 중) | `RESOLVED`(처리 완료) | `REJECTED`(반려)
-- `targetReportCount`로 **같은 대상에 누적된 신고 수**를 함께 내려준다.
-  반복 신고 대상을 먼저 처리할 수 있도록 정렬 기준으로도 쓴다.
+- `targetType`: `COMMENT` | `UNIVERSE`. 새 대상은 docs/19의 체크리스트대로 `src/type/report.ts`와
+  상세의 스냅샷 렌더러 레지스트리(`community/reports/[caseId]/_components/snapshot/index.ts`)에 더한다.
+- 상태: `PENDING`(처리 대기) | `ACTIONED`(조치 완료) | `DISMISSED`(위반 없음). 닫힌 케이스는 다시 열리지 않고,
+  같은 대상이 다시 신고되면 새 케이스가 된다.
+- 조치: 댓글 `HIDE_COMMENT`(`comment:write`), 세계관 `UNIVERSE_PRIVATE` · `UNIVERSE_INACTIVE`(`universe:write`),
+  피신고자 제재 기간 정지 · 영구 정지(`user:write`). 권한이 없는 항목은 처리 모달에서 잠그고 이유를 적는다.
+- 조치함은 조치 또는 제재가 1개 이상, 위반 없음은 0개여야 한다. 메모는 필수(1000자)이며 신고자에게 보이지 않는다.
+- 다른 관리자가 먼저 닫으면 409 `REPORT_CASE_ALREADY_HANDLED` — 안내 후 상세를 다시 읽는다.
+- 상태 탭 건수는 전용 API가 없어 상태별 목록(`size=1`)의 총 개수로 센다.
 
 ### 5.8 로그 · 배치
 
@@ -615,7 +624,7 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
   시드는 `src/mocks/db/<domain>.ts`에 **메모리 상태**로 두고, POST/PUT/DELETE가 실제로 그 상태를
   바꾼다. 새로고침 전까지 CRUD가 진짜처럼 동작해야 화면을 검증할 수 있다.
 - 실서버로 옮긴 도메인이어도 시드가 남아 있을 수 있다. `src/mocks/db/user.ts` · `src/mocks/db/official.ts`는
-  전역 검색 · 캐릭터 · 신고 · 결제 목업이 유저와 공식 뱃지를 빌려 쓰기 때문에 남겼다.
+  전역 검색 · 캐릭터 · 결제 목업이 유저와 공식 뱃지를 빌려 쓰기 때문에 남겼다.
 - **메뉴 밖에서 도는 목업 조회는 목업이 꺼지면 부르지 않는다.** 처리 대기 뱃지
   (`/admin/ops/pending-counts`)와 ⌘K 엔티티 검색(`/admin/search`)은 `IS_MOCKING`
   (`src/api/baseUri.ts`)으로 막는다. ⌘K의 메뉴 검색은 그대로 된다.

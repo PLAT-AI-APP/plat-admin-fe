@@ -3,7 +3,6 @@ import { type AppVersion, type AppVersionFormValues } from "@/type/ops";
 import { appVersions } from "@/mocks/db/ops";
 import { comments } from "@/mocks/db/comment";
 import { qnaItems } from "@/mocks/db/communication";
-import { reports } from "@/mocks/db/report";
 import { MOCK_DELAY_MS, nextId } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
@@ -27,9 +26,6 @@ export const opsHandlers = [
     await delay(MOCK_DELAY_MS);
 
     return HttpResponse.json({
-      report: reports.filter(
-        (report) => report.status === "PENDING" || report.status === "REVIEWING",
-      ).length,
       qna: qnaItems.filter((qna) => qna.status === "OPEN").length,
       // 신고가 들어왔는데 아직 노출 중인 댓글이 검수 대상이다.
       comment: comments.filter(

@@ -34,9 +34,8 @@ import {
   LOGIN_PROVIDER_BADGE_CLASS,
   LOGIN_PROVIDER_LABEL,
   USER_STATUS_FILTER_OPTIONS,
-  USER_STATUS_LABEL,
-  USER_STATUS_TONE,
 } from "@/app/(admin)/users/_constants/userOptions";
+import { USER_STATUS_LABEL, USER_STATUS_TONE } from "@/constants/userOptions";
 import UserSuspendModal from "./UserSuspendModal";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */

@@ -54,11 +54,10 @@ const SUSPEND_REASONS = [
  * 페이지네이션(20건/페이지) 동작을 확인할 수 있도록 3페이지 분량을 만든다.
  * 목록/상세를 한 배열로 관리하고, 목록 응답에서만 상세 필드를 제외한다.
  *
- * 아래 네 필드는 여기서 정하지 않고 **다른 도메인 시드가 채운다.**
+ * 아래 세 필드는 여기서 정하지 않고 **다른 도메인 시드가 채운다.**
  * 화면에서 집계값 옆에 실제 목록이 함께 보이므로 따로 난수를 뿌리면 바로 어긋난다.
  * - characterCount  → db/character
  * - creditBalance, totalPaidAmount → db/billing (장부 합계)
- * - reportedCount   → db/report
  */
 export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
   const seed = index + 1;
