@@ -25,6 +25,7 @@ import UserAccountPanel from "./UserAccountPanel";
 import UserBillingPanel from "./UserBillingPanel";
 import UserCharacterPanel from "./UserCharacterPanel";
 import UserCommentPanel from "./UserCommentPanel";
+import UserQnaPanel from "./UserQnaPanel";
 import UserReportPanel from "./UserReportPanel";
 import UserUniversePanel from "./UserUniversePanel";
 import {
@@ -261,6 +262,9 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
           )}
           {tab === "BILLING" && <UserBillingPanel userId={userId} />}
           {tab === "REPORT" && <UserReportPanel userId={userId} />}
+          {tab === "QNA" && (
+            <UserQnaPanel userId={userId} nickname={user.nickname} />
+          )}
 
           <UserSuspendModal
             user={isSuspendOpen ? user : null}
