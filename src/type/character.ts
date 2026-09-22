@@ -165,7 +165,7 @@ export interface Universe {
    *
    * **저장된 값이 아니라 조회 시점에 계산된 값이다.**
    * 소유 크리에이터가 공식 계정으로 등록되어 있으면 참이다. 그래서 이 값만
-   * 따로 켜고 끌 수 없고, 바꾸려면 `공식 계정`(`/universes/official`)에서
+   * 따로 켜고 끌 수 없고, 바꾸려면 `공식 계정`(`/users/official`)에서
    * 계정을 등록·해제한다.
    */
   isOfficial: boolean;

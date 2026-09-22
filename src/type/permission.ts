@@ -362,7 +362,6 @@ export const PERMISSION_CATEGORIES = [
     resources: [
       "universe",
       "character",
-      "officialAccount",
       "hashtag",
       "bannedWord",
       "chatExport",
@@ -376,9 +375,9 @@ export const PERMISSION_CATEGORIES = [
   },
   {
     id: "user",
-    label: "유저",
-    description: "유저 계정 조회와 제재",
-    resources: ["user"],
+    label: "유저 · 크리에이터",
+    description: "유저 계정 조회 · 제재와 공식 계정 지정",
+    resources: ["user", "officialAccount"],
   },
   {
     id: "ai",

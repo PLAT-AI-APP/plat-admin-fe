@@ -163,12 +163,6 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         isMock: true,
       },
       {
-        label: "공식 계정",
-        href: "/universes/official",
-        permission: "officialAccount:read",
-        icon: <Crown size={SUB_ICON_SIZE} />,
-      },
-      {
         label: "해시태그 관리",
         href: "/universes/hashtags",
         permission: "hashtag:read",
@@ -219,6 +213,16 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/users",
         permission: "user:read",
         icon: <Users size={SUB_ICON_SIZE} />,
+      },
+      {
+        /*
+          세계관이 아니라 유저 아래에 둔다. 지정하는 대상이 세계관이 아니라 **유저 계정**이고,
+          세계관의 공식 표시는 그 계정에서 계산되어 따라올 뿐이다.
+        */
+        label: "공식 계정",
+        href: "/users/official",
+        permission: "officialAccount:read",
+        icon: <Crown size={SUB_ICON_SIZE} />,
       },
     ],
   },
@@ -411,7 +415,7 @@ export const findActiveGroupKey = (pathname: string): string | undefined => {
 /**
  * 2뎁스 활성 판정.
  *
- * 목록 경로(`/universes`)가 다른 하위 경로(`/universes/official`)를
+ * 목록 경로(`/users`)가 다른 하위 경로(`/users/official`)를
  * 함께 활성화하지 않도록 상세 경로만 prefix 매칭을 허용한다.
  * 더 깊은 형제 메뉴가 현재 경로를 담당하면(`/universes/characters/1`) 그쪽에 양보한다.
  */

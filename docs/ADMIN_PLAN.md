@@ -70,13 +70,13 @@
 | | | 에셋 추천 | `/main-exposure/asset-pick` | **감춤**(`hidden`) · 언어별 최대 3개 |
 | 3 | 세계관 | 세계관 | `/universes` | 상세 `/universes/[universeId]` |
 | | | 캐릭터 | `/universes/characters` | **MOCK** · 상세 `/universes/characters/[characterId]` |
-| | | 공식 계정 | `/universes/official` | 공식으로 취급할 **유저 ID** 등록 |
 | | | 해시태그 관리 | `/universes/hashtags` | 사용자는 여기 등록된 태그만 사용 · 유저 제안 처리 |
 | | | 금지어 관리 | `/universes/banned-words` | |
 | | | 채팅 내보내기 | `/universes/chat-exports` | **MOCK** |
 | 4 | 커뮤니티 | 댓글 관리 | `/community/comments` | 전 영역 댓글 통합 |
 | | | 신고 관리 | `/community/reports` | 대상별 케이스 · 상세 `/community/reports/[caseId]` |
 | 5 | 유저/크리에이터 | 유저 관리 | `/users` | 상세 `/users/[userId]` |
+| | | 공식 계정 | `/users/official` | 공식으로 취급할 **유저 ID** 등록 |
 | 6 | AI 운영 | 모델 카탈로그 | `/ai/catalog` | |
 | | | AI 모델 관리 | `/ai/models` | |
 | | | 시스템 프롬프트 | `/ai/prompts` | |
@@ -276,7 +276,7 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 - **공식** 세계관 언어당 **최대 3개**.
 - 후보는 `officialOnly`로 좁힌다. 공식 여부는 세계관에 저장된 값이 아니라 **소유
   크리에이터가 공식 계정으로 지정되어 있는지**로 계산된다(→ 5.5). 후보가 비면 세계관을 찾을
-  것이 아니라 `세계관 > 공식 계정`(`/universes/official`)에 계정이 등록되어 있는지 먼저 본다.
+  것이 아니라 `유저/크리에이터 > 공식 계정`(`/users/official`)에 계정이 등록되어 있는지 먼저 본다.
 - 이 섹션만 **맛보기 회차(`scenarioId`)를 지목한다**(`PATCH /admin/home-sections/{id}/scenario`,
   `src/components/universe/ScenarioPickerModal.tsx`). 세계관만 고르면 앱이 어느 회차를 실어야
   할지 알 수 없어서다.
