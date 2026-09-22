@@ -34,7 +34,7 @@ import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
 import Table, { type TableColumn } from "@/components/ui/Table";
-import RefundRejectModal from "./RefundRejectModal";
+import RefundRejectModal from "@/components/billing/RefundRejectModal";
 import PaymentStatusCell from "../../_components/PaymentStatusCell";
 import AdminRefundModal from "./AdminRefundModal";
 import ForceRefundModal from "./ForceRefundModal";
@@ -54,6 +54,7 @@ import {
   PG_TRANSACTION_RESULT_LABEL,
   PG_TRANSACTION_RESULT_TONE,
   PG_TRANSACTION_TYPE_LABEL,
+  REFUND_CHAT_IN_PROGRESS_CODE,
   REFUND_CHAT_IN_PROGRESS_MESSAGE,
   REFUND_CREDIT_USED_MESSAGE,
   REFUND_REASON_CODE_LABEL,
@@ -68,8 +69,6 @@ import {
 interface PaymentOrderDetailViewProps {
   orderId: string;
 }
-
-const CHAT_IN_PROGRESS_CODE = "PAYMENT_REFUND_CHAT_IN_PROGRESS";
 
 /** 정보 한 줄 */
 const InfoRow = ({ label, value }: { label: string; value: ReactNode }) => (
@@ -344,7 +343,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
             refundId: refund.refundId,
           });
         } catch (caught) {
-          if ((caught as AppError).code === CHAT_IN_PROGRESS_CODE) {
+          if ((caught as AppError).code === REFUND_CHAT_IN_PROGRESS_CODE) {
             throw new Error(REFUND_CHAT_IN_PROGRESS_MESSAGE);
           }
 
@@ -608,8 +607,8 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
 
           {pendingRefund?.creditUsedSinceRequest && (
             <Alert tone="danger" title="환불 신청 뒤 유저가 노트를 사용했습니다.">
-              승인하면 서버가 크레딧 사용으로 자동 거절하고, 유저에게는 &lsquo;
-              {REFUND_CREDIT_USED_MESSAGE}&rsquo;가 안내됩니다.
+              승인하면 서버가 크레딧 사용으로 자동 거절하고, 거절 사유는 &lsquo;
+              {REFUND_CREDIT_USED_MESSAGE}&rsquo;로 남습니다.
             </Alert>
           )}
 
@@ -866,6 +865,23 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
                 />
               )}
               <InfoRow label="신청일" value={formatDateTime(refund.requestedAt)} />
+              {/*
+                문의 상세는 목록 위 모달이라 따로 주소가 없다. 문의 ID로 검색한 환불 문의 목록으로 보낸다.
+              */}
+              {refund.qnaId && (
+                <InfoRow
+                  label="환불 문의"
+                  value={
+                    <Link
+                      href={`/communication/qna?category=REFUND&keyword=${refund.qnaId}`}
+                      className="inline-flex items-center gap-1 transition hover:text-brand"
+                    >
+                      Q&A 보기
+                      <ExternalLink size={12} />
+                    </Link>
+                  }
+                />
+              )}
               {refund.status === "REQUESTED" && (
                 <RefundJudgment
                   refund={refund}

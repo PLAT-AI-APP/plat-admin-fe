@@ -7,6 +7,7 @@ import type {
 /**
  * 서버는 비어 있는 값을 `null`로 보내고, 화면 타입은 `undefined`(선택 필드)로 다룬다.
  * 결제 응답은 중첩이 깊어(환불 → 풀 사용 → 원장 줄) 필드마다 옮기면 빠뜨리기 쉬워, 통째로 바꾼다.
+ * 환불의 `qnaId`(문의 없이 건 환불은 `null`)도 여기서 `undefined`가 된다.
  */
 const withoutNulls = <T>(value: unknown): T => {
   if (value === null) return undefined as T;

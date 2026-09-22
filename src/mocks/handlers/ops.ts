@@ -2,7 +2,7 @@ import { HttpResponse, delay, http } from "msw";
 import { type AppVersion, type AppVersionFormValues } from "@/type/ops";
 import { appVersions } from "@/mocks/db/ops";
 import { comments } from "@/mocks/db/comment";
-import { qnaItems } from "@/mocks/db/communication";
+import { MOCK_PENDING_QNA_COUNT } from "@/mocks/db/dashboard";
 import { MOCK_DELAY_MS, nextId } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
@@ -26,7 +26,8 @@ export const opsHandlers = [
     await delay(MOCK_DELAY_MS);
 
     return HttpResponse.json({
-      qna: qnaItems.filter((qna) => qna.status === "OPEN").length,
+      // Q&A는 실서버로 나갔지만 대기 건수는 아직 목업이다. 고정값의 이유는 `MOCK_PENDING_QNA_COUNT`에 있다.
+      qna: MOCK_PENDING_QNA_COUNT,
       // 신고가 들어왔는데 아직 노출 중인 댓글이 검수 대상이다.
       comment: comments.filter(
         (comment) => comment.reportCount > 0 && comment.status === "VISIBLE",

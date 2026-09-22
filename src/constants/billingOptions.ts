@@ -168,6 +168,9 @@ export const REFUND_REJECT_REASON_LABEL: Record<RefundRejectReasonCode, string> 
 export const REFUND_CREDIT_USED_MESSAGE =
   "크레딧을 사용하여 환불이 거절되었습니다.";
 
+/** 채팅이 크레딧을 예약 중이라 승인할 수 없을 때 서버가 409와 함께 주는 코드 */
+export const REFUND_CHAT_IN_PROGRESS_CODE = "PAYMENT_REFUND_CHAT_IN_PROGRESS";
+
 /** 채팅이 크레딧을 예약 중일 때. 서버 409 문구와 같은 뜻으로 맞춘다. */
 export const REFUND_CHAT_IN_PROGRESS_MESSAGE =
   "유저에게 완료되지 않은 채팅이 있어 크레딧이 예약 중입니다. 채팅이 끝난 뒤 다시 승인해 주세요.";

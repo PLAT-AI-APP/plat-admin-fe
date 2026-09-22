@@ -450,6 +450,8 @@ export type PaymentOrderRefund = PaymentOrderRefundBase & {
   adminMemo?: string;
   /** 강제 환불이 회수하지 못한 노트(이미 쓴 몫). 회수가 끝나기 전엔 비어 있다. */
   lostCredit?: number;
+  /** 유저 신청으로 함께 열린 환불 문의(Snowflake). 관리자 · 강제 환불처럼 문의 없이 건 환불은 비어 있다. */
+  qnaId?: string;
 };
 
 type PaymentOrderRefundBase = Pick<

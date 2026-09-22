@@ -1,4 +1,5 @@
 import type {
+  FaqCategory,
   NotificationChannel,
   ProactiveTrigger,
   PushStatus,
@@ -20,16 +21,15 @@ import type { TabItem } from "@/components/ui/Tabs";
 export const QNA_STATUS_LABEL: Record<QnaStatus, string> = {
   OPEN: "답변 대기",
   ANSWERED: "답변 완료",
-  CLOSED: "종료",
 };
 
 export const QNA_STATUS_TONE: Record<QnaStatus, BadgeTone> = {
   OPEN: "warning",
   ANSWERED: "success",
-  CLOSED: "neutral",
 };
 
 export const QNA_CATEGORY_LABEL: Record<QnaCategory, string> = {
+  REFUND: "환불",
   ACCOUNT: "계정",
   PAYMENT: "결제",
   CHARACTER: "캐릭터",
@@ -44,6 +44,8 @@ export const QNA_CATEGORY_LABEL: Record<QnaCategory, string> = {
  * `danger`, 결제는 금전이 얽혀 `warning`을 쓴다.
  */
 export const QNA_CATEGORY_TONE: Record<QnaCategory, BadgeTone> = {
+  /* 환불은 승인·거절이 필요한 처리 건이라 일반 결제 문의와 구분되는 `danger`를 쓴다. */
+  REFUND: "danger",
   ACCOUNT: "info",
   PAYMENT: "warning",
   CHARACTER: "brand",
@@ -56,7 +58,6 @@ export const QNA_STATUS_TABS: TabItem<QnaStatus | "">[] = [
   { label: "전체", value: "" },
   { label: QNA_STATUS_LABEL.OPEN, value: "OPEN" },
   { label: QNA_STATUS_LABEL.ANSWERED, value: "ANSWERED" },
-  { label: QNA_STATUS_LABEL.CLOSED, value: "CLOSED" },
 ];
 
 export const QNA_CATEGORY_OPTIONS: SelectOption[] = [
@@ -65,6 +66,38 @@ export const QNA_CATEGORY_OPTIONS: SelectOption[] = [
     label: QNA_CATEGORY_LABEL[category],
     value: category,
   })),
+];
+
+/* ------------------------------- FAQ ------------------------------- */
+
+export const FAQ_CATEGORY_LABEL: Record<FaqCategory, string> = {
+  ACCOUNT: "계정",
+  PAYMENT: "결제",
+  REFUND: "환불",
+  CHARACTER: "캐릭터",
+  CHAT: "대화",
+  ETC: "기타",
+};
+
+export const FAQ_CATEGORY_TONE: Record<FaqCategory, BadgeTone> = {
+  ACCOUNT: "info",
+  PAYMENT: "warning",
+  REFUND: "danger",
+  CHARACTER: "brand",
+  CHAT: "success",
+  ETC: "neutral",
+};
+
+export const FAQ_CATEGORY_OPTIONS: SelectOption[] = (
+  Object.keys(FAQ_CATEGORY_LABEL) as FaqCategory[]
+).map((category) => ({
+  label: FAQ_CATEGORY_LABEL[category],
+  value: category,
+}));
+
+export const FAQ_CATEGORY_FILTER_OPTIONS: SelectOption[] = [
+  { label: "전체 카테고리", value: "" },
+  ...FAQ_CATEGORY_OPTIONS,
 ];
 
 /* --------------------------- 알림 템플릿 --------------------------- */

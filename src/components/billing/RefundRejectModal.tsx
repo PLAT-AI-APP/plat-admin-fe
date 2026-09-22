@@ -26,7 +26,7 @@ interface RefundRejectModalProps {
 /**
  * 환불 거절 사유 입력.
  *
- * **사유는 유저에게 그대로 보인다.** 유저는 돈을 돌려받지 못한 이유를 이 문장으로만 안다.
+ * 사유는 결제 기록으로 남는다. 유저에게는 자동으로 보이지 않으므로 Q&A 답변으로 따로 알린다.
  * 그래서 비워 둘 수 없고, 자주 쓰는 사유는 완성된 문장으로 제공한다.
  *
  * 노트를 써서 거절해야 하는 건은 여기서 거절하지 않아도 된다. 승인하면 서버가
@@ -54,7 +54,7 @@ const RefundRejectModal = ({
       isOpen={refund !== null}
       onClose={onClose}
       title="환불 거절"
-      description="거절하면 돈과 노트는 그대로 두고 요청만 닫습니다. 사유는 유저에게 그대로 보이고 기록으로 남습니다."
+      description="거절하면 돈과 노트는 그대로 두고 요청만 닫습니다. 사유는 기록으로 남고, 유저에게는 Q&A 답변으로 알려 주세요."
       closeOnOverlayClick={false}
       footer={
         <>
@@ -111,7 +111,7 @@ const RefundRejectModal = ({
               maxLength={REFUND_REJECT_REASON_MAX_LENGTH}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              placeholder="유저에게 보일 거절 사유를 입력하거나 위에서 선택해 주세요."
+              placeholder="거절 사유를 입력하거나 위에서 선택해 주세요."
             />
           </div>
         </FormField>
