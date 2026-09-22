@@ -35,6 +35,7 @@ export type PermissionResource =
   | "refundForce"
   | "notice"
   | "qna"
+  | "faq"
   | "notification"
   | "push"
   | "legal"
@@ -232,6 +233,11 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     description: "문의 확인과 답변. 답변은 유저에게 그대로 보인다.",
     actions: ["read", "write", "send"],
   },
+  faq: {
+    label: "FAQ",
+    description: "고객센터의 자주 하는 질문. 노출하면 유저 화면에 바로 보인다.",
+    actions: ["read", "write", "delete"],
+  },
   notification: {
     label: "알림 템플릿",
     description: "서비스 알림 문구",
@@ -357,6 +363,7 @@ export const PERMISSION_CATEGORIES = [
       "bannedWord",
       "systemPrompt",
       "billingProduct",
+      "faq",
       "role",
       "manager",
     ],
