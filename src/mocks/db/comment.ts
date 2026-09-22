@@ -56,14 +56,6 @@ const pickTarget = (seed: number, targetType: CommentTargetType) => {
   return { targetId: universe.universeId, targetName: universe.name };
 };
 
-/**
- * 신고가 들어올 만한 댓글의 ID.
- * 신고 시드(db/report)가 이 중에서 대상을 고르고, 실제 신고 건수를
- * 각 댓글의 reportCount로 되돌려 준다. 그래야 댓글의 "신고 N"과
- * 신고 관리의 "누적 신고"가 같은 수를 가리킨다.
- */
-export const reportableCommentIds: string[] = [];
-
 export const comments: Comment[] = Array.from({ length: 64 }, (_, index) => {
   const seed = index + 1;
   const targetType = pickOne(seed, TARGET_TYPES);
@@ -85,8 +77,6 @@ export const comments: Comment[] = Array.from({ length: 64 }, (_, index) => {
   const createdDaysAgo = Math.floor(index / 2);
   const handler = pickManager(seed * 17);
 
-  if (isReported) reportableCommentIds.push(commentId);
-
   return {
     commentId,
     targetType,
@@ -102,8 +92,8 @@ export const comments: Comment[] = Array.from({ length: 64 }, (_, index) => {
     status,
     // 목업은 직접 내린 건만 만든다. 연쇄 숨김은 서버 조치에서만 생긴다.
     cascaded: false,
-    // 실제 신고 건수는 db/report가 채운다.
-    reportCount: 0,
+    // 신고는 실서버로 옮겨 목업 신고 시드가 없다. 처리 대기 뱃지가 셀 수 있게 건수만 둔다.
+    reportCount: isReported ? randomInt(seed * 19, 1, 12) : 0,
     likeCount: randomInt(seed * 11, 0, 320),
     replyCount: 0,
     hiddenReason: isHandled ? pickOne(seed * 13, HIDDEN_REASONS) : null,

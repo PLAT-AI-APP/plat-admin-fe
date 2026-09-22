@@ -17,12 +17,6 @@ interface PendingEntry {
 /** 뱃지에 실을 항목. 사이드바의 `pendingKey`와 같은 값을 본다. */
 const PENDING_ENTRIES: PendingEntry[] = [
   {
-    key: "report",
-    label: "미처리 신고",
-    href: "/community/reports",
-    hint: "접수 · 검토 중인 신고",
-  },
-  {
     key: "qna",
     label: "답변 대기 문의",
     href: "/communication/qna",
@@ -61,7 +55,7 @@ const PendingBell = () => {
     return () => document.removeEventListener("mousedown", handleClickAway);
   }, [isOpen]);
 
-  const total = data ? data.report + data.qna + data.comment : 0;
+  const total = data ? data.qna + data.comment : 0;
 
   return (
     <div ref={containerRef} className="relative">
