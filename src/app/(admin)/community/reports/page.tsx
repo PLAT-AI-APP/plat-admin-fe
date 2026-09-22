@@ -8,7 +8,7 @@ export default function ReportPage() {
     <>
       <PageHeader
         title="신고 관리"
-        description="캐릭터·댓글·유저에 접수된 신고를 확인하고 처리합니다."
+        description="댓글 · 세계관에 접수된 신고를 대상별 케이스로 묶어 판정하고 조치합니다."
       />
 
       <Suspense fallback={<Skeleton className="h-64 w-full rounded-card" />}>

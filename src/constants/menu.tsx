@@ -207,7 +207,6 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         pendingKey: "report",
         permission: "report:read",
         icon: <Flag size={SUB_ICON_SIZE} />,
-        isMock: true,
       },
     ],
   },

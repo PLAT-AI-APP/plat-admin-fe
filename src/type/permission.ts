@@ -138,7 +138,7 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
   },
   report: {
     label: "신고",
-    description: "캐릭터 · 댓글 · 유저 신고 처리",
+    description: "댓글 · 세계관 신고 판정 · 조치",
     actions: ["read", "write"],
   },
   user: {
