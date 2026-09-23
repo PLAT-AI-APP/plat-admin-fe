@@ -1,8 +1,6 @@
 import type {
   AdjustmentType,
   BillingProduct,
-  CreditPolicy,
-  CreditPolicyKey,
   LedgerEntry,
   LedgerType,
 } from "@/type/billing";
@@ -55,82 +53,6 @@ export const billingProducts: BillingProduct[] = PRODUCT_SEEDS.map(
   }),
 );
 
-/** 정책 문구는 운영자가 보는 그대로여야 하므로 고정값으로 둔다. */
-const POLICY_SEEDS: Record<
-  CreditPolicyKey,
-  { label: string; description: string; amount: number; isEnabled: boolean }
-> = {
-  SIGN_UP_BONUS: {
-    label: "가입 축하 크레딧",
-    description: "신규 가입이 완료된 직후 1회 지급합니다.",
-    amount: 300,
-    isEnabled: true,
-  },
-  PROFILE_COMPLETE_BONUS: {
-    label: "프로필 완성 보상",
-    description: "닉네임과 프로필 이미지를 모두 채우면 계정당 1회 지급합니다.",
-    amount: 50,
-    isEnabled: true,
-  },
-  ADULT_VERIFICATION_BONUS: {
-    label: "성인 인증 완료 보상",
-    description: "본인·성인 인증을 마치면 계정당 1회 지급합니다.",
-    amount: 100,
-    isEnabled: true,
-  },
-  DAILY_ATTENDANCE: {
-    label: "일일 출석 보상",
-    description: "하루 첫 접속 시 자동으로 지급합니다.",
-    amount: 20,
-    isEnabled: true,
-  },
-  ATTENDANCE_STREAK_7DAYS: {
-    label: "7일 연속 출석 보상",
-    description: "출석이 7일 연속으로 이어질 때마다 추가로 지급합니다.",
-    amount: 100,
-    isEnabled: true,
-  },
-  DORMANT_RETURN_BONUS: {
-    label: "휴면 복귀 보상",
-    description: "30일 이상 미접속한 유저가 다시 접속하면 1회 지급합니다.",
-    amount: 150,
-    isEnabled: false,
-  },
-  REFERRAL_BONUS: {
-    label: "친구 초대 보상",
-    description: "초대 링크로 가입한 친구가 첫 대화를 마치면 초대한 유저에게 지급합니다.",
-    amount: 200,
-    isEnabled: true,
-  },
-  INVITEE_BONUS: {
-    label: "초대 가입 보상",
-    description: "초대 링크로 가입한 유저 본인에게 가입 즉시 지급합니다.",
-    amount: 100,
-    isEnabled: true,
-  },
-  FIRST_PURCHASE_BONUS: {
-    label: "첫 결제 보너스",
-    description: "첫 크레딧 결제가 완료되면 구매 크레딧과 별도로 1회 지급합니다.",
-    amount: 500,
-    isEnabled: true,
-  },
-};
-
-export const creditPolicies: CreditPolicy[] = (
-  Object.keys(POLICY_SEEDS) as CreditPolicyKey[]
-).map((policyKey, index) => {
-  const seed = index + 1;
-  const editor = pickManager(seed * 5);
-
-  return {
-    policyKey,
-    ...POLICY_SEEDS[policyKey],
-    updatedAt: daysAgo(randomInt(seed * 3, 2, 60), randomInt(seed * 4, 9, 19)),
-    updatedBy: editor.name,
-    updatedById: editor.managerId,
-  };
-});
-
 /** 사유는 조정 유형과 방향이 맞아야 한다. 지급/차감 사유를 분리해서 관리한다. */
 const ADJUSTMENT_REASONS: Record<AdjustmentType, string[]> = {
   GRANT: [
@@ -154,8 +76,8 @@ const USE_MEMOS = [
   "세계관 확장 사용",
 ];
 
-/** 가입 축하 크레딧. 크레딧 정책(SIGN_UP_BONUS)과 같은 금액을 쓴다. */
-const SIGN_UP_BONUS = POLICY_SEEDS.SIGN_UP_BONUS.amount;
+/** 가입 축하 크레딧. 실서버 크레딧 정책(SIGN_UP_BONUS)의 기본 금액과 같게 둔다. */
+const SIGN_UP_BONUS = 300;
 
 /** ledgerId·balanceAfter를 나중에 채우기 위해 그 전 단계의 장부 형태를 따로 둔다. */
 type DraftLedgerEntry = Omit<LedgerEntry, "ledgerId">;
