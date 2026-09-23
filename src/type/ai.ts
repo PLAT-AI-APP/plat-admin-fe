@@ -77,7 +77,7 @@ export interface AiModel {
  * 여기 적는 것은 서버가 내려주는 값을 좁혀 두는 것일 뿐, 목록의 출처가 아니다.
  */
 export type SystemPromptKey =
-  "SAFETY_FILTER" | "UNIVERSE_CHAT" | "UNIVERSE_REVIEW";
+  "SAFETY_FILTER" | "UNIVERSE_CHAT" | "UNIVERSE_REVIEW" | "RECOMMENDATION";
 
 /**
  * 시스템 프롬프트.
