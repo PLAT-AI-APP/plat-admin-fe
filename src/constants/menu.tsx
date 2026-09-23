@@ -267,7 +267,6 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/billing/credit-policies",
         permission: "creditPolicy:read",
         icon: <Sliders size={SUB_ICON_SIZE} />,
-        isMock: true,
       },
       {
         label: "크레딧 수동 조정",

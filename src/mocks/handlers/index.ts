@@ -1,4 +1,3 @@
-import { billingHandlers } from "./billing";
 import { characterHandlers } from "./character";
 import { communicationHandlers } from "./communication";
 import { dashboardHandlers } from "./dashboard";
@@ -16,9 +15,10 @@ import { searchHandlers } from "./search";
  * 나가는 실서버 요청은 가로채지 않는다.
  *
  * 연동이 끝난 도메인은 목업을 걷어냈다 — 세계관 · 상품 · 해시태그 · 금지어 ·
- * 크레딧 조정 · 장부 · 시스템 프롬프트 · AI 모델 · 공지사항 · 유저 · 공식 계정 ·
- * 댓글 · 신고 · 메인 노출 · 로그 · 배치 · 서버 상태 · 관리자 계정 · 직책 · Q&A · FAQ는
- * 실서버로 그대로 나간다. (Q&A 대기 건수만 아직 목업이다 — `db/dashboard.ts`)
+ * 크레딧 정책 · 크레딧 조정 · 장부 · 시스템 프롬프트 · AI 모델 · 공지사항 · 유저 ·
+ * 공식 계정 · 댓글 · 신고 · 메인 노출 · 로그 · 배치 · 서버 상태 · 관리자 계정 ·
+ * 직책 · Q&A · FAQ는 실서버로 그대로 나간다. (Q&A 대기 건수만 아직 목업이다 —
+ * `db/dashboard.ts`)
  *
  * 관리자 활동 로그는 목업이 모든 변경 요청을 가로채 직접 쌓았지만, 이제 서버가
  * 요청 길목에서 남긴다. 목업이 실서버로 나간 요청은 애초에 보지도 못했으므로
@@ -32,7 +32,6 @@ export const handlers = [
   ...searchHandlers,
   ...dashboardHandlers,
   ...characterHandlers,
-  ...billingHandlers,
   ...communicationHandlers,
   ...legalHandlers,
   ...opsHandlers,
