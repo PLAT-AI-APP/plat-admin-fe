@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { CreditPolicy, CreditPolicyKey } from "@/type/billing";
 import { showAppToast } from "@/lib/toast";
@@ -14,7 +14,7 @@ export const updateCreditPolicy = async (
   policyKey: CreditPolicyKey,
   values: CreditPolicyUpdateValues,
 ) => {
-  const response = await adminAxios.put<CreditPolicy>(
+  const response = await liveAxios.put<CreditPolicy>(
     `/admin/credits/policies/${policyKey}`,
     values,
   );

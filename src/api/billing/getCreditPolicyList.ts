@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { CreditPolicy } from "@/type/billing";
 
 export const getCreditPolicyList = async () => {
-  const response = await adminAxios.get<CreditPolicy[]>("/admin/credits/policies");
+  const response = await liveAxios.get<CreditPolicy[]>("/admin/credits/policies");
 
   return response.data;
 };
