@@ -30,6 +30,8 @@ export type PermissionResource =
   | "creditPolicy"
   | "creditAdjustment"
   | "ledger"
+  | "earning"
+  | "rewardProduct"
   | "payment"
   | "refund"
   | "refundForce"
@@ -163,6 +165,22 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
       "프롬프트 버전 작성과 활성화. 전체 대화 품질에 바로 반영된다.",
     actions: ["read", "write", "delete"],
     isSensitive: true,
+  },
+  earning: {
+    label: "제작자 수익",
+    description: "제작자 수익 포인트 · 적립 · 교환 요청 · 수익 정책",
+    actions: ["read", "write", "adjust", "send"],
+    isSensitive: true,
+    actionLabels: {
+      write: "동결 · 정책 · 적립 재실행",
+      adjust: "포인트 차감",
+      send: "교환 발송 · 반려",
+    },
+  },
+  rewardProduct: {
+    label: "교환 상품",
+    description: "제작자가 수익 포인트로 교환하는 상품권 · 노트 상품",
+    actions: ["read", "write", "delete"],
   },
   billingProduct: {
     label: "결제 상품",
@@ -397,6 +415,8 @@ export const PERMISSION_CATEGORIES = [
       "refund",
       "refundForce",
       "ledger",
+      "earning",
+      "rewardProduct",
     ],
   },
   {

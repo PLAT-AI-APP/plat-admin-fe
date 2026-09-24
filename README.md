@@ -116,13 +116,15 @@ MSW 목업을 쓴다. 목업 핸들러는 전부 `NEXT_PUBLIC_BASE_URI`(아무�
 (`/admin/notices`), AI 모델 · 카탈로그(`/admin/ai/models/**`), 시스템 프롬프트
 (`/admin/ai/prompts`), 상품(`/admin/billing/products`), 크레딧 수동 조정
 (`/admin/credits/adjustments` · `/admin/credits/users`), 장부(`/admin/ledgers/**`), 운영 · 시스템 로그(`/admin/logs/**`), 배치(`/admin/batch/**`),
-서버 상태(`/admin/server/**`), 신고(`/admin/reports/**`).
+서버 상태(`/admin/server/**`), 신고(`/admin/reports/**`), 제작자 수익 · 교환 요청 · 수익 정책
+(`/admin/earnings/**`), 교환 상품(`/admin/reward-products/**`).
 
 **목업(`adminAxios` + MSW)** — 메뉴에 MOCK 배지가 붙고 화면 위에 안내가 뜬다
 (`src/constants/menu.tsx`의 `isMock`). 대시보드, 캐릭터, 채팅 내보내기, 크레딧
 정책, 결제 보존 원장, Q&A, 알림 템플릿, 선제 메시지, 푸시, 약관, 앱 버전.
 메뉴가 아닌 **처리 대기 뱃지(`/admin/ops/pending-counts`)와 ⌘K 엔티티 검색
 (`/admin/search`)도 목업**이라, 목업이 꺼진 운영(`main`)에서는 부르지 않는다.
+단, 처리 대기 뱃지 중 교환 요청 건수(`/admin/earnings/redemptions/pending-count`)는 실서버에서 받는다.
 
 **세션은 실서버가 준다.** 목업 화면이어도 401은 진짜 세션 만료다(`liveAxios`가
 로그인 화면으로 보낸다).

@@ -11,6 +11,7 @@ export type UserDetailTab =
   | "CHARACTER"
   | "COMMENT"
   | "BILLING"
+  | "EARNING"
   | "REPORT"
   | "QNA";
 
@@ -20,6 +21,7 @@ export const USER_DETAIL_TABS: TabItem<UserDetailTab>[] = [
   { label: "캐릭터", value: "CHARACTER" },
   { label: "작성 댓글", value: "COMMENT" },
   { label: "결제 · 크레딧", value: "BILLING" },
+  { label: "제작자 수익", value: "EARNING" },
   { label: "신고 이력", value: "REPORT" },
   { label: "Q&A", value: "QNA" },
 ];

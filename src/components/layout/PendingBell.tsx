@@ -28,6 +28,12 @@ const PENDING_ENTRIES: PendingEntry[] = [
     href: "/community/comments",
     hint: "신고가 들어왔지만 아직 노출 중",
   },
+  {
+    key: "redemption",
+    label: "교환 요청",
+    href: "/earnings/redemptions",
+    hint: "발송을 기다리는 상품권 교환",
+  },
 ];
 
 /**
@@ -55,7 +61,7 @@ const PendingBell = () => {
     return () => document.removeEventListener("mousedown", handleClickAway);
   }, [isOpen]);
 
-  const total = data ? data.qna + data.comment : 0;
+  const total = data.qna + data.comment + data.redemption;
 
   return (
     <div ref={containerRef} className="relative">

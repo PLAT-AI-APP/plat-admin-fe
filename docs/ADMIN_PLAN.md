@@ -85,6 +85,10 @@
 | | | 크레딧 수동 조정 | `/billing/credit-adjustments` | |
 | | | 결제 장부 | `/billing/ledger` | |
 | | | 결제 보존 원장 | `/billing/retention` | **MOCK** · 탈퇴/파기 후에도 법정 5년 보존 · PG 거래번호로 조회 |
+| 7-1 | 제작자 수익 | 제작자 수익 | `/earnings/creators` | 상세 `/earnings/creators/[accountId]` · 동결 · 차감 |
+| | | 교환 요청 | `/earnings/redemptions` | 상품권 수동 발송 · 반려 · 처리 대기 뱃지 |
+| | | 수익 정책 · 교환 상품 | `/earnings/policy` | 정책은 이력으로 쌓인다 · 상품 이미지 업로드 |
+| | | 대사 결과 | `/earnings/reconciliation` | 매일 00:40 대사 · 불일치는 Slack |
 | 8 | 커뮤니케이션 | 공지사항 관리 | `/communication/notices` | 마크다운 |
 | | | Q&A 관리 | `/communication/qna` | **MOCK** |
 | | | 알림 관리 | `/communication/notifications` | **MOCK** |
@@ -343,6 +347,7 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 | 상품 | 실서버 | `/admin/billing/products` | `src/api/billing/` |
 | 크레딧 수동 조정 | 실서버 | `/admin/credits/adjustments` · `/admin/credits/users` | `src/api/billing/` |
 | 결제 장부 | 실서버 | `/admin/ledgers/**` | `src/api/billing/` |
+| 제작자 수익 · 교환 상품 | 실서버 | `/admin/earnings/**` · `/admin/reward-products/**` | `src/api/earning/` |
 | 관리자 활동 · 시스템 로그 | 실서버 | `/admin/logs/**` | `src/api/ops/` |
 | 배치 | 실서버 | `/admin/batch/**` | `src/api/ops/` |
 | 서버 상태 | 실서버 | `/admin/server/**` | `src/api/ops/` |
@@ -355,6 +360,7 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 | 법적 고지 | 목업 | `/admin/legal` | `src/api/legal/` |
 | 앱 버전 | 목업 | `/admin/app-versions` | `src/api/ops/` |
 | 처리 대기 건수 | 목업 | `/admin/ops/pending-counts` | `src/api/ops/getPendingCounts.ts` |
+| 교환 요청 대기 건수 | 실서버 | `/admin/earnings/redemptions/pending-count` | `src/api/earning/getRedemptionList.ts` |
 | 전역 검색(⌘K 엔티티) | 목업 | `/admin/search` | `src/api/search/` |
 
 아래는 경로만으로는 알 수 없는 **계약의 이유**가 있는 도메인만 적는다.

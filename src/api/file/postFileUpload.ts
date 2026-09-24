@@ -9,11 +9,12 @@ import type { AppError } from "@/type/api";
  * 권한이 다르므로 공용 업로드 엔드포인트가 없고, 그 자료의 경로 아래에
  * 하나씩 뚫려 있다. 새 화면이 이미지를 올리려면 서버에 그 경로부터 만든다.
  */
-export type FileUploadType = "MAIN_BANNER";
+export type FileUploadType = "MAIN_BANNER" | "REWARD_PRODUCT";
 
 /** 용도별 업로드 경로. 권한이 그 자료의 것을 그대로 따르므로 경로도 자료 밑에 있다. */
 const UPLOAD_PATH: Record<FileUploadType, string> = {
   MAIN_BANNER: "/admin/main-banners/image",
+  REWARD_PRODUCT: "/admin/reward-products/image",
 };
 
 /** 업로드 응답. URL이 아니라 파일 ID만 온다 — 이미지 URL은 화면이 조립한다. */

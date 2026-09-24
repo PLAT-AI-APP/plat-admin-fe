@@ -429,4 +429,6 @@ export interface BatchJobRun {
 export interface PendingCounts {
   qna: number;
   comment: number;
+  /** 발송 대기 상품권 교환. 수익 서버의 별도 엔드포인트에서 온다. */
+  redemption: number;
 }
