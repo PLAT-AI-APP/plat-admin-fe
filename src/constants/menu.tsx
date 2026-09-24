@@ -288,6 +288,39 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     ],
   },
   {
+    /* 제작자 수익(plat-earning). 대화 수익 포인트와 상품권 · 노트 교환을 관리한다. */
+    key: "earnings",
+    label: "제작자 수익",
+    icon: <Crown size={ICON_SIZE} />,
+    children: [
+      {
+        label: "제작자 수익",
+        href: "/earnings/creators",
+        icon: <Users size={SUB_ICON_SIZE} />,
+        permission: "earning:read",
+      },
+      {
+        label: "교환 요청",
+        href: "/earnings/redemptions",
+        icon: <Package size={SUB_ICON_SIZE} />,
+        permission: "earning:read",
+        pendingKey: "redemption",
+      },
+      {
+        label: "수익 정책 · 교환 상품",
+        href: "/earnings/policy",
+        icon: <Sliders size={SUB_ICON_SIZE} />,
+        permission: "earning:read",
+      },
+      {
+        label: "대사 결과",
+        href: "/earnings/reconciliation",
+        icon: <Scale size={SUB_ICON_SIZE} />,
+        permission: "earning:read",
+      },
+    ],
+  },
+  {
     key: "communication",
     label: "커뮤니케이션",
     icon: <Megaphone size={ICON_SIZE} />,
