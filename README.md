@@ -37,11 +37,13 @@ npm run dev
 `spring.profiles.active`와 같은 자리다. 프로파일 하나가 실서버 주소 · 이미지
 주소 · 목업 여부를 함께 정한다. 값의 출처는 `src/config/appEnv.ts` 하나다.
 
-| 프로파일 | 실서버 · 이미지 | MSW 목업 |
-|---|---|---|
-| `local` | `http://localhost:8080` (로컬 `plat-be`) | 켬 |
-| `develop` | `https://api-dev.plat.so` | 켬 |
-| `main` | `https://api.plat.so` | **끔** |
+| 프로파일 | 실서버(관리자 API) | 이미지 | MSW 목업 |
+|---|---|---|---|
+| `local` | `http://localhost:8081` (로컬 `plat-be` admin 앱) | `http://localhost:8080` | 켬 |
+| `develop` | `https://admin-api-dev.plat.so` | `https://api-dev.plat.so` | 켬 |
+| `main` | `https://admin-api.plat.so` | `https://api.plat.so` | **끔** |
+
+`plat-be` 는 앱이 나뉘어 있어 관리자 API(`/admin/**`)는 admin 앱, 이미지(`/images/**`)는 api 앱이 받는다.
 
 **브랜치 이름이 곧 프로파일 이름이다.** `main` · `develop` · `local` 브랜치를
 체크아웃하고 `npm run dev`만 치면 그 환경으로 뜬다. `feat/**` 같은 작업
@@ -49,7 +51,7 @@ npm run dev
 
 ```
 ▲ 환경 develop(개발) · 브랜치 develop
-  실서버 https://api-dev.plat.so · 이미지 https://api-dev.plat.so · 목업 켬
+  실서버 https://admin-api-dev.plat.so · 이미지 https://api-dev.plat.so · 목업 켬
 ```
 
 브랜치와 다른 환경을 보려면 스크립트로 고른다.
