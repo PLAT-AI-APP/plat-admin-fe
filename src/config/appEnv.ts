@@ -4,9 +4,12 @@
  * Spring 의 `spring.profiles.active` 와 같은 자리다. 어느 서버를 볼지는
  * `.env` 를 손으로 고쳐서가 아니라 **프로파일 하나로** 정해진다.
  *
- *   local   → 로컬 plat-be (`http://localhost:8080`)
- *   develop → 개발 서버 (`https://api-dev.plat.so`)
- *   main    → 운영 서버 (`https://api.plat.so`)
+ *   local   → 로컬 plat-be 관리자 앱 (`http://localhost:8081`)
+ *   develop → 개발 서버 (`https://admin-api-dev.plat.so`)
+ *   main    → 운영 서버 (`https://admin-api.plat.so`)
+ *
+ * plat-be 는 앱이 나뉘어 있다. 관리자 API(`/admin/**`)는 admin 앱이, 이미지(`/images/**`)는
+ * api 앱이 받으므로 실서버 주소와 이미지 주소가 다르다.
  *
  * 프로파일은 `next.config.ts` 가 정하고(환경 변수 → CI 브랜치 → git 브랜치),
  * 여기서 나온 값들을 `NEXT_PUBLIC_*` 로 번들에 심는다. 그래서 화면 코드는
@@ -43,9 +46,9 @@ export const profileOfBranch = (
 interface AppProfilePreset {
   /** 화면·로그에 쓰는 이름. */
   label: string;
-  /** 실서버(plat-be) 오리진. */
+  /** 실서버(plat-be admin 앱) 오리진. */
   liveBaseUri: string;
-  /** 이미지 서빙 오리진(`GET /images/{type}/{fileId}/{variant}`). 보통 실서버와 같다. */
+  /** 이미지 서빙 오리진(`GET /images/{type}/{fileId}/{variant}`). plat-be api 앱이 받는다. */
   imageBaseUri: string;
   /** MSW 목업 워커를 띄우는가. */
   mocking: boolean;
@@ -61,19 +64,19 @@ interface AppProfilePreset {
 export const APP_PROFILE_PRESETS: Record<AppProfile, AppProfilePreset> = {
   local: {
     label: "로컬",
-    liveBaseUri: "http://localhost:8080",
+    liveBaseUri: "http://localhost:8081",
     imageBaseUri: "http://localhost:8080",
     mocking: true,
   },
   develop: {
     label: "개발",
-    liveBaseUri: "https://api-dev.plat.so",
+    liveBaseUri: "https://admin-api-dev.plat.so",
     imageBaseUri: "https://api-dev.plat.so",
     mocking: true,
   },
   main: {
     label: "운영",
-    liveBaseUri: "https://api.plat.so",
+    liveBaseUri: "https://admin-api.plat.so",
     imageBaseUri: "https://api.plat.so",
     mocking: false,
   },
@@ -83,7 +86,7 @@ export const APP_PROFILE_PRESETS: Record<AppProfile, AppProfilePreset> = {
  * 목업 구간의 관리자 API 오리진. **아무것도 뜨지 않는 포트**여야 한다.
  *
  * 실서버와 오리진이 같으면 목업 워커가 실서버 요청까지 가로챈다.
- * 로컬 plat-be 가 8080 이므로 여기는 8080 이 아니어야 한다.
+ * 로컬 plat-be 가 8080~8083 이므로 그 포트가 아니어야 한다.
  */
 export const MOCK_ORIGIN = "http://localhost:9090";
 
