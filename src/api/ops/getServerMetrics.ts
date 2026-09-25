@@ -45,7 +45,7 @@ export interface ServerMetricPoint {
   memoryUsage: number | null;
   memoryUsedBytes: number | null;
   /**
-   * JVM 힙 사용률 (%). null의 의미는 위와 같다.
+   * JVM 힙 사용률 (%, 상한 -Xmx 대비). null의 의미는 위와 같다.
    *
    * 머신 메모리와 따로 온다. 머신에 여유가 있어도 힙이 차면 GC가 돌기 시작하므로,
    * 느려진 시각을 되짚을 때 두 선을 겹쳐 봐야 원인이 어느 쪽인지 갈린다.
@@ -57,10 +57,23 @@ export interface ServerMetricPoint {
   errorCount: number;
 }
 
-export const getServerMetrics = async (range: MetricRange) => {
+/**
+ * 추이를 거르는 조건. 서비스(`app`)를 고르지 않으면 서로 다른 JVM의 힙이 한 선에
+ * 섞여 어느 앱이 찼는지 읽을 수 없으므로, 화면은 서비스를 골라 부른다.
+ */
+export interface ServerMetricFilter {
+  app: string;
+  /** 비우면 그 서비스의 모든 인스턴스를 묶는다. */
+  instance?: string;
+}
+
+export const getServerMetrics = async (
+  range: MetricRange,
+  { app, instance }: ServerMetricFilter,
+) => {
   const response = await liveAxios.get<ServerMetricPoint[]>(
     "/server/metrics",
-    { params: { range } },
+    { params: { range, app, instance: instance || undefined } },
   );
 
   return response.data;
@@ -71,12 +84,16 @@ export const getServerMetrics = async (range: MetricRange) => {
  *
  * CPU · 메모리 · 힙은 서버가 1분마다 남긴 표본을 구간 단위로 묶은 값이고,
  * 요청 수 · 오류 수는 액세스 로그에서 셉니다. 같은 사실을 두 곳에 쌓지 않으려고
- * 수집 경로를 나눠 두었습니다.
+ * 수집 경로를 나눠 두었습니다. 요청 수는 액세스 로그에 인스턴스가 없어 서비스
+ * 단위까지만 걸립니다.
  */
-export const useServerMetricsQuery = (range: MetricRange) => {
+export const useServerMetricsQuery = (
+  range: MetricRange,
+  filter: ServerMetricFilter,
+) => {
   return useQuery<ServerMetricPoint[], AppError>({
-    queryKey: ["get-server-metrics", range],
-    queryFn: () => getServerMetrics(range),
+    queryKey: ["get-server-metrics", range, filter.app, filter.instance ?? ""],
+    queryFn: () => getServerMetrics(range, filter),
     staleTime: 0,
     gcTime: 0,
     retry: false,

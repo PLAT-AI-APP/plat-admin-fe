@@ -290,9 +290,13 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     actions: ["read", "write"],
   },
   server: {
+    /*
+      조회와 달리 **앱 재시작**이 붙는다. 서비스마다 한 대뿐이면 재시작하는
+      동안 그 서비스의 요청이 끊기므로 write로 뗀다.
+    */
     label: "서버 상태",
-    description: "서버와 외부 의존성 상태",
-    actions: ["read"],
+    description: "서버 · 서비스 상태 조회와 앱 재시작",
+    actions: ["read", "write"],
   },
   log: {
     /*

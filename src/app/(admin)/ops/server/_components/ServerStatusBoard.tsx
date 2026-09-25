@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useServerHealthQuery } from "@/api/ops/getServerHealth";
+import { useServerServicesQuery } from "@/api/ops/getServerServices";
 import {
   useServerMetricsQuery,
   type MetricRange,
@@ -16,9 +17,12 @@ import MemoryDetailCard from "./MemoryDetailCard";
 import MetricTile from "./MetricTile";
 import ResourceUsageChart from "./ResourceUsageChart";
 import ServerOverviewCard from "./ServerOverviewCard";
+import ServiceStatusCard, { isRestartPhase } from "./ServiceStatusCard";
 import {
   DANGER_THRESHOLD,
+  DEFAULT_SERVICE,
   WARNING_THRESHOLD,
+  getServiceLabel,
 } from "@/app/(admin)/ops/server/_constants/serverStatus";
 import {
   useAutoRefresh,
@@ -40,29 +44,52 @@ const collectWarnings = (
 
 const ServerStatusBoard = () => {
   const [range, setRange] = useState<MetricRange>("24h");
+  /* 추이는 서비스 하나씩 본다. 네 앱의 힙을 한 선에 섞으면 어느 앱이 찼는지 읽을 수 없다. */
+  const [selectedApp, setSelectedApp] = useState(DEFAULT_SERVICE);
   const [autoRefreshSeconds, setAutoRefreshSeconds] =
     useState<AutoRefreshSeconds>(0);
 
   const healthQuery = useServerHealthQuery();
-  const metricsQuery = useServerMetricsQuery(range);
+  const servicesQuery = useServerServicesQuery();
+  const metricsQuery = useServerMetricsQuery(range, { app: selectedApp });
 
   const health = healthQuery.data;
+  const services = servicesQuery.data ?? [];
   const metrics = metricsQuery.data ?? [];
-  const isRefreshing = healthQuery.isFetching || metricsQuery.isFetching;
+  const isRefreshing =
+    healthQuery.isFetching ||
+    servicesQuery.isFetching ||
+    metricsQuery.isFetching;
+
+  /* JVM 힙 칸은 고른 서비스의 첫 번째 살아 있는 인스턴스를 보여 준다. */
+  const selectedService = services.find(
+    (service) => service.app === selectedApp,
+  );
+  const selectedInstance = selectedService?.instances.find(
+    (instance) => instance.status === "UP",
+  );
+  /* 재시작 중인 서비스는 계획된 중단이라 경고에서 뺀다. 카드 배지가 "재시작 중"으로 따로 알린다. */
+  const unhealthyServices = services.filter(
+    (service) =>
+      service.status !== "UP" &&
+      !service.instances.some((instance) => isRestartPhase(instance.phase)),
+  );
 
   /** 자동 새로고침은 조용히 다시 부른다 — 5초마다 성공 토스트가 뜨면 화면을 쓸 수 없다. */
   const { secondsLeft } = useAutoRefresh(autoRefreshSeconds, () => {
     void healthQuery.refetch();
+    void servicesQuery.refetch();
     void metricsQuery.refetch();
   });
 
   /**
-   * 새로고침 버튼은 두 조회를 함께 다시 부른다.
+   * 새로고침 버튼은 세 조회를 함께 다시 부른다.
    * refetch는 실패해도 reject하지 않으므로 결과 객체로 성공 여부를 판단한다.
    */
   const handleRefresh = async () => {
     const [healthResult] = await Promise.all([
       healthQuery.refetch(),
+      servicesQuery.refetch(),
       metricsQuery.refetch(),
     ]);
 
@@ -110,7 +137,22 @@ const ServerStatusBoard = () => {
   const warnings = collectWarnings([
     { label: "CPU", value: health.cpu.systemUsage },
     { label: "메모리", value: health.memory.usage },
-    { label: "JVM 힙", value: health.jvm.heapUsage },
+    /*
+     * 서비스별로는 컨테이너 메모리만 경고한다. 힙 사용률은 분모가 committed라 JVM이
+     * 필요한 만큼만 받아 두는 탓에 평소에도 80~90%를 오간다 — 경고로 올리면 늘 떠 있어
+     * 아무도 읽지 않게 된다. 넘으면 OOMKilled로 죽는 선은 컨테이너 한도 쪽이다.
+     */
+    ...services.flatMap((service) =>
+      service.instances
+        .filter(
+          (instance) =>
+            instance.status === "UP" && instance.containerMemoryUsage !== null,
+        )
+        .map((instance) => ({
+          label: `${getServiceLabel(service.app)} 컨테이너 메모리`,
+          value: instance.containerMemoryUsage as number,
+        })),
+    ),
     ...health.disks.map((disk) => ({
       label: `디스크 ${disk.mountPoint}`,
       value: disk.usage,
@@ -119,6 +161,15 @@ const ServerStatusBoard = () => {
 
   return (
     <>
+      {unhealthyServices.length > 0 && (
+        <Alert tone="danger" title="응답하지 않는 서비스가 있습니다.">
+          {unhealthyServices
+            .map((service) => getServiceLabel(service.app))
+            .join(" · ")}{" "}
+          — 아래 서비스별 상태에서 마지막 알림 시각을 확인해 주세요.
+        </Alert>
+      )}
+
       {warnings.length > 0 && (
         <Alert tone="warning" title="임계치를 넘은 지표가 있습니다.">
           {warnings.join(" · ")} — 무엇이 차지하고 있는지 확인해 주세요.
@@ -151,11 +202,17 @@ const ServerStatusBoard = () => {
           targetId="server-memory"
         />
         <MetricTile
-          label="JVM 힙"
-          value={health.jvm.heapUsage}
-          amount={`${formatBytes(health.jvm.heapUsedBytes)} / ${formatBytes(health.jvm.heapCommittedBytes)}`}
+          label={`JVM 힙 · ${getServiceLabel(selectedApp)}`}
+          /* 서비스 카드 · 추이 차트와 같은 기준 — 상한(-Xmx) 대비. */
+          value={selectedInstance?.heapUsage ?? 0}
+          fallbackValue={selectedInstance ? undefined : "-"}
+          amount={
+            selectedInstance
+              ? `${formatBytes(selectedInstance.heapUsedBytes)} / 상한 ${formatBytes(selectedInstance.heapMaxBytes)}`
+              : "응답하는 인스턴스 없음"
+          }
           trend={metrics.map((point) => point.heapUsage)}
-          targetId="server-trend"
+          targetId="server-services"
         />
         <MetricTile
           label="디스크"
@@ -169,6 +226,14 @@ const ServerStatusBoard = () => {
         />
       </div>
 
+      <ServiceStatusCard
+        services={services}
+        isLoading={servicesQuery.isLoading}
+        isError={servicesQuery.isError}
+        selectedApp={selectedApp}
+        onSelect={setSelectedApp}
+      />
+
       <CpuDetailCard cpu={health.cpu} />
 
       <MemoryDetailCard
@@ -177,6 +242,7 @@ const ServerStatusBoard = () => {
       />
 
       <ResourceUsageChart
+        serviceLabel={getServiceLabel(selectedApp)}
         metrics={metrics}
         range={range}
         onRangeChange={setRange}
