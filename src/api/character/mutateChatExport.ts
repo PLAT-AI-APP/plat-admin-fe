@@ -7,7 +7,7 @@ import { showAppToast } from "@/lib/toast";
 
 export const createChatExportJob = async (values: ChatExportSchema) => {
   const response = await adminAxios.post<ChatExportJob>(
-    "/admin/chat-exports",
+    "/chat-exports",
     values,
   );
 

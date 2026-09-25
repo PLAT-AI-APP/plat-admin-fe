@@ -6,7 +6,7 @@ import type { AppError } from "@/type/api";
 import type { AdminProfile } from "@/type/auth";
 
 export const getMe = async () => {
-  const response = await liveAxios.get<AdminProfile>("/admin/auth/me");
+  const response = await liveAxios.get<AdminProfile>("/auth/me");
 
   return response.data;
 };

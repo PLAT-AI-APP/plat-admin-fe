@@ -16,7 +16,7 @@ export const useEarningPoliciesQuery = () =>
   usePermittedQuery<EarningPolicy[]>("earning:read", {
     queryKey: earningQueryKeys.policies(),
     queryFn: async () =>
-      (await liveAxios.get<EarningPolicyResponse[]>("/admin/earnings/policies")).data.map(
+      (await liveAxios.get<EarningPolicyResponse[]>("/earnings/policies")).data.map(
         toEarningPolicy,
       ),
   });
@@ -26,7 +26,7 @@ export const useRewardProductListQuery = () =>
   usePermittedQuery<RewardProduct[]>("rewardProduct:read", {
     queryKey: earningQueryKeys.rewardProducts(),
     queryFn: async () =>
-      (await liveAxios.get<RewardProductAdminResponse[]>("/admin/reward-products")).data.map(
+      (await liveAxios.get<RewardProductAdminResponse[]>("/reward-products")).data.map(
         toRewardProduct,
       ),
   });
@@ -37,7 +37,7 @@ export const useEarningReconciliationsQuery = (days = 7) =>
     queryKey: earningQueryKeys.reconciliations(days),
     queryFn: async () =>
       (
-        await liveAxios.get<EarningReconciliationResponse[]>("/admin/earnings/reconciliations", {
+        await liveAxios.get<EarningReconciliationResponse[]>("/earnings/reconciliations", {
           params: { days },
         })
       ).data.map(toEarningReconciliation),

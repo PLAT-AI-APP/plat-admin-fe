@@ -4,7 +4,7 @@ import type { AiModel } from "@/type/ai";
 import type { AppError } from "@/type/api";
 
 export const getAiModelList = async () => {
-  const response = await liveAxios.get<AiModel[]>("/admin/ai/models");
+  const response = await liveAxios.get<AiModel[]>("/ai/models");
 
   return response.data;
 };

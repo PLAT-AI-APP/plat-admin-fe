@@ -4,7 +4,7 @@ import type { SystemPrompt } from "@/type/ai";
 import type { AppError } from "@/type/api";
 
 export const getSystemPromptList = async () => {
-  const response = await liveAxios.get<SystemPrompt[]>("/admin/ai/prompts");
+  const response = await liveAxios.get<SystemPrompt[]>("/ai/prompts");
 
   return response.data;
 };

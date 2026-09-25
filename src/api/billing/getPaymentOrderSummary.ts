@@ -4,7 +4,7 @@ import type { PaymentOrderSummary } from "@/type/billing";
 
 export const getPaymentOrderSummary = async (userId?: string) => {
   const response = await liveAxios.get<PaymentOrderSummary>(
-    "/admin/payment-orders/summary",
+    "/payment-orders/summary",
     { params: userId ? { userId } : undefined },
   );
 

@@ -10,7 +10,7 @@ import {
 
 export const createNotice = async (values: NoticeFormValues): Promise<NoticeDetail> => {
   const response = await liveAxios.post<NoticeDetailResponse>(
-    "/admin/notices",
+    "/notices",
     values,
   );
 
@@ -22,7 +22,7 @@ export const updateNotice = async (
   values: NoticeFormValues,
 ) => {
   const response = await liveAxios.put<NoticeDetailResponse>(
-    `/admin/notices/${noticeId}`,
+    `/notices/${noticeId}`,
     values,
   );
 
@@ -33,11 +33,11 @@ export const updateNoticeStatus = async (
   noticeId: number,
   status: NoticeStatus,
 ) => {
-  await liveAxios.patch(`/admin/notices/${noticeId}/status`, { status });
+  await liveAxios.patch(`/notices/${noticeId}/status`, { status });
 };
 
 export const deleteNotice = async (noticeId: number) => {
-  await liveAxios.delete(`/admin/notices/${noticeId}`);
+  await liveAxios.delete(`/notices/${noticeId}`);
 };
 
 /** 공지 추가·수정·상태 변경·삭제 후 목록과 열려 있던 상세를 갱신합니다. */

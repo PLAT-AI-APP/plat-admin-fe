@@ -3,7 +3,7 @@ import { usePermittedQuery } from "@/api/usePermittedQuery";
 import type { AdminRole } from "@/type/ops";
 
 export const getAdminRoleList = async () => {
-  const response = await liveAxios.get<AdminRole[]>("/admin/roles");
+  const response = await liveAxios.get<AdminRole[]>("/roles");
 
   return response.data;
 };

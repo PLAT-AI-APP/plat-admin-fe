@@ -3,7 +3,7 @@ import { usePermittedQuery } from "@/api/usePermittedQuery";
 import type { QnaItem } from "@/type/communication";
 
 export const getQnaDetail = async (qnaId: string) => {
-  const response = await liveAxios.get<QnaItem>(`/admin/qna/${qnaId}`);
+  const response = await liveAxios.get<QnaItem>(`/qna/${qnaId}`);
 
   return response.data;
 };

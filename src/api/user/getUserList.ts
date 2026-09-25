@@ -87,7 +87,7 @@ export const getUserList = async (
   params: UserListParams,
 ): Promise<PageResponse<User>> => {
   const response = await liveAxios.get<PageWith<UserSummaryResponse>>(
-    "/admin/users",
+    "/users",
     { params: toRequestParams(params) },
   );
 

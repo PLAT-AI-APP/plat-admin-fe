@@ -8,7 +8,7 @@ export interface LegalDocumentListParams {
 }
 
 export const getLegalDocumentList = async (params: LegalDocumentListParams) => {
-  const response = await adminAxios.get<LegalDocument[]>("/admin/legal", {
+  const response = await adminAxios.get<LegalDocument[]>("/legal", {
     params,
   });
 

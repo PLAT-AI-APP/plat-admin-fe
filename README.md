@@ -43,7 +43,7 @@ npm run dev
 | `develop` | `https://admin-api-dev.plat.so` | `https://api-dev.plat.so` | 켬 |
 | `main` | `https://admin-api.plat.so` | `https://api.plat.so` | **끔** |
 
-`plat-be` 는 앱이 나뉘어 있어 관리자 API(`/admin/**`)는 admin 앱, 이미지(`/images/**`)는 api 앱이 받는다.
+`plat-be` 는 앱이 나뉘어 있어 관리자 API는 admin 앱, 이미지(`/images/**`)는 api 앱이 받는다.
 
 **브랜치 이름이 곧 프로파일 이름이다.** `main` · `develop` · `local` 브랜치를
 체크아웃하고 `npm run dev`만 치면 그 환경으로 뜬다. `feat/**` 같은 작업
@@ -98,9 +98,9 @@ npm run dev:local
 진짜로 붙었는지 아무도 구분하지 못한다. 목업을 끄면 죽은 오리진(`:9090`)을
 둘 이유도 없어서 `adminAxios`도 실서버를 본다.
 
-관리자 API(`/admin/**`)는 별도 서버가 아니라 **`plat-boot`이 서비스 API와 같은
-포트에서 함께 서빙한다.** `SecurityConfig`의 `adminFilterChain`이
-`/admin/**`을 먼저 잡아 관리자 토큰으로만 통과시킨다.
+관리자 API는 **`plat-be`의 admin 앱이 따로 서빙한다**(`admin-api-dev.plat.so` · 로컬 `:8081`).
+어느 앱인지는 도메인이 가르므로 경로에 `/admin` prefix가 없다(`/auth/login`, `/users` …).
+admin 앱의 `adminFilterChain`이 들어오는 모든 요청을 관리자 토큰으로만 통과시킨다.
 
 **목업과 실서버가 함께 돈다.** 연동이 끝난 도메인은 `src/api/index.ts`의
 `liveAxios`로 실서버에 붙고, 서버에 아직 엔드포인트가 없는 도메인만 `adminAxios` +
@@ -110,23 +110,23 @@ MSW 목업을 쓴다. 목업 핸들러는 전부 `NEXT_PUBLIC_BASE_URI`(아무�
 
 ### 실서버 연동 현황
 
-**실서버(`liveAxios`)** — 로그인 · 내 계정(`/admin/auth/**`), 관리자 계정
-(`/admin/managers`), 직책(`/admin/roles`), 유저(`/admin/users`), 세계관
-(`/admin/universes`), 공식 계정(`/admin/official-accounts`), 해시태그 · 제안
-(`/admin/hashtags/**`), 금지어(`/admin/banned-words`), 댓글(`/admin/comments`),
-메인 배너(`/admin/main-banners`), 홈 편성(`/admin/home-sections`), 공지사항
-(`/admin/notices`), AI 모델 · 카탈로그(`/admin/ai/models/**`), 시스템 프롬프트
-(`/admin/ai/prompts`), 상품(`/admin/billing/products`), 크레딧 수동 조정
-(`/admin/credits/adjustments` · `/admin/credits/users`), 장부(`/admin/ledgers/**`), 운영 · 시스템 로그(`/admin/logs/**`), 배치(`/admin/batch/**`),
-서버 상태(`/admin/server/**`), 신고(`/admin/reports/**`), 제작자 수익 · 교환 요청 · 수익 정책
-(`/admin/earnings/**`), 교환 상품(`/admin/reward-products/**`).
+**실서버(`liveAxios`)** — 로그인 · 내 계정(`/auth/**`), 관리자 계정
+(`/managers`), 직책(`/roles`), 유저(`/users`), 세계관
+(`/universes`), 공식 계정(`/official-accounts`), 해시태그 · 제안
+(`/hashtags/**`), 금지어(`/banned-words`), 댓글(`/comments`),
+메인 배너(`/main-banners`), 홈 편성(`/home-sections`), 공지사항
+(`/notices`), AI 모델 · 카탈로그(`/ai/models/**`), 시스템 프롬프트
+(`/ai/prompts`), 상품(`/billing/products`), 크레딧 수동 조정
+(`/credits/adjustments` · `/credits/users`), 장부(`/ledgers/**`), 운영 · 시스템 로그(`/logs/**`), 배치(`/batch/**`),
+서버 상태(`/server/**`), 신고(`/reports/**`), 제작자 수익 · 교환 요청 · 수익 정책
+(`/earnings/**`), 교환 상품(`/reward-products/**`).
 
 **목업(`adminAxios` + MSW)** — 메뉴에 MOCK 배지가 붙고 화면 위에 안내가 뜬다
 (`src/constants/menu.tsx`의 `isMock`). 대시보드, 캐릭터, 채팅 내보내기, 크레딧
 정책, 결제 보존 원장, Q&A, 알림 템플릿, 선제 메시지, 푸시, 약관, 앱 버전.
-메뉴가 아닌 **처리 대기 뱃지(`/admin/ops/pending-counts`)와 ⌘K 엔티티 검색
-(`/admin/search`)도 목업**이라, 목업이 꺼진 운영(`main`)에서는 부르지 않는다.
-단, 처리 대기 뱃지 중 교환 요청 건수(`/admin/earnings/redemptions/pending-count`)는 실서버에서 받는다.
+메뉴가 아닌 **처리 대기 뱃지(`/ops/pending-counts`)와 ⌘K 엔티티 검색
+(`/search`)도 목업**이라, 목업이 꺼진 운영(`main`)에서는 부르지 않는다.
+단, 처리 대기 뱃지 중 교환 요청 건수(`/earnings/redemptions/pending-count`)는 실서버에서 받는다.
 
 **세션은 실서버가 준다.** 목업 화면이어도 401은 진짜 세션 만료다(`liveAxios`가
 로그인 화면으로 보낸다).
@@ -134,7 +134,7 @@ MSW 목업을 쓴다. 목업 핸들러는 전부 `NEXT_PUBLIC_BASE_URI`(아무�
 ### 권한 키
 
 권한 모델의 출처는 서버의 `AdminResource` · `AdminAction` enum 하나다
-(`GET /admin/permissions`가 그대로 내려 준다). 어드민은 같은 목록을
+(`GET /permissions`가 그대로 내려 준다). 어드민은 같은 목록을
 `src/type/permission.ts`에 **라벨 · 설명 · 갈래와 함께** 들고 있다 — 서버에는
 없는 정보라 화면이 직접 가진다. **서버에 자원이 늘면 이 파일도 함께 고친다.**
 빠뜨리면 그 권한은 직책 편집 화면에 나타나지 않아 아무도 켤 수 없다.
@@ -177,7 +177,7 @@ sonner · recharts · MSW v2
 `BCryptPasswordEncoder(12)`로 생성해 넣는다).
 
 `password_updated_at`이 `NULL`인 계정은 **임시 비밀번호 상태**다. 서버가
-`PASSWORD_CHANGE_REQUIRED` 권한 하나만 주므로 `/admin/auth/**` 밖이 전부
+`PASSWORD_CHANGE_REQUIRED` 권한 하나만 주므로 `/auth/**` 밖이 전부
 막히고, 콘솔은 비밀번호 변경 모달을 강제로 띄운다. 바꾸면 같은 토큰이 곧바로
 직책의 전체 권한을 받는다(권한은 토큰이 아니라 요청마다 직책에서 읽는다).
 
@@ -202,7 +202,7 @@ npx tsc --noEmit && npx eslint src
 
 **업로드는 자료 경로 아래에 있다.** 관리자 업로드는 자료마다 권한이 달라 공용 업로드
 엔드포인트가 없다. 지금 서버가 여는 것은 배너 하나다 —
-`POST /admin/main-banners/image` (multipart, `file` 필드) → `201 { fileId }`.
+`POST /main-banners/image` (multipart, `file` 필드) → `201 { fileId }`.
 화면에서는 `ImageUploadField` 하나만 쓰면 되고(`src/components/ui/ImageUploadField.tsx`),
 폼은 `fileId`만 들고 있다가 생성 · 수정 API에 `imageFileId`로 넘긴다.
 

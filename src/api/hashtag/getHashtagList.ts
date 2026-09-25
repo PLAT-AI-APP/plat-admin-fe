@@ -64,7 +64,7 @@ const toRequestParams = (filters: HashtagFilterParams) => ({
 export const getHashtagList = async (
   filters: HashtagFilterParams,
 ): Promise<Hashtag[]> => {
-  const response = await liveAxios.get<HashtagListResponse>("/admin/hashtags", {
+  const response = await liveAxios.get<HashtagListResponse>("/hashtags", {
     params: toRequestParams(filters),
   });
 

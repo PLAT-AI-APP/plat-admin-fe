@@ -42,7 +42,7 @@ export const toBanner = (banner: BannerResponse): Banner => ({
 
 export const getBannerList = async (language: ServiceLanguage) => {
   const response = await liveAxios.get<BannerResponse[]>(
-    "/admin/main-banners",
+    "/main-banners",
     { params: { language } },
   );
 
@@ -51,7 +51,7 @@ export const getBannerList = async (language: ServiceLanguage) => {
 
 export const getBannerLanguageCounts = async () => {
   const response = await liveAxios.get<LanguageCount[]>(
-    "/admin/main-banners/languages",
+    "/main-banners/languages",
   );
 
   return response.data;

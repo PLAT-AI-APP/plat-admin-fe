@@ -12,7 +12,7 @@ export const registerOfficialAccount = async (
   userId: string,
 ): Promise<OfficialAccount> => {
   const response = await liveAxios.post<OfficialAccountResponse>(
-    "/admin/official-accounts",
+    "/official-accounts",
     { userId },
   );
 
@@ -20,7 +20,7 @@ export const registerOfficialAccount = async (
 };
 
 export const releaseOfficialAccount = async (userId: string) => {
-  await liveAxios.delete(`/admin/official-accounts/${userId}`);
+  await liveAxios.delete(`/official-accounts/${userId}`);
 };
 
 /**

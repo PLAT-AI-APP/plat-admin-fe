@@ -11,7 +11,7 @@ const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 const LIMIT_PER_TYPE = 5;
 
 export const searchHandlers = [
-  http.get(`${BASE_URI}/admin/search`, async ({ request }) => {
+  http.get(`${BASE_URI}/search`, async ({ request }) => {
     const url = new URL(request.url);
     const keyword = url.searchParams.get("keyword") ?? "";
 

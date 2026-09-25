@@ -35,7 +35,7 @@ export const resolvePaymentAnomaly = async ({
   memo,
 }: ResolveAnomalyRequest) => {
   const response = await liveAxios.post<unknown>(
-    `/admin/payment-orders/${orderId}/anomalies/${anomalyId}/resolve`,
+    `/payment-orders/${orderId}/anomalies/${anomalyId}/resolve`,
     { memo },
   );
 
@@ -47,7 +47,7 @@ export const approvePaymentRefund = async ({
   refundId,
 }: PaymentRefundTarget) => {
   const response = await liveAxios.post<RefundDecisionResponse>(
-    `/admin/payment-orders/${orderId}/refunds/${refundId}/approve`,
+    `/payment-orders/${orderId}/refunds/${refundId}/approve`,
   );
 
   return response.data;
@@ -59,7 +59,7 @@ export const rejectPaymentRefund = async ({
   reason,
 }: PaymentRefundTarget & { reason: string }) => {
   const response = await liveAxios.post<RefundDecisionResponse>(
-    `/admin/payment-orders/${orderId}/refunds/${refundId}/reject`,
+    `/payment-orders/${orderId}/refunds/${refundId}/reject`,
     { reason },
   );
 
@@ -80,7 +80,7 @@ export interface ForceRefundRequest extends AdminRefundRequest {
 
 export const createForceRefund = async ({ orderId, ...body }: ForceRefundRequest) => {
   const response = await liveAxios.post<unknown>(
-    `/admin/payment-orders/${orderId}/refunds/force`,
+    `/payment-orders/${orderId}/refunds/force`,
     body,
   );
 
@@ -96,7 +96,7 @@ const latestRefundOf = (order: PaymentOrderDetail) =>
 
 export const retryPaymentFulfillment = async (orderId: string) => {
   const response = await liveAxios.post<unknown>(
-    `/admin/payment-orders/${orderId}/fulfillment/retry`,
+    `/payment-orders/${orderId}/fulfillment/retry`,
   );
 
   return toPaymentOrderDetail(response.data);
@@ -104,7 +104,7 @@ export const retryPaymentFulfillment = async (orderId: string) => {
 
 export const inquirePaymentPg = async (orderId: string) => {
   const response = await liveAxios.post<unknown>(
-    `/admin/payment-orders/${orderId}/pg-inquiry`,
+    `/payment-orders/${orderId}/pg-inquiry`,
   );
 
   return toPaymentOrderDetail(response.data);
@@ -112,7 +112,7 @@ export const inquirePaymentPg = async (orderId: string) => {
 
 export const createAdminRefund = async ({ orderId, ...body }: AdminRefundRequest) => {
   const response = await liveAxios.post<unknown>(
-    `/admin/payment-orders/${orderId}/refunds`,
+    `/payment-orders/${orderId}/refunds`,
     body,
   );
 
@@ -128,7 +128,7 @@ export interface ManualCancelRequest {
 
 export const acceptPaymentPgCapture = async (orderId: string) => {
   const response = await liveAxios.post<unknown>(
-    `/admin/payment-orders/${orderId}/capture/accept`,
+    `/payment-orders/${orderId}/capture/accept`,
   );
 
   return toPaymentOrderDetail(response.data);
@@ -139,7 +139,7 @@ export const recordPaymentManualCancel = async ({
   ...body
 }: ManualCancelRequest) => {
   const response = await liveAxios.post<unknown>(
-    `/admin/payment-orders/${orderId}/manual-cancel`,
+    `/payment-orders/${orderId}/manual-cancel`,
     body,
   );
 
@@ -148,7 +148,7 @@ export const recordPaymentManualCancel = async ({
 
 export const restorePaymentCredit = async (orderId: string) => {
   const response = await liveAxios.post<unknown>(
-    `/admin/payment-orders/${orderId}/credit/restore`,
+    `/payment-orders/${orderId}/credit/restore`,
   );
 
   return toPaymentOrderDetail(response.data);

@@ -17,7 +17,7 @@ export const createProactiveMessage = async (
   values: ProactiveMessageFormValues,
 ) => {
   const response = await adminAxios.post<ProactiveMessage>(
-    "/admin/proactive-messages",
+    "/proactive-messages",
     values,
   );
 
@@ -29,7 +29,7 @@ export const updateProactiveMessage = async (
   values: ProactiveMessageFormValues,
 ) => {
   const response = await adminAxios.put<ProactiveMessage>(
-    `/admin/proactive-messages/${messageId}`,
+    `/proactive-messages/${messageId}`,
     values,
   );
 
@@ -37,7 +37,7 @@ export const updateProactiveMessage = async (
 };
 
 export const deleteProactiveMessage = async (messageId: number) => {
-  await adminAxios.delete(`/admin/proactive-messages/${messageId}`);
+  await adminAxios.delete(`/proactive-messages/${messageId}`);
 };
 
 /** 선제 메시지 생성·수정·삭제 후 목록을 갱신합니다. */

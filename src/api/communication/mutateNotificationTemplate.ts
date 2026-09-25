@@ -10,7 +10,7 @@ export const updateNotificationTemplate = async (
   values: NotificationTemplateSchema,
 ) => {
   const response = await adminAxios.put<NotificationTemplate>(
-    `/admin/notifications/templates/${templateId}`,
+    `/notifications/templates/${templateId}`,
     values,
   );
 
@@ -22,7 +22,7 @@ export const updateNotificationTemplateStatus = async (
   isEnabled: boolean,
 ) => {
   const response = await adminAxios.patch<NotificationTemplate>(
-    `/admin/notifications/templates/${templateId}/status`,
+    `/notifications/templates/${templateId}/status`,
     { isEnabled },
   );
 

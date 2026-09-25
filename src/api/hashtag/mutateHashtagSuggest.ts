@@ -9,12 +9,12 @@ interface HashtagSuggestDeleteResponse {
 }
 
 export const deleteHashtagSuggest = async (suggestId: string) => {
-  await liveAxios.delete(`/admin/hashtags/suggestions/items/${suggestId}`);
+  await liveAxios.delete(`/hashtags/suggestions/items/${suggestId}`);
 };
 
 export const deleteHashtagSuggestGroup = async (name: string) => {
   const response = await liveAxios.delete<HashtagSuggestDeleteResponse>(
-    "/admin/hashtags/suggestions",
+    "/hashtags/suggestions",
     { params: { name } },
   );
 

@@ -239,7 +239,7 @@ export const universeBlockReason = (
 /* 실서버(plat-admin) 세계관 계약                                        */
 /*                                                                    */
 /* 위 `Universe`/`UniverseScenario`(목업)와 달리 아래 타입은 실서버        */
-/* `/admin/universes`(liveAxios) 응답을 화면 용어로 옮긴 것이다.          */
+/* `/universes`(liveAxios) 응답을 화면 용어로 옮긴 것이다.          */
 /* 서버 DTO ↔ 화면 타입 변환은 `src/api/universe/*`에서만 한다.           */
 /*                                                                    */
 /* 관리자 서버는 파일 저장소 어댑터를 스캔하지 않아 이미지 URL을 만들지 못한다.  */

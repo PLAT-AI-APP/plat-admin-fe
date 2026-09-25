@@ -17,7 +17,7 @@ export const updateAiModel = async (
   modelId: number,
   body: UpdateAiModelRequest,
 ) => {
-  await liveAxios.patch(`/admin/ai/models/${modelId}`, body);
+  await liveAxios.patch(`/ai/models/${modelId}`, body);
 };
 
 /**
@@ -29,7 +29,7 @@ export const updateAiModel = async (
  */
 export const assignAiModelRole = async (modelId: number, role: AiModelRole) => {
   const response = await liveAxios.put<AiModel>(
-    `/admin/ai/models/${modelId}/roles/${role}`,
+    `/ai/models/${modelId}/roles/${role}`,
   );
 
   return response.data;

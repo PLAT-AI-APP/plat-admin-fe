@@ -10,7 +10,7 @@ type OpsPendingCounts = Omit<PendingCounts, "redemption">;
 
 export const getPendingCounts = async () => {
   const response = await adminAxios.get<OpsPendingCounts>(
-    "/admin/ops/pending-counts",
+    "/ops/pending-counts",
   );
 
   return response.data;

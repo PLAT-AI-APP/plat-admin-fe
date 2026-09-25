@@ -42,7 +42,7 @@ export const useEarningAccountActionMutation = () => {
   return useMutation<void, AppError, EarningAccountActionInput>({
     mutationFn: async ({ accountId, action, reasonCode, memo, amount }) => {
       await liveAxios.post(
-        `/admin/earnings/accounts/${accountId}/${ACCOUNT_ACTION_PATH[action]}`,
+        `/earnings/accounts/${accountId}/${ACCOUNT_ACTION_PATH[action]}`,
         { reasonCode, memo, amount },
       );
     },
@@ -60,7 +60,7 @@ export const useRedemptionMutation = () => {
 
   const issueMutation = useMutation<void, AppError, { redemptionId: string; memo: string }>({
     mutationFn: async ({ redemptionId, memo }) => {
-      await liveAxios.post(`/admin/earnings/redemptions/${redemptionId}/issue`, {
+      await liveAxios.post(`/earnings/redemptions/${redemptionId}/issue`, {
         memo: memo || null,
       });
     },
@@ -73,7 +73,7 @@ export const useRedemptionMutation = () => {
 
   const rejectMutation = useMutation<void, AppError, { redemptionId: string; reason: string }>({
     mutationFn: async ({ redemptionId, reason }) => {
-      await liveAxios.post(`/admin/earnings/redemptions/${redemptionId}/reject`, { reason });
+      await liveAxios.post(`/earnings/redemptions/${redemptionId}/reject`, { reason });
     },
     onSuccess: () => {
       showAppToast("success", "반려했습니다. 잠긴 포인트가 제작자에게 돌아갑니다.");
@@ -91,7 +91,7 @@ export const useChangeEarningPolicyMutation = () => {
 
   return useMutation<void, AppError, EarningPolicyValues & { memo: string }>({
     mutationFn: async (body) => {
-      await liveAxios.post("/admin/earnings/policies", body);
+      await liveAxios.post("/earnings/policies", body);
     },
     onSuccess: () => {
       showAppToast("success", "새 정책을 적용했습니다.");
@@ -119,9 +119,9 @@ export const useRewardProductMutation = () => {
   >({
     mutationFn: async ({ productId, values }) => {
       if (productId) {
-        await liveAxios.put(`/admin/reward-products/${productId}`, toBody(values));
+        await liveAxios.put(`/reward-products/${productId}`, toBody(values));
       } else {
-        await liveAxios.post("/admin/reward-products", toBody(values));
+        await liveAxios.post("/reward-products", toBody(values));
       }
     },
     onSuccess: () => {
@@ -133,7 +133,7 @@ export const useRewardProductMutation = () => {
 
   const activeMutation = useMutation<void, AppError, { productId: string; active: boolean }>({
     mutationFn: async ({ productId, active }) => {
-      await liveAxios.patch(`/admin/reward-products/${productId}/active`, { active });
+      await liveAxios.patch(`/reward-products/${productId}/active`, { active });
     },
     onSuccess: invalidate,
     onError: (error) => showErrorToast(error),
@@ -141,7 +141,7 @@ export const useRewardProductMutation = () => {
 
   const deleteMutation = useMutation<void, AppError, string>({
     mutationFn: async (productId) => {
-      await liveAxios.delete(`/admin/reward-products/${productId}`);
+      await liveAxios.delete(`/reward-products/${productId}`);
     },
     onSuccess: () => {
       showAppToast("success", "삭제했습니다.");

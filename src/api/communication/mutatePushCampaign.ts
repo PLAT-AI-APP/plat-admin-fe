@@ -16,7 +16,7 @@ export interface PushCampaignFormValues {
 
 export const createPushCampaign = async (values: PushCampaignFormValues) => {
   const response = await adminAxios.post<PushCampaign>(
-    "/admin/push/campaigns",
+    "/push/campaigns",
     values,
   );
 
@@ -25,14 +25,14 @@ export const createPushCampaign = async (values: PushCampaignFormValues) => {
 
 export const sendPushCampaign = async (campaignId: number) => {
   const response = await adminAxios.post<PushCampaign>(
-    `/admin/push/campaigns/${campaignId}/send`,
+    `/push/campaigns/${campaignId}/send`,
   );
 
   return response.data;
 };
 
 export const deletePushCampaign = async (campaignId: number) => {
-  await adminAxios.delete(`/admin/push/campaigns/${campaignId}`);
+  await adminAxios.delete(`/push/campaigns/${campaignId}`);
 };
 
 /** 푸시 캠페인 생성·발송·삭제 후 목록을 갱신합니다. */

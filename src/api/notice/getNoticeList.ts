@@ -56,7 +56,7 @@ export const getNoticeList = async (
   params: NoticeListParams,
 ): Promise<PageResponse<NoticeSummary>> => {
   const response = await liveAxios.get<PageWith<NoticeSummaryResponse>>(
-    "/admin/notices",
+    "/notices",
     { params: toRequestParams(params) },
   );
 

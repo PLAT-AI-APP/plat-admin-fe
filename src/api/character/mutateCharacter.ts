@@ -13,7 +13,7 @@ export const updateCharacterVisibility = async (
   visibility: CharacterVisibility,
 ) => {
   const response = await adminAxios.patch<Character>(
-    `/admin/characters/${characterId}/visibility`,
+    `/characters/${characterId}/visibility`,
     { visibility },
   );
 
@@ -44,7 +44,7 @@ export const updateCharacterStatus = async (
   body: CharacterStatusBody,
 ) => {
   const response = await adminAxios.patch<Character>(
-    `/admin/characters/${characterId}/status`,
+    `/characters/${characterId}/status`,
     body,
   );
 
@@ -52,7 +52,7 @@ export const updateCharacterStatus = async (
 };
 
 export const deleteCharacter = async (characterId: string) => {
-  await adminAxios.delete(`/admin/characters/${characterId}`);
+  await adminAxios.delete(`/characters/${characterId}`);
 };
 
 /** 캐릭터 노출 상태 변경·차단·삭제 후 목록과 상세를 함께 갱신합니다. */

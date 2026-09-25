@@ -34,7 +34,7 @@ const toUpdateBody = (
 /** 초대. 이메일은 이때만 정할 수 있고 이후에는 바꾸지 못한다(로그인 계정이다). */
 export const inviteManager = async (values: ManagerFormValues) => {
   const response = await liveAxios.post<ManagerCredentialIssued>(
-    "/admin/managers",
+    "/managers",
     values,
   );
 
@@ -46,7 +46,7 @@ export const updateManager = async (
   patch: Partial<ManagerUpdateBody>,
 ) => {
   await liveAxios.patch(
-    `/admin/managers/${manager.managerId}`,
+    `/managers/${manager.managerId}`,
     toUpdateBody(manager, patch),
   );
 };
@@ -59,7 +59,7 @@ export const updateManager = async (
  * 상태만 ACTIVE로 바꾸면 실패 횟수가 남아 다음 오타 한 번에 다시 잠긴다.
  */
 export const unlockManager = async (managerId: number) => {
-  await liveAxios.post(`/admin/managers/${managerId}/unlock`);
+  await liveAxios.post(`/managers/${managerId}/unlock`);
 };
 
 /**
@@ -70,12 +70,12 @@ export const unlockManager = async (managerId: number) => {
  * id로만 적기 때문에 지운 뒤에는 이름으로 되짚을 수 없다.
  */
 export const deleteManager = async (managerId: number) => {
-  await liveAxios.delete(`/admin/managers/${managerId}`);
+  await liveAxios.delete(`/managers/${managerId}`);
 };
 
 export const resetManagerPassword = async (managerId: number) => {
   const response = await liveAxios.post<ManagerCredentialIssued>(
-    `/admin/managers/${managerId}/reset-password`,
+    `/managers/${managerId}/reset-password`,
   );
 
   return response.data;

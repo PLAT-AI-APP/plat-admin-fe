@@ -8,7 +8,7 @@
  *   develop → 개발 서버 (`https://admin-api-dev.plat.so`)
  *   main    → 운영 서버 (`https://admin-api.plat.so`)
  *
- * plat-be 는 앱이 나뉘어 있다. 관리자 API(`/admin/**`)는 admin 앱이, 이미지(`/images/**`)는
+ * plat-be 는 앱이 나뉘어 있다. 관리자 API는 admin 앱이, 이미지(`/images/**`)는
  * api 앱이 받으므로 실서버 주소와 이미지 주소가 다르다.
  *
  * 프로파일은 `next.config.ts` 가 정하고(환경 변수 → CI 브랜치 → git 브랜치),

@@ -5,7 +5,7 @@ import type { DashboardSummary } from "@/type/dashboard";
 
 export const getDashboardSummary = async () => {
   const response = await adminAxios.get<DashboardSummary>(
-    "/admin/dashboard/summary",
+    "/dashboard/summary",
   );
 
   return response.data;

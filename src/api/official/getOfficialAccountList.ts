@@ -47,7 +47,7 @@ export const toOfficialAccount = (
 
 export const getOfficialAccountList = async (): Promise<OfficialAccount[]> => {
   const response =
-    await liveAxios.get<OfficialAccountResponse[]>("/admin/official-accounts");
+    await liveAxios.get<OfficialAccountResponse[]>("/official-accounts");
 
   return response.data.map(toOfficialAccount);
 };

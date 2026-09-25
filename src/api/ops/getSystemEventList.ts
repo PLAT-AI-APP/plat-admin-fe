@@ -43,7 +43,7 @@ export const getSystemEventList = async (
   params: SystemEventListParams,
 ): Promise<PageResponse<SystemEventLog>> => {
   const response = await liveAxios.get<PageWith<SystemEventLogResponse>>(
-    "/admin/logs/system",
+    "/logs/system",
     { params: toRequestParams(params) },
   );
 

@@ -15,7 +15,7 @@ const RUNNING_REFETCH_INTERVAL_MS = 2_000;
 
 export const getChatExportJobList = async (params: ChatExportJobListParams) => {
   const response = await adminAxios.get<PageResponse<ChatExportJob>>(
-    "/admin/chat-exports",
+    "/chat-exports",
     { params },
   );
 

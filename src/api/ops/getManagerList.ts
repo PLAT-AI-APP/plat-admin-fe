@@ -23,7 +23,7 @@ export const getManagerList = async ({
   status,
   roleId,
 }: ManagerListParams = {}) => {
-  const response = await liveAxios.get<Manager[]>("/admin/managers");
+  const response = await liveAxios.get<Manager[]>("/managers");
 
   return response.data.filter(
     (manager) =>

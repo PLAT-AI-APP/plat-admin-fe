@@ -38,7 +38,7 @@ export const getHashtagSuggestItemList = async (
   params: HashtagSuggestItemListParams,
 ): Promise<PageResponse<HashtagSuggest>> => {
   const response = await liveAxios.get<PageWith<HashtagSuggestItemResponse>>(
-    "/admin/hashtags/suggestions/items",
+    "/hashtags/suggestions/items",
     {
       params: {
         name: params.name,

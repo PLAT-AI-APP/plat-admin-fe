@@ -132,7 +132,7 @@ const toRequestParams = (params: NoticeListParams) => ({
 });
 
 export const getNoticeList = async (params: NoticeListParams) => {
-  const response = await liveAxios.get<PageWith<NoticeSummary>>("/admin/notices", {
+  const response = await liveAxios.get<PageWith<NoticeSummary>>("/notices", {
     params: toRequestParams(params),
   });
 
@@ -305,7 +305,7 @@ useEffect(() => {
 ```
 
 업로드는 생성·수정 API와 분리되어 있다. 파일을 고르는 즉시 자료 경로의 업로드 API
-(`POST /admin/main-banners/image`)로 올려 **`fileId`**를 받고, 폼은 그 ID만 들고 있다가
+(`POST /main-banners/image`)로 올려 **`fileId`**를 받고, 폼은 그 ID만 들고 있다가
 저장한다. 화면에 그릴 때는 `src/lib/imageUrl.ts`가 `GET /images/{type}/{fileId}/{variant}`를
 조립한다. 스키마는 형식 검증 없이 `z.string().min(1, "…업로드해 주세요.")`면 된다.
 

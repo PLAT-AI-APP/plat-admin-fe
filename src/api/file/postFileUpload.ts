@@ -13,8 +13,8 @@ export type FileUploadType = "MAIN_BANNER" | "REWARD_PRODUCT";
 
 /** 용도별 업로드 경로. 권한이 그 자료의 것을 그대로 따르므로 경로도 자료 밑에 있다. */
 const UPLOAD_PATH: Record<FileUploadType, string> = {
-  MAIN_BANNER: "/admin/main-banners/image",
-  REWARD_PRODUCT: "/admin/reward-products/image",
+  MAIN_BANNER: "/main-banners/image",
+  REWARD_PRODUCT: "/reward-products/image",
 };
 
 /** 업로드 응답. URL이 아니라 파일 ID만 온다 — 이미지 URL은 화면이 조립한다. */

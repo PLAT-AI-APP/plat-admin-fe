@@ -58,7 +58,7 @@ export const getCreditAdjustmentList = async (
   params: CreditAdjustmentListParams,
 ): Promise<PageResponse<CreditAdjustment>> => {
   const response = await liveAxios.get<PageWith<CreditAdjustmentResponse>>(
-    "/admin/credits/adjustments",
+    "/credits/adjustments",
     { params: toRequestParams(params) },
   );
 

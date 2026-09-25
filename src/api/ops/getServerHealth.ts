@@ -4,7 +4,7 @@ import type { AppError } from "@/type/api";
 import type { ServerHealth } from "@/type/ops";
 
 export const getServerHealth = async () => {
-  const response = await liveAxios.get<ServerHealth>("/admin/server/health");
+  const response = await liveAxios.get<ServerHealth>("/server/health");
 
   return response.data;
 };

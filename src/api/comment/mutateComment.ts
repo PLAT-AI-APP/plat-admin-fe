@@ -21,12 +21,12 @@ export interface HideCommentParams {
 
 /** 서버가 204로 답한다. 바뀐 내용은 목록·상세를 다시 불러서 받는다. */
 export const hideComment = async ({ commentId, reason }: HideCommentParams) => {
-  await liveAxios.post(`/admin/comments/${commentId}/hide`, { reason });
+  await liveAxios.post(`/comments/${commentId}/hide`, { reason });
 };
 
 /** 재노출은 본문이 없다. 루트를 올리면 딸려 내려갔던 답글도 함께 올라온다. */
 export const restoreComment = async (commentId: string) => {
-  await liveAxios.post(`/admin/comments/${commentId}/restore`);
+  await liveAxios.post(`/comments/${commentId}/restore`);
 };
 
 export interface BulkHideCommentParams {
@@ -44,7 +44,7 @@ interface BulkCommentHideResponse {
 
 export const bulkHideComments = async (params: BulkHideCommentParams) => {
   const response = await liveAxios.post<BulkCommentHideResponse>(
-    "/admin/comments/bulk-hide",
+    "/comments/bulk-hide",
     params,
   );
 

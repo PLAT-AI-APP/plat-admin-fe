@@ -46,7 +46,7 @@ const toRequestParams = (params: PaymentOrderListParams) => ({
 export const getPaymentOrderList = async (
   params: PaymentOrderListParams,
 ): Promise<PageResponse<PaymentOrderListItem>> => {
-  const response = await liveAxios.get<PageWith<unknown>>("/admin/payment-orders", {
+  const response = await liveAxios.get<PageWith<unknown>>("/payment-orders", {
     params: toRequestParams(params),
   });
 

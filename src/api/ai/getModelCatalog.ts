@@ -9,7 +9,7 @@ export interface ModelCatalogParams {
 
 export const getModelCatalog = async (params: ModelCatalogParams) => {
   const response = await liveAxios.get<AiModelCatalogItem[]>(
-    "/admin/ai/models/catalog",
+    "/ai/models/catalog",
     { params },
   );
 

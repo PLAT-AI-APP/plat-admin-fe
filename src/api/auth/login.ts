@@ -13,7 +13,7 @@ import type { LoginResponse } from "@/type/auth";
  * `email`로 두고 여기서 한 번 맞춘다.
  */
 export const login = async (values: LoginSchema) => {
-  const response = await liveAxios.post<LoginResponse>("/admin/auth/login", {
+  const response = await liveAxios.post<LoginResponse>("/auth/login", {
     username: values.email,
     password: values.password,
   });

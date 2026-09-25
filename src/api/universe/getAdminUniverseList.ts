@@ -153,7 +153,7 @@ export const getAdminUniverseList = async (
   params: AdminUniverseListParams,
 ): Promise<PageResponse<AdminUniverseListItem>> => {
   const response = await liveAxios.get<PageWith<AdminUniverseItemResponse>>(
-    "/admin/universes",
+    "/universes",
     { params: toRequestParams(params) },
   );
   const page = toPageResponse(response.data);

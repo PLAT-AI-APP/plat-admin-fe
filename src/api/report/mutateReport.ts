@@ -23,7 +23,7 @@ export const resolveReportCase = async ({
   ownerSanction,
   note,
 }: ResolveReportCaseParams) => {
-  await liveAxios.post(`/admin/reports/${caseId}/resolve`, {
+  await liveAxios.post(`/reports/${caseId}/resolve`, {
     outcome,
     actions,
     ownerSanction: ownerSanction

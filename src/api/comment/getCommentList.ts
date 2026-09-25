@@ -95,7 +95,7 @@ export const getCommentList = async (
   params: CommentListParams,
 ): Promise<PageResponse<Comment>> => {
   const response = await liveAxios.get<PageWith<CommentItemResponse>>(
-    "/admin/comments",
+    "/comments",
     { params: toRequestParams(params) },
   );
 

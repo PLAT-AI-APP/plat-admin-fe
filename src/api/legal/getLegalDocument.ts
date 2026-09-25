@@ -5,7 +5,7 @@ import type { LegalDocument } from "@/type/legal";
 
 export const getLegalDocument = async (documentId: number) => {
   const response = await adminAxios.get<LegalDocument>(
-    `/admin/legal/${documentId}`,
+    `/legal/${documentId}`,
   );
 
   return response.data;

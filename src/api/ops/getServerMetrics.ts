@@ -59,7 +59,7 @@ export interface ServerMetricPoint {
 
 export const getServerMetrics = async (range: MetricRange) => {
   const response = await liveAxios.get<ServerMetricPoint[]>(
-    "/admin/server/metrics",
+    "/server/metrics",
     { params: { range } },
   );
 

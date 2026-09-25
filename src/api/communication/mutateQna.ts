@@ -4,7 +4,7 @@ import type { AppError } from "@/type/api";
 import { showAppToast } from "@/lib/toast";
 
 export const answerQna = async (qnaId: string, answer: string) => {
-  await liveAxios.put(`/admin/qna/${qnaId}/answer`, { answer });
+  await liveAxios.put(`/qna/${qnaId}/answer`, { answer });
 };
 
 /**
