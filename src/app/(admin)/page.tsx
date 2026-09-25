@@ -1,8 +1,13 @@
 import PageHeader from "@/components/layout/PageHeader";
 import Alert from "@/components/ui/Alert";
+import { IS_MOCKING } from "@/api/baseUri";
 import DashboardOverview from "./_components/DashboardOverview";
+import FirstMenuRedirect from "./_components/FirstMenuRedirect";
 
 export default function DashboardPage() {
+  // 대시보드는 아직 목업 화면이다. 실서버 환경에서는 볼 수 있는 첫 메뉴로 넘긴다.
+  if (!IS_MOCKING) return <FirstMenuRedirect />;
+
   return (
     <>
       <PageHeader
