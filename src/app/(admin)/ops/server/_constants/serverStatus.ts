@@ -21,6 +21,22 @@ export const HEALTH_STATUS_DESCRIPTION: Record<HealthStatus, string> = {
   DOWN: "응답하지 않는 의존성이 있습니다. 즉시 확인이 필요합니다.",
 };
 
+/**
+ * 서비스 이름. 서버가 주는 `app`(spring.application.name)에 한국어 라벨을 붙인다.
+ * 모르는 이름(새로 나뉜 서비스)은 원문을 그대로 보여 준다 — 값의 주인은 서버다.
+ */
+export const SERVICE_LABEL: Record<string, string> = {
+  api: "사용자 API",
+  ai: "AI 채팅",
+  admin: "관리자 API",
+  batch: "배치",
+};
+
+export const getServiceLabel = (app: string) => SERVICE_LABEL[app] ?? app;
+
+/** 처음 열었을 때 추이를 보여 줄 서비스. 사용자 트래픽 대부분이 여기로 온다. */
+export const DEFAULT_SERVICE = "api";
+
 /** 임계치. 80% 이상은 주의, 90% 이상은 위험으로 본다. 서버 판정과 같은 선이다. */
 export const WARNING_THRESHOLD = 80;
 export const DANGER_THRESHOLD = 90;

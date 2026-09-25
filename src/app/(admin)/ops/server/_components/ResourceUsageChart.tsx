@@ -26,6 +26,8 @@ import Skeleton from "@/components/ui/Skeleton";
 import Tabs from "@/components/ui/Tabs";
 
 interface ResourceUsageChartProps {
+  /** 지금 보고 있는 서비스. 힙 · 요청 수가 이 서비스 것이다. */
+  serviceLabel: string;
   metrics: ServerMetricPoint[];
   range: MetricRange;
   onRangeChange: (range: MetricRange) => void;
@@ -76,6 +78,7 @@ const tickFormat = (range: MetricRange) =>
   range === "7d" ? "MM.DD" : "HH:mm";
 
 const ResourceUsageChart = ({
+  serviceLabel,
   metrics,
   range,
   onRangeChange,
@@ -111,7 +114,7 @@ const ResourceUsageChart = ({
   return (
     <Card
       id="server-trend"
-      title="자원 사용률 추이"
+      title={`자원 사용률 추이 · ${serviceLabel}`}
       description={`${METRIC_RANGE_LABEL[range]} · ${METRIC_RANGE_BUCKET_LABEL[range]} 단위 · 선이 끊긴 구간은 표본이 없는 시간입니다`}
       action={
         <div className="flex items-center gap-3">

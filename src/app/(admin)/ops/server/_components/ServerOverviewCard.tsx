@@ -47,6 +47,9 @@ const MetaItem = ({ label, value }: { label: string; value: string }) => (
 /**
  * 맨 위 한 줄. "지금 정상인가"와 "어느 서버를 보고 있는가"를 먼저 답한다.
  *
+ * 여기 값은 이 요청을 받은 admin이 도는 **호스트**와 공용 의존성(DB · Redis) 기준이다.
+ * 앱별 JVM은 아래 서비스별 상태에서 따로 본다.
+ *
  * 인스턴스 · JVM 정보를 여기 두는 이유는, 값이 이상할 때 가장 먼저 확인하는 것이
  * "내가 보는 서버가 그 서버가 맞나"이기 때문이다.
  */
@@ -116,7 +119,7 @@ const ServerOverviewCard = ({
         </div>
 
         <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-border-main pt-5 md:grid-cols-3 xl:grid-cols-6">
-          <MetaItem label="인스턴스" value={health.instanceId} />
+          <MetaItem label="측정한 인스턴스" value={health.instanceId} />
           <MetaItem label="업타임" value={formatUptime(health.uptimeSeconds)} />
           <MetaItem
             label="기동 시각"

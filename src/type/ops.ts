@@ -198,7 +198,10 @@ export interface DiskUsage {
  */
 export interface ServerHealth {
   status: HealthStatus;
-  /** 어느 인스턴스의 값인가. 여러 대로 늘었을 때 화면이 섞이지 않게 한다. */
+  /**
+   * 이 응답을 만든 admin 인스턴스. 호스트 · 의존성 · `jvm` 값은 이 한 대 기준이다.
+   * 서비스별 JVM은 `ServiceStatus`로 따로 본다.
+   */
   instanceId: string;
   /** 호스트 OS · JVM. 재현 환경을 맞출 때 먼저 확인하는 값이다. */
   osName: string;
@@ -213,6 +216,53 @@ export interface ServerHealth {
   disks: DiskUsage[];
   dependencies: DependencyHealth[];
   checkedAt: string;
+}
+
+/**
+ * 인스턴스 한 대의 현재 상태. 각 앱이 10초마다 스스로 알린 값이다.
+ *
+ * 컨테이너 메모리를 힙과 따로 받는다. 힙에 여유가 있어도 메타스페이스 · 스레드가
+ * 컨테이너 한도를 넘으면 OOMKilled로 죽는다 — 배분이 맞는지는 둘을 함께 봐야 갈린다.
+ */
+export interface InstanceStatus {
+  instanceId: string;
+  /** 마지막 알림이 30초 안이면 UP, 아니면 DOWN. */
+  status: HealthStatus;
+  /** 컨테이너 ID. 같은 인스턴스 이름으로 옛 · 새 컨테이너가 겹칠 때 가려 준다. */
+  host: string;
+  javaVersion: string;
+  /** `-X`로 시작하는 옵션만(힙 · GC). */
+  jvmOptions: string;
+  startedAt: string;
+  uptimeSeconds: number;
+  reportedAt: string;
+  cpuCores: number;
+  cpuUsage: number;
+  /** 분모는 committed다. */
+  heapUsage: number;
+  heapUsedBytes: number;
+  heapCommittedBytes: number;
+  heapMaxBytes: number;
+  /** 한도가 없는 실행(로컬)이면 null. */
+  containerMemoryUsage: number | null;
+  containerMemoryUsedBytes: number | null;
+  containerMemoryLimitBytes: number | null;
+}
+
+/**
+ * 서비스 하나와 그 인스턴스들.
+ *
+ * 서브도메인이 아니라 앱 이름(`app`)으로 묶는다. 서브도메인은 환경마다 다르고
+ * (api-dev · api) 내부 전용인 batch에는 없어서, 주소는 `domain`으로 곁들여 보여 준다.
+ * 지금은 서비스마다 한 대지만 대수를 늘려도 같은 모양으로 온다.
+ */
+export interface ServiceStatus {
+  /** api · ai · admin · batch. 모르는 이름이 와도(새 서비스) 그대로 보여 준다. */
+  app: string;
+  domain: string | null;
+  /** 모두 응답하면 UP, 일부면 DEGRADED, 하나도 없으면 DOWN. */
+  status: HealthStatus;
+  instances: InstanceStatus[];
 }
 
 /* -------------------------------------------------------------------------
