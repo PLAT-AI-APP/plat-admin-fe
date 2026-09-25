@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { DashboardSummary } from "@/type/dashboard";
 
 export const getDashboardSummary = async () => {
-  const response = await adminAxios.get<DashboardSummary>(
+  const response = await liveAxios.get<DashboardSummary>(
     "/dashboard/summary",
   );
 

@@ -99,8 +99,6 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     icon: <Dashboard size={ICON_SIZE} />,
     href: "/",
     permission: "dashboard:read",
-    /* 집계 지표를 아직 실서버가 내려주지 않는다. 화면은 지표가 붙을 때를 위해 남겨 둔다. */
-    isMock: true,
   },
   {
     key: "main-exposure",
