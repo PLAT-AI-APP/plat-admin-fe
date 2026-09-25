@@ -128,6 +128,19 @@ const toSnapshot = (
     };
   }
 
+  if (snapshot.type === "MESSAGE") {
+    return {
+      type: "MESSAGE",
+      creatorUserId: text(snapshot.creatorUserId),
+      creatorNickname: text(snapshot.creatorNickname),
+      universeId: text(snapshot.universeId),
+      universeTitle: text(snapshot.universeTitle),
+      content: text(snapshot.content),
+      precedingUserContent: nullableText(snapshot.precedingUserContent),
+      writtenAt: text(snapshot.writtenAt),
+    };
+  }
+
   const characters = Array.isArray(snapshot.characters)
     ? (snapshot.characters as SnapshotCharacterResponse[])
     : [];

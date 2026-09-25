@@ -20,6 +20,7 @@ import {
 export const REPORT_TARGET_TYPE_TONE: Record<ReportTargetType, BadgeTone> = {
   COMMENT: "warning",
   UNIVERSE: "brand",
+  MESSAGE: "info",
 };
 
 export const REPORT_CASE_STATUS_TONE: Record<ReportCaseStatus, BadgeTone> = {

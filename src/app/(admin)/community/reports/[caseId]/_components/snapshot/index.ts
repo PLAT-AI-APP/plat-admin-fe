@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { ReportSnapshotOf, ReportTargetType } from "@/type/report";
 import CommentSnapshotView from "./CommentSnapshotView";
+import MessageSnapshotView from "./MessageSnapshotView";
 import UniverseSnapshotView from "./UniverseSnapshotView";
 
 export interface SnapshotViewProps<T extends ReportTargetType> {
@@ -18,4 +19,5 @@ export const SNAPSHOT_VIEWS: {
 } = {
   COMMENT: CommentSnapshotView,
   UNIVERSE: UniverseSnapshotView,
+  MESSAGE: MessageSnapshotView,
 };
