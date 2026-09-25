@@ -529,11 +529,15 @@ export interface BatchJobRun {
 /**
  * 처리 대기 건수. 사이드바 · 헤더 뱃지가 쓴다.
  *
- * 신고는 여기서 뺐다. 실서버로 옮겨 목업 신고가 없어졌고, 이 값은 아직 목업에서만 나온다.
+ * 서버는 볼 권한이 없는 영역을 세지 않고 0 으로 준다.
  */
 export interface PendingCounts {
+  /** 답변 대기 Q&A. */
   qna: number;
+  /** 신고가 들어왔지만 아직 노출 중인 댓글. */
   comment: number;
+  /** 검토 대기 신고 건. */
+  report: number;
   /** 발송 대기 상품권 교환. 수익 서버의 별도 엔드포인트에서 온다. */
   redemption: number;
 }

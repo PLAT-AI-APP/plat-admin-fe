@@ -199,6 +199,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
       {
         label: "신고 관리",
         href: "/community/reports",
+        pendingKey: "report",
         permission: "report:read",
         icon: <Flag size={SUB_ICON_SIZE} />,
       },
@@ -335,6 +336,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
       {
         label: "Q&A 관리",
         href: "/communication/qna",
+        pendingKey: "qna",
         permission: "qna:read",
         icon: <QuestionCircle size={SUB_ICON_SIZE} />,
       },
