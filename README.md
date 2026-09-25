@@ -117,7 +117,7 @@ MSW 목업을 쓴다. 목업 핸들러는 전부 `NEXT_PUBLIC_BASE_URI`(아무�
 메인 배너(`/main-banners`), 홈 편성(`/home-sections`), 공지사항
 (`/notices`), AI 모델 · 카탈로그(`/ai/models/**`), 시스템 프롬프트
 (`/ai/prompts`), 상품(`/billing/products`), 크레딧 수동 조정
-(`/credits/adjustments` · `/credits/users`), 장부(`/ledgers/**`), 운영 · 시스템 로그(`/logs/**`), 배치(`/batch/**`),
+(`/credits/adjustments` · `/credits/users`), 장부(`/ledgers/**`), 운영 · 접근 · 시스템 로그(`/logs/**`), 배치(`/batch/**`),
 서버 상태(`/server/**`), 신고(`/reports/**`), 제작자 수익 · 교환 요청 · 수익 정책
 (`/earnings/**`), 교환 상품(`/reward-products/**`).
 

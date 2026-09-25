@@ -338,6 +338,45 @@ export interface SystemEventLog {
 }
 
 /* -------------------------------------------------------------------------
+ * 접근 로그
+ * ---------------------------------------------------------------------- */
+
+/** 요청을 받은 plat-be 앱. 네 앱이 한 테이블에 쌓으므로 경로만으로는 갈리지 않는다. */
+export const ACCESS_LOG_APPS = ["api", "admin", "ai", "batch"] as const;
+
+export type AccessLogApp = (typeof ACCESS_LOG_APPS)[number];
+
+/** 서버가 상태 코드에서 정한다. 2xx·3xx → INFO, 4xx → WARN, 5xx·예외 → ERROR. */
+export type AccessLogLevel = "INFO" | "WARN" | "ERROR";
+
+/**
+ * HTTP 요청 한 건.
+ *
+ * 관리자 활동 로그와 달리 **가공하지 않은 요청 원본**이다. 문의 대응에서 "이 유저가
+ * 실제로 무엇을 보냈고 무엇을 받았나"를 되짚는 자리라, 본문을 그대로 들고 있다.
+ * 본문은 서버가 적재 전에 가린다(비밀번호 · 토큰 · 전화번호 등).
+ */
+export interface AccessLog {
+  /** Snowflake라 문자열이다. */
+  logId: string;
+  app: AccessLogApp | (string & {});
+  method: string;
+  path: string;
+  queryString?: string;
+  status: number;
+  /** 토큰 주인. admin 앱 기록이면 관리자 ID다. 로그인 전 요청은 비어 있다. */
+  userId?: string;
+  durationMs: number;
+  /** 보관 기한이 지나면 본문부터 지워진다. */
+  requestBody?: string;
+  responseBody?: string;
+  level: AccessLogLevel;
+  remoteIp?: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
+/* -------------------------------------------------------------------------
  * 배치(스케줄) 작업
  * ---------------------------------------------------------------------- */
 
