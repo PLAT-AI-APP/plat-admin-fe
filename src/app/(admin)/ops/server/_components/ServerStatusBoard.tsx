@@ -17,7 +17,7 @@ import MemoryDetailCard from "./MemoryDetailCard";
 import MetricTile from "./MetricTile";
 import ResourceUsageChart from "./ResourceUsageChart";
 import ServerOverviewCard from "./ServerOverviewCard";
-import ServiceStatusCard from "./ServiceStatusCard";
+import ServiceStatusCard, { isRestartPhase } from "./ServiceStatusCard";
 import {
   DANGER_THRESHOLD,
   DEFAULT_SERVICE,
@@ -68,8 +68,11 @@ const ServerStatusBoard = () => {
   const selectedInstance = selectedService?.instances.find(
     (instance) => instance.status === "UP",
   );
+  /* 재시작 중인 서비스는 계획된 중단이라 경고에서 뺀다. 카드 배지가 "재시작 중"으로 따로 알린다. */
   const unhealthyServices = services.filter(
-    (service) => service.status !== "UP",
+    (service) =>
+      service.status !== "UP" &&
+      !service.instances.some((instance) => isRestartPhase(instance.phase)),
   );
 
   /** 자동 새로고침은 조용히 다시 부른다 — 5초마다 성공 토스트가 뜨면 화면을 쓸 수 없다. */
@@ -200,11 +203,12 @@ const ServerStatusBoard = () => {
         />
         <MetricTile
           label={`JVM 힙 · ${getServiceLabel(selectedApp)}`}
+          /* 서비스 카드 · 추이 차트와 같은 기준 — 상한(-Xmx) 대비. */
           value={selectedInstance?.heapUsage ?? 0}
           fallbackValue={selectedInstance ? undefined : "-"}
           amount={
             selectedInstance
-              ? `${formatBytes(selectedInstance.heapUsedBytes)} / ${formatBytes(selectedInstance.heapCommittedBytes)}`
+              ? `${formatBytes(selectedInstance.heapUsedBytes)} / 상한 ${formatBytes(selectedInstance.heapMaxBytes)}`
               : "응답하는 인스턴스 없음"
           }
           trend={metrics.map((point) => point.heapUsage)}

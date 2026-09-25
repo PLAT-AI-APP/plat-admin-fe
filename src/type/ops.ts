@@ -224,10 +224,26 @@ export interface ServerHealth {
  * 컨테이너 메모리를 힙과 따로 받는다. 힙에 여유가 있어도 메타스페이스 · 스레드가
  * 컨테이너 한도를 넘으면 OOMKilled로 죽는다 — 배분이 맞는지는 둘을 함께 봐야 갈린다.
  */
+/**
+ * 인스턴스 단계. UP/DOWN만으로는 "재시작 중"과 "죽었다"가 갈리지 않는다.
+ * - RUNNING: 알림이 제때 옴
+ * - RESTART_REQUESTED: 재시작을 요청했고 아직 가져가지 않음
+ * - RESTARTING: 재시작 요청으로 내려감(곧 RUNNING)
+ * - STOPPED: 정상 종료를 알림(배포 · 수동 중지), 또는 재시작 후 2분 넘게 안 돌아옴
+ * - NO_RESPONSE: 30초 넘게 알림 없음(강제 종료 · 먹통)
+ */
+export type InstancePhase =
+  | "RUNNING"
+  | "RESTART_REQUESTED"
+  | "RESTARTING"
+  | "STOPPED"
+  | "NO_RESPONSE";
+
 export interface InstanceStatus {
   instanceId: string;
-  /** 마지막 알림이 30초 안이면 UP, 아니면 DOWN. */
+  /** RUNNING · RESTART_REQUESTED면 UP, 나머지는 DOWN. */
   status: HealthStatus;
+  phase: InstancePhase;
   /** 컨테이너 ID. 같은 인스턴스 이름으로 옛 · 새 컨테이너가 겹칠 때 가려 준다. */
   host: string;
   javaVersion: string;
@@ -238,7 +254,7 @@ export interface InstanceStatus {
   reportedAt: string;
   cpuCores: number;
   cpuUsage: number;
-  /** 분모는 committed다. */
+  /** 분모는 상한(-Xmx)이다. committed 대비는 JVM이 필요한 만큼만 받아 두어 평소에도 90% 안팎이다. */
   heapUsage: number;
   heapUsedBytes: number;
   heapCommittedBytes: number;

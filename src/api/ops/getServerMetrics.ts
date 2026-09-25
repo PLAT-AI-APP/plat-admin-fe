@@ -45,7 +45,7 @@ export interface ServerMetricPoint {
   memoryUsage: number | null;
   memoryUsedBytes: number | null;
   /**
-   * JVM 힙 사용률 (%). null의 의미는 위와 같다.
+   * JVM 힙 사용률 (%, 상한 -Xmx 대비). null의 의미는 위와 같다.
    *
    * 머신 메모리와 따로 온다. 머신에 여유가 있어도 힙이 차면 GC가 돌기 시작하므로,
    * 느려진 시각을 되짚을 때 두 선을 겹쳐 봐야 원인이 어느 쪽인지 갈린다.
