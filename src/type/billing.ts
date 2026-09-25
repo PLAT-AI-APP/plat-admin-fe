@@ -104,6 +104,20 @@ export interface CreditAdjustmentFormValues {
 }
 
 /**
+ * 크레딧 일괄 지급 결과.
+ *
+ * 서버가 유저마다 따로 커밋해 일부만 실패할 수 있다. 실패한 유저만 골라
+ * **같은 멱등키**로 다시 보내면 이미 받은 유저는 건너뛴다(`alreadyGranted`).
+ */
+export interface CreditBulkGrantResult {
+  /** 중복을 뺀 대상 수 */
+  requested: number;
+  granted: number;
+  alreadyGranted: number;
+  failed: { userId: string; code: string }[];
+}
+
+/**
  * 결제/크레딧 장부 한 줄의 성격.
  *
  * 서버 원장은 결제 충전·이벤트 지급·관리자 지급을 전부 `CHARGE` 하나로 적는다.

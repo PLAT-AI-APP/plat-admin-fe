@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useListParams } from "@/hooks/useListParams";
 import { useCreditAdjustmentListQuery } from "@/api/billing/getCreditAdjustmentList";
 import { useCreditAdjustmentMutation } from "@/api/billing/mutateCreditAdjustment";
-import { Coin, Plus } from "@/icons";
+import { Coin, Plus, Users } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
 import {
@@ -31,6 +31,7 @@ import Select from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
 import CreditAdjustmentFormModal from "./CreditAdjustmentFormModal";
+import CreditBulkGrantModal from "./CreditBulkGrantModal";
 import {
   ADJUSTMENT_TYPE_FILTER_OPTIONS,
   ADJUSTMENT_TYPE_LABEL,
@@ -72,6 +73,7 @@ const CreditAdjustmentManager = () => {
   const { page, keyword } = params;
   const type = params.type as AdjustmentType | "";
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
 
   /*
     조정 권한이 없으면 실행 버튼을 감춘다. 막는 책임은 서버에 있지만(`:adjust`),
@@ -218,6 +220,17 @@ const CreditAdjustmentManager = () => {
 
             {canAdjust && (
               <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Users size={15} />}
+                onClick={() => setIsBulkOpen(true)}
+              >
+                일괄 지급
+              </Button>
+            )}
+
+            {canAdjust && (
+              <Button
                 variant="primary"
                 size="sm"
                 leftIcon={<Plus size={15} />}
@@ -289,6 +302,11 @@ const CreditAdjustmentManager = () => {
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending}
+      />
+
+      <CreditBulkGrantModal
+        isOpen={isBulkOpen}
+        onClose={() => setIsBulkOpen(false)}
       />
     </>
   );
