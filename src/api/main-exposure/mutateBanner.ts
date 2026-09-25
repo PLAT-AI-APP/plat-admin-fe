@@ -19,7 +19,7 @@ const toRequestBody = (values: BannerFormValues) => ({
 
 export const createBanner = async (values: BannerFormValues) => {
   const response = await liveAxios.post<BannerResponse>(
-    "/admin/main-banners",
+    "/main-banners",
     toRequestBody(values),
   );
 
@@ -31,7 +31,7 @@ export const updateBanner = async (
   values: BannerFormValues,
 ) => {
   const response = await liveAxios.put<BannerResponse>(
-    `/admin/main-banners/${bannerId}`,
+    `/main-banners/${bannerId}`,
     toRequestBody(values),
   );
 
@@ -39,7 +39,7 @@ export const updateBanner = async (
 };
 
 export const deleteBanner = async (bannerId: string) => {
-  await liveAxios.delete(`/admin/main-banners/${bannerId}`);
+  await liveAxios.delete(`/main-banners/${bannerId}`);
 };
 
 /**
@@ -52,7 +52,7 @@ export const updateBannerOrder = async (
   language: ServiceLanguage,
   bannerIds: string[],
 ) => {
-  await liveAxios.patch("/admin/main-banners/order", {
+  await liveAxios.patch("/main-banners/order", {
     language,
     orderedIds: bannerIds,
   });

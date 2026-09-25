@@ -13,7 +13,7 @@ export const createSystemPromptVersion = async (
   content: string,
 ): Promise<SystemPromptVersion> => {
   const response = await liveAxios.post<SystemPromptVersionResponse>(
-    `/admin/ai/prompts/${promptKey}/versions`,
+    `/ai/prompts/${promptKey}/versions`,
     { content },
   );
 
@@ -24,7 +24,7 @@ export const deleteSystemPromptVersion = async (
   promptKey: string,
   version: number,
 ) => {
-  await liveAxios.delete(`/admin/ai/prompts/${promptKey}/versions/${version}`);
+  await liveAxios.delete(`/ai/prompts/${promptKey}/versions/${version}`);
 };
 
 export const activateSystemPromptVersion = async (
@@ -32,7 +32,7 @@ export const activateSystemPromptVersion = async (
   version: number,
 ) => {
   const response = await liveAxios.post<SystemPrompt>(
-    `/admin/ai/prompts/${promptKey}/activate`,
+    `/ai/prompts/${promptKey}/activate`,
     { version },
   );
 

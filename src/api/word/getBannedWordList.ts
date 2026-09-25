@@ -56,7 +56,7 @@ export const getBannedWordList = async (
   params: BannedWordListParams,
 ): Promise<PageResponse<BannedWord>> => {
   const response = await liveAxios.get<PageWith<BannedWordResponse>>(
-    "/admin/banned-words",
+    "/banned-words",
     { params: toRequestParams(params) },
   );
 

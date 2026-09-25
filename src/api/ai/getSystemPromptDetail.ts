@@ -36,7 +36,7 @@ export const getSystemPromptDetail = async (
   promptKey: string,
 ): Promise<SystemPromptDetail> => {
   const response = await liveAxios.get<SystemPromptDetailResponse>(
-    `/admin/ai/prompts/${promptKey}`,
+    `/ai/prompts/${promptKey}`,
   );
 
   return {

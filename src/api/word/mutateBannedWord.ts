@@ -8,7 +8,7 @@ import { toBannedWord, type BannedWordResponse } from "./getBannedWordList";
 
 export const createBannedWord = async (values: BannedWordSchema) => {
   const response = await liveAxios.post<BannedWordResponse>(
-    "/admin/banned-words",
+    "/banned-words",
     values,
   );
 
@@ -16,7 +16,7 @@ export const createBannedWord = async (values: BannedWordSchema) => {
 };
 
 export const deleteBannedWord = async (bannedWordId: number) => {
-  await liveAxios.delete(`/admin/banned-words/${bannedWordId}`);
+  await liveAxios.delete(`/banned-words/${bannedWordId}`);
 };
 
 /** 금지어 추가·삭제 후 목록을 갱신합니다. */

@@ -47,7 +47,7 @@ const onResponseSuccess = (response: AxiosResponse): AxiosResponse => {
 
 export const LOGIN_PATH = "/login";
 
-export const REFRESH_PATH = "/admin/auth/refresh";
+export const REFRESH_PATH = "/auth/refresh";
 
 /**
  * 인증 없이 부를 수 있는 경로. 이 경로의 401은 화면이 직접 문구로 처리한다.
@@ -55,7 +55,7 @@ export const REFRESH_PATH = "/admin/auth/refresh";
  * 재발급도 여기 있다. 재발급이 401로 끝났다는 것은 세션이 정말 끝났다는 뜻이라
  * **다시 재발급을 시도하면 안 된다.** 아래 재시도 로직이 이 목록을 보고 멈춘다.
  */
-const PUBLIC_PATHS = ["/admin/auth/login", REFRESH_PATH, "/admin/auth/logout"];
+const PUBLIC_PATHS = ["/auth/login", REFRESH_PATH, "/auth/logout"];
 
 const isPublicPath = (url?: string) =>
   Boolean(url && PUBLIC_PATHS.some((path) => url.startsWith(path)));

@@ -26,7 +26,7 @@ const toRequestParams = (params: FaqListParams) => ({
 export const getFaqList = async (
   params: FaqListParams,
 ): Promise<PageResponse<FaqItem>> => {
-  const response = await liveAxios.get<PageWith<FaqItem>>("/admin/faqs", {
+  const response = await liveAxios.get<PageWith<FaqItem>>("/faqs", {
     params: toRequestParams(params),
   });
 

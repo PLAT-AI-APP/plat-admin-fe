@@ -45,7 +45,7 @@ export const useHomeSectionAddMutation = (
   return useMutation<void, AppError, AddHomeSectionVariables[]>({
     mutationFn: async (targets) => {
       for (const target of targets) {
-        await liveAxios.post("/admin/home-sections", {
+        await liveAxios.post("/home-sections", {
           section,
           language,
           targetType: target.targetType,
@@ -72,7 +72,7 @@ export const useHomeSectionRemoveMutation = (
 
   return useMutation<void, AppError, string>({
     mutationFn: async (homeSectionId) => {
-      await liveAxios.delete(`/admin/home-sections/${homeSectionId}`);
+      await liveAxios.delete(`/home-sections/${homeSectionId}`);
     },
     onSuccess: () => {
       showAppToast("success", "편성에서 뺐습니다.");
@@ -97,7 +97,7 @@ export const useHomeSectionScenarioMutation = (
 
   return useMutation<void, AppError, ChangeScenarioVariables>({
     mutationFn: async ({ homeSectionId, scenarioId }) => {
-      await liveAxios.patch(`/admin/home-sections/${homeSectionId}/scenario`, {
+      await liveAxios.patch(`/home-sections/${homeSectionId}/scenario`, {
         scenarioId,
       });
     },
@@ -127,7 +127,7 @@ export const useHomeSectionReorderMutation = (
 
   return useMutation<void, AppError, string[]>({
     mutationFn: async (orderedIds) => {
-      await liveAxios.patch("/admin/home-sections/order", {
+      await liveAxios.patch("/home-sections/order", {
         section,
         language,
         orderedIds,

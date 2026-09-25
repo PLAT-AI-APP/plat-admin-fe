@@ -4,7 +4,7 @@ import type { AppError } from "@/type/api";
 import type { CreditPolicy } from "@/type/billing";
 
 export const getCreditPolicyList = async () => {
-  const response = await liveAxios.get<CreditPolicy[]>("/admin/credits/policies");
+  const response = await liveAxios.get<CreditPolicy[]>("/credits/policies");
 
   return response.data;
 };

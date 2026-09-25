@@ -60,7 +60,7 @@ export const toUserDetail = (user: UserDetailResponse): UserDetail => ({
 
 export const getUserDetail = async (userId: string): Promise<UserDetail> => {
   const response = await liveAxios.get<UserDetailResponse>(
-    `/admin/users/${userId}`,
+    `/users/${userId}`,
   );
 
   return toUserDetail(response.data);

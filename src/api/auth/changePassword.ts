@@ -7,7 +7,7 @@ import type { AppError } from "@/type/api";
 import type { TokenResponse } from "@/type/auth";
 
 export const changePassword = async (values: PasswordChangeSchema) => {
-  const response = await liveAxios.post<TokenResponse>("/admin/auth/password", {
+  const response = await liveAxios.post<TokenResponse>("/auth/password", {
     currentPassword: values.currentPassword,
     newPassword: values.newPassword,
   });
@@ -19,7 +19,7 @@ export const changePassword = async (values: PasswordChangeSchema) => {
  * 비밀번호 변경. 성공하면 임시 비밀번호 강제 변경 상태가 풀린다.
  *
  * 임시 비밀번호를 쓰는 계정은 서버에서 `PASSWORD_CHANGE_REQUIRED` 권한 하나만
- * 받아 `/admin/auth/**` 밖이 전부 막힌다. 여기를 통과해야 콘솔이 열린다.
+ * 받아 `/auth/**` 밖이 전부 막힌다. 여기를 통과해야 콘솔이 열린다.
  *
  * **서버가 이 계정의 세션을 전부 끊고 새 토큰 한 쌍을 내준다.** 비밀번호를 바꾸는
  * 이유의 절반은 "남이 알고 있을지도 모른다"라서, 다른 기기에 열려 있던 세션이

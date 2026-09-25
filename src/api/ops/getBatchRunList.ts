@@ -64,7 +64,7 @@ export const getBatchRunList = async (
   params: BatchRunListParams,
 ): Promise<PageResponse<BatchJobRun>> => {
   const response = await liveAxios.get<PageWith<BatchJobRunResponse>>(
-    "/admin/batch/runs",
+    "/batch/runs",
     { params: toRequestParams(params) },
   );
 

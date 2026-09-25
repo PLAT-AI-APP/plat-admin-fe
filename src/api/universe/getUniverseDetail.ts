@@ -176,7 +176,7 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
 
 export const getUniverseDetail = async (universeId: string) => {
   const response = await liveAxios.get<UniverseDetailResponse>(
-    `/admin/universes/${universeId}`,
+    `/universes/${universeId}`,
   );
 
   return toDetail(response.data);

@@ -10,21 +10,21 @@ interface FaqCreateResponse {
 }
 
 export const createFaq = async (values: FaqFormValues) => {
-  const response = await liveAxios.post<FaqCreateResponse>("/admin/faqs", values);
+  const response = await liveAxios.post<FaqCreateResponse>("/faqs", values);
 
   return response.data;
 };
 
 export const updateFaq = async (faqId: string, values: FaqFormValues) => {
-  await liveAxios.put(`/admin/faqs/${faqId}`, values);
+  await liveAxios.put(`/faqs/${faqId}`, values);
 };
 
 export const updateFaqVisibility = async (faqId: string, isVisible: boolean) => {
-  await liveAxios.patch(`/admin/faqs/${faqId}/visibility`, { isVisible });
+  await liveAxios.patch(`/faqs/${faqId}/visibility`, { isVisible });
 };
 
 export const deleteFaq = async (faqId: string) => {
-  await liveAxios.delete(`/admin/faqs/${faqId}`);
+  await liveAxios.delete(`/faqs/${faqId}`);
 };
 
 /** FAQ 등록·수정·노출 변경·삭제 후 목록을 갱신합니다. */

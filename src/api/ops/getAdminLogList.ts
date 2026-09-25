@@ -80,7 +80,7 @@ export const getAdminLogList = async (
   params: AdminLogListParams,
 ): Promise<PageResponse<AdminAuditLog>> => {
   const response = await liveAxios.get<PageWith<AdminActivityLogResponse>>(
-    "/admin/logs/admin",
+    "/logs/admin",
     { params: toRequestParams(params) },
   );
 

@@ -52,7 +52,7 @@ export const getAdjustableUserList = async (
   params: AdjustableUserListParams,
 ): Promise<PageResponse<AdjustableUser>> => {
   const response = await liveAxios.get<PageWith<AdjustableUserResponse>>(
-    "/admin/credits/users",
+    "/credits/users",
     { params: toRequestParams(params) },
   );
 

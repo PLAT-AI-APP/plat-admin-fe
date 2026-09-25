@@ -205,7 +205,7 @@ const notFound = (message: string) =>
   HttpResponse.json({ code: "NOT_FOUND", message }, { status: 404 });
 
 export const characterHandlers = [
-  http.get(`${BASE_URI}/admin/characters`, async ({ request }) => {
+  http.get(`${BASE_URI}/characters`, async ({ request }) => {
     const url = new URL(request.url);
 
     await delay(MOCK_DELAY_MS);
@@ -213,7 +213,7 @@ export const characterHandlers = [
     return HttpResponse.json(paginate(filterCharacters(url), url));
   }),
 
-  http.get(`${BASE_URI}/admin/characters/:characterId`, async ({ params }) => {
+  http.get(`${BASE_URI}/characters/:characterId`, async ({ params }) => {
     const character = findCharacter(String(params.characterId));
 
     await delay(MOCK_DELAY_MS);
@@ -224,7 +224,7 @@ export const characterHandlers = [
   }),
 
   http.patch(
-    `${BASE_URI}/admin/characters/:characterId/visibility`,
+    `${BASE_URI}/characters/:characterId/visibility`,
     async ({ params, request }) => {
       const character = findCharacter(String(params.characterId));
       const { visibility } = (await request.json()) as {
@@ -248,7 +248,7 @@ export const characterHandlers = [
     숨김으로 두었을 수도 있기 때문이다. 노출은 운영자가 따로 판단해 올린다.
   */
   http.patch(
-    `${BASE_URI}/admin/characters/:characterId/status`,
+    `${BASE_URI}/characters/:characterId/status`,
     async ({ params, request }) => {
       const character = findCharacter(String(params.characterId));
       const body = (await request.json()) as CharacterStatusBody;
@@ -288,7 +288,7 @@ export const characterHandlers = [
   ),
 
   http.delete(
-    `${BASE_URI}/admin/characters/:characterId`,
+    `${BASE_URI}/characters/:characterId`,
     async ({ params }) => {
       const character = findCharacter(String(params.characterId));
 
@@ -307,7 +307,7 @@ export const characterHandlers = [
     },
   ),
 
-  http.get(`${BASE_URI}/admin/chat-exports`, async ({ request }) => {
+  http.get(`${BASE_URI}/chat-exports`, async ({ request }) => {
     const url = new URL(request.url);
     const status = url.searchParams.get("status") ?? "";
 
@@ -323,7 +323,7 @@ export const characterHandlers = [
     return HttpResponse.json(paginate(sorted, url));
   }),
 
-  http.post(`${BASE_URI}/admin/chat-exports`, async ({ request }) => {
+  http.post(`${BASE_URI}/chat-exports`, async ({ request }) => {
     const body = (await request.json()) as ChatExportSchema;
     const character = findCharacter(body.targetId);
 
@@ -354,7 +354,7 @@ export const characterHandlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  http.get(`${BASE_URI}/admin/chat-exports/:jobId`, async ({ params }) => {
+  http.get(`${BASE_URI}/chat-exports/:jobId`, async ({ params }) => {
     const jobId = Number(params.jobId);
     const job = chatExportJobs.find((item) => item.jobId === jobId);
 

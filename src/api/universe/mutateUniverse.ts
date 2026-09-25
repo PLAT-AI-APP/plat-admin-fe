@@ -13,8 +13,8 @@ import type {
 /**
  * 세계관 운영 조치(실서버 plat-admin, liveAxios).
  *
- * 두 엔드포인트로 나뉜다. 일반 운영 값은 `PATCH /admin/universes/{id}`,
- * 심사 결과는 `PATCH /admin/universes/{id}/review`. 둘 다 204라 응답에 값이 없어,
+ * 두 엔드포인트로 나뉜다. 일반 운영 값은 `PATCH /universes/{id}`,
+ * 심사 결과는 `PATCH /universes/{id}/review`. 둘 다 204라 응답에 값이 없어,
  * 보낸 값을 그대로 문구에 쓴다.
  */
 
@@ -38,14 +38,14 @@ export const patchUniverse = async (
   universeId: string,
   body: UniversePatchBody,
 ) => {
-  await liveAxios.patch(`/admin/universes/${universeId}`, body);
+  await liveAxios.patch(`/universes/${universeId}`, body);
 };
 
 export const reviewUniverse = async (
   universeId: string,
   body: UniverseReviewBody,
 ) => {
-  await liveAxios.patch(`/admin/universes/${universeId}/review`, body);
+  await liveAxios.patch(`/universes/${universeId}/review`, body);
 };
 
 /**

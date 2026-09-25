@@ -4,10 +4,11 @@ import { useHasPermission } from "@/store/useAdminStore";
 import { useListParams } from "@/hooks/useListParams";
 import Alert from "@/components/ui/Alert";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
+import AccessLogTable from "./AccessLogTable";
 import AdminLogTable from "./AdminLogTable";
 import SystemEventTable from "./SystemEventTable";
 
-export type LogTab = "admin" | "system";
+export type LogTab = "admin" | "access" | "system";
 
 /**
  * 두 탭의 조건을 한 곳에서 들고 있는다.
@@ -27,6 +28,13 @@ const DEFAULT_PARAMS = {
   // 시스템 이벤트
   level: "",
   source: "",
+  // 접근 로그
+  app: "",
+  method: "",
+  status: "",
+  userId: "",
+  startDate: "",
+  endDate: "",
 };
 
 export type LogParams = typeof DEFAULT_PARAMS;
@@ -35,12 +43,14 @@ export type SetLogParams = (patch: Partial<LogParams>) => void;
 /**
  * 로그 화면.
  *
- * 관리자 활동과 시스템 이벤트는 **답해야 하는 질문이 다르다.** 전자는 "누가
- * 무엇을 바꿨나", 후자는 "지금 무엇이 터지고 있나"다. 컬럼도 필터도 겹치지
- * 않아 한 표에 담으면 양쪽 모두 최소한만 보여 주게 된다.
+ * 세 탭은 **답해야 하는 질문이 다르다.** 관리자 활동은 "누가 무엇을 바꿨나",
+ * 접근 로그는 "이 요청이 실제로 어떻게 오갔나", 시스템 이벤트는 "지금 무엇이
+ * 터지고 있나"다. 컬럼도 필터도 겹치지 않아 한 표에 담으면 모두 최소한만 보여
+ * 주게 된다.
  *
- * 권한도 다르다. 감사 로그는 변경된 값이 그대로 남아 좁게 열어야 하므로
- * (`log:read`), 장애를 보려는 사람에게까지 함께 열리지 않도록 탭 단위로 막는다.
+ * 권한도 다르다. 감사 로그와 접근 로그는 변경 값 · 요청 본문이 그대로 남아 좁게
+ * 열어야 하므로(`log:read`), 장애를 보려는 사람에게까지 함께 열리지 않도록 탭
+ * 단위로 막는다.
  */
 const LogManager = () => {
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
@@ -50,7 +60,10 @@ const LogManager = () => {
 
   const items: TabItem<LogTab>[] = [
     ...(canReadAuditLog
-      ? [{ label: "관리자 활동", value: "admin" as const }]
+      ? [
+          { label: "관리자 활동", value: "admin" as const },
+          { label: "접근 로그", value: "access" as const },
+        ]
       : []),
     ...(canReadSystemLog
       ? [{ label: "시스템 이벤트", value: "system" as const }]
@@ -81,6 +94,12 @@ const LogManager = () => {
       actorId: "",
       level: "",
       source: "",
+      app: "",
+      method: "",
+      status: "",
+      userId: "",
+      startDate: "",
+      endDate: "",
     });
 
   return (
@@ -89,9 +108,13 @@ const LogManager = () => {
         <Tabs items={items} value={tab} onChange={handleTabChange} />
       )}
 
-      {tab === "admin" ? (
+      {tab === "admin" && (
         <AdminLogTable params={params} setParams={setParams} />
-      ) : (
+      )}
+      {tab === "access" && (
+        <AccessLogTable params={params} setParams={setParams} />
+      )}
+      {tab === "system" && (
         <SystemEventTable params={params} setParams={setParams} />
       )}
     </div>

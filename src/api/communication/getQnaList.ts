@@ -32,7 +32,7 @@ const toRequestParams = (params: QnaListParams) => ({
 export const getQnaList = async (
   params: QnaListParams,
 ): Promise<PageResponse<QnaItem>> => {
-  const response = await liveAxios.get<PageWith<QnaItem>>("/admin/qna", {
+  const response = await liveAxios.get<PageWith<QnaItem>>("/qna", {
     params: toRequestParams(params),
   });
 

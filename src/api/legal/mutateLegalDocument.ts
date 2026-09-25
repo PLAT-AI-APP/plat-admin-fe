@@ -5,14 +5,14 @@ import type { LegalDocument, LegalDocumentFormValues } from "@/type/legal";
 import { showAppToast } from "@/lib/toast";
 
 export const createLegalDocument = async (values: LegalDocumentFormValues) => {
-  const response = await adminAxios.post<LegalDocument>("/admin/legal", values);
+  const response = await adminAxios.post<LegalDocument>("/legal", values);
 
   return response.data;
 };
 
 export const activateLegalDocument = async (documentId: number) => {
   const response = await adminAxios.patch<LegalDocument>(
-    `/admin/legal/${documentId}/activate`,
+    `/legal/${documentId}/activate`,
   );
 
   return response.data;

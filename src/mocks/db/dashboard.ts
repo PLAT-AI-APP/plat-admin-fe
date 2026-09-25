@@ -141,7 +141,7 @@ export const dashboardCreditUsage: DashboardSummary["creditUsage"] =
  * 대기 건수는 다른 도메인 목업과 어긋나지 않도록 실제 시드 배열에서 계산한다.
  *
  * 세계관 심사 대기 건수는 여기 없다. 세계관 목록은 이미 실서버로 나가므로
- * 화면이 `/admin/universes`를 직접 세고, 목업이 그와 다른 수를 말하지 않게 한다.
+ * 화면이 `/universes`를 직접 세고, 목업이 그와 다른 수를 말하지 않게 한다.
  */
 export const dashboardSummary: DashboardSummary = {
   metrics: dashboardMetrics,

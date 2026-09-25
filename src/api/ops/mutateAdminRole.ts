@@ -5,7 +5,7 @@ import type { AppError } from "@/type/api";
 import type { AdminRole, AdminRoleFormValues } from "@/type/ops";
 
 export const createAdminRole = async (body: AdminRoleFormValues) => {
-  const response = await liveAxios.post<AdminRole>("/admin/roles", body);
+  const response = await liveAxios.post<AdminRole>("/roles", body);
 
   return response.data;
 };
@@ -18,11 +18,11 @@ export const updateAdminRole = async (
   roleId: number,
   body: AdminRoleFormValues,
 ) => {
-  await liveAxios.patch(`/admin/roles/${roleId}`, body);
+  await liveAxios.patch(`/roles/${roleId}`, body);
 };
 
 export const deleteAdminRole = async (roleId: number) => {
-  await liveAxios.delete(`/admin/roles/${roleId}`);
+  await liveAxios.delete(`/roles/${roleId}`);
 };
 
 /**
@@ -32,7 +32,7 @@ export const deleteAdminRole = async (roleId: number) => {
  * 방금 크레딧 조정 권한을 뺐는데 그 사람 화면에 조정 버튼이 남아 있으면,
  * 눌렀을 때 서버가 막아 주더라도 "되는 줄 알았다"는 경험이 남는다.
  * 그래서 캐시를 통째로 버린다. 내 직책을 고쳤다면 내 권한 목록도 다시 읽어야
- * 하므로 `/admin/auth/me` 캐시도 함께 날아간다.
+ * 하므로 `/auth/me` 캐시도 함께 날아간다.
  */
 export const useAdminRoleMutation = () => {
   const queryClient = useQueryClient();

@@ -37,7 +37,7 @@ const toHashtagDetail = (response: HashtagDetailResponse): HashtagDetail => ({
 
 export const getHashtagDetail = async (hashtagId: number) => {
   const response = await liveAxios.get<HashtagDetailResponse>(
-    `/admin/hashtags/${hashtagId}`,
+    `/hashtags/${hashtagId}`,
   );
 
   return toHashtagDetail(response.data);

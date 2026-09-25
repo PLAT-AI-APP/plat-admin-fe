@@ -1,12 +1,14 @@
 "use client";
 
 import { ReactNode, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useUserDetailQuery } from "@/api/user/getUserDetail";
 import { useUserMutation } from "@/api/user/mutateUser";
-import { Ban, CheckCircle } from "@/icons";
+import { Ban, CheckCircle, ListLines } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
 import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatCurrency, formatWithCommas } from "@/lib/utils";
+import { useHasPermission } from "@/store/useAdminStore";
 import { openConfirm } from "@/store/useConfirmStore";
 import type { UserDetail } from "@/type/user";
 import BackLink from "@/components/layout/BackLink";
@@ -57,6 +59,8 @@ const StatBox = ({ label, value }: { label: string; value: ReactNode }) => (
 const UserDetailView = ({ userId }: UserDetailViewProps) => {
   const [tab, setTab] = useState<UserDetailTab>("ACCOUNT");
   const [isSuspendOpen, setIsSuspendOpen] = useState(false);
+  const router = useRouter();
+  const canReadLog = useHasPermission("log:read");
 
   const { data: user, isLoading, isError, error } = useUserDetailQuery(userId);
   const { statusMutation } = useUserMutation();
@@ -97,6 +101,16 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
   /** 상단 액션. 탈퇴 유저는 상태를 바꾸지 않는다. */
   const buildActions = (target: UserDetail): DropdownItem[] => {
     const items: DropdownItem[] = [];
+
+    /* 문의 대응의 출발점. 이 유저가 서비스 API로 보낸 요청만 추려 연다. */
+    if (canReadLog) {
+      items.push({
+        label: "요청 로그 보기",
+        icon: <ListLines size={15} />,
+        onSelect: () =>
+          router.push(`/ops/logs?tab=access&app=api&userId=${target.userId}`),
+      });
+    }
 
     if (target.status === "ACTIVE") {
       items.push({

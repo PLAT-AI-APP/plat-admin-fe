@@ -26,7 +26,7 @@ export interface GlobalSearchResponse {
 }
 
 export const getGlobalSearch = async (keyword: string) => {
-  const response = await adminAxios.get<GlobalSearchResponse>("/admin/search", {
+  const response = await adminAxios.get<GlobalSearchResponse>("/search", {
     params: { keyword },
   });
 

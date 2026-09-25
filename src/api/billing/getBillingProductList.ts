@@ -5,7 +5,7 @@ import type { BillingProduct } from "@/type/billing";
 
 export const getBillingProductList = async () => {
   const response = await liveAxios.get<BillingProduct[]>(
-    "/admin/billing/products",
+    "/billing/products",
   );
 
   return response.data;

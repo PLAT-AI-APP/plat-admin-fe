@@ -5,7 +5,7 @@ import { toReportCaseDetail, type ReportCaseDetailResponse } from "./reportMappe
 
 export const getReportCase = async (caseId: string): Promise<ReportCaseDetail> => {
   const response = await liveAxios.get<ReportCaseDetailResponse>(
-    `/admin/reports/${caseId}`,
+    `/reports/${caseId}`,
   );
 
   return toReportCaseDetail(response.data);

@@ -53,7 +53,7 @@ export const getHashtagSuggestList = async (
   params: HashtagSuggestListParams,
 ): Promise<PageResponse<HashtagSuggestGroup>> => {
   const response = await liveAxios.get<PageWith<HashtagSuggestGroupResponse>>(
-    "/admin/hashtags/suggestions",
+    "/hashtags/suggestions",
     { params: toRequestParams(params) },
   );
 

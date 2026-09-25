@@ -54,7 +54,7 @@ export const getHomeSectionItems = async (
   language: ServiceLanguage,
 ): Promise<HomeSectionItem[]> => {
   const response = await liveAxios.get<HomeSectionItemResponse[]>(
-    "/admin/home-sections",
+    "/home-sections",
     { params: { section, language } },
   );
 

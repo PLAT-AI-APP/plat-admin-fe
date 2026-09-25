@@ -18,7 +18,7 @@ export const createCreditAdjustment = async (
   request: CreditAdjustmentRequest,
 ) => {
   const response = await liveAxios.post<CreditAdjustment>(
-    "/admin/credits/adjustments",
+    "/credits/adjustments",
     request,
   );
 

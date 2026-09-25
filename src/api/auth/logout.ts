@@ -12,7 +12,7 @@ import type { AppError } from "@/type/api";
  * accessToken은 서버가 폐기하지 못한다 — 만료를 15분으로 짧게 둔 이유가 이것이다.
  */
 export const logout = async () => {
-  await liveAxios.post("/admin/auth/logout", {
+  await liveAxios.post("/auth/logout", {
     refreshToken: getRefreshToken(),
   });
 };

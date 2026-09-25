@@ -20,7 +20,7 @@ export const getReporterEntries = async ({
   ...page
 }: ReporterEntriesParams): Promise<PageResponse<ReportEntryItem>> => {
   const response = await liveAxios.get<PageWith<ReportEntryItemResponse>>(
-    "/admin/reports/items",
+    "/reports/items",
     { params: { ...toPageRequest(page), reporterUserId } },
   );
 

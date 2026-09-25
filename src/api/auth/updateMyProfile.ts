@@ -8,7 +8,7 @@ import type { AdminProfile } from "@/type/auth";
 
 export const updateMyProfile = async (values: ProfileNameSchema) => {
   const response = await liveAxios.patch<AdminProfile>(
-    "/admin/auth/me",
+    "/auth/me",
     values,
   );
 

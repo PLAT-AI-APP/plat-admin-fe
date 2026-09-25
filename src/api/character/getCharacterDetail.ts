@@ -51,7 +51,7 @@ export interface CharacterDetailResponse extends CharacterDetail {
 
 export const getCharacterDetail = async (characterId: string) => {
   const response = await adminAxios.get<CharacterDetailResponse>(
-    `/admin/characters/${characterId}`,
+    `/characters/${characterId}`,
   );
 
   return response.data;

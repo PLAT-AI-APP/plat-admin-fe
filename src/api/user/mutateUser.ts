@@ -27,7 +27,7 @@ export const updateUserStatus = async (
   userId: string,
   body: UpdateUserStatusRequest,
 ): Promise<void> => {
-  await liveAxios.patch(`/admin/users/${userId}/status`, body);
+  await liveAxios.patch(`/users/${userId}/status`, body);
 };
 
 /** 유저 상태 변경 후 목록과 상세를 함께 갱신합니다. */

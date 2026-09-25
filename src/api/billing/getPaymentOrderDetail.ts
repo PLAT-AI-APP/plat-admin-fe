@@ -4,7 +4,7 @@ import type { PaymentOrderDetail } from "@/type/billing";
 import { toPaymentOrderDetail } from "./paymentOrderMapper";
 
 export const getPaymentOrderDetail = async (orderId: string) => {
-  const response = await liveAxios.get<unknown>(`/admin/payment-orders/${orderId}`);
+  const response = await liveAxios.get<unknown>(`/payment-orders/${orderId}`);
 
   return toPaymentOrderDetail(response.data);
 };

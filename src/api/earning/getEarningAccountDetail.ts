@@ -41,7 +41,7 @@ export const useEarningAccountQuery = (accountId: string) =>
     queryKey: earningQueryKeys.account(accountId),
     queryFn: async () =>
       toEarningAccountDetail(
-        (await liveAxios.get<EarningAccountDetailResponse>(`/admin/earnings/accounts/${accountId}`)).data,
+        (await liveAxios.get<EarningAccountDetailResponse>(`/earnings/accounts/${accountId}`)).data,
       ),
   });
 
@@ -54,7 +54,7 @@ export const useEarningAccountByUserQuery = (userId: string) =>
     queryKey: earningQueryKeys.accountByUser(userId),
     queryFn: async () =>
       toEarningAccountDetail(
-        (await liveAxios.get<EarningAccountDetailResponse>(`/admin/earnings/users/${userId}`)).data,
+        (await liveAxios.get<EarningAccountDetailResponse>(`/earnings/users/${userId}`)).data,
       ),
     retry: (count, error) => error.code !== EARNING_ACCOUNT_NOT_FOUND && count < 1,
   });
@@ -66,7 +66,7 @@ export const useEarningContributionsQuery = (accountId: string) =>
     queryFn: async () =>
       (
         await liveAxios.get<EarningContributionResponse[]>(
-          `/admin/earnings/accounts/${accountId}/contributions`,
+          `/earnings/accounts/${accountId}/contributions`,
         )
       ).data.map(toEarningContribution),
   });
@@ -98,7 +98,7 @@ const useEarningSliceQuery = <R, T>(
 export const useEarningLedgersQuery = (accountId: string, size = 20, enabled = true) =>
   useEarningSliceQuery<EarningLedgerAdminResponse, EarningLedgerRow>(
     earningQueryKeys.ledgers(accountId, size),
-    `/admin/earnings/accounts/${accountId}/ledgers`,
+    `/earnings/accounts/${accountId}/ledgers`,
     size,
     toEarningLedgerRow,
     enabled,
@@ -108,7 +108,7 @@ export const useEarningLedgersQuery = (accountId: string, size = 20, enabled = t
 export const useEarningAccrualsQuery = (accountId: string, size = 20) =>
   useEarningSliceQuery<EarningAccrualAdminResponse, EarningAccrualRow>(
     earningQueryKeys.accruals(accountId, size),
-    `/admin/earnings/accounts/${accountId}/accruals`,
+    `/earnings/accounts/${accountId}/accruals`,
     size,
     toEarningAccrualRow,
   );
@@ -119,7 +119,7 @@ export const useEarningHistoriesQuery = (accountId: string, enabled = true) =>
     queryKey: earningQueryKeys.histories(accountId),
     queryFn: async () =>
       (
-        await liveAxios.get<EarningHistoryResponse[]>(`/admin/earnings/accounts/${accountId}/histories`)
+        await liveAxios.get<EarningHistoryResponse[]>(`/earnings/accounts/${accountId}/histories`)
       ).data.map(toEarningHistory),
     enabled,
   });
@@ -130,7 +130,7 @@ export const useAccountRedemptionsQuery = (accountId: string, enabled = true) =>
     queryKey: earningQueryKeys.accountRedemptions(accountId),
     queryFn: async () =>
       (
-        await liveAxios.get<RedemptionAdminResponse[]>(`/admin/earnings/accounts/${accountId}/redemptions`)
+        await liveAxios.get<RedemptionAdminResponse[]>(`/earnings/accounts/${accountId}/redemptions`)
       ).data.map(toRedemption),
     enabled,
   });

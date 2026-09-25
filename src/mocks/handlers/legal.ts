@@ -11,7 +11,7 @@ import { MOCK_DELAY_MS, nextId } from "@/mocks/utils";
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
 export const legalHandlers = [
-  http.get(`${BASE_URI}/admin/legal`, async ({ request }) => {
+  http.get(`${BASE_URI}/legal`, async ({ request }) => {
     const url = new URL(request.url);
     const documentType = url.searchParams.get(
       "documentType",
@@ -28,7 +28,7 @@ export const legalHandlers = [
     );
   }),
 
-  http.get(`${BASE_URI}/admin/legal/:documentId`, async ({ params }) => {
+  http.get(`${BASE_URI}/legal/:documentId`, async ({ params }) => {
     const documentId = Number(params.documentId);
     const document = legalDocuments.find(
       (item) => item.documentId === documentId,
@@ -46,7 +46,7 @@ export const legalHandlers = [
     return HttpResponse.json(document);
   }),
 
-  http.post(`${BASE_URI}/admin/legal`, async ({ request }) => {
+  http.post(`${BASE_URI}/legal`, async ({ request }) => {
     const body = (await request.json()) as LegalDocumentFormValues;
 
     const isDuplicated = legalDocuments.some(
@@ -85,7 +85,7 @@ export const legalHandlers = [
   }),
 
   http.patch(
-    `${BASE_URI}/admin/legal/:documentId/activate`,
+    `${BASE_URI}/legal/:documentId/activate`,
     async ({ params }) => {
       const documentId = Number(params.documentId);
       const target = legalDocuments.find(

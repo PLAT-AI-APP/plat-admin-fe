@@ -1,5 +1,8 @@
 import {
+  ACCESS_LOG_APPS,
   LOG_DOMAINS,
+  type AccessLogApp,
+  type AccessLogLevel,
   SYSTEM_EVENT_SOURCES,
   type AuditResult,
   type LogDomain,
@@ -110,3 +113,48 @@ export const SYSTEM_EVENT_SOURCE_OPTIONS: SelectOption[] = [
 
 export const getSystemEventSourceLabel = (source: string): string =>
   SYSTEM_EVENT_SOURCE_LABEL[source as SystemEventSource] ?? source;
+
+/* -------------------------------------------------------------------------
+ * 접근 로그
+ * ---------------------------------------------------------------------- */
+
+export const ACCESS_LOG_APP_LABEL: Record<AccessLogApp, string> = {
+  api: "서비스 API",
+  admin: "관리자 API",
+  ai: "AI 채팅",
+  batch: "배치",
+};
+
+export const ACCESS_LOG_APP_OPTIONS: SelectOption[] = [
+  { label: "전체 앱", value: "" },
+  ...ACCESS_LOG_APPS.map((app) => ({
+    label: ACCESS_LOG_APP_LABEL[app],
+    value: app,
+  })),
+];
+
+export const getAccessLogAppLabel = (app: string): string =>
+  ACCESS_LOG_APP_LABEL[app as AccessLogApp] ?? app;
+
+export const ACCESS_LOG_METHOD_OPTIONS: SelectOption[] = [
+  { label: "전체 메서드", value: "" },
+  ...["GET", "POST", "PUT", "PATCH", "DELETE"].map((method) => ({
+    label: method,
+    value: method,
+  })),
+];
+
+export const ACCESS_LOG_STATUS_OPTIONS: SelectOption[] = [
+  { label: "전체 상태", value: "" },
+  { label: "2xx 성공", value: "2xx" },
+  { label: "3xx 이동", value: "3xx" },
+  { label: "4xx 요청 오류", value: "4xx" },
+  { label: "5xx 서버 오류", value: "5xx" },
+];
+
+/** 관리자 활동과 같은 원칙이다 — 정상(INFO)은 중립으로 두고 봐야 할 것에만 색을 준다. */
+export const ACCESS_LOG_LEVEL_TONE: Record<AccessLogLevel, BadgeTone> = {
+  INFO: "neutral",
+  WARN: "warning",
+  ERROR: "danger",
+};

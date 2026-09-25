@@ -7,7 +7,7 @@ import { formatWithCommas } from "@/lib/utils";
 
 export const pingModel = async (model: string) => {
   const response = await liveAxios.post<AiModelPingResult>(
-    `/admin/ai/models/${model}/ping`,
+    `/ai/models/${model}/ping`,
   );
 
   return response.data;

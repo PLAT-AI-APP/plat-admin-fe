@@ -22,7 +22,7 @@ export const opsHandlers = [
    * 사이드바 · 헤더 뱃지가 쓰는 값.
    * 목록과 같은 기준으로 세야 뱃지를 누르고 들어갔을 때 건수가 맞는다.
    */
-  http.get(`${BASE_URI}/admin/ops/pending-counts`, async () => {
+  http.get(`${BASE_URI}/ops/pending-counts`, async () => {
     await delay(MOCK_DELAY_MS);
 
     return HttpResponse.json({
@@ -39,13 +39,13 @@ export const opsHandlers = [
    * 앱 버전 관리
    * ------------------------------------------------------------------ */
 
-  http.get(`${BASE_URI}/admin/app-versions`, async () => {
+  http.get(`${BASE_URI}/app-versions`, async () => {
     await delay(MOCK_DELAY_MS);
 
     return HttpResponse.json([...appVersions]);
   }),
 
-  http.post(`${BASE_URI}/admin/app-versions`, async ({ request }) => {
+  http.post(`${BASE_URI}/app-versions`, async ({ request }) => {
     const body = (await request.json()) as AppVersionFormValues;
 
     if (appVersions.some((version) => version.platform === body.platform)) {
@@ -71,7 +71,7 @@ export const opsHandlers = [
   }),
 
   http.put(
-    `${BASE_URI}/admin/app-versions/:versionId`,
+    `${BASE_URI}/app-versions/:versionId`,
     async ({ params, request }) => {
       const versionId = Number(params.versionId);
       const body = (await request.json()) as AppVersionFormValues;

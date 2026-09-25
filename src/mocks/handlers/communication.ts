@@ -46,7 +46,7 @@ export const communicationHandlers = [
   /* 알림 템플릿                                                        */
   /* ---------------------------------------------------------------- */
 
-  http.get(`${BASE_URI}/admin/notifications/templates`, async () => {
+  http.get(`${BASE_URI}/notifications/templates`, async () => {
     await delay(MOCK_DELAY_MS);
 
     return HttpResponse.json(
@@ -55,7 +55,7 @@ export const communicationHandlers = [
   }),
 
   http.put(
-    `${BASE_URI}/admin/notifications/templates/:templateId`,
+    `${BASE_URI}/notifications/templates/:templateId`,
     async ({ params, request }) => {
       const templateId = Number(params.templateId);
       const body = (await request.json()) as { title: string; body: string };
@@ -76,7 +76,7 @@ export const communicationHandlers = [
   ),
 
   http.patch(
-    `${BASE_URI}/admin/notifications/templates/:templateId/status`,
+    `${BASE_URI}/notifications/templates/:templateId/status`,
     async ({ params, request }) => {
       const templateId = Number(params.templateId);
       const { isEnabled } = (await request.json()) as { isEnabled: boolean };
@@ -99,7 +99,7 @@ export const communicationHandlers = [
   /* 선제 메시지                                                        */
   /* ---------------------------------------------------------------- */
 
-  http.get(`${BASE_URI}/admin/proactive-messages`, async () => {
+  http.get(`${BASE_URI}/proactive-messages`, async () => {
     await delay(MOCK_DELAY_MS);
 
     return HttpResponse.json(
@@ -107,7 +107,7 @@ export const communicationHandlers = [
     );
   }),
 
-  http.post(`${BASE_URI}/admin/proactive-messages`, async ({ request }) => {
+  http.post(`${BASE_URI}/proactive-messages`, async ({ request }) => {
     const body = (await request.json()) as {
       characterId?: string;
       trigger: ProactiveTrigger;
@@ -144,7 +144,7 @@ export const communicationHandlers = [
   }),
 
   http.put(
-    `${BASE_URI}/admin/proactive-messages/:messageId`,
+    `${BASE_URI}/proactive-messages/:messageId`,
     async ({ params, request }) => {
       const messageId = Number(params.messageId);
       const body = (await request.json()) as {
@@ -190,7 +190,7 @@ export const communicationHandlers = [
   ),
 
   http.delete(
-    `${BASE_URI}/admin/proactive-messages/:messageId`,
+    `${BASE_URI}/proactive-messages/:messageId`,
     async ({ params }) => {
       const messageId = Number(params.messageId);
       const index = proactiveMessages.findIndex(
@@ -209,7 +209,7 @@ export const communicationHandlers = [
   /* 푸시 캠페인                                                        */
   /* ---------------------------------------------------------------- */
 
-  http.get(`${BASE_URI}/admin/push/campaigns`, async ({ request }) => {
+  http.get(`${BASE_URI}/push/campaigns`, async ({ request }) => {
     const url = new URL(request.url);
     const keyword = url.searchParams.get("keyword") ?? "";
     const status = url.searchParams.get("status") ?? "";
@@ -226,7 +226,7 @@ export const communicationHandlers = [
     return HttpResponse.json(paginate(filtered, url));
   }),
 
-  http.post(`${BASE_URI}/admin/push/campaigns`, async ({ request }) => {
+  http.post(`${BASE_URI}/push/campaigns`, async ({ request }) => {
     const body = (await request.json()) as {
       title: string;
       body: string;
@@ -258,7 +258,7 @@ export const communicationHandlers = [
   }),
 
   http.post(
-    `${BASE_URI}/admin/push/campaigns/:campaignId/send`,
+    `${BASE_URI}/push/campaigns/:campaignId/send`,
     async ({ params }) => {
       const campaignId = Number(params.campaignId);
       const campaign = pushCampaigns.find(
@@ -293,7 +293,7 @@ export const communicationHandlers = [
   ),
 
   http.delete(
-    `${BASE_URI}/admin/push/campaigns/:campaignId`,
+    `${BASE_URI}/push/campaigns/:campaignId`,
     async ({ params }) => {
       const campaignId = Number(params.campaignId);
       const index = pushCampaigns.findIndex(

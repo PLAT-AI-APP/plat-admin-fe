@@ -26,7 +26,7 @@ export const getRedemptionList = async (
   params: RedemptionListParams,
 ): Promise<PageResponse<Redemption>> => {
   const response = await liveAxios.get<PageWith<RedemptionAdminResponse>>(
-    "/admin/earnings/redemptions",
+    "/earnings/redemptions",
     {
       params: {
         ...toPageRequest(params),
@@ -56,7 +56,7 @@ export const useRedemptionHistoriesQuery = (redemptionId: string) =>
     queryFn: async () =>
       (
         await liveAxios.get<EarningHistoryResponse[]>(
-          `/admin/earnings/redemptions/${redemptionId}/histories`,
+          `/earnings/redemptions/${redemptionId}/histories`,
         )
       ).data.map(toEarningHistory),
   });
@@ -69,7 +69,7 @@ export const usePendingRedemptionCountQuery = () =>
   usePermittedQuery<number>("earning:read", {
     queryKey: earningQueryKeys.pendingRedemptionCount(),
     queryFn: async () =>
-      (await liveAxios.get<{ count: number }>("/admin/earnings/redemptions/pending-count")).data.count,
+      (await liveAxios.get<{ count: number }>("/earnings/redemptions/pending-count")).data.count,
     refetchInterval: PENDING_REFETCH_MS,
     refetchOnWindowFocus: true,
     staleTime: 0,

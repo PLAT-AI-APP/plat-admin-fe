@@ -47,7 +47,7 @@ export const getReportCaseList = async (
   params: ReportCaseListParams,
 ): Promise<PageResponse<ReportCaseItem>> => {
   const response = await liveAxios.get<PageWith<ReportCaseItemResponse>>(
-    "/admin/reports",
+    "/reports",
     { params: toRequestParams(params) },
   );
 

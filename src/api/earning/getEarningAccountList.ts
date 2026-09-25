@@ -25,7 +25,7 @@ export const getEarningAccountList = async (
   params: EarningAccountListParams,
 ): Promise<PageResponse<EarningAccountRow>> => {
   const response = await liveAxios.get<PageWith<EarningAccountListResponse>>(
-    "/admin/earnings/accounts",
+    "/earnings/accounts",
     {
       params: {
         ...toPageRequest(params),
@@ -53,5 +53,5 @@ export const useEarningAccountTotalsQuery = () =>
   usePermittedQuery<EarningAccountTotals>("earning:read", {
     queryKey: earningQueryKeys.accountTotals(),
     queryFn: async () =>
-      (await liveAxios.get<EarningAccountTotals>("/admin/earnings/accounts/totals")).data,
+      (await liveAxios.get<EarningAccountTotals>("/earnings/accounts/totals")).data,
   });

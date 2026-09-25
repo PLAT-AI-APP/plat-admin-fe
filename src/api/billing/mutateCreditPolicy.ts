@@ -15,7 +15,7 @@ export const updateCreditPolicy = async (
   values: CreditPolicyUpdateValues,
 ) => {
   const response = await liveAxios.put<CreditPolicy>(
-    `/admin/credits/policies/${policyKey}`,
+    `/credits/policies/${policyKey}`,
     values,
   );
 
