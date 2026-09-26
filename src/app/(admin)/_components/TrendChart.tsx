@@ -310,6 +310,7 @@ const TrendChart = ({ trend, metric, className }: TrendChartProps) => {
               tickLine={false}
               axisLine={false}
               width={56}
+              allowDecimals={false}
               tickFormatter={formatMetricAxis}
             />
 
