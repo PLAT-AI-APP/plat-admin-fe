@@ -63,12 +63,11 @@ export interface User {
   birthDate?: string;
   gender: Gender;
   /**
-   * 마케팅 정보 수신 동의 (푸시 발송 대상 산정에 쓰인다).
+   * 마케팅 정보 수신 동의 (푸시 발송 대상 산정에 쓰인다). 가장 최근 동의 기록 기준이다.
    *
-   * **아직 모으지 않는 값이라 항상 비어 있다.** 서버에 동의 컬럼 자체가 없다.
-   * 값이 없는 유저가 아니라 아직 아무에게도 묻지 않은 것이므로, 화면은 `-`가
-   * 아니라 `미수집`으로 그린다 — `-`로 두면 운영자가 "이 사람만 동의를 안 했다"로
-   * 읽고 푸시 대상 판단을 그르친다.
+   * 비어 있으면 **마케팅 기록이 하나도 없는 유저**다(소셜 가입 뒤 동의 화면을 아직
+   * 거치지 않음). 거절(false)과 뜻이 다르므로 화면은 `미동의`가 아니라
+   * `NO_AGREEMENT_RECORD_LABEL`로 그린다.
    */
   isMarketingAgreed?: boolean;
   lastLoginAt?: string;
@@ -180,6 +179,9 @@ export const calculateAge = (birthDate?: string): number | undefined => {
  * 비어 있다고 읽고, 그 오해가 그대로 CS 판단이 된다.
  */
 export const UNCOLLECTED_LABEL = "미수집";
+
+/** 동의 기록이 아직 없는 유저의 표시 문구. 거절한 유저(`미동의`)와 구분한다. */
+export const NO_AGREEMENT_RECORD_LABEL = "기록 없음";
 
 /** 휴대폰번호를 010-1234-5678 형태로 표시한다. 아직 수집하지 않는 값이라 대개 비어 있다. */
 export const formatPhoneNumber = (phoneNumber?: string): string => {
