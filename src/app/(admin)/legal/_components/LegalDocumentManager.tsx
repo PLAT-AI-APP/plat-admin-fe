@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLegalDocumentListQuery } from "@/api/legal/getLegalDocumentList";
 import { useLegalDocumentMutation } from "@/api/legal/mutateLegalDocument";
-import { CheckCircle, FileText, Plus } from "@/icons";
+import { FileText, Plus } from "@/icons";
 import { formatDate } from "@/lib/dayjs";
 import { openConfirm } from "@/store/useConfirmStore";
 import type {
@@ -19,6 +19,7 @@ import Table, { type TableColumn } from "@/components/ui/Table";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import LegalDocumentFormModal from "./LegalDocumentFormModal";
 import LegalDocumentDetailModal from "./LegalDocumentDetailModal";
+import LegalStatusBadge from "./LegalStatusBadge";
 
 const LEGAL_TABS: TabItem<LegalDocumentType>[] = [
   { label: LEGAL_DOCUMENT_LABEL.TERMS_OF_SERVICE, value: "TERMS_OF_SERVICE" },
@@ -49,7 +50,7 @@ const LegalDocumentManager = () => {
   const [viewingDocument, setViewingDocument] = useState<LegalDocument>();
 
   const { data, isLoading } = useLegalDocumentListQuery({ documentType });
-  const { createMutation, activateMutation } = useLegalDocumentMutation();
+  const { createMutation, publishMutation } = useLegalDocumentMutation();
 
   const documents = data ?? [];
 
@@ -58,17 +59,19 @@ const LegalDocumentManager = () => {
   };
 
   /**
-   * 활성 문서는 타입별로 1개만 유지된다.
-   * 기존 활성 문서가 즉시 내려가므로 확인 단계를 반드시 거친다.
+   * 게시한 문서는 고칠 수 없고, 시행일이 오면 모든 유저가 재동의 화면을 본다.
+   * 되돌릴 수 없는 일이라 확인 단계를 반드시 거친다.
    */
-  const handleActivate = (legalDocument: LegalDocument) => {
+  const handlePublish = (legalDocument: LegalDocument) => {
+    const effectiveDate = formatDate(legalDocument.effectiveAt);
     openConfirm({
-      title: "활성 문서로 지정할까요?",
-      description: `${LEGAL_DOCUMENT_LABEL[legalDocument.documentType]} ${legalDocument.version} 버전이 앱에 즉시 노출됩니다.`,
-      warning: "기존 활성 문서가 비활성화됩니다.",
-      confirmText: "활성 지정",
+      title: "이 버전을 게시할까요?",
+      description: `${LEGAL_DOCUMENT_LABEL[legalDocument.documentType]} ${legalDocument.version} 버전이 ${effectiveDate}부터 시행됩니다.`,
+      warning:
+        "게시한 문서는 고칠 수 없습니다. 시행일이 되면 모든 유저가 다음 방문 때 재동의 화면을 봅니다.",
+      confirmText: "게시",
       onConfirm: async () => {
-        await activateMutation.mutateAsync(legalDocument.documentId);
+        await publishMutation.mutateAsync(legalDocument.documentId);
 
         setViewingDocument(undefined);
       },
@@ -86,26 +89,32 @@ const LegalDocumentManager = () => {
       ),
     },
     {
-      key: "isActive",
-      header: "활성",
-      width: "100px",
-      render: (legalDocument) =>
-        legalDocument.isActive ? (
-          <span className="inline-flex items-center gap-1 body-5 font-medium text-success">
-            <CheckCircle size={16} />
-            활성
-          </span>
-        ) : (
-          <span className="text-font-disabled">-</span>
-        ),
+      key: "version",
+      header: "버전",
+      width: "90px",
+      render: (legalDocument) => (
+        <span className="body-5 font-medium text-font-1">
+          {legalDocument.version}
+        </span>
+      ),
     },
     {
-      key: "createdAt",
-      header: "생성일",
+      key: "status",
+      header: "상태",
+      width: "110px",
+      render: (legalDocument) => (
+        <LegalStatusBadge status={legalDocument.status} />
+      ),
+    },
+    {
+      key: "effectiveAt",
+      header: "시행일",
       width: "130px",
       numeric: true,
       render: (legalDocument) => (
-        <span className="text-font-2">{formatDate(legalDocument.createdAt)}</span>
+        <span className="text-font-2">
+          {formatDate(legalDocument.effectiveAt)}
+        </span>
       ),
     },
     {
@@ -135,18 +144,18 @@ const LegalDocumentManager = () => {
       width: "120px",
       align: "right",
       render: (legalDocument) =>
-        legalDocument.isActive ? null : (
+        legalDocument.status !== "DRAFT" ? null : (
           <Button
             variant="secondary"
             size="sm"
-            disabled={activateMutation.isPending}
+            disabled={publishMutation.isPending}
             onClick={(event) => {
               // 행 클릭(본문 보기)과 겹치지 않게 이벤트를 막는다.
               event.stopPropagation();
-              handleActivate(legalDocument);
+              handlePublish(legalDocument);
             }}
           >
-            활성 지정
+            게시
           </Button>
         ),
     },
@@ -154,9 +163,13 @@ const LegalDocumentManager = () => {
 
   return (
     <>
-      <Alert tone="info" title="활성 문서는 타입별로 1건만 유지됩니다.">
-        새 버전은 비활성 상태로 등록되며, 활성 지정 시 같은 타입의 기존 활성
-        문서가 자동으로 내려갑니다. 행을 클릭하면 전체 본문을 볼 수 있습니다.
+      <Alert
+        tone="info"
+        title="새 버전은 초안으로 등록되고, 게시하면 시행일부터 적용됩니다."
+      >
+        시행일이 되면 그 버전이 시행 중 문서가 되고, 모든 유저가 다음 방문 때
+        재동의 화면을 봅니다. 게시한 문서는 고칠 수 없으니 게시 전에 본문을
+        확인하세요. 행을 클릭하면 전체 본문을 볼 수 있습니다.
       </Alert>
 
       <Card noPadding>
@@ -190,7 +203,7 @@ const LegalDocumentManager = () => {
           skeletonRows={4}
           onRowClick={setViewingDocument}
           emptyTitle="등록된 문서가 없습니다."
-          emptyDescription="'새 버전 등록'으로 첫 버전을 만들고 활성 문서로 지정하세요."
+          emptyDescription="'새 버전 등록'으로 첫 버전을 만들고 게시하세요."
           emptyAction={
             <Button
               variant="primary"
@@ -216,7 +229,7 @@ const LegalDocumentManager = () => {
         isOpen={Boolean(viewingDocument)}
         onClose={() => setViewingDocument(undefined)}
         legalDocument={viewingDocument}
-        onActivate={handleActivate}
+        onPublish={handlePublish}
       />
     </>
   );

@@ -1,30 +1,29 @@
 "use client";
 
 import { useLegalDocumentQuery } from "@/api/legal/getLegalDocument";
-import { CheckCircle } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
 import { formatAdmin } from "@/lib/utils";
 import type { LegalDocument } from "@/type/legal";
 import { LEGAL_DOCUMENT_LABEL } from "@/type/legal";
-import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
 import MarkdownContent from "@/components/ui/MarkdownContent";
+import LegalStatusBadge from "./LegalStatusBadge";
 
 interface LegalDocumentDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   /** 목록에서 클릭한 문서. 본문은 상세 API로 다시 조회한다. */
   legalDocument?: LegalDocument;
-  onActivate: (legalDocument: LegalDocument) => void;
+  onPublish: (legalDocument: LegalDocument) => void;
 }
 
 const LegalDocumentDetailModal = ({
   isOpen,
   onClose,
   legalDocument,
-  onActivate,
+  onPublish,
 }: LegalDocumentDetailModalProps) => {
   const { data, isLoading } = useLegalDocumentQuery(
     isOpen ? legalDocument?.documentId : undefined,
@@ -44,7 +43,7 @@ const LegalDocumentDetailModal = ({
       }
       description={
         target
-          ? `시행일 ${formatDate(target.effectiveAt)} · 등록 ${formatDateTime(target.createdAt)} · ${formatAdmin(target.createdBy, target.createdById)}`
+          ? `시행일 ${formatDate(target.effectiveAt)} · 등록 ${formatDateTime(target.createdAt)} · ${formatAdmin(target.createdBy, target.createdById ?? undefined)}`
           : undefined
       }
       size="lg"
@@ -56,9 +55,9 @@ const LegalDocumentDetailModal = ({
             닫기
           </Button>
 
-          {target && !target.isActive && (
-            <Button variant="primary" onClick={() => onActivate(target)}>
-              활성 문서로 지정
+          {target?.status === "DRAFT" && (
+            <Button variant="primary" onClick={() => onPublish(target)}>
+              게시
             </Button>
           )}
         </>
@@ -66,13 +65,7 @@ const LegalDocumentDetailModal = ({
     >
       {target && (
         <div className="mb-4 flex items-center gap-2">
-          {target.isActive ? (
-            <Badge tone="success" leftIcon={<CheckCircle size={13} />}>
-              활성 문서
-            </Badge>
-          ) : (
-            <Badge tone="neutral">비활성</Badge>
-          )}
+          <LegalStatusBadge status={target.status} />
 
           <span className="body-5 text-font-2">
             문서 ID #{target.documentId}
