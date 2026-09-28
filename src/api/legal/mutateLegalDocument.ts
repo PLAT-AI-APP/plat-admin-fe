@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type { LegalDocument, LegalDocumentFormValues } from "@/type/legal";
-import { showAppToast } from "@/lib/toast";
+import { showAppToast, showErrorToast } from "@/lib/toast";
 
 /** 폼의 날짜를 한국 시간 그날 0시로 바꾼다. 운영자가 고른 "시행일" 은 한국 날짜다. */
 const toEffectiveAt = (date: string) =>
@@ -45,6 +45,7 @@ export const useLegalDocumentMutation = () => {
       );
       invalidateLegalDocuments();
     },
+    onError: (error) => showErrorToast(error),
   });
 
   const publishMutation = useMutation<LegalDocument, AppError, string>({
@@ -58,6 +59,7 @@ export const useLegalDocumentMutation = () => {
       );
       invalidateLegalDocuments();
     },
+    onError: (error) => showErrorToast(error),
   });
 
   return { createMutation, publishMutation };
