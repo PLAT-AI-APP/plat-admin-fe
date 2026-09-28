@@ -42,6 +42,7 @@ import {
 import ReportEntryPanel from "./ReportEntryPanel";
 import ReportInfoRow from "./ReportInfoRow";
 import ReportResolveModal from "./ReportResolveModal";
+import ReportContextPanel from "./ReportContextPanel";
 import ReportSnapshotView from "./snapshot/ReportSnapshotView";
 
 interface ReportCaseDetailViewProps {
@@ -229,7 +230,12 @@ const ReportCaseDetailView = ({ caseId }: ReportCaseDetailViewProps) => {
                 </Badge>
               }
             >
-              <ReportSnapshotView snapshot={detail.snapshot} />
+              <div className="flex flex-col gap-4">
+                <ReportSnapshotView snapshot={detail.snapshot} />
+                {detail.targetType === "MESSAGE" && (
+                  <ReportContextPanel caseId={detail.caseId} />
+                )}
+              </div>
             </Card>
 
             <div className="flex flex-col gap-4">
