@@ -57,7 +57,7 @@ interface AppProfilePreset {
 /**
  * 프로파일별 기본값.
  *
- * **운영(`main`)은 목업을 끈다.** 아직 실서버가 열어 주지 않은 도메인은
+ * **운영(`main`)과 개발(`develop`)은 목업을 끈다.** 아직 실서버가 열어 주지 않은 도메인은
  * 목업이 아니라 404 로 끝나는 것이 맞다 — 운영에서 가짜 데이터가 그려지면
  * 어느 화면이 진짜로 붙었는지 아무도 구분하지 못한다.
  */
@@ -72,7 +72,8 @@ export const APP_PROFILE_PRESETS: Record<AppProfile, AppProfilePreset> = {
     label: "개발",
     liveBaseUri: "https://admin-api-dev.plat.so",
     imageBaseUri: "https://api-dev.plat.so",
-    mocking: true,
+    // 클로즈베타는 dev 서버로 운영한다. 운영자가 가짜 화면을 진짜로 착각하지 않게 목업을 끈다.
+    mocking: false,
   },
   main: {
     label: "운영",
