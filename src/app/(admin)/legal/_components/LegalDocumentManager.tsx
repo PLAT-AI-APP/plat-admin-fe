@@ -11,7 +11,7 @@ import type {
   LegalDocumentFormValues,
   LegalDocumentType,
 } from "@/type/legal";
-import { LEGAL_DOCUMENT_LABEL } from "@/type/legal";
+import { LEGAL_DOCUMENT_LABEL, RECONSENT_DOCUMENT_TYPES } from "@/type/legal";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -24,6 +24,7 @@ import LegalStatusBadge from "./LegalStatusBadge";
 const LEGAL_TABS: TabItem<LegalDocumentType>[] = [
   { label: LEGAL_DOCUMENT_LABEL.TERMS_OF_SERVICE, value: "TERMS_OF_SERVICE" },
   { label: LEGAL_DOCUMENT_LABEL.PRIVACY_POLICY, value: "PRIVACY_POLICY" },
+  { label: LEGAL_DOCUMENT_LABEL.YOUTH_PROTECTION, value: "YOUTH_PROTECTION" },
 ];
 
 /** 표에서 본문을 가늠할 수 있게 마크다운 기호를 걷어낸 앞 2줄만 남긴다. */
@@ -59,7 +60,7 @@ const LegalDocumentManager = () => {
   };
 
   /**
-   * 게시한 문서는 고칠 수 없고, 시행일이 오면 모든 유저가 재동의 화면을 본다.
+   * 게시한 문서는 고칠 수 없고, 이용약관·개인정보처리방침은 시행일이 오면 모든 유저가 재동의 화면을 본다.
    * 되돌릴 수 없는 일이라 확인 단계를 반드시 거친다.
    */
   const handlePublish = (legalDocument: LegalDocument) => {
@@ -67,8 +68,9 @@ const LegalDocumentManager = () => {
     openConfirm({
       title: "이 버전을 게시할까요?",
       description: `${LEGAL_DOCUMENT_LABEL[legalDocument.documentType]} ${legalDocument.version} 버전이 ${effectiveDate}부터 시행됩니다.`,
-      warning:
-        "게시한 문서는 고칠 수 없습니다. 시행일이 되면 모든 유저가 다음 방문 때 재동의 화면을 봅니다.",
+      warning: RECONSENT_DOCUMENT_TYPES.includes(legalDocument.documentType)
+        ? "게시한 문서는 고칠 수 없습니다. 시행일이 되면 모든 유저가 다음 방문 때 재동의 화면을 봅니다."
+        : "게시한 문서는 고칠 수 없습니다. 시행일이 되면 서비스의 약관 페이지에 이 버전이 보입니다.",
       confirmText: "게시",
       onConfirm: async () => {
         await publishMutation.mutateAsync(legalDocument.documentId);
@@ -167,9 +169,10 @@ const LegalDocumentManager = () => {
         tone="info"
         title="새 버전은 초안으로 등록되고, 게시하면 시행일부터 적용됩니다."
       >
-        시행일이 되면 그 버전이 시행 중 문서가 되고, 모든 유저가 다음 방문 때
-        재동의 화면을 봅니다. 게시한 문서는 고칠 수 없으니 게시 전에 본문을
-        확인하세요. 행을 클릭하면 전체 본문을 볼 수 있습니다.
+        시행일이 되면 그 버전이 서비스의 약관 페이지에 보이고, 이용약관·
+        개인정보처리방침은 모든 유저가 다음 방문 때 재동의 화면을 봅니다.
+        게시한 문서는 고칠 수 없으니 게시 전에 본문을 확인하세요. 행을 클릭하면
+        전체 본문을 볼 수 있습니다.
       </Alert>
 
       <Card noPadding>

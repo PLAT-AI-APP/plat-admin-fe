@@ -1,4 +1,13 @@
-export type LegalDocumentType = "TERMS_OF_SERVICE" | "PRIVACY_POLICY";
+export type LegalDocumentType =
+  | "TERMS_OF_SERVICE"
+  | "PRIVACY_POLICY"
+  | "YOUTH_PROTECTION";
+
+/** 새 버전이 시행되면 유저에게 다시 동의를 받는 문서. 청소년 보호 정책은 게시만 한다. */
+export const RECONSENT_DOCUMENT_TYPES: readonly LegalDocumentType[] = [
+  "TERMS_OF_SERVICE",
+  "PRIVACY_POLICY",
+];
 
 /**
  * 버전 상태. 서버가 게시 여부·시행일·현재 시행 버전으로 매번 계산한다.
@@ -39,6 +48,7 @@ export interface LegalDocumentFormValues {
 export const LEGAL_DOCUMENT_LABEL: Record<LegalDocumentType, string> = {
   TERMS_OF_SERVICE: "이용약관",
   PRIVACY_POLICY: "개인정보처리방침",
+  YOUTH_PROTECTION: "청소년 보호 정책",
 };
 
 export const LEGAL_STATUS_LABEL: Record<LegalDocumentStatus, string> = {
