@@ -27,6 +27,11 @@ const ACTION_COPY: Record<AccountAction, { title: string; description: string; c
     description: "상품권 교환과 노트 전환이 다시 됩니다.",
     confirm: "해제",
   },
+  GRANT: {
+    title: "포인트 지급",
+    description: "교환 가능 포인트로 바로 들어갑니다.",
+    confirm: "지급",
+  },
   DEDUCT: {
     title: "포인트 차감",
     description: "교환 가능 포인트 안에서 차감합니다.",
@@ -49,6 +54,9 @@ interface AccountActionModalProps {
 }
 
 /** 제작자 계정 조치. 모든 조치는 사유 코드와 메모가 필수다. */
+/** 한 번에 지급할 수 있는 최대 포인트. 서버와 같은 값이다. */
+const MAX_GRANT = 10_000_000;
+
 const AccountActionModal = ({
   action,
   available,
@@ -63,9 +71,11 @@ const AccountActionModal = ({
   if (!action) return null;
   const copy = ACTION_COPY[action];
   const amountValue = Number(amount) || 0;
+  const withAmount = action === "GRANT" || action === "DEDUCT";
+  const maxAmount = action === "GRANT" ? MAX_GRANT : available;
   const isInvalid =
     memo.trim().length === 0 ||
-    (action === "DEDUCT" && (amountValue <= 0 || amountValue > available));
+    (withAmount && (!Number.isInteger(amountValue) || amountValue <= 0 || amountValue > maxAmount));
 
   return (
     <Modal
@@ -81,7 +91,7 @@ const AccountActionModal = ({
             취소
           </Button>
           <Button
-            variant={action === "UNFREEZE" ? "primary" : "danger"}
+            variant={action === "UNFREEZE" || action === "GRANT" ? "primary" : "danger"}
             disabled={isInvalid || isSubmitting}
             onClick={() =>
               onSubmit({ reasonCode, memo: memo.trim(), amount: amountValue })
@@ -93,12 +103,20 @@ const AccountActionModal = ({
       }
     >
       <div className="flex flex-col gap-4">
-        {action === "DEDUCT" && (
-          <FormField label="차감 포인트" required hint={`교환 가능 ${formatWithCommas(available)}P까지`}>
+        {withAmount && (
+          <FormField
+            label={action === "GRANT" ? "지급 포인트" : "차감 포인트"}
+            required
+            hint={
+              action === "GRANT"
+                ? `한 번에 ${formatWithCommas(MAX_GRANT)}P까지`
+                : `교환 가능 ${formatWithCommas(available)}P까지`
+            }
+          >
             <Input
               type="number"
               min={1}
-              max={available}
+              max={maxAmount}
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
               placeholder="0"
