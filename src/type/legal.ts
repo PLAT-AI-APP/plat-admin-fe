@@ -57,3 +57,27 @@ export const LEGAL_STATUS_LABEL: Record<LegalDocumentStatus, string> = {
   ACTIVE: "시행 중",
   SUPERSEDED: "지난 버전",
 };
+
+/** 번역본 언어. 한국어는 원문(버전 본문)이라 번역본으로 두지 않는다. */
+export type LegalTranslationLanguage = "EN" | "JA" | "ZH" | "TH" | "VI";
+
+export const LEGAL_TRANSLATION_LANGUAGES: {
+  value: LegalTranslationLanguage;
+  label: string;
+}[] = [
+  { value: "EN", label: "영어" },
+  { value: "JA", label: "일본어" },
+  { value: "ZH", label: "중국어" },
+  { value: "TH", label: "태국어" },
+  { value: "VI", label: "베트남어" },
+];
+
+/** 약관 버전 하나의 번역본(참고용). 효력은 한국어 원문이 가진다. */
+export interface LegalTranslation {
+  language: LegalTranslationLanguage;
+  /** 마크다운 본문 */
+  content: string;
+  updatedAt: string;
+  updatedBy: string;
+  updatedById: number | null;
+}

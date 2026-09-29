@@ -1,7 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
-import type { LegalDocument, LegalDocumentFormValues } from "@/type/legal";
+import {
+  RECONSENT_DOCUMENT_TYPES,
+  type LegalDocument,
+  type LegalDocumentFormValues,
+} from "@/type/legal";
 import { showAppToast, showErrorToast } from "@/lib/toast";
 
 /** 폼의 날짜를 한국 시간 그날 0시로 바꾼다. 운영자가 고른 "시행일" 은 한국 날짜다. */
@@ -51,11 +55,17 @@ export const useLegalDocumentMutation = () => {
   const publishMutation = useMutation<LegalDocument, AppError, string>({
     mutationFn: publishLegalDocument,
     onSuccess: (document) => {
+      // 청소년 보호 정책은 동의 대상이 아니라 약관 페이지에만 반영된다.
+      const reconsent = RECONSENT_DOCUMENT_TYPES.includes(document.documentType);
       showAppToast(
         "success",
         document.status === "ACTIVE"
-          ? "게시했습니다. 지금부터 유저에게 재동의를 받습니다."
-          : "게시했습니다. 시행일부터 유저에게 재동의를 받습니다.",
+          ? reconsent
+            ? "게시했습니다. 지금부터 유저에게 재동의를 받습니다."
+            : "게시했습니다. 지금부터 약관 페이지에 보입니다."
+          : reconsent
+            ? "게시했습니다. 시행일부터 유저에게 재동의를 받습니다."
+            : "게시했습니다. 시행일부터 약관 페이지에 보입니다.",
       );
       invalidateLegalDocuments();
     },

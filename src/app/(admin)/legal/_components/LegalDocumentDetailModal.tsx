@@ -8,8 +8,8 @@ import { LEGAL_DOCUMENT_LABEL } from "@/type/legal";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
-import MarkdownContent from "@/components/ui/MarkdownContent";
 import LegalStatusBadge from "./LegalStatusBadge";
+import LegalTranslationPanel from "./LegalTranslationPanel";
 
 interface LegalDocumentDetailModalProps {
   isOpen: boolean;
@@ -46,7 +46,7 @@ const LegalDocumentDetailModal = ({
           ? `시행일 ${formatDate(target.effectiveAt)} · 등록 ${formatDateTime(target.createdAt)} · ${formatAdmin(target.createdBy, target.createdById ?? undefined)}`
           : undefined
       }
-      size="lg"
+      size="xl"
       // 스켈레톤 → 본문으로 바뀔 때 높이가 튀지 않게 한다.
       minHeight="md"
       footer={
@@ -80,7 +80,12 @@ const LegalDocumentDetailModal = ({
           ))}
         </div>
       ) : (
-        target && <MarkdownContent content={target.content} />
+        target && (
+          <LegalTranslationPanel
+            documentId={target.documentId}
+            originalContent={target.content}
+          />
+        )
       )}
     </Modal>
   );
