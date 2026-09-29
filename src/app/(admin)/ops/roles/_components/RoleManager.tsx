@@ -7,7 +7,7 @@ import { Plus, ShieldCheck, Trash, Users } from "@/icons";
 import { showErrorToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
-import { useHasPermission } from "@/store/useAdminStore";
+import { useAdminStore, useHasPermission } from "@/store/useAdminStore";
 import type { AdminRole } from "@/type/ops";
 import {
   ALL_PERMISSIONS,
@@ -102,8 +102,14 @@ const findFormError = (role: AdminRole): string | null => {
  */
 const RoleManager = () => {
   const canRead = useHasPermission("role:read");
-  const canWrite = useHasPermission("role:write");
-  const canDelete = useHasPermission("role:delete");
+  /*
+    직책을 만들고 · 고치고 · 지우는 일은 **최고관리자만** 한다(서버도 그 외엔 403).
+    직책 권한만 가진 운영자가 자기 직책에 권한을 더 붙이면 스스로 권한을 올릴 수 있기 때문이다.
+    `role:write` · `role:delete` 는 그대로 보되 최고관리자 여부를 함께 본다.
+  */
+  const isSuperAdmin = useAdminStore((state) => Boolean(state.admin?.isSuperAdmin));
+  const canWrite = useHasPermission("role:write") && isSuperAdmin;
+  const canDelete = useHasPermission("role:delete") && isSuperAdmin;
 
   const { data: roles = [], isLoading } = useAdminRoleListQuery();
   const { createMutation, updateMutation, deleteMutation } =
@@ -222,6 +228,13 @@ const RoleManager = () => {
   }
 
   return (
+    <>
+    {!isSuperAdmin && (
+      <Alert tone="info" title="직책은 최고관리자만 만들고 고칠 수 있습니다.">
+        이 화면에서는 직책과 권한 구성을 확인만 할 수 있습니다. 바꿔야 하면
+        최고관리자에게 요청해 주세요.
+      </Alert>
+    )}
     <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
       {/* ------------------------------ 직책 목록 ----------------------------- */}
       <Card
@@ -522,6 +535,7 @@ const RoleManager = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
