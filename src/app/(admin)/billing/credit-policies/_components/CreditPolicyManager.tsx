@@ -94,7 +94,15 @@ const CreditPolicyManager = () => {
       header: "정책",
       width: "220px",
       render: (policy) => (
-        <TableCellStack primary={policy.label} secondary={policy.policyKey} />
+        <div className="flex flex-col items-start gap-1">
+          <TableCellStack primary={policy.label} secondary={policy.policyKey} />
+          {/* 정책 표만 있고 지급 코드가 없는 항목. 켜 두어도 지급되지 않는다는 것을 한눈에 보인다. */}
+          {!policy.applied && (
+            <Badge tone="warning" title="지급 코드가 아직 없어 켜도 지급되지 않습니다.">
+              미연동
+            </Badge>
+          )}
+        </div>
       ),
     },
     {
@@ -206,6 +214,12 @@ const CreditPolicyManager = () => {
         거친 뒤 모든 유저에게 즉시 적용됩니다. 채팅 메시지·이미지 생성처럼 모델과
         옵션(이미지 크기·화질 등)에 따라 차감액이 달라지는 사용 요금은 고정할 수
         없어 <b>AI 모델 설정</b>에서 모델별로 관리합니다.
+      </Alert>
+
+      <Alert tone="warning" title="'미연동' 정책은 아직 지급되지 않습니다.">
+        지금 실제로 지급되는 정책은 <b>가입 축하 크레딧</b>뿐입니다. 나머지는
+        금액과 활성 여부만 저장되고 지급 기능이 붙지 않아, 켜 두어도 유저가 받지
+        않습니다. 이벤트로 공지하기 전에 개발 연동을 먼저 확인해 주세요.
       </Alert>
 
       <Card

@@ -240,6 +240,11 @@ const ReportResolveModal = ({
             hint={isActioned ? undefined : "'조치함'을 고르면 선택할 수 있습니다."}
           >
             <div className="flex flex-col gap-2">
+              {allowedActions.length === 0 && (
+                <p className="caption-2 text-font-2">
+                  이 대상에는 콘솔에서 거는 조치가 없습니다. 조치함은 피신고자 제재로만 닫습니다.
+                </p>
+              )}
               {allowedActions.map((action) => {
                 const blockReason = actionBlockReason(action);
                 const isApplied = isAlreadyApplied(detail, action);

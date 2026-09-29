@@ -13,7 +13,7 @@ import {
   useGlobalSearchQuery,
   type GlobalSearchType,
 } from "@/api/search/getGlobalSearch";
-import { ADMIN_MENU } from "@/constants/menu";
+import { ADMIN_MENU, isMenuShown } from "@/constants/menu";
 import { useAdminStore } from "@/store/useAdminStore";
 import { hasPermission, type PermissionKey } from "@/type/permission";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -50,6 +50,7 @@ const SEARCH_TYPE_LABEL: Record<GlobalSearchType, string> = {
 const buildCommandItems = (): CommandItem[] =>
   ADMIN_MENU.flatMap((group) => {
     if (group.href) {
+      if (!isMenuShown(group)) return [];
       return [
         {
           href: group.href,
@@ -64,7 +65,7 @@ const buildCommandItems = (): CommandItem[] =>
 
     /* 사이드바에서 감춘 항목은 검색으로도 닿지 않아야 한다 — 한쪽만 막으면 감춘 뜻이 없다. */
     return (group.children ?? [])
-      .filter((child) => !child.hidden)
+      .filter((child) => isMenuShown(child))
       .map((child) => ({
         href: child.href,
         label: child.label,

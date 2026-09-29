@@ -18,6 +18,7 @@ import type {
   AppError,
 } from "@/type/api";
 import type { TokenResponse } from "@/type/auth";
+import { reportError } from "@/lib/monitoring";
 
 /** 기존 공통 응답 봉투만 골라내는 가드입니다. */
 const isLegacyApiSuccessEnvelope = <T>(
@@ -238,6 +239,18 @@ const createAdminAxios = ({
       !isPublicPath(config?.url)
     ) {
       handleUnauthorized();
+    }
+
+    // 4xx 는 대부분 입력·권한 문제라 수집하지 않는다. 서버가 깨진 5xx 만 모은다.
+    const status = error.response?.status;
+    if (status !== undefined && status >= 500) {
+      const path = config?.url?.split("?")[0] ?? "";
+      reportError(
+        new Error(
+          `[Admin API ${status}] ${config?.method?.toUpperCase() ?? ""} ${path}`,
+        ),
+        { code: error.response?.data?.code, status },
+      );
     }
 
     const appError: AppError = {

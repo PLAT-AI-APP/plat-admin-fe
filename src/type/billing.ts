@@ -65,6 +65,10 @@ export interface CreditPolicy {
   policyKey: CreditPolicyKey;
   label: string;
   description: string;
+  /**
+   * 지급 코드가 실제로 붙어 있는지. false 면 켜고 금액을 바꿔도 아무도 받지 않는다(지금은 가입 축하만 true).
+   */
+  applied: boolean;
   /** 지급은 양수, 차감은 음수로 관리한다. */
   amount: number;
   isEnabled: boolean;
@@ -101,6 +105,20 @@ export interface CreditAdjustmentFormValues {
   type: AdjustmentType;
   amount: number;
   reason: string;
+}
+
+/**
+ * 크레딧 일괄 지급 결과.
+ *
+ * 서버가 유저마다 따로 커밋해 일부만 실패할 수 있다. 실패한 유저만 골라
+ * **같은 멱등키**로 다시 보내면 이미 받은 유저는 건너뛴다(`alreadyGranted`).
+ */
+export interface CreditBulkGrantResult {
+  /** 중복을 뺀 대상 수 */
+  requested: number;
+  granted: number;
+  alreadyGranted: number;
+  failed: { userId: string; code: string }[];
 }
 
 /**

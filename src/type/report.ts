@@ -13,11 +13,12 @@ import type { UserStatus } from "./user";
  * 상세 화면의 스냅샷 렌더러 레지스트리를 함께 고친다(docs/19 체크리스트).
  */
 
-export type ReportTargetType = "COMMENT" | "UNIVERSE";
+export type ReportTargetType = "COMMENT" | "UNIVERSE" | "MESSAGE";
 
 export const REPORT_TARGET_TYPE_LABEL: Record<ReportTargetType, string> = {
   COMMENT: "댓글",
   UNIVERSE: "세계관",
+  MESSAGE: "AI 답변",
 };
 
 export type ReportReason =
@@ -26,6 +27,10 @@ export type ReportReason =
   | "HATE"
   | "COPYRIGHT"
   | "SPAM"
+  | "DEFAMATION"
+  | "IMPERSONATION"
+  | "MINOR_SEXUAL"
+  | "PERSONAL_INFO"
   | "ETC";
 
 export const REPORT_REASON_LABEL: Record<ReportReason, string> = {
@@ -34,6 +39,10 @@ export const REPORT_REASON_LABEL: Record<ReportReason, string> = {
   HATE: "혐오 표현",
   COPYRIGHT: "저작권",
   SPAM: "스팸·광고",
+  DEFAMATION: "명예훼손·사생활 침해",
+  IMPERSONATION: "실존 인물 사칭",
+  MINOR_SEXUAL: "미성년자 성적 콘텐츠",
+  PERSONAL_INFO: "개인정보 노출",
   ETC: "기타",
 };
 
@@ -66,6 +75,8 @@ export const REPORT_ACTION_LABEL: Record<ReportAction, string> = {
 export const REPORT_ACTIONS_BY_TARGET: Record<ReportTargetType, ReportAction[]> = {
   COMMENT: ["HIDE_COMMENT"],
   UNIVERSE: ["UNIVERSE_DELETE"],
+  // AI 답변은 지울 원본이 신고자 대화다. 조치는 제작자 제재뿐이고, 프롬프트 · 모델 조정은 콘솔 밖 작업이다.
+  MESSAGE: [],
 };
 
 /**
@@ -140,8 +151,28 @@ export interface UniverseReportSnapshot {
   characters: UniverseReportSnapshotCharacter[];
 }
 
+/**
+ * AI 답변 스냅샷. 방을 지우면 메시지가 사라지므로 판단 근거가 전부 여기 있다.
+ * 피신고자는 답변을 만든 세계관의 제작자다.
+ */
+export interface MessageReportSnapshot {
+  type: "MESSAGE";
+  creatorUserId: string;
+  creatorNickname: string;
+  universeId: string;
+  universeTitle: string;
+  /** 신고된 AI 답변 */
+  content: string;
+  /** 답변 바로 앞의 신고자 메시지. 첫 인사면 없다. */
+  precedingUserContent: string | null;
+  writtenAt: string;
+}
+
 /** 대상 타입별 스냅샷. `type`으로 갈라 렌더러를 고른다. */
-export type ReportSnapshot = CommentReportSnapshot | UniverseReportSnapshot;
+export type ReportSnapshot =
+  | CommentReportSnapshot
+  | UniverseReportSnapshot
+  | MessageReportSnapshot;
 
 export type ReportSnapshotOf<T extends ReportTargetType> = Extract<
   ReportSnapshot,
@@ -241,14 +272,16 @@ export interface ResolveReportValues {
  * 신고 대상의 원본 화면 경로. 대상 타입이 늘면 여기만 고친다.
  *
  * 댓글은 상세 페이지가 없어 댓글 관리에서 상세 모달이 열리도록 ID를 실어 보낸다.
+ * AI 답변은 신고자의 개인 대화라 콘솔에 원본 화면이 없다(`null`). 스냅샷으로 판단한다.
  */
 export const getReportTargetHref = (
   targetType: ReportTargetType,
   targetId: string,
-): string => {
-  const hrefByType: Record<ReportTargetType, string> = {
+): string | null => {
+  const hrefByType: Record<ReportTargetType, string | null> = {
     COMMENT: `/community/comments?commentId=${targetId}`,
     UNIVERSE: `/universes/${targetId}`,
+    MESSAGE: null,
   };
 
   return hrefByType[targetType];

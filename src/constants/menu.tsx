@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import type { PermissionKey } from "@/type/permission";
+import { IS_MOCKING } from "@/api/baseUri";
 import {
   Bell,
   Calendar,
@@ -98,8 +99,6 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     icon: <Dashboard size={ICON_SIZE} />,
     href: "/",
     permission: "dashboard:read",
-    /* 집계 지표를 아직 실서버가 내려주지 않는다. 화면은 지표가 붙을 때를 위해 남겨 둔다. */
-    isMock: true,
   },
   {
     key: "main-exposure",
@@ -198,6 +197,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
       {
         label: "신고 관리",
         href: "/community/reports",
+        pendingKey: "report",
         permission: "report:read",
         icon: <Flag size={SUB_ICON_SIZE} />,
       },
@@ -223,6 +223,16 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/users/official",
         permission: "officialAccount:read",
         icon: <Crown size={SUB_ICON_SIZE} />,
+      },
+      {
+        /*
+          관리자 콘솔 계정이 아니라 **서비스 계정**에 주는 관리자 역할이다.
+          운영자가 서비스 화면에서 관리자 기능을 쓸 계정을 여기서 정한다.
+        */
+        label: "서비스 관리자",
+        href: "/users/service-admins",
+        permission: "serviceAdmin:read",
+        icon: <ShieldCheck size={SUB_ICON_SIZE} />,
       },
     ],
   },
@@ -334,6 +344,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
       {
         label: "Q&A 관리",
         href: "/communication/qna",
+        pendingKey: "qna",
         permission: "qna:read",
         icon: <QuestionCircle size={SUB_ICON_SIZE} />,
       },
@@ -372,8 +383,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     icon: <Scale size={ICON_SIZE} />,
     href: "/legal",
     permission: "legal:read",
-    /* 약관·운영 규정은 현재 Notion으로 관리한다. 화면은 이후 전환용으로 남겨 둔다. */
-    isMock: true,
+    /* 약관 버전은 여기서 관리한다. 본문 원문은 아직 Notion 에 두고 버전·시행일·동의 대상을 서버가 판정한다. */
   },
   {
     key: "ops",
@@ -427,6 +437,15 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
   },
 ];
 
+/**
+ * 사이드바·메뉴 검색에 보일 항목인지.
+ *
+ * MOCK 화면은 목업 서버가 켜진 환경에서만 보인다. 실서버 환경에서는 붙을 API 가 없어
+ * 열면 오류만 나므로 메뉴에서 뺀다.
+ */
+export const isMenuShown = (entry: { isMock?: boolean; hidden?: boolean }) =>
+  !entry.hidden && (IS_MOCKING || !entry.isMock);
+
 /** 현재 경로가 속한 1뎁스 그룹 키를 찾는다. */
 export const findActiveGroupKey = (pathname: string): string | undefined => {
   const matched = ADMIN_MENU.find((group) => {
@@ -470,6 +489,27 @@ export const isMenuItemActive = (
   return !hasDeeperSibling;
 };
 
+/** 이 경로를 담당하는 메뉴 항목(단독 메뉴 또는 하위 메뉴). */
+const findRouteMenu = (
+  pathname: string,
+): { permission?: PermissionKey; isMock?: boolean } | undefined => {
+  for (const group of ADMIN_MENU) {
+    if (group.href) {
+      const isMatched =
+        group.href === pathname ||
+        (group.href !== "/" && pathname.startsWith(`${group.href}/`));
+
+      if (isMatched) return group;
+    }
+
+    const child = group.children?.find((item) => isMenuItemActive(item, pathname));
+
+    if (child) return child;
+  }
+
+  return undefined;
+};
+
 /**
  * 이 경로를 보려면 필요한 권한.
  *
@@ -479,20 +519,13 @@ export const isMenuItemActive = (
  */
 export const findRoutePermission = (
   pathname: string,
-): PermissionKey | undefined => {
-  for (const group of ADMIN_MENU) {
-    if (group.href) {
-      const isMatched =
-        group.href === pathname ||
-        (group.href !== "/" && pathname.startsWith(`${group.href}/`));
+): PermissionKey | undefined => findRouteMenu(pathname)?.permission;
 
-      if (isMatched) return group.permission;
-    }
-
-    const child = group.children?.find((item) => isMenuItemActive(item, pathname));
-
-    if (child) return child.permission;
-  }
-
-  return undefined;
-};
+/**
+ * 실서버 환경에서 열 수 없는 MOCK 화면인지.
+ *
+ * 메뉴에서 뺀 MOCK 화면도 주소를 직접 치면 열린다. 붙을 API 가 없어 오류만 나므로
+ * 본문을 안내로 바꾼다. 대시보드(`/`)는 화면이 직접 첫 메뉴로 넘기므로 여기서 빼 둔다.
+ */
+export const isUnavailableMockRoute = (pathname: string): boolean =>
+  !IS_MOCKING && pathname !== "/" && !!findRouteMenu(pathname)?.isMock;

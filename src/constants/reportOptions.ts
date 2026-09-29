@@ -20,6 +20,7 @@ import {
 export const REPORT_TARGET_TYPE_TONE: Record<ReportTargetType, BadgeTone> = {
   COMMENT: "warning",
   UNIVERSE: "brand",
+  MESSAGE: "info",
 };
 
 export const REPORT_CASE_STATUS_TONE: Record<ReportCaseStatus, BadgeTone> = {
@@ -34,6 +35,11 @@ export const REPORT_REASON_TONE: Record<ReportReason, BadgeTone> = {
   HATE: "warning",
   COPYRIGHT: "info",
   SPAM: "neutral",
+  DEFAMATION: "warning",
+  IMPERSONATION: "warning",
+  // 미성년자 성적 콘텐츠는 가장 먼저 처리해야 해 가장 강한 색을 쓴다.
+  MINOR_SEXUAL: "danger",
+  PERSONAL_INFO: "warning",
   ETC: "neutral",
 };
 

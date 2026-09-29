@@ -42,6 +42,7 @@ import {
 import ReportEntryPanel from "./ReportEntryPanel";
 import ReportInfoRow from "./ReportInfoRow";
 import ReportResolveModal from "./ReportResolveModal";
+import ReportContextPanel from "./ReportContextPanel";
 import ReportSnapshotView from "./snapshot/ReportSnapshotView";
 
 interface ReportCaseDetailViewProps {
@@ -137,6 +138,7 @@ const ReportCaseDetailView = ({ caseId }: ReportCaseDetailViewProps) => {
   const { resolveMutation, invalidateReports } = useReportMutation();
 
   const canResolve = canWrite && detail?.status === "PENDING";
+  const targetHref = detail ? getReportTargetHref(detail.targetType, detail.targetId) : null;
 
   const handleResolve = (values: ResolveReportValues) => {
     if (!detail) return;
@@ -228,7 +230,12 @@ const ReportCaseDetailView = ({ caseId }: ReportCaseDetailViewProps) => {
                 </Badge>
               }
             >
-              <ReportSnapshotView snapshot={detail.snapshot} />
+              <div className="flex flex-col gap-4">
+                <ReportSnapshotView snapshot={detail.snapshot} />
+                {detail.targetType === "MESSAGE" && (
+                  <ReportContextPanel caseId={detail.caseId} />
+                )}
+              </div>
             </Card>
 
             <div className="flex flex-col gap-4">
@@ -258,16 +265,18 @@ const ReportCaseDetailView = ({ caseId }: ReportCaseDetailViewProps) => {
                 <ReportInfoRow
                   label="원본"
                   value={
-                    detail.targetState.exists ? (
+                    !detail.targetState.exists ? (
+                      <span className="text-font-2">대상이 사라졌습니다</span>
+                    ) : targetHref ? (
                       <Link
-                        href={getReportTargetHref(detail.targetType, detail.targetId)}
+                        href={targetHref}
                         className="inline-flex items-center gap-1 transition hover:text-brand"
                       >
                         원본 화면으로
                         <ExternalLink size={12} />
                       </Link>
                     ) : (
-                      <span className="text-font-2">대상이 사라졌습니다</span>
+                      <span className="text-font-2">신고자 대화라 스냅샷으로만 봅니다</span>
                     )
                   }
                 />

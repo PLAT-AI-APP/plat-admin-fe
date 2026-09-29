@@ -13,6 +13,7 @@ import Alert from "@/components/ui/Alert";
 import Skeleton from "@/components/ui/Skeleton";
 import CpuDetailCard from "./CpuDetailCard";
 import DependencyCard from "./DependencyCard";
+import MaintenanceCard from "./MaintenanceCard";
 import MemoryDetailCard from "./MemoryDetailCard";
 import MetricTile from "./MetricTile";
 import ResourceUsageChart from "./ResourceUsageChart";
@@ -233,6 +234,8 @@ const ServerStatusBoard = () => {
         selectedApp={selectedApp}
         onSelect={setSelectedApp}
       />
+
+      <MaintenanceCard />
 
       <CpuDetailCard cpu={health.cpu} />
 

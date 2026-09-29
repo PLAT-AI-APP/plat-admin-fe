@@ -2,9 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { findRoutePermission } from "@/constants/menu";
+import { findRoutePermission, isUnavailableMockRoute } from "@/constants/menu";
 import { useAdminStore } from "@/store/useAdminStore";
 import { hasPermission, type PermissionKey } from "@/type/permission";
+import MockRouteUnavailable from "./MockRouteUnavailable";
 import PermissionDenied from "./PermissionDenied";
 
 /**
@@ -22,6 +23,8 @@ import PermissionDenied from "./PermissionDenied";
 const RoutePermissionGate = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const admin = useAdminStore((state) => state.admin);
+
+  if (isUnavailableMockRoute(pathname)) return <MockRouteUnavailable />;
 
   const required = findRoutePermission(pathname);
 

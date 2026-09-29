@@ -8,6 +8,7 @@ import {
   AdminMenuGroup,
   findActiveGroupKey,
   isMenuItemActive,
+  isMenuShown,
 } from "@/constants/menu";
 import { usePendingCountsQuery } from "@/api/ops/getPendingCounts";
 import { ChevronDown, ChevronLeft } from "@/icons";
@@ -55,7 +56,7 @@ const Sidebar = () => {
 
     // 하위가 없는 단독 메뉴
     if (group.href) {
-      if (!isAllowed(group.permission)) return null;
+      if (!isMenuShown(group) || !isAllowed(group.permission)) return null;
 
       return (
         <li key={group.key}>
@@ -88,7 +89,7 @@ const Sidebar = () => {
 
     /* 볼 수 있는 하위가 하나도 없으면 그룹 자체를 숨긴다. 눌러도 빈 목록만 열린다. */
     const visibleChildren = (group.children ?? []).filter(
-      (item) => !item.hidden && isAllowed(item.permission),
+      (item) => isMenuShown(item) && isAllowed(item.permission),
     );
 
     if (visibleChildren.length === 0) return null;

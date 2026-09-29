@@ -1,7 +1,6 @@
 import { characterHandlers } from "./character";
 import { communicationHandlers } from "./communication";
 import { dashboardHandlers } from "./dashboard";
-import { legalHandlers } from "./legal";
 import { opsHandlers } from "./ops";
 import { searchHandlers } from "./search";
 
@@ -33,6 +32,5 @@ export const handlers = [
   ...dashboardHandlers,
   ...characterHandlers,
   ...communicationHandlers,
-  ...legalHandlers,
   ...opsHandlers,
 ];

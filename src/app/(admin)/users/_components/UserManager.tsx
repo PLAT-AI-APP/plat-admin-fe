@@ -14,6 +14,7 @@ import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import {
   DEVICE_PLATFORM_LABEL,
   GENDER_LABEL,
+  NO_AGREEMENT_RECORD_LABEL,
   UNCOLLECTED_LABEL,
   type User,
   type UserStatus,
@@ -45,12 +46,12 @@ const USER_CSV_COLUMNS: CsvColumn<User>[] = [
   { header: "이메일", value: (row) => row.email ?? "-" },
   { header: "생년월일", value: (row) => row.birthDate ?? "-" },
   { header: "성별", value: (row) => GENDER_LABEL[row.gender] },
-  // 아직 모으지 않는 값은 Y/N 으로 적지 않는다. 내려받은 파일에서 N이 "동의 안 함"으로 읽힌다.
+  // 기록이 없는 유저는 N 으로 적지 않는다. 내려받은 파일에서 N이 "거절"로 읽힌다.
   {
     header: "마케팅 동의",
     value: (row) =>
       row.isMarketingAgreed === undefined
-        ? UNCOLLECTED_LABEL
+        ? NO_AGREEMENT_RECORD_LABEL
         : row.isMarketingAgreed
           ? "Y"
           : "N",

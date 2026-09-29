@@ -17,6 +17,7 @@ export type PermissionResource =
   | "mainExposure"
   | "character"
   | "officialAccount"
+  | "serviceAdmin"
   | "universe"
   | "hashtag"
   | "bannedWord"
@@ -107,6 +108,17 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     label: "공식 계정",
     description: "공식으로 취급할 유저 ID 지정. 공식 세계관 전체가 여기서 정해진다.",
     actions: ["read", "write", "delete"],
+  },
+  serviceAdmin: {
+    /*
+      유저 권한과 따로 뗀다. 정지 같은 제재와 달리 서비스 안에서 관리자 기능을 쓸 수 있는
+      계정을 만드는 일이라, 유저를 볼 수 있는 사람 모두에게 딸려 가면 안 된다.
+    */
+    label: "서비스 관리자",
+    description:
+      "운영자가 서비스 화면에서 쓰는 계정에 관리자(ADMIN) 역할을 주고 뺀다.",
+    actions: ["read", "write"],
+    isSensitive: true,
   },
   universe: {
     label: "세계관",
@@ -399,7 +411,7 @@ export const PERMISSION_CATEGORIES = [
     id: "user",
     label: "유저 · 크리에이터",
     description: "유저 계정 조회 · 제재와 공식 계정 지정",
-    resources: ["user", "officialAccount"],
+    resources: ["user", "officialAccount", "serviceAdmin"],
   },
   {
     id: "ai",
