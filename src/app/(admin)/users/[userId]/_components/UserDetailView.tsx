@@ -12,6 +12,7 @@ import { useAdminStore, useHasPermission } from "@/store/useAdminStore";
 import { hasPermission } from "@/type/permission";
 import { openConfirm } from "@/store/useConfirmStore";
 import { useCan } from "@/hooks/useCan";
+import { useListParams } from "@/hooks/useListParams";
 import type { UserDetail } from "@/type/user";
 import BackLink from "@/components/layout/BackLink";
 import PageHeader from "@/components/layout/PageHeader";
@@ -39,6 +40,8 @@ import {
   type UserDetailTab,
 } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
 
+const TAB_PARAMS_DEFAULT = { tab: "ACCOUNT" };
+
 interface UserDetailViewProps {
   userId: string;
 }
@@ -60,7 +63,11 @@ const StatBox = ({ label, value }: { label: string; value: ReactNode }) => (
  * 모달 한 장에 담기지 않는다. 그래서 탭을 가진 페이지로 둔다.
  */
 const UserDetailView = ({ userId }: UserDetailViewProps) => {
-  const [tab, setTab] = useState<UserDetailTab>("ACCOUNT");
+  /*
+    탭을 주소에 묶는다. 새로고침하거나 주소를 넘겨도 보던 탭이 열린다
+    ("이 유저 결제 탭 좀 봐 주세요").
+  */
+  const [params, setParams] = useListParams(TAB_PARAMS_DEFAULT);
   const [isSuspendOpen, setIsSuspendOpen] = useState(false);
   const router = useRouter();
   const canReadLog = useHasPermission("log:read");
@@ -78,6 +85,10 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
       )
     );
   });
+
+  /* 주소에 없는 탭 · 볼 수 없는 탭이 적혀 있으면 계정 정보로 연다. */
+  const tab: UserDetailTab =
+    visibleTabs.find((item) => item.value === params.tab)?.value ?? "ACCOUNT";
 
   const { data: user, isLoading, isError, error } = useUserDetailQuery(userId);
   const { statusMutation } = useUserMutation();
@@ -291,7 +302,11 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
             </div>
           </Card>
 
-          <Tabs items={visibleTabs} value={tab} onChange={setTab} />
+          <Tabs
+            items={visibleTabs}
+            value={tab}
+            onChange={(next) => setParams({ tab: next })}
+          />
 
           {tab === "ACCOUNT" && <UserAccountPanel user={user} />}
           {tab === "UNIVERSE" && (
