@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useCreditBulkGrantMutation } from "@/api/billing/mutateCreditBulkGrant";
 import { Upload } from "@/icons";
+import { createIdempotencyKey } from "@/lib/idempotency";
 import { parseUserIds } from "@/lib/userIdList";
 import { formatCredit, formatWithCommas } from "@/lib/utils";
 import {
@@ -37,15 +38,8 @@ const FAILURE_LABEL: Record<string, string> = {
   UNKNOWN: "알 수 없는 오류 — 서버 로그를 확인해 주세요.",
 };
 
-/**
- * 묶음 멱등키. 서버가 `키:userId`로 풀어 64자에 맞추므로 40자 · 영문 숫자 하이픈만 쓴다.
- * `crypto.randomUUID`가 없는 비보안 컨텍스트에서도 되도록 `getRandomValues`로 만든다.
- */
-const createBatchKey = (): string => {
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-
-  return `bulk-${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
-};
+/** 묶음 멱등키. 서버가 `키:userId`로 풀어 64자에 맞추므로 짧게(37자) 둔다. */
+const createBatchKey = (): string => createIdempotencyKey("bulk");
 
 /**
  * 크레딧 일괄 지급.

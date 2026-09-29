@@ -199,18 +199,21 @@ const CreatorEarningDetail = ({ accountId }: { accountId: string }) => {
 
   const closeModal = () => setAction(null);
 
-  const handleSubmit = (input: AccountActionInput) => {
+  const handleSubmit = async (input: AccountActionInput) => {
     if (!action) return;
-    actionMutation.mutate(
-      {
-        accountId,
-        action,
-        reasonCode: input.reasonCode,
-        memo: input.memo,
-        amount: action === "GRANT" || action === "DEDUCT" ? input.amount : undefined,
-      },
-      { onSuccess: closeModal },
-    );
+
+    const withAmount = action === "GRANT" || action === "DEDUCT";
+
+    await actionMutation.mutateAsync({
+      accountId,
+      action,
+      reasonCode: input.reasonCode,
+      memo: input.memo,
+      amount: withAmount ? input.amount : undefined,
+      idempotencyKey: withAmount ? input.idempotencyKey : undefined,
+    });
+
+    closeModal();
   };
 
   const redemptionColumns: TableColumn<Redemption>[] = [
