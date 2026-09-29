@@ -184,8 +184,8 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     actions: ["read", "write", "adjust", "send"],
     isSensitive: true,
     actionLabels: {
-      write: "동결 · 정책 · 적립 재실행",
-      adjust: "포인트 차감",
+      write: "동결 · 해제 · 정책",
+      adjust: "포인트 지급 · 차감 · 적립 재실행",
       send: "교환 발송 · 반려",
     },
   },
@@ -281,8 +281,10 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
   legal: {
     label: "법적 고지",
     description: "이용약관 · 개인정보처리방침. 활성 지정은 법적 효력을 갖는다.",
-    actions: ["read", "write", "publish"],
+    /* 번역 내리기는 되돌릴 수 없어 서버가 `delete` 로 뗐다. */
+    actions: ["read", "write", "delete", "publish"],
     isSensitive: true,
+    actionLabels: { delete: "번역 내리기" },
   },
   role: {
     label: "직책 · 권한",
@@ -337,6 +339,30 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     actions: ["read", "write"],
   },
 };
+
+/**
+ * 서버에 아직 이 권한을 요구하는 기능이 없는 권한.
+ *
+ * 켤 수는 있지만 켜도 달라지는 것이 없다. 설정 화면에 그대로 두면 "이걸 켰는데 왜 안 되지"
+ * 또는 "이걸 꺼 뒀으니 막혀 있겠지"로 읽힌다. 화면에 '미연결'로 표시해 둔다.
+ * 서버 `AdminAuthority` 에 해당 권한이 생기면 여기서 뺀다.
+ */
+export const UNWIRED_PERMISSIONS: ReadonlySet<PermissionKey> = new Set<PermissionKey>([
+  "character:read",
+  "character:write",
+  "character:delete",
+  "chatExport:write",
+  "billingProduct:delete",
+  "qna:write",
+  "notification:read",
+  "notification:write",
+  "push:read",
+  "push:write",
+  "push:delete",
+  "push:send",
+  "appVersion:read",
+  "appVersion:write",
+]);
 
 export const PERMISSION_ACTION_LABEL: Record<PermissionAction, string> = {
   read: "조회",

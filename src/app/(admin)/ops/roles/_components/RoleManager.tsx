@@ -20,6 +20,7 @@ import {
   permissionKey,
   type PermissionAction,
   type PermissionResource,
+  UNWIRED_PERMISSIONS,
 } from "@/type/permission";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
@@ -479,6 +480,12 @@ const RoleManager = () => {
                                     {def.isSensitive && (
                                       <Badge tone="warning">민감</Badge>
                                     )}
+                                    {/* 자료 전체가 서버와 아직 이어지지 않았으면 줄에서 바로 보인다. */}
+                                    {def.actions.every((action) =>
+                                      UNWIRED_PERMISSIONS.has(
+                                        permissionKey(resource, action),
+                                      ),
+                                    ) && <Badge tone="neutral">미연결</Badge>}
                                   </span>
                                   <span className="block truncate body-6 text-font-2">
                                     {def.description}
@@ -495,14 +502,32 @@ const RoleManager = () => {
                                       className="flex items-center justify-center"
                                     >
                                       {supported ? (
-                                        <Checkbox
-                                          aria-label={`${def.label} ${def.actionLabels?.[action] ?? PERMISSION_ACTION_LABEL[action]}`}
-                                          disabled={!canWrite}
-                                          checked={granted.includes(action)}
-                                          onChange={() =>
-                                            togglePermission(resource, action)
+                                        <span
+                                          className="flex flex-col items-center gap-0.5"
+                                          title={
+                                            UNWIRED_PERMISSIONS.has(
+                                              permissionKey(resource, action),
+                                            )
+                                              ? "서버에 이 권한을 쓰는 기능이 아직 없습니다. 켜도 달라지는 것이 없습니다."
+                                              : undefined
                                           }
-                                        />
+                                        >
+                                          <Checkbox
+                                            aria-label={`${def.label} ${def.actionLabels?.[action] ?? PERMISSION_ACTION_LABEL[action]}`}
+                                            disabled={!canWrite}
+                                            checked={granted.includes(action)}
+                                            onChange={() =>
+                                              togglePermission(resource, action)
+                                            }
+                                          />
+                                          {UNWIRED_PERMISSIONS.has(
+                                            permissionKey(resource, action),
+                                          ) && (
+                                            <span className="caption-3 text-font-disabled">
+                                              미연결
+                                            </span>
+                                          )}
+                                        </span>
                                       ) : (
                                         /* 같은 갈래 안에서도 그 자료에 없는 행위는 선으로 둔다. 꺼진 것과 구분돼야 한다. */
                                         <span className="text-font-disabled">
