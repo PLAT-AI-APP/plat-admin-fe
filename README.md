@@ -40,7 +40,7 @@ npm run dev
 | 프로파일 | 실서버(관리자 API) | 이미지 | MSW 목업 |
 |---|---|---|---|
 | `local` | `http://localhost:8081` (로컬 `plat-be` admin 앱) | `http://localhost:8080` | 켬 |
-| `develop` | `https://admin-api-dev.plat.so` | `https://api-dev.plat.so` | 켬 |
+| `develop` | `https://admin-api-dev.plat.so` | `https://api-dev.plat.so` | **끔** |
 | `main` | `https://admin-api.plat.so` | `https://api.plat.so` | **끔** |
 
 `plat-be` 는 앱이 나뉘어 있어 관리자 API는 admin 앱, 이미지(`/images/**`)는 api 앱이 받는다.
@@ -51,7 +51,7 @@ npm run dev
 
 ```
 ▲ 환경 develop(개발) · 브랜치 develop
-  실서버 https://admin-api-dev.plat.so · 이미지 https://api-dev.plat.so · 목업 켬
+  실서버 https://admin-api-dev.plat.so · 이미지 https://api-dev.plat.so · 목업 끔
 ```
 
 브랜치와 다른 환경을 보려면 스크립트로 고른다.
@@ -93,8 +93,9 @@ npm run dev:local
 이 값들은 `next.config.ts`가 프로파일에서 계산해 번들에 심는다. 화면 코드는
 지금까지처럼 `process.env.NEXT_PUBLIC_*`만 읽는다.
 
-**운영(`main`)은 목업을 끈다.** 아직 실서버가 열어 주지 않은 도메인은 목업이
-아니라 404로 끝나는 것이 맞다 — 운영에서 가짜 데이터가 그려지면 어느 화면이
+**개발(`develop`) · 운영(`main`)은 목업을 끈다.** 클로즈베타는 개발 서버로 운영하므로
+`develop`도 실제 운영 화면이다. 목업은 로컬(`local`)에서만 뜬다. 아직 실서버가 열어 주지 않은
+도메인은 목업이 아니라 404로 끝나는 것이 맞다 — 가짜 데이터가 그려지면 어느 화면이
 진짜로 붙었는지 아무도 구분하지 못한다. 목업을 끄면 죽은 오리진(`:9090`)을
 둘 이유도 없어서 `adminAxios`도 실서버를 본다.
 
@@ -125,7 +126,7 @@ MSW 목업을 쓴다. 목업 핸들러는 전부 `NEXT_PUBLIC_BASE_URI`(아무�
 (`src/constants/menu.tsx`의 `isMock`). 대시보드, 캐릭터, 채팅 내보내기, 크레딧
 정책, 결제 보존 원장, Q&A, 알림 템플릿, 선제 메시지, 푸시, 약관, 앱 버전.
 메뉴가 아닌 **처리 대기 뱃지(`/ops/pending-counts`)와 ⌘K 엔티티 검색
-(`/search`)도 목업**이라, 목업이 꺼진 운영(`main`)에서는 부르지 않는다.
+(`/search`)도 목업**이라, 목업이 꺼진 개발 · 운영(`develop` · `main`)에서는 부르지 않는다.
 단, 처리 대기 뱃지 중 교환 요청 건수(`/earnings/redemptions/pending-count`)는 실서버에서 받는다.
 
 **세션은 실서버가 준다.** 목업 화면이어도 401은 진짜 세션 만료다(`liveAxios`가
