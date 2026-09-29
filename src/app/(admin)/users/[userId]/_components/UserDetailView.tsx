@@ -211,6 +211,9 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
                   {user.isAdultVerified && (
                     <Badge tone="info">성인 인증</Badge>
                   )}
+                  {user.role === "ADMIN" && (
+                    <Badge tone="warning">서비스 관리자</Badge>
+                  )}
                 </div>
 
                 <p className="mt-1 truncate body-5 text-font-2">

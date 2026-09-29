@@ -263,6 +263,10 @@ export interface InstanceStatus {
   containerMemoryUsage: number | null;
   containerMemoryUsedBytes: number | null;
   containerMemoryLimitBytes: number | null;
+  /** 점검 게이트를 지나 처리 중인 요청 수. 게이트가 없는 앱(admin · batch)이면 null. */
+  inFlightRequests: number | null;
+  /** 요청과 떨어져 도는 채팅 답변 생성 수. ai 앱에만 있다. */
+  activeGenerations: number | null;
 }
 
 /**
@@ -540,4 +544,49 @@ export interface PendingCounts {
   report: number;
   /** 발송 대기 상품권 교환. 수익 서버의 별도 엔드포인트에서 온다. */
   redemption: number;
+}
+
+/**
+ * 점검 단계. 판정은 서버가 시각으로 한다.
+ * - NOTICE: 예고. 모두 통과하고 사용자 화면이 예정 시각을 안내한다.
+ * - DRAINING: 소프트 종료. 새 요청은 막고 결제 승인 · 채팅 스트림처럼 진행 중인 흐름은 끝까지 간다.
+ * - CLOSED: 점검 중. 사용자 요청은 모두 막힌다. 이때 배포 · DB 작업을 한다.
+ * - OPEN: 평소(끝났거나 취소된 예약).
+ */
+export type MaintenancePhase = "OPEN" | "NOTICE" | "DRAINING" | "CLOSED";
+
+export type MaintenanceStatus = "SCHEDULED" | "CANCELLED" | "FINISHED";
+
+export interface MaintenanceWindow {
+  maintenanceId: string;
+  phase: MaintenancePhase;
+  status: MaintenanceStatus;
+  drainStartsAt: string;
+  closesAt: string;
+  expectedEndsAt: string | null;
+  message: string | null;
+  createdAt: string;
+  createdByName: string;
+  endedByName: string | null;
+  endedAt: string | null;
+}
+
+/** api · ai 인스턴스 한 대의 진행 중 수. 응답 없는 인스턴스는 수가 null 이다. */
+export interface MaintenanceInstance {
+  app: string;
+  instanceId: string;
+  phase: InstancePhase;
+  reportedAt: string;
+  inFlightRequests: number | null;
+  activeGenerations: number | null;
+}
+
+/** 점검 화면 한 장. "지금 닫아도 되나"를 가를 재료를 함께 준다. */
+export interface MaintenanceOverview {
+  current: MaintenanceWindow | null;
+  history: MaintenanceWindow[];
+  instances: MaintenanceInstance[];
+  /** 결제창을 연 뒤 아직 승인되지 않은 주문 수. */
+  pendingCheckouts: number;
+  latestCheckoutExpiresAt: string | null;
 }

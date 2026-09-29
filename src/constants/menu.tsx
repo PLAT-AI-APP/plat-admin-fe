@@ -224,6 +224,16 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         permission: "officialAccount:read",
         icon: <Crown size={SUB_ICON_SIZE} />,
       },
+      {
+        /*
+          관리자 콘솔 계정이 아니라 **서비스 계정**에 주는 관리자 역할이다.
+          운영자가 서비스 화면에서 관리자 기능을 쓸 계정을 여기서 정한다.
+        */
+        label: "서비스 관리자",
+        href: "/users/service-admins",
+        permission: "serviceAdmin:read",
+        icon: <ShieldCheck size={SUB_ICON_SIZE} />,
+      },
     ],
   },
   {

@@ -94,6 +94,8 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
     userId: String(seed),
     nickname: `${pickOne(seed, NICKNAME_POOL)}${randomInt(seed * 3, 100, 999)}`,
     email: `plat.user${String(seed).padStart(3, "0")}@example.com`,
+    // 운영팀 계정처럼 몇 명만 서비스 관리자로 둔다.
+    role: seed % 17 === 0 ? "ADMIN" : "USER",
     phoneNumber: isVerified
       ? `010${String(randomInt(seed * 18, 10_000_000, 99_999_999))}`
       : undefined,

@@ -42,6 +42,8 @@ export interface UserSummaryResponse {
   lastLoginAt: string | null;
   /** 아직 수집하지 않는 값이라 항상 null이다. */
   lastLoginPlatform: User["lastLoginPlatform"] | null;
+  /** 서비스 역할. ADMIN 이면 서비스 관리자다(관리자 콘솔 계정과는 별개). */
+  role: User["role"];
   createdAt: string;
 }
 
@@ -64,6 +66,7 @@ export const toUser = (user: UserSummaryResponse): User => ({
   isMarketingAgreed: user.marketingAgreed ?? undefined,
   lastLoginAt: user.lastLoginAt ?? undefined,
   lastLoginPlatform: user.lastLoginPlatform ?? undefined,
+  role: user.role,
   createdAt: user.createdAt,
 });
 
