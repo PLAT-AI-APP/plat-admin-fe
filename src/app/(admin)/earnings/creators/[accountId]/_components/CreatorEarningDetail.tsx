@@ -207,7 +207,7 @@ const CreatorEarningDetail = ({ accountId }: { accountId: string }) => {
         action,
         reasonCode: input.reasonCode,
         memo: input.memo,
-        amount: action === "DEDUCT" ? input.amount : undefined,
+        amount: action === "GRANT" || action === "DEDUCT" ? input.amount : undefined,
       },
       { onSuccess: closeModal },
     );
@@ -263,9 +263,14 @@ const CreatorEarningDetail = ({ accountId }: { accountId: string }) => {
         action={
           <div className="flex gap-2">
             {canAdjust && (
-              <Button variant="secondary" onClick={() => setAction("DEDUCT")}>
-                포인트 차감
-              </Button>
+              <>
+                <Button variant="secondary" onClick={() => setAction("GRANT")}>
+                  포인트 지급
+                </Button>
+                <Button variant="secondary" onClick={() => setAction("DEDUCT")}>
+                  포인트 차감
+                </Button>
+              </>
             )}
             {canWrite &&
               (account.status === "FROZEN" ? (

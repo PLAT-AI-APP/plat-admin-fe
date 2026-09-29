@@ -9,7 +9,7 @@ import type {
 } from "@/type/earning";
 import { earningQueryKeys } from "./queryKeys";
 
-export type EarningAccountAction = "FREEZE" | "UNFREEZE" | "DEDUCT";
+export type EarningAccountAction = "FREEZE" | "UNFREEZE" | "GRANT" | "DEDUCT";
 
 export interface EarningAccountActionInput extends EarningActionInput {
   accountId: string;
@@ -20,12 +20,14 @@ export interface EarningAccountActionInput extends EarningActionInput {
 const ACCOUNT_ACTION_PATH: Record<EarningAccountAction, string> = {
   FREEZE: "freeze",
   UNFREEZE: "unfreeze",
+  GRANT: "grants",
   DEDUCT: "deductions",
 };
 
 const ACCOUNT_ACTION_DONE: Record<EarningAccountAction, string> = {
   FREEZE: "계정을 동결했습니다.",
   UNFREEZE: "동결을 해제했습니다.",
+  GRANT: "포인트를 지급했습니다.",
   DEDUCT: "포인트를 차감했습니다.",
 };
 
@@ -35,7 +37,7 @@ const useInvalidateEarning = () => {
   return () => queryClient.invalidateQueries({ queryKey: earningQueryKeys.all() });
 };
 
-/** 계정 조치(동결·해제·차감). 모두 사유 코드와 메모가 필수다. */
+/** 계정 조치(동결·해제·지급·차감). 모두 사유 코드와 메모가 필수다. */
 export const useEarningAccountActionMutation = () => {
   const invalidate = useInvalidateEarning();
 
