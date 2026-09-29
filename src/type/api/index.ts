@@ -3,6 +3,8 @@ export interface AppError {
   code: string;
   fields: Record<string, string>;
   message: string;
+  /** HTTP 상태. 응답이 오지 않은 실패(네트워크 끊김 등)에는 없다. */
+  status?: number;
 }
 
 /** 서버 공통 성공 응답 봉투 */
