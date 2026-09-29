@@ -26,13 +26,13 @@ import type { PermissionKey } from "@/type/permission";
  * 막는 책임은 여전히 서버에 있다.
  * 이건 **쓸모없는 요청을 아예 만들지 않기 위한 것**이지 보안 장치가 아니다.
  */
-export const usePermittedQuery = <TData>(
+export const usePermittedQuery = <TQueryFnData, TData = TQueryFnData>(
   permission: PermissionKey,
-  options: UseQueryOptions<TData, AppError, TData, QueryKey>,
+  options: UseQueryOptions<TQueryFnData, AppError, TData, QueryKey>,
 ): UseQueryResult<TData, AppError> => {
   const allowed = useHasPermission(permission);
 
-  return useQuery<TData, AppError, TData, QueryKey>({
+  return useQuery<TQueryFnData, AppError, TData, QueryKey>({
     ...options,
     enabled: (options.enabled ?? true) && allowed,
   });

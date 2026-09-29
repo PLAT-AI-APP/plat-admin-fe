@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
+import { usePermittedQuery } from "@/api/usePermittedQuery";
 import {
   toPageRequest,
   toPageResponse,
@@ -82,7 +82,7 @@ export const getLedgerList = async (
  * 정렬은 서버가 최근순으로 고정한다. 기간은 KST 날짜 기준이다.
  */
 export const useLedgerListQuery = (params: LedgerListParams) => {
-  return useQuery<PageResponse<LedgerEntry>, AppError>({
+  return usePermittedQuery<PageResponse<LedgerEntry>>("ledger:read", {
     queryKey: ["get-ledger-list", params],
     queryFn: () => getLedgerList(params),
   });

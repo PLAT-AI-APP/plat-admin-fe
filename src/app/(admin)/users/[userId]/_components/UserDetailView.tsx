@@ -8,7 +8,8 @@ import { Ban, CheckCircle, ListLines } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
 import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatCurrency, formatWithCommas } from "@/lib/utils";
-import { useHasPermission } from "@/store/useAdminStore";
+import { useAdminStore, useHasPermission } from "@/store/useAdminStore";
+import { hasPermission } from "@/type/permission";
 import { openConfirm } from "@/store/useConfirmStore";
 import { useCan } from "@/hooks/useCan";
 import type { UserDetail } from "@/type/user";
@@ -33,6 +34,7 @@ import UserQnaPanel from "./UserQnaPanel";
 import UserReportPanel from "./UserReportPanel";
 import UserUniversePanel from "./UserUniversePanel";
 import {
+  USER_DETAIL_TAB_PERMISSIONS,
   USER_DETAIL_TABS,
   type UserDetailTab,
 } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
@@ -63,6 +65,19 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
   const router = useRouter();
   const canReadLog = useHasPermission("log:read");
   const canWrite = useCan("user:write");
+  const admin = useAdminStore((state) => state.admin);
+
+  /* 볼 권한이 없는 탭은 감춘다. 빈 표가 "기록 없음"으로 읽히지 않게 한다. */
+  const visibleTabs = USER_DETAIL_TABS.filter((item) => {
+    const required = USER_DETAIL_TAB_PERMISSIONS[item.value];
+
+    return (
+      !required ||
+      required.some((permission) =>
+        hasPermission(admin?.permissions, permission, admin?.isSuperAdmin),
+      )
+    );
+  });
 
   const { data: user, isLoading, isError, error } = useUserDetailQuery(userId);
   const { statusMutation } = useUserMutation();
@@ -276,7 +291,7 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
             </div>
           </Card>
 
-          <Tabs items={USER_DETAIL_TABS} value={tab} onChange={setTab} />
+          <Tabs items={visibleTabs} value={tab} onChange={setTab} />
 
           {tab === "ACCOUNT" && <UserAccountPanel user={user} />}
           {tab === "UNIVERSE" && (

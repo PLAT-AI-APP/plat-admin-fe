@@ -8,6 +8,7 @@ import { Globe, QuestionCircle, Server } from "@/icons";
 import { formatWithCommas } from "@/lib/utils";
 import type { DashboardMetricKey } from "@/type/dashboard";
 import type { HealthStatus } from "@/type/ops";
+import Can from "@/components/domain/Can";
 import Alert from "@/components/ui/Alert";
 import Badge, { type BadgeTone } from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
@@ -198,14 +199,17 @@ const DashboardOverview = () => {
           </Link>
         </Card>
 
-        <PendingCard
-          title="세계관 심사 대기"
-          description="승인 전에는 앱에 노출되지 않습니다."
-          count={pendingReviewCount}
-          href="/universes?reviewStatus=PENDING"
-          linkLabel="심사하러 가기"
-          icon={<Globe size={22} />}
-        />
+        {/* 세계관을 볼 수 없으면 숫자도 부르지 않는다. 0 으로 두면 "대기 없음"으로 읽힌다. */}
+        <Can permission="universe:read">
+          <PendingCard
+            title="세계관 심사 대기"
+            description="승인 전에는 앱에 노출되지 않습니다."
+            count={pendingReviewCount}
+            href="/universes?reviewStatus=PENDING"
+            linkLabel="심사하러 가기"
+            icon={<Globe size={22} />}
+          />
+        </Can>
 
         <PendingCard
           title="Q&A 문의 대기"
