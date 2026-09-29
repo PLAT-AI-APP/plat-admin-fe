@@ -10,6 +10,7 @@ import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatCurrency, formatWithCommas } from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import { openConfirm } from "@/store/useConfirmStore";
+import { useCan } from "@/hooks/useCan";
 import type { UserDetail } from "@/type/user";
 import BackLink from "@/components/layout/BackLink";
 import PageHeader from "@/components/layout/PageHeader";
@@ -61,6 +62,7 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
   const [isSuspendOpen, setIsSuspendOpen] = useState(false);
   const router = useRouter();
   const canReadLog = useHasPermission("log:read");
+  const canWrite = useCan("user:write");
 
   const { data: user, isLoading, isError, error } = useUserDetailQuery(userId);
   const { statusMutation } = useUserMutation();
@@ -112,6 +114,9 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
       });
     }
 
+    /* 정지 · 해제는 서버에서 `user:write` 다. */
+    if (!canWrite) return items;
+
     if (target.status === "ACTIVE") {
       items.push({
         label: "계정 정지",
@@ -139,7 +144,12 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
       <PageHeader
         title={user?.nickname ?? "유저 상세"}
         description={user ? `#${user.userId} · ${user.email}` : undefined}
-        action={user && <Dropdown items={buildActions(user)} />}
+        action={
+          user &&
+          buildActions(user).length > 0 && (
+            <Dropdown items={buildActions(user)} />
+          )
+        }
       />
 
       {isLoading && (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useBillingProductListQuery } from "@/api/billing/getBillingProductList";
 import { useBillingProductMutation } from "@/api/billing/mutateBillingProduct";
+import { useCan } from "@/hooks/useCan";
 import { Edit, Package, Plus } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { formatCredit, formatCurrency } from "@/lib/utils";
@@ -40,6 +41,8 @@ const BillingProductManager = () => {
   const { data, isLoading } = useBillingProductListQuery();
   const { createMutation, updateMutation, statusMutation } =
     useBillingProductMutation();
+  /* 등록 · 수정 · 상태 변경은 서버에서 모두 `billingProduct:write` 다. */
+  const canWrite = useCan("billingProduct:write");
 
   const [editingProduct, setEditingProduct] = useState<BillingProduct | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -213,7 +216,8 @@ const BillingProductManager = () => {
       header: "",
       width: "88px",
       align: "right",
-      render: (product) => (
+      render: (product) =>
+        canWrite && (
         <div className="flex items-center justify-end gap-1">
           <IconButton
             label="수정"
@@ -231,7 +235,7 @@ const BillingProductManager = () => {
             )}
           />
         </div>
-      ),
+        ),
     },
   ];
 
@@ -241,14 +245,16 @@ const BillingProductManager = () => {
         title={`상품 ${visibleProducts.length}건`}
         description="결제 금액과 지급 크레딧 구성을 관리합니다. 금액은 원 단위 정수입니다."
         action={
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus size={15} />}
-            onClick={handleOpenCreate}
-          >
-            상품 추가
-          </Button>
+          canWrite && (
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus size={15} />}
+              onClick={handleOpenCreate}
+            >
+              상품 추가
+            </Button>
+          )
         }
         noPadding
       >
@@ -272,14 +278,16 @@ const BillingProductManager = () => {
           }
           emptyDescription="첫 크레딧 상품을 추가해 결제 화면을 구성해 보세요."
           emptyAction={
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleOpenCreate}
-            >
-              상품 추가
-            </Button>
+            canWrite && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={handleOpenCreate}
+              >
+                상품 추가
+              </Button>
+            )
           }
         />
       </Card>

@@ -9,12 +9,14 @@ import { showErrorToast } from "@/lib/toast";
 import { formatAdmin } from "@/lib/utils";
 import type { BannedWordSchema } from "@/schema/bannedWord.schema";
 import { openConfirm } from "@/store/useConfirmStore";
+import { useCan } from "@/hooks/useCan";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type {
   BannedWord,
   BannedWordSort,
   BannedWordType,
 } from "@/type/bannedWord";
+import Can from "@/components/domain/Can";
 import Alert from "@/components/ui/Alert";
 import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
@@ -65,6 +67,7 @@ const BannedWordManager = () => {
     sort,
   });
   const { createMutation, deleteMutation } = useBannedWordMutation();
+  const canDelete = useCan("bannedWord:delete");
 
   /* 탭·필터가 바뀌면 `useListParams`가 페이지를 1로 되돌린다. */
   const handleChangeType = (next: BannedWordType) => setParams({ type: next });
@@ -124,22 +127,26 @@ const BannedWordManager = () => {
         <span className="body-5 text-font-2">{formatDate(row.createdAt)}</span>
       ),
     },
-    {
-      key: "actions",
-      header: "",
-      width: "56px",
-      align: "center",
-      render: (row) => (
-        <div className="flex justify-center">
-          <IconButton
-            label="삭제"
-            icon={<Trash size={16} />}
-            tone="danger"
-            onClick={() => handleDelete(row)}
-          />
-        </div>
-      ),
-    },
+    ...(canDelete
+      ? [
+          {
+            key: "actions",
+            header: "",
+            width: "56px",
+            align: "center" as const,
+            render: (row: BannedWord) => (
+              <div className="flex justify-center">
+                <IconButton
+                  label="삭제"
+                  icon={<Trash size={16} />}
+                  tone="danger"
+                  onClick={() => handleDelete(row)}
+                />
+              </div>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const columns: TableColumn<BannedWord>[] = [wordColumn, ...tailColumns];
@@ -150,11 +157,13 @@ const BannedWordManager = () => {
         {TAB_GUIDE[type].body}
       </Alert>
 
-      <BannedWordAddForm
-        type={type}
-        onSubmit={handleCreate}
-        isSubmitting={createMutation.isPending}
-      />
+      <Can permission="bannedWord:write">
+        <BannedWordAddForm
+          type={type}
+          onSubmit={handleCreate}
+          isSubmitting={createMutation.isPending}
+        />
+      </Can>
 
       <Card noPadding>
         <Tabs

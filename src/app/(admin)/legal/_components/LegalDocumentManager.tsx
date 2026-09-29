@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useLegalDocumentListQuery } from "@/api/legal/getLegalDocumentList";
 import { useLegalDocumentMutation } from "@/api/legal/mutateLegalDocument";
+import { useCan } from "@/hooks/useCan";
 import { FileText, Plus } from "@/icons";
 import { formatDate } from "@/lib/dayjs";
 import { openConfirm } from "@/store/useConfirmStore";
@@ -52,6 +53,8 @@ const LegalDocumentManager = () => {
 
   const { data, isLoading } = useLegalDocumentListQuery({ documentType });
   const { createMutation, publishMutation } = useLegalDocumentMutation();
+  const canWrite = useCan("legal:write");
+  const canPublish = useCan("legal:publish");
 
   const documents = data ?? [];
 
@@ -146,7 +149,7 @@ const LegalDocumentManager = () => {
       width: "120px",
       align: "right",
       render: (legalDocument) =>
-        legalDocument.status !== "DRAFT" ? null : (
+        legalDocument.status !== "DRAFT" || !canPublish ? null : (
           <Button
             variant="secondary"
             size="sm"
@@ -188,14 +191,16 @@ const LegalDocumentManager = () => {
             총 {documents.length}건 (이 탭 기준)
           </p>
 
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus size={15} />}
-            onClick={() => setIsFormOpen(true)}
-          >
-            새 버전 등록
-          </Button>
+          {canWrite && (
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus size={15} />}
+              onClick={() => setIsFormOpen(true)}
+            >
+              새 버전 등록
+            </Button>
+          )}
         </div>
 
         <Table
@@ -208,14 +213,16 @@ const LegalDocumentManager = () => {
           emptyTitle="등록된 문서가 없습니다."
           emptyDescription="'새 버전 등록'으로 첫 버전을 만들고 게시하세요."
           emptyAction={
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<FileText size={15} />}
-              onClick={() => setIsFormOpen(true)}
-            >
-              새 버전 등록
-            </Button>
+            canWrite && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<FileText size={15} />}
+                onClick={() => setIsFormOpen(true)}
+              >
+                새 버전 등록
+              </Button>
+            )
           }
         />
       </Card>
@@ -232,7 +239,7 @@ const LegalDocumentManager = () => {
         isOpen={Boolean(viewingDocument)}
         onClose={() => setViewingDocument(undefined)}
         legalDocument={viewingDocument}
-        onPublish={handlePublish}
+        onPublish={canPublish ? handlePublish : undefined}
       />
     </>
   );

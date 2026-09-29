@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useListParams } from "@/hooks/useListParams";
 import { useNoticeListQuery } from "@/api/notice/getNoticeList";
 import { useNoticeMutation } from "@/api/notice/mutateNotice";
+import { useCan } from "@/hooks/useCan";
 import { Ban, Edit, Megaphone, Plus, Star, Trash } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
@@ -86,6 +87,9 @@ const NoticeManager = () => {
 
   const { createMutation, updateMutation, statusMutation, deleteMutation } =
     useNoticeMutation();
+  const canWrite = useCan("notice:write");
+  const canPublish = useCan("notice:publish");
+  const canDelete = useCan("notice:delete");
 
   const notices = data?.content ?? [];
 
@@ -147,32 +151,47 @@ const NoticeManager = () => {
    * 행 액션. 아이콘 버튼을 늘리지 않고 더보기 메뉴 하나로 모은다.
    * 상세 보기는 행을 누르면 열리므로 메뉴에 두지 않는다.
    */
-  const buildRowActions = (notice: NoticeSummary): DropdownItem[] => [
-    notice.status === "PUBLISHED"
-      ? {
-          label: "숨김",
-          icon: <Ban size={15} />,
-          disabled: statusMutation.isPending,
-          onSelect: () => handleHide(notice),
-        }
-      : {
-          label: "게시",
-          icon: <Megaphone size={15} />,
-          disabled: statusMutation.isPending,
-          onSelect: () => handlePublish(notice),
-        },
-    {
-      label: "수정",
-      icon: <Edit size={15} />,
-      onSelect: () => handleOpenEdit(notice),
-    },
-    {
-      label: "삭제",
-      icon: <Trash size={15} />,
-      tone: "danger",
-      onSelect: () => handleDelete(notice),
-    },
-  ];
+  const buildRowActions = (notice: NoticeSummary): DropdownItem[] => {
+    const items: DropdownItem[] = [];
+
+    /* 게시 · 숨김은 서버에서 `notice:publish` 다. */
+    if (canPublish) {
+      items.push(
+        notice.status === "PUBLISHED"
+          ? {
+              label: "숨김",
+              icon: <Ban size={15} />,
+              disabled: statusMutation.isPending,
+              onSelect: () => handleHide(notice),
+            }
+          : {
+              label: "게시",
+              icon: <Megaphone size={15} />,
+              disabled: statusMutation.isPending,
+              onSelect: () => handlePublish(notice),
+            },
+      );
+    }
+
+    if (canWrite) {
+      items.push({
+        label: "수정",
+        icon: <Edit size={15} />,
+        onSelect: () => handleOpenEdit(notice),
+      });
+    }
+
+    if (canDelete) {
+      items.push({
+        label: "삭제",
+        icon: <Trash size={15} />,
+        tone: "danger",
+        onSelect: () => handleDelete(notice),
+      });
+    }
+
+    return items;
+  };
 
   const columns: TableColumn<NoticeSummary>[] = [
     {
@@ -252,15 +271,21 @@ const NoticeManager = () => {
       header: "",
       width: "56px",
       align: "center",
-      render: (row) => (
-        // 행 클릭(상세 모달)과 겹치지 않도록 액션 영역의 클릭은 여기서 멈춘다.
-        <div
-          className="flex justify-center"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <Dropdown items={buildRowActions(row)} />
-        </div>
-      ),
+      render: (row) => {
+        const items = buildRowActions(row);
+
+        if (items.length === 0) return null;
+
+        return (
+          // 행 클릭(상세 모달)과 겹치지 않도록 액션 영역의 클릭은 여기서 멈춘다.
+          <div
+            className="flex justify-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Dropdown items={items} />
+          </div>
+        );
+      },
     },
   ];
 
@@ -278,14 +303,16 @@ const NoticeManager = () => {
               disabled={isLoading}
             />
 
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleOpenCreate}
-            >
-              공지 등록
-            </Button>
+            {canWrite && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={handleOpenCreate}
+              >
+                공지 등록
+              </Button>
+            )}
           </>
         }
         noPadding
@@ -325,14 +352,16 @@ const NoticeManager = () => {
           emptyTitle="등록된 공지사항이 없습니다."
           emptyDescription="점검·업데이트·이벤트 안내를 등록해 보세요."
           emptyAction={
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleOpenCreate}
-            >
-              공지 등록
-            </Button>
+            canWrite && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={handleOpenCreate}
+              >
+                공지 등록
+              </Button>
+            )
           }
         />
 
@@ -350,12 +379,13 @@ const NoticeManager = () => {
         noticeId={editingNoticeId}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+        canPublish={canPublish}
       />
 
       <NoticeDetailModal
         noticeId={viewingNoticeId}
         onClose={() => setViewingNoticeId(null)}
-        onEdit={handleOpenEdit}
+        onEdit={canWrite ? handleOpenEdit : undefined}
       />
     </>
   );

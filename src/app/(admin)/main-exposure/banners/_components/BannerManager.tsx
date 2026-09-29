@@ -19,6 +19,7 @@ import { cn, reorder } from "@/lib/utils";
 import { SERVICE_LANGUAGE_LABEL, type ServiceLanguage } from "@/type/language";
 import type { Banner, BannerFormValues } from "@/type/mainExposure";
 import { openConfirm } from "@/store/useConfirmStore";
+import { useCan } from "@/hooks/useCan";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -45,6 +46,8 @@ const BannerManager = () => {
   const { data: languageCounts } = useBannerLanguageCountQuery();
   const { createMutation, updateMutation, deleteMutation, orderMutation } =
     useBannerMutation();
+  const canWrite = useCan("mainExposure:write");
+  const canDelete = useCan("mainExposure:delete");
 
   /*
     순서 변경 전에는 서버 값을 그대로 쓰고, 드래그가 시작되면 draft가 화면을 담당한다.
@@ -296,6 +299,7 @@ const BannerManager = () => {
       <Card
         title={`${SERVICE_LANGUAGE_LABEL[language]} 배너 목록 ${banners.length}건`}
         action={
+          canWrite && (
           <>
             <Button
               variant="secondary"
@@ -316,6 +320,7 @@ const BannerManager = () => {
               배너 추가
             </Button>
           </>
+          )
         }
       >
         {isLoading && (
@@ -332,14 +337,16 @@ const BannerManager = () => {
             title={`${SERVICE_LANGUAGE_LABEL[language]} 배너가 없습니다.`}
             description={`${SERVICE_LANGUAGE_LABEL[language]} 이미지로 첫 배너를 등록하거나, 다른 언어의 배너를 복제해 보세요.`}
             action={
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<Plus size={15} />}
-                onClick={handleOpenCreate}
-              >
-                배너 추가
-              </Button>
+              canWrite && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<Plus size={15} />}
+                  onClick={handleOpenCreate}
+                >
+                  배너 추가
+                </Button>
+              )
             }
           />
         )}
@@ -358,6 +365,7 @@ const BannerManager = () => {
                       key={banner.bannerId}
                       draggableId={String(banner.bannerId)}
                       index={index}
+                      isDragDisabled={!canWrite}
                     >
                       {(draggable, snapshot) => (
                         <li
@@ -370,6 +378,7 @@ const BannerManager = () => {
                         >
                           <span
                             {...draggable.dragHandleProps}
+                            hidden={!canWrite}
                             className="flex cursor-grab items-center text-font-disabled transition hover:text-font-2 active:cursor-grabbing"
                             aria-label="순서 변경"
                           >
@@ -427,22 +436,28 @@ const BannerManager = () => {
                           </div>
 
                           <div className="flex shrink-0 items-center gap-1">
-                            <IconButton
-                              label="다른 언어로 복제"
-                              icon={<Copy size={16} />}
-                              onClick={() => handleOpenCopy(banner)}
-                            />
-                            <IconButton
-                              label="수정"
-                              icon={<Edit size={16} />}
-                              onClick={() => handleOpenEdit(banner)}
-                            />
-                            <IconButton
-                              label="삭제"
-                              icon={<Trash size={16} />}
-                              tone="danger"
-                              onClick={() => handleDelete(banner)}
-                            />
+                            {canWrite && (
+                              <>
+                                <IconButton
+                                  label="다른 언어로 복제"
+                                  icon={<Copy size={16} />}
+                                  onClick={() => handleOpenCopy(banner)}
+                                />
+                                <IconButton
+                                  label="수정"
+                                  icon={<Edit size={16} />}
+                                  onClick={() => handleOpenEdit(banner)}
+                                />
+                              </>
+                            )}
+                            {canDelete && (
+                              <IconButton
+                                label="삭제"
+                                icon={<Trash size={16} />}
+                                tone="danger"
+                                onClick={() => handleDelete(banner)}
+                              />
+                            )}
                           </div>
                         </li>
                       )}

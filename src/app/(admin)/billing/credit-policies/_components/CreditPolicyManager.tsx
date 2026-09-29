@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useCreditPolicyListQuery } from "@/api/billing/getCreditPolicyList";
 import { useCreditPolicyMutation } from "@/api/billing/mutateCreditPolicy";
+import { useCan } from "@/hooks/useCan";
 import { Check, Close, Edit } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { showAppToast } from "@/lib/toast";
@@ -21,6 +22,7 @@ import TableCellStack from "@/components/ui/TableCellStack";
 const CreditPolicyManager = () => {
   const { data, isLoading } = useCreditPolicyListQuery();
   const { updateMutation } = useCreditPolicyMutation();
+  const canWrite = useCan("creditPolicy:write");
 
   // 인라인 수정 중인 정책만 draft를 들고, 나머지는 서버 값을 그대로 쓴다.
   const [editingKey, setEditingKey] = useState<CreditPolicyKey | null>(null);
@@ -150,7 +152,7 @@ const CreditPolicyManager = () => {
           <Switch
             label={`${policy.label} 활성 여부`}
             checked={policy.isEnabled}
-            disabled={updateMutation.isPending}
+            disabled={!canWrite || updateMutation.isPending}
             onChange={(checked) => handleToggleEnabled(policy, checked)}
           />
         </div>
@@ -195,6 +197,7 @@ const CreditPolicyManager = () => {
             />
           </div>
         ) : (
+          canWrite && (
           <div className="flex items-center justify-end">
             <IconButton
               label="금액 수정"
@@ -202,6 +205,7 @@ const CreditPolicyManager = () => {
               onClick={() => handleStartEdit(policy)}
             />
           </div>
+          )
         ),
     },
   ];

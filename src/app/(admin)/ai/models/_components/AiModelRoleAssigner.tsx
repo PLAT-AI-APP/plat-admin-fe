@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useAiModelMutation } from "@/api/ai/mutateAiModel";
+import { useCan } from "@/hooks/useCan";
 import { Layers, Scale, Star } from "@/icons";
 import { openConfirm } from "@/store/useConfirmStore";
 import type { AiModel, AiModelRole } from "@/type/ai";
@@ -38,6 +39,8 @@ const AiModelRoleAssigner = ({
   models,
   isLoading,
 }: AiModelRoleAssignerProps) => {
+  /* 역할 지정은 서버에서 `aiModel:write` 다. 볼 수만 있으면 지금 지정만 보여 준다. */
+  const canWrite = useCan("aiModel:write");
   const { assignRoleMutation } = useAiModelMutation();
 
   const findHolder = (role: AiModelRole) =>
@@ -132,7 +135,9 @@ const AiModelRoleAssigner = ({
                 onChange={(event) =>
                   handleChange(role, Number(event.target.value))
                 }
-                disabled={assignRoleMutation.isPending || models.length === 0}
+                disabled={
+                  !canWrite || assignRoleMutation.isPending || models.length === 0
+                }
               />
             )}
           </div>
