@@ -26,6 +26,13 @@ const RoutePermissionGate = ({ children }: { children: ReactNode }) => {
 
   if (isUnavailableMockRoute(pathname)) return <MockRouteUnavailable />;
 
+  /*
+    대시보드(`/`)는 로그인 직후 첫 화면이다. 여기서 막으면 대시보드 권한이 없는 운영자는
+    "권한 없음"에 갇힌다. 판단은 화면(DashboardEntry → FirstMenuRedirect)이 직접 해서
+    볼 수 있는 첫 메뉴로 넘긴다.
+  */
+  if (pathname === "/") return <>{children}</>;
+
   const required = findRoutePermission(pathname);
 
   if (
