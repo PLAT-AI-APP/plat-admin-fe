@@ -52,6 +52,13 @@ const createBatchKey = (): string => createIdempotencyKey("bulk");
  */
 const CreditBulkGrantModal = ({ isOpen, onClose }: CreditBulkGrantModalProps) => {
   const [batchKey, setBatchKey] = useState(createBatchKey);
+  /*
+    지금 키로 이미 보낸 금액 · 사유. 둘 중 하나라도 바뀐 채 다시 보내면 **다른 지급**이다.
+    같은 키를 쓰면 서버는 이미 받은 유저를 "처리됨"으로 보고 건너뛰어, 바뀐 금액이
+    조용히 반영되지 않는다. 그래서 그때는 키를 새로 만든다.
+    '실패한 유저만 다시 시도'는 금액 · 사유를 그대로 두므로 같은 키가 유지된다.
+  */
+  const [sentTerms, setSentTerms] = useState<string | null>(null);
   const [result, setResult] = useState<CreditBulkGrantResult | null>(null);
   const [wasOpen, setWasOpen] = useState(isOpen);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,6 +68,7 @@ const CreditBulkGrantModal = ({ isOpen, onClose }: CreditBulkGrantModalProps) =>
     setWasOpen(isOpen);
     if (isOpen) {
       setBatchKey(createBatchKey());
+      setSentTerms(null);
       setResult(null);
     }
   }
@@ -107,6 +115,10 @@ const CreditBulkGrantModal = ({ isOpen, onClose }: CreditBulkGrantModalProps) =>
 
   const submit = handleSubmit((values) => {
     const { userIds } = parseUserIds(values.userIdsText);
+    const reason = values.reason.trim();
+    const terms = `${values.amount}|${reason}`;
+    const key =
+      sentTerms !== null && sentTerms !== terms ? createBatchKey() : batchKey;
 
     openConfirm({
       title: `${formatWithCommas(userIds.length)}명에게 크레딧을 지급할까요?`,
@@ -116,11 +128,14 @@ const CreditBulkGrantModal = ({ isOpen, onClose }: CreditBulkGrantModalProps) =>
       confirmText: "일괄 지급 실행",
       tone: "danger",
       onConfirm: async () => {
+        if (key !== batchKey) setBatchKey(key);
+        setSentTerms(terms);
+
         const next = await mutation.mutateAsync({
           userIds,
           amount: values.amount,
-          reason: values.reason.trim(),
-          idempotencyKey: batchKey,
+          reason,
+          idempotencyKey: key,
         });
 
         setResult(next);
