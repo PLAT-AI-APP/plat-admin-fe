@@ -44,6 +44,11 @@ export interface QnaRefundLink {
    * `FAILED`이면서 `true`면 "환불 불가"로 확정된 것이고, `false`면 결제 상세에서 마무리할 일이 남았다.
    */
   creditRestored: boolean;
+  /**
+   * 승인 대기 중에 그 결제의 노트가 쓰였는지. 쓰였으면 승인해도 자동 거절된다.
+   * 아직 서버 Q&A 응답에 없다 — 오면 확인 문구가 그대로 경고를 띄운다.
+   */
+  creditUsedSinceRequest?: boolean;
 }
 
 export interface QnaItem {

@@ -6,17 +6,11 @@ import { useForm } from "react-hook-form";
 import { usePaymentOrderMutation } from "@/api/billing/mutatePaymentOrder";
 import { useQnaDetailQuery } from "@/api/communication/getQnaDetail";
 import { useQnaMutation } from "@/api/communication/mutateQna";
-import {
-  REFUND_CHAT_IN_PROGRESS_CODE,
-  REFUND_CHAT_IN_PROGRESS_MESSAGE,
-} from "@/constants/billingOptions";
 import { formatDateTime } from "@/lib/dayjs";
 import { showErrorToast } from "@/lib/toast";
-import { formatAdmin, formatCurrency } from "@/lib/utils";
+import { formatAdmin } from "@/lib/utils";
 import { qnaAnswerSchema, type QnaAnswerSchema } from "@/schema/qnaAnswer.schema";
 import { useHasPermission } from "@/store/useAdminStore";
-import { openConfirm } from "@/store/useConfirmStore";
-import type { AppError } from "@/type/api";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
@@ -24,6 +18,7 @@ import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
 import Textarea from "@/components/ui/Textarea";
 import RefundRejectModal from "@/components/billing/RefundRejectModal";
+import { openRefundApproveConfirm } from "@/components/billing/refundApprove";
 import {
   QNA_CATEGORY_LABEL,
   QNA_CATEGORY_TONE,
@@ -84,32 +79,27 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
   const handleApproveRefund = () => {
     if (!qna || !refund) return;
 
-    openConfirm({
-      title: "환불을 승인할까요?",
-      description: `${refund.productName} · ${formatCurrency(refund.refundAmount)}을 환불합니다.`,
-      warning:
-        "승인하면 노트를 회수하고 PG 취소를 요청하며 되돌릴 수 없습니다. 결과는 유저에게 자동으로 전달되지 않으니 답변으로 알려 주세요.",
-      confirmText: "승인",
-      tone: "danger",
-      onConfirm: async () => {
-        try {
-          await approveMutation.mutateAsync({
-            orderId: refund.paymentOrderId,
-            refundId: refund.refundId,
-          });
-        } catch (caught) {
-          /* 결제 상세와 같다. 채팅이 크레딧을 예약 중이면 서버 코드 대신 할 일을 알려 준다. */
-          if ((caught as AppError).code === REFUND_CHAT_IN_PROGRESS_CODE) {
-            throw new Error(REFUND_CHAT_IN_PROGRESS_MESSAGE);
-          }
-
-          throw caught;
-        } finally {
-          // 결정이 나면 환불 패널이 바뀐다. 결제 쪽 무효화에 더해 문의도 다시 읽는다.
-          invalidateQna();
-        }
+    /*
+      결제 상세와 같은 문구 · 같은 오류 안내를 쓴다. 이 응답에는 '신청 뒤 노트 사용' 여부가 없어
+      모른다고 적고 결제 상세에서 확인하게 한다.
+    */
+    openRefundApproveConfirm(
+      {
+        refundAmount: refund.refundAmount,
+        refundCredit: refund.refundCredit,
+        productName: refund.productName,
+        nickname: qna.userNickname,
+        creditUsedSinceRequest: refund.creditUsedSinceRequest,
+        note: "결과는 유저에게 자동으로 전달되지 않으니 답변으로 알려 주세요.",
       },
-    });
+      () =>
+        approveMutation.mutateAsync({
+          orderId: refund.paymentOrderId,
+          refundId: refund.refundId,
+        }),
+      // 결정이 나면 환불 패널이 바뀐다. 결제 쪽 무효화에 더해 문의도 다시 읽는다.
+      invalidateQna,
+    );
   };
 
   const handleRejectRefund = (reason: string) => {
