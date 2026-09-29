@@ -19,7 +19,7 @@ import {
   type MetricRange,
   type ServerMetricPoint,
 } from "@/api/ops/getServerMetrics";
-import dayjs from "@/lib/dayjs";
+import { toKst } from "@/lib/dayjs";
 import { cn, formatWithCommas } from "@/lib/utils";
 import Card from "@/components/ui/Card";
 import Skeleton from "@/components/ui/Skeleton";
@@ -95,7 +95,7 @@ const ResourceUsageChart = ({
       range === "7d"
         ? metrics
             .map((point) => point.capturedAt)
-            .filter((capturedAt) => dayjs(capturedAt).hour() === 0)
+            .filter((capturedAt) => toKst(capturedAt).hour() === 0)
         : undefined,
     [metrics, range],
   );
@@ -164,7 +164,7 @@ const ResourceUsageChart = ({
                 dataKey="capturedAt"
                 ticks={dayTicks}
                 tickFormatter={(value: string) =>
-                  dayjs(value).format(tickFormat(range))
+                  toKst(value).format(tickFormat(range))
                 }
                 tick={{ fill: AXIS_COLOR, fontSize: 12 }}
                 tickLine={false}
@@ -187,7 +187,7 @@ const ResourceUsageChart = ({
                 itemStyle={{ color: "var(--font-1)" }}
                 cursor={{ stroke: GRID_COLOR }}
                 labelFormatter={(value) =>
-                  dayjs(String(value)).format("MM.DD HH:mm")
+                  toKst(String(value)).format("MM.DD HH:mm")
                 }
                 formatter={(value, name) => [
                   value === null || value === undefined
@@ -249,7 +249,7 @@ const ResourceUsageChart = ({
                   dataKey="capturedAt"
                   ticks={dayTicks}
                   tickFormatter={(value: string) =>
-                    dayjs(value).format(tickFormat(range))
+                    toKst(value).format(tickFormat(range))
                   }
                   tick={{ fill: AXIS_COLOR, fontSize: 12 }}
                   tickLine={false}
@@ -271,7 +271,7 @@ const ResourceUsageChart = ({
                   itemStyle={{ color: "var(--font-1)" }}
                   cursor={{ fill: "var(--bg-surface-hover)" }}
                   labelFormatter={(value) =>
-                    dayjs(String(value)).format("MM.DD HH:mm")
+                    toKst(String(value)).format("MM.DD HH:mm")
                   }
                   formatter={(value, name) => [
                     `${formatWithCommas(Number(value))}건`,

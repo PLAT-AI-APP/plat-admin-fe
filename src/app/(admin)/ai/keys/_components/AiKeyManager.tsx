@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAiKeysQuery } from "@/api/ai/getAiKeys";
 import { useAiKeyMutation } from "@/api/ai/mutateAiKey";
-import dayjs, { formatDateTime } from "@/lib/dayjs";
+import { daysLeftKst, formatDateTime } from "@/lib/dayjs";
 import { showAppToast } from "@/lib/toast";
 import { useHasPermission } from "@/store/useAdminStore";
 import { openConfirm } from "@/store/useConfirmStore";
@@ -32,9 +32,7 @@ const slotKey = (provider: AiKeyProvider, slot: AiKeySlot) =>
 
 const ExpiryBadge = ({ expiresOn }: { expiresOn: string | null }) => {
   if (!expiresOn) return null;
-  const days = dayjs(expiresOn)
-    .startOf("day")
-    .diff(dayjs().startOf("day"), "day");
+  const days = daysLeftKst(expiresOn);
   if (days < 0) return <Badge tone="danger">만료됨</Badge>;
   if (days <= EXPIRY_ALERT_DAYS) return <Badge tone="warning">D-{days}</Badge>;
   return null;

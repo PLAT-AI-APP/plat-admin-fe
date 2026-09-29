@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import dayjs from "@/lib/dayjs";
+import dayjs, { parseKst } from "@/lib/dayjs";
 import type { ScheduleMaintenancePayload } from "@/api/ops/mutateMaintenance";
 import {
   maintenanceScheduleSchema,
@@ -62,13 +62,13 @@ const MaintenanceScheduleModal = ({
 
   const submit = handleSubmit((values) => {
     const drainStartsAt =
-      values.startMode === "NOW" ? dayjs() : dayjs(values.drainStartsAt);
+      values.startMode === "NOW" ? dayjs() : parseKst(values.drainStartsAt);
     onSubmit({
       drainStartsAt:
         values.startMode === "NOW" ? undefined : drainStartsAt.toISOString(),
       closesAt: drainStartsAt.add(values.drainMinutes, "minute").toISOString(),
       expectedEndsAt: values.expectedEndsAt
-        ? dayjs(values.expectedEndsAt).toISOString()
+        ? parseKst(values.expectedEndsAt).toISOString()
         : undefined,
       message: values.message || undefined,
     });

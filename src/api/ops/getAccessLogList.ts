@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import dayjs from "@/lib/dayjs";
+import { parseKst } from "@/lib/dayjs";
 import { liveAxios } from "..";
 import {
   toPageRequest,
@@ -71,10 +71,10 @@ const toRequestParams = (params: AccessLogListParams) => ({
   userId: params.userId || undefined,
   ...(params.status ? STATUS_RANGE[params.status] : {}),
   from: params.startDate
-    ? dayjs(params.startDate).startOf("day").toISOString()
+    ? parseKst(params.startDate).startOf("day").toISOString()
     : undefined,
   to: params.endDate
-    ? dayjs(params.endDate).endOf("day").toISOString()
+    ? parseKst(params.endDate).endOf("day").toISOString()
     : undefined,
 });
 

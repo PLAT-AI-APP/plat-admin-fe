@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import type { PushCampaignFormValues } from "@/api/communication/mutatePushCampaign";
-import dayjs from "@/lib/dayjs";
+import { parseKst } from "@/lib/dayjs";
 import {
   pushCampaignSchema,
   type PushCampaignSchema,
@@ -73,7 +73,7 @@ const PushCampaignFormModal = ({
       // 예약을 끄면 예약 일시를 보내지 않아 임시 저장 상태로 만들어진다.
       scheduledAt:
         values.isScheduled && values.scheduledAt
-          ? dayjs(values.scheduledAt).toISOString()
+          ? parseKst(values.scheduledAt).toISOString()
           : undefined,
     });
   });

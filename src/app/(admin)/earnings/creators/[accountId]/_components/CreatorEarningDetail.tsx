@@ -11,7 +11,7 @@ import {
 } from "@/api/earning/getEarningAccountDetail";
 import { useEarningAccountActionMutation } from "@/api/earning/mutateEarning";
 import { ChevronDown } from "@/icons";
-import dayjs, { formatDateTime } from "@/lib/dayjs";
+import { formatDateTime, toKst } from "@/lib/dayjs";
 import { cn, formatWithCommas } from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import {
@@ -318,7 +318,7 @@ const CreatorEarningDetail = ({ accountId }: { accountId: string }) => {
                 render: (row) => (
                   <TableCellStack
                     primary={row.nickname ?? row.userId}
-                    secondary={row.joinedAt ? `가입 ${dayjs(row.joinedAt).format("YYYY-MM-DD")}` : undefined}
+                    secondary={row.joinedAt ? `가입 ${toKst(row.joinedAt).format("YYYY-MM-DD")}` : undefined}
                   />
                 ),
               },
