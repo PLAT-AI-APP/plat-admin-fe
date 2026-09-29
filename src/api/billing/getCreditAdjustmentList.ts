@@ -3,7 +3,6 @@ import { usePermittedQuery } from "@/api/usePermittedQuery";
 import {
   toPageRequest,
   toPageResponse,
-  type AppError,
   type PageResponse,
   type PageWith,
 } from "@/type/api";
