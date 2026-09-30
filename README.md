@@ -10,6 +10,7 @@ PLAT 서비스 운영 관리자 프론트엔드.
 | [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) | **필독.** 파일 규칙, 컴포넌트 작성법, API + react-query 패턴, MSW 목업 규칙 |
 | [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) | 색상 토큰, 타이포, 간격, hover/애니메이션, 컴포넌트 규격 |
 | [docs/ADMIN_PLAN.md](docs/ADMIN_PLAN.md) | 메뉴 분류 기준, 라우트 구조, 메인 노출 관리 설계 |
+| [docs/OPERATIONS_GUIDE.md](docs/OPERATIONS_GUIDE.md) | **운영자용.** 신고 대화 열람 원칙, Slack 알림, 점검, AI 키 교체, 권한 운영 규칙 |
 | [docs/CODE_STYLE_REFERENCE.md](docs/CODE_STYLE_REFERENCE.md) | `plat-fe` 코드 스타일 분석 결과 |
 | [docs/ATTACHMENT_PLAN.md](docs/ATTACHMENT_PLAN.md) | 첨부 파일 제안서 (**미착수**) |
 | [docs/PLAN.md](docs/PLAN.md) | 최초 기능 계획서 (**보관 문서** — 현재 계약은 이 README와 ADMIN_PLAN) |
@@ -89,6 +90,12 @@ npm run dev:local
 | `NEXT_PUBLIC_IMAGE_BASE_URI` | 이미지 서빙 베이스 URI (`GET /images/{type}/{fileId}/{variant}`) |
 | `NEXT_PUBLIC_BASE_URI` | 목업 구간의 관리자 API 베이스 URI. **아무것도 뜨지 않는 포트**를 둔다 |
 | `NEXT_PUBLIC_API_MOCKING` | `enabled`일 때만 MSW 목업 워커가 뜬다 |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN. 없으면 브라우저·서버 모두 오류 수집을 켜지 않는다 |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | Sentry environment 이름. 없으면 `NODE_ENV` |
+
+Sentry 는 `src/instrumentation.ts`(서버)·`src/instrumentation-client.ts`(브라우저)에서 `src/lib/monitoring.ts` 의 설정으로 켠다.
+`sendDefaultPii: false`, `tracesSampleRate: 0` 이고 요청 본문을 싣지 않는다 — 관리자 화면에는 신고 대화·이메일·결제 정보가 뜨기 때문이다.
+프로파일이 정하지 않는 값이라 배포 환경 변수로 넣는다. `NEXT_PUBLIC_*` 는 빌드 때 번들에 박히므로 바꾸면 다시 빌드한다.
 
 이 값들은 `next.config.ts`가 프로파일에서 계산해 번들에 심는다. 화면 코드는
 지금까지처럼 `process.env.NEXT_PUBLIC_*`만 읽는다.
@@ -111,23 +118,20 @@ MSW 목업을 쓴다. 목업 핸들러는 전부 `NEXT_PUBLIC_BASE_URI`(아무�
 
 ### 실서버 연동 현황
 
-**실서버(`liveAxios`)** — 로그인 · 내 계정(`/auth/**`), 관리자 계정
-(`/managers`), 직책(`/roles`), 유저(`/users`), 세계관
-(`/universes`), 공식 계정(`/official-accounts`), 해시태그 · 제안
-(`/hashtags/**`), 금지어(`/banned-words`), 댓글(`/comments`),
-메인 배너(`/main-banners`), 홈 편성(`/home-sections`), 공지사항
-(`/notices`), AI 모델 · 카탈로그(`/ai/models/**`), 시스템 프롬프트
-(`/ai/prompts`), 상품(`/billing/products`), 크레딧 수동 조정
-(`/credits/adjustments` · `/credits/users`), 장부(`/ledgers/**`), 운영 · 접근 · 시스템 로그(`/logs/**`), 배치(`/batch/**`),
-서버 상태(`/server/**`), 신고(`/reports/**`), 제작자 수익 · 교환 요청 · 수익 정책
+**실서버(`liveAxios`)** — 로그인 · 내 계정(`/auth/**`), 대시보드(`/dashboard/summary`), 처리 대기 뱃지(`/ops/pending-counts`),
+관리자 계정(`/managers`), 직책(`/roles`), 유저(`/users`), 서비스 관리자(`/service-admins`), 세계관(`/universes`),
+공식 계정(`/official-accounts`), 해시태그 · 제안(`/hashtags/**`), 금지어(`/banned-words`), 댓글(`/comments`),
+신고(`/reports/**`), 메인 배너(`/main-banners`), 홈 편성(`/home-sections`), 공지사항(`/notices`), Q&A(`/qna`),
+FAQ(`/faqs`), 법적 고지(`/legal`), AI 모델 · 카탈로그(`/ai/models/**`), 시스템 프롬프트(`/ai/prompts`),
+AI API 키(`/server/ai-keys`), 상품(`/billing/products`), 크레딧 정책(`/credits/policies`), 크레딧 수동 조정 · 일괄 지급
+(`/credits/adjustments` · `/credits/adjustments/bulk` · `/credits/users`), 결제 내역(`/payment-orders/**`), 장부(`/ledgers`),
+운영 · 접근 · 시스템 로그(`/logs/**`), 배치(`/batch/**`), 서버 상태 · 점검(`/server/**`), 제작자 수익 · 교환 요청 · 수익 정책
 (`/earnings/**`), 교환 상품(`/reward-products/**`).
 
-**목업(`adminAxios` + MSW)** — 메뉴에 MOCK 배지가 붙고 화면 위에 안내가 뜬다
-(`src/constants/menu.tsx`의 `isMock`). 대시보드, 캐릭터, 채팅 내보내기, 크레딧
-정책, 결제 보존 원장, Q&A, 알림 템플릿, 선제 메시지, 푸시, 약관, 앱 버전.
-메뉴가 아닌 **처리 대기 뱃지(`/ops/pending-counts`)와 ⌘K 엔티티 검색
-(`/search`)도 목업**이라, 목업이 꺼진 개발 · 운영(`develop` · `main`)에서는 부르지 않는다.
-단, 처리 대기 뱃지 중 교환 요청 건수(`/earnings/redemptions/pending-count`)는 실서버에서 받는다.
+**목업(`adminAxios` + MSW)** — 서버에 아직 API 가 없다. 메뉴에 MOCK 배지가 붙고 화면 위에 안내가 뜬다
+(`src/constants/menu.tsx`의 `isMock`). 캐릭터, 채팅 내보내기, 알림 관리(템플릿), 선제 메시지, 푸시 발송, 앱 버전 관리.
+메뉴가 아닌 **⌘K 엔티티 검색(`/search`)도 목업**이다. 목업이 꺼진 개발 · 운영(`develop` · `main`)에서는 이 메뉴가 숨고
+검색도 메뉴 검색만 된다.
 
 **세션은 실서버가 준다.** 목업 화면이어도 401은 진짜 세션 만료다(`liveAxios`가
 로그인 화면으로 보낸다).
@@ -162,11 +166,11 @@ sonner · recharts · MSW v2
 |---|---|
 | 로그인 · 세션 | `/login` · 새로고침 유지 · 401 시 자동 로그아웃 · 권한 없는 주소는 본문만 차단 |
 | 내 계정 | 헤더 프로필 → 비밀번호 변경 · 내 직책이 가진 권한 확인 |
-| 처리 대기 알림 | 사이드바 메뉴 뱃지 + 헤더 종 (Q&A · 신고된 댓글, 60초 갱신 · **목업 전용**) |
+| 처리 대기 알림 | 사이드바 메뉴 뱃지 + 헤더 종 (Q&A · 신고 · 댓글 · 교환 요청, 60초 갱신. 권한 없는 영역은 서버가 거른다) |
 | 전역 검색 (`⌘K` / `Ctrl+K`) | 메뉴 검색 + 유저·캐릭터·세계관·해시태그 통합 검색(**목업 전용**) 후 이동 |
 | 목록 조건 URL 동기화 | 검색·필터·페이지가 주소에 남아 새로고침·공유·뒤로가기에도 유지 |
 | CSV 내보내기 | 유저 관리 · 결제 장부 · 크레딧 수동 조정 · 운영 로그 · 해시태그 |
-| 감사 로그 | 모든 변경 요청이 **대상 · 요청 본문(비밀 필드 마스킹)**과 함께 적재 · 관리자별 활동 조회 |
+| 감사 로그 | 변경 요청이 **대상**과 함께 관리자 활동 로그로 남고 관리자별로 조회한다. 돈·계정 조치와 신고 대화 열람은 요청 처리 단계에서 바로 적는다. 관리자 앱의 접근 로그는 요청·응답 **본문을 남기지 않는다** |
 | 기간 프리셋 | 오늘 / 7일 / 30일 / 90일 · 결제 장부 |
 | 다크 모드 | 헤더 토글 |
 | 다국어 운영 | 해시태그 라벨 번역 · 언어별 배너 · 홈 편성 (한국어 · 영어 · 일본어 · 중국어 · 태국어 · 베트남어) |
@@ -182,13 +186,17 @@ sonner · recharts · MSW v2
 막히고, 콘솔은 비밀번호 변경 모달을 강제로 띄운다. 바꾸면 같은 토큰이 곧바로
 직책의 전체 권한을 받는다(권한은 토큰이 아니라 요청마다 직책에서 읽는다).
 
-로그인 실패가 5회 쌓이면 계정이 잠긴다. 잠금 해제는 다른 관리자가
-**운영 &gt; 관리자 계정**에서 한다.
+로그인 실패가 5회 쌓이면 계정이 잠기고 **15분 뒤 저절로 풀린다.** 그 전에 풀려면 다른 관리자가
+**운영 &gt; 관리자 관리**에서 해제한다(최고관리자 계정은 최고관리자만). 로그인은 IP 단위로도 분당 5회로 늦춘다(nginx).
+
+**직책(권한 묶음)은 최고관리자만 만들고 고치고 지운다.** 그 밖의 관리자는 직책 화면을 읽기만 한다. 관리자 계정에는 **자기 권한의
+부분집합인 직책만** 줄 수 있다. 운영 규칙은 [docs/OPERATIONS_GUIDE.md](docs/OPERATIONS_GUIDE.md).
 
 ## 확인
 
 ```bash
 npx tsc --noEmit && npx eslint src
+APP_ENV=develop npx next build   # 배포와 같은 프로파일로 빌드 확인
 ```
 
 ## 아직 없는 것
