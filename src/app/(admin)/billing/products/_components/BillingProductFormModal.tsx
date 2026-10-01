@@ -128,7 +128,7 @@ const BillingProductFormModal = ({
           >
             <Input
               id="product-name"
-              placeholder="스타터"
+              placeholder="1,000 노트"
               hasError={Boolean(errors.name)}
               {...register("name")}
             />

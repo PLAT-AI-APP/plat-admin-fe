@@ -130,6 +130,10 @@ export const PAYMENT_ORDER_METHOD_LABEL: Record<PaymentOrderMethod, string> = {
   KAKAO_PAY: "카카오페이머니",
   LINE_PAY: "LINE Pay",
   VIRTUAL_ACCOUNT: "가상계좌",
+  EASY_PAY: "간편결제",
+  TRANSFER: "계좌이체",
+  MOBILE_PHONE: "휴대폰",
+  GIFT_CERTIFICATE: "상품권",
 };
 
 export const REFUND_STATUS_LABEL: Record<RefundStatus, string> = {
