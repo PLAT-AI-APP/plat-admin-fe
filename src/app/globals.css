@@ -50,6 +50,11 @@
    * 테마와 무관하게 붉은 배경이 유지되는 자리는 글자도 항상 밝아야 한다.
    */
   --on-brand: #ffffff;
+  /* PLAT 로고(사용자 화면 plat-fe 와 같은 시안). 관리자 보라 브랜드색과 별개로 로고 고유색을 쓴다.
+     앱 아이콘 바탕은 화면과 대비되도록 반대 테마의 색을 쓴다. */
+  --app-icon-bg: #111112;
+  --logo-text: #2f3132;
+  --logo-mark: #ff5a1d;
   --on-danger: #ffffff;
 
   /* 컨트롤 손잡이(스위치 노브). 테마와 무관하게 밝은 면을 유지한다. */
@@ -88,6 +93,9 @@
 }
 
 .dark {
+  --app-icon-bg: #ffffff;
+  --logo-text: #ffffff;
+  --logo-mark: #ff6c1d;
   --brand: #7c74f2;
   --brand-hover: #8d86f5;
   --brand-pressed: #6a61e8;
