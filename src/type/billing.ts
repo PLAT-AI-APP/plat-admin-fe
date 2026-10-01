@@ -179,7 +179,11 @@ export type PaymentOrderMethod =
   | "CARD"
   | "KAKAO_PAY"
   | "LINE_PAY"
-  | "VIRTUAL_ACCOUNT";
+  | "VIRTUAL_ACCOUNT"
+  | "EASY_PAY"
+  | "TRANSFER"
+  | "MOBILE_PHONE"
+  | "GIFT_CERTIFICATE";
 
 /**
  * 환불 한 건의 돈 상태.
