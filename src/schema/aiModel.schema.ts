@@ -17,6 +17,26 @@ export const aiModelSchema = z.object({
     .max(2, "temperature는 2 이하여야 합니다."),
   memo: z.string().max(100, "메모는 100자 이내로 입력해 주세요."),
   isEnabled: z.boolean(),
+  inputPricePerMillion: z
+    .number({ error: "입력 단가를 입력해 주세요." })
+    .int("단가는 정수(원)로만 입력할 수 있습니다.")
+    .min(0, "단가는 0 이상이어야 합니다.")
+    .max(10_000_000, "단가는 10,000,000 이하로 입력해 주세요."),
+  outputPricePerMillion: z
+    .number({ error: "출력 단가를 입력해 주세요." })
+    .int("단가는 정수(원)로만 입력할 수 있습니다.")
+    .min(0, "단가는 0 이상이어야 합니다.")
+    .max(10_000_000, "단가는 10,000,000 이하로 입력해 주세요."),
+  cacheReadPricePerMillion: z
+    .number({ error: "캐시 읽기 단가를 입력해 주세요." })
+    .int("단가는 정수(원)로만 입력할 수 있습니다.")
+    .min(0, "단가는 0 이상이어야 합니다.")
+    .max(10_000_000, "단가는 10,000,000 이하로 입력해 주세요."),
+  cacheWritePricePerMillion: z
+    .number({ error: "캐시 쓰기 단가를 입력해 주세요." })
+    .int("단가는 정수(원)로만 입력할 수 있습니다.")
+    .min(0, "단가는 0 이상이어야 합니다.")
+    .max(10_000_000, "단가는 10,000,000 이하로 입력해 주세요."),
 });
 
 export type AiModelSchema = z.infer<typeof aiModelSchema>;

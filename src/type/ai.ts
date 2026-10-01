@@ -32,6 +32,10 @@ export interface AiModelCatalogItem {
   /** 1M 토큰 기준 입력 단가 (원) */
   inputPricePerMillion: number;
   outputPricePerMillion: number;
+  /** 캐시에서 읽은 입력 1M 토큰당 원. 보통 입력의 1/10. */
+  cacheReadPricePerMillion: number;
+  /** 캐시에 쓴 입력 1M 토큰당 원. Anthropic 만 입력의 1.25배, 나머지는 입력과 같다. */
+  cacheWritePricePerMillion: number;
 }
 
 /** 모델 테스트 호출 결과 */
@@ -66,6 +70,14 @@ export interface AiModel {
   maxOutputTokens: number;
   temperature: number;
   memo: string;
+  /**
+   * 1M 토큰당 원. 제공사가 가격을 바꾸면 여기서 고친다. 대화는 시작할 때 단가를 복사해 두므로
+   * 바꾼 뒤 시작한 대화부터 새 단가로 원가가 적힌다.
+   */
+  inputPricePerMillion: number;
+  outputPricePerMillion: number;
+  cacheReadPricePerMillion: number;
+  cacheWritePricePerMillion: number;
   /** 한 번도 고친 적 없는 모델은 서버가 `null`을 준다. */
   updatedAt: string | null;
 }

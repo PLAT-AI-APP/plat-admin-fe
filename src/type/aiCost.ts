@@ -5,15 +5,24 @@
  * 가입·이벤트·관리자 지급 크레딧은 매출이 0 이다. 원가는 실패해 크레딧을 돌려준 턴도 포함한다.
  */
 export interface AiCost {
-  /** 기간 안 대화 턴(실패 포함) */
+  /** 기간 안 채팅 턴(실패 포함) */
   turns: number;
-  /** 크레딧이 확정된 턴 */
+  /** 크레딧이 확정된 채팅 턴 */
   settledTurns: number;
-  /** 확정됐지만 원가를 모르는 턴(단가 없는 모델 · 토큰 수 못 받음) */
+  /** 채팅 밖 AI 호출(장기기억 요약 · 모델 점검 · 키 확인) */
+  otherCalls: number;
+  /** 원가를 모르는 호출(단가 없는 모델 · 토큰 수 못 받음) */
   unpricedTurns: number;
+  /** 캐시를 거치지 않은 입력 */
   inputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  /** 생각 · 추론 포함 */
   outputTokens: number;
+  /** 원가 합(채팅 + 채팅 밖) */
   costKrw: number;
+  chatCostKrw: number;
+  otherCostKrw: number;
   /** 대화에 쓴 크레딧 전부 */
   credits: number;
   /** 그중 결제로 산 크레딧 */
@@ -22,9 +31,16 @@ export interface AiCost {
   grossProfitKrw: number;
   /** 이익 ÷ 매출. 매출이 없으면 null */
   marginRate: number | null;
-  /** 크레딧 1개를 쓰는 데 든 원가. 쓴 크레딧이 없으면 null */
+  /** 크레딧 1개를 쓰는 데 든 채팅 원가. 쓴 크레딧이 없으면 null */
   costPerCredit: number | null;
 }
+
+/** CHAT 은 채팅 답변, 나머지는 채팅 밖 호출 */
+export type AiCostPurpose =
+  | "CHAT"
+  | "MEMORY_SUMMARY"
+  | "MODEL_PING"
+  | "KEY_CHECK";
 
 export interface AiCostReport {
   /** 한국 날짜, 양 끝 포함 */
@@ -32,6 +48,8 @@ export interface AiCostReport {
   to: string;
   total: AiCost;
   daily: { date: string; cost: AiCost }[];
+  /** 원가가 큰 순 */
+  purposes: { purpose: AiCostPurpose; cost: AiCost }[];
   /** model 이 null 이면 모델을 기록하기 전 정산 */
   models: { model: string | null; cost: AiCost }[];
   /** 원가가 큰 순 20명. 닉네임·상태는 지금 값 */

@@ -15,7 +15,7 @@ import {
 import dayjs, { nowKst, todayKst } from "@/lib/dayjs";
 import { cn, formatWithCommas } from "@/lib/utils";
 import { useAiCostsQuery } from "@/api/ai/getAiCosts";
-import type { AiCost, AiCostReport } from "@/type/aiCost";
+import type { AiCost, AiCostPurpose, AiCostReport } from "@/type/aiCost";
 import type { UserStatus } from "@/type/user";
 import { USER_STATUS_LABEL, USER_STATUS_TONE } from "@/constants/userOptions";
 import Alert from "@/components/ui/Alert";
@@ -89,9 +89,9 @@ const Summary = ({ total }: { total: AiCost }) => (
     <SummaryTile
       label="제공사 원가"
       value={formatWon(total.costKrw)}
-      sub={`대화 ${formatWithCommas(total.turns)}턴 · 실패 ${formatWithCommas(
-        total.turns - total.settledTurns,
-      )}턴 포함`}
+      sub={`채팅 ${formatWon(total.chatCostKrw)} · 그 외 ${formatWon(
+        total.otherCostKrw,
+      )}`}
     />
     <SummaryTile
       label="매출 (부가세 제외)"
@@ -111,9 +111,9 @@ const Summary = ({ total }: { total: AiCost }) => (
       value={
         total.costPerCredit === null ? "-" : formatWon(total.costPerCredit)
       }
-      sub={`입력 ${formatTokens(total.inputTokens)} · 출력 ${formatTokens(
-        total.outputTokens,
-      )} 토큰`}
+      sub={`대화 ${formatWithCommas(total.turns)}턴 · 실패 ${formatWithCommas(
+        total.turns - total.settledTurns,
+      )}턴 · 그 외 호출 ${formatWithCommas(total.otherCalls)}회`}
     />
   </div>
 );
@@ -196,16 +196,24 @@ const DailyChart = ({ daily }: { daily: AiCostReport["daily"] }) => {
 
 /* ------------------------------------------------------------------ */
 
+const PURPOSE_LABEL: Record<AiCostPurpose, string> = {
+  CHAT: "채팅 답변",
+  MEMORY_SUMMARY: "장기기억 요약",
+  MODEL_PING: "모델 점검",
+  KEY_CHECK: "API 키 확인",
+};
+
+type PurposeRow = AiCostReport["purposes"][number];
 type ModelRow = AiCostReport["models"][number];
 type UserRow = AiCostReport["topUsers"][number];
 
 const costColumns = <T extends { cost: AiCost }>(): TableColumn<T>[] => [
   {
-    key: "turns",
-    header: "턴",
+    key: "calls",
+    header: "호출",
     align: "right",
     numeric: true,
-    render: ({ cost }) => formatWithCommas(cost.turns),
+    render: ({ cost }) => formatWithCommas(cost.turns + cost.otherCalls),
   },
   {
     key: "cost",
@@ -242,6 +250,22 @@ const costColumns = <T extends { cost: AiCost }>(): TableColumn<T>[] => [
   },
 ];
 
+/** 입력은 캐시 안 거친 몫, 캐시는 읽기(싸게 매김) 몫이다. 캐시 쓰기는 툴팁에 둔다. */
+const tokenColumn = <T extends { cost: AiCost }>(): TableColumn<T> => ({
+  key: "tokens",
+  header: "토큰 (입력 / 캐시 / 출력)",
+  align: "right",
+  numeric: true,
+  render: ({ cost }) => (
+    <span
+      title={`캐시 쓰기 ${formatWithCommas(cost.cacheWriteTokens)} 토큰`}
+    >
+      {formatTokens(cost.inputTokens)} / {formatTokens(cost.cacheReadTokens)} /{" "}
+      {formatTokens(cost.outputTokens)}
+    </span>
+  ),
+});
+
 const MODEL_COLUMNS: TableColumn<ModelRow>[] = [
   {
     key: "model",
@@ -250,20 +274,32 @@ const MODEL_COLUMNS: TableColumn<ModelRow>[] = [
       <div className="flex items-center gap-2">
         <span className="body-5 text-font-0">{model ?? "(기록 없음)"}</span>
         {cost.unpricedTurns > 0 && (
-          <Badge tone="warning">원가 모름 {cost.unpricedTurns}턴</Badge>
+          <Badge tone="warning">원가 모름 {cost.unpricedTurns}회</Badge>
         )}
       </div>
     ),
   },
-  {
-    key: "tokens",
-    header: "토큰 (입력 / 출력)",
-    align: "right",
-    numeric: true,
-    render: ({ cost }) =>
-      `${formatTokens(cost.inputTokens)} / ${formatTokens(cost.outputTokens)}`,
-  },
+  tokenColumn<ModelRow>(),
   ...costColumns<ModelRow>(),
+];
+
+const PURPOSE_COLUMNS: TableColumn<PurposeRow>[] = [
+  {
+    key: "purpose",
+    header: "용도",
+    render: ({ purpose, cost }) => (
+      <div className="flex items-center gap-2">
+        <span className="body-5 text-font-0">
+          {PURPOSE_LABEL[purpose] ?? purpose}
+        </span>
+        {cost.unpricedTurns > 0 && (
+          <Badge tone="warning">원가 모름 {cost.unpricedTurns}회</Badge>
+        )}
+      </div>
+    ),
+  },
+  tokenColumn<PurposeRow>(),
+  ...costColumns<PurposeRow>(),
 ];
 
 const USER_COLUMNS: TableColumn<UserRow>[] = [
@@ -350,9 +386,9 @@ const AiCostManager = () => {
           <>
             {data.total.unpricedTurns > 0 && (
               <Alert tone="info">
-                원가를 알 수 없는 확정 턴이{" "}
-                {formatWithCommas(data.total.unpricedTurns)}개 있습니다. 모델
-                단가가 비어 있거나 제공사가 토큰 수를 주지 않은 턴이라 원가
+                원가를 알 수 없는 호출이{" "}
+                {formatWithCommas(data.total.unpricedTurns)}회 있습니다. 모델
+                단가가 비어 있거나 제공사가 토큰 수를 주지 않은 호출이라 원가
                 합계에서 빠졌습니다.
               </Alert>
             )}
@@ -360,6 +396,20 @@ const AiCostManager = () => {
             <Summary total={data.total} />
 
             <DailyChart daily={data.daily} />
+
+            <Card
+              title="용도별"
+              description="채팅 답변과 그 밖의 AI 호출(장기기억 요약 · 점검 · 키 확인)"
+              bodyClassName="p-0"
+            >
+              <Table
+                columns={PURPOSE_COLUMNS}
+                rows={data.purposes}
+                getRowKey={(row) => row.purpose}
+                minRows={0}
+                emptyTitle="기간 안에 AI 호출이 없습니다."
+              />
+            </Card>
 
             <Card title="모델별" bodyClassName="p-0">
               <Table
@@ -373,7 +423,7 @@ const AiCostManager = () => {
 
             <Card
               title="원가 상위 유저"
-              description="원가가 큰 순 20명. 누르면 유저 상세로 갑니다."
+              description="원가(채팅 + 장기기억 요약)가 큰 순 20명. 누르면 유저 상세로 갑니다."
               bodyClassName="p-0"
             >
               <Table
