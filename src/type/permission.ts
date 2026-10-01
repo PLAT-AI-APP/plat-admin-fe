@@ -26,6 +26,7 @@ export type PermissionResource =
   | "report"
   | "user"
   | "aiModel"
+  | "aiCost"
   | "systemPrompt"
   | "billingProduct"
   | "creditPolicy"
@@ -166,6 +167,16 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     label: "AI 모델",
     description: "모델 카탈로그 확인과 운영 설정",
     actions: ["read", "write"],
+  },
+  aiCost: {
+    /*
+      AI 모델 권한과 따로 뗀다. 모델을 켜고 끄는 사람이 원가와 마진까지 볼 필요는 없고,
+      유저별 사용 금액 순위가 함께 나온다.
+    */
+    label: "AI 원가",
+    description: "제공사 원가와 크레딧 매출 · 마진, 모델별 · 유저별 사용 금액",
+    actions: ["read"],
+    isSensitive: true,
   },
   systemPrompt: {
     label: "시스템 프롬프트",
@@ -443,7 +454,7 @@ export const PERMISSION_CATEGORIES = [
     id: "ai",
     label: "AI 운영",
     description: "모델 설정과 시스템 프롬프트. 전체 대화 품질에 바로 반영됩니다.",
-    resources: ["aiModel", "systemPrompt"],
+    resources: ["aiModel", "aiCost", "systemPrompt"],
   },
   {
     id: "billing",

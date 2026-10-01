@@ -11,6 +11,11 @@ export interface UpdateAiModelRequest {
   maxOutputTokens?: number;
   temperature?: number;
   memo?: string;
+  /** 1M 토큰당 원 */
+  inputPricePerMillion?: number;
+  outputPricePerMillion?: number;
+  cacheReadPricePerMillion?: number;
+  cacheWritePricePerMillion?: number;
 }
 
 export const updateAiModel = async (

@@ -255,6 +255,12 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Sliders size={SUB_ICON_SIZE} />,
       },
       {
+        label: "AI 원가",
+        href: "/ai/costs",
+        permission: "aiCost:read",
+        icon: <Coin size={SUB_ICON_SIZE} />,
+      },
+      {
         label: "시스템 프롬프트",
         href: "/ai/prompts",
         permission: "systemPrompt:read",

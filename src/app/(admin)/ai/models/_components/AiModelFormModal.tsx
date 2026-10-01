@@ -34,7 +34,19 @@ const EMPTY_VALUES: AiModelSchema = {
   temperature: 0.7,
   memo: "",
   isEnabled: true,
+  inputPricePerMillion: 0,
+  outputPricePerMillion: 0,
+  cacheReadPricePerMillion: 0,
+  cacheWritePricePerMillion: 0,
 };
+
+/** 단가 입력 칸. 모두 100만 토큰당 원이다. */
+const PRICE_FIELDS = [
+  { name: "inputPricePerMillion", label: "입력" },
+  { name: "outputPricePerMillion", label: "출력" },
+  { name: "cacheReadPricePerMillion", label: "캐시 읽기" },
+  { name: "cacheWritePricePerMillion", label: "캐시 쓰기" },
+] as const;
 
 const AiModelFormModal = ({
   model,
@@ -63,6 +75,10 @@ const AiModelFormModal = ({
       temperature: model.temperature,
       memo: model.memo,
       isEnabled: model.isEnabled,
+      inputPricePerMillion: model.inputPricePerMillion,
+      outputPricePerMillion: model.outputPricePerMillion,
+      cacheReadPricePerMillion: model.cacheReadPricePerMillion,
+      cacheWritePricePerMillion: model.cacheWritePricePerMillion,
     });
   }, [model, reset]);
 
@@ -207,6 +223,32 @@ const AiModelFormModal = ({
               hasError={Boolean(errors.memo)}
               {...register("memo")}
             />
+          </FormField>
+
+          <FormField
+            label="단가 (100만 토큰당 원)"
+            hint="바꾼 뒤 시작한 대화부터 적용"
+            error={
+              PRICE_FIELDS.map(({ name }) => errors[name]?.message).find(
+                Boolean,
+              ) ?? undefined
+            }
+          >
+            <div className="grid grid-cols-4 gap-2">
+              {PRICE_FIELDS.map(({ name, label }) => (
+                <label key={name} className="flex flex-col gap-1">
+                  <span className="body-6 text-font-2">{label}</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={1}
+                    aria-label={`${label} 단가`}
+                    hasError={Boolean(errors[name])}
+                    {...register(name, { valueAsNumber: true })}
+                  />
+                </label>
+              ))}
+            </div>
           </FormField>
         </form>
       )}

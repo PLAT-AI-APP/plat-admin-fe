@@ -98,6 +98,16 @@ const ModelCatalogManager = () => {
       render: (item) => `${formatWithCommas(item.outputPricePerMillion)}원`,
     },
     {
+      key: "cachePrice",
+      header: "캐시 읽기 / 쓰기",
+      align: "right",
+      numeric: true,
+      render: (item) =>
+        `${formatWithCommas(item.cacheReadPricePerMillion)} / ${formatWithCommas(
+          item.cacheWritePricePerMillion,
+        )}원`,
+    },
+    {
       key: "pingResult",
       header: "테스트 결과",
       render: (item) => {
@@ -156,9 +166,9 @@ const ModelCatalogManager = () => {
       <Alert tone="info" title="모델이 어떤 물건인지만 봅니다.">
         &apos;AI 모델 관리&apos;와 같은 모델 목록이고, 이 화면은 제공사 쪽
         사실만 보여줍니다. 사용 여부·역할·차감 크레딧 같은 운영 값은 그쪽에서
-        바꾸세요. 단가와 컨텍스트 윈도우는 제공사가 내려주는 값이 아니라 운영이
-        적어 두는 값이라 실제와 어긋날 수 있습니다. 테스트 호출 결과는 저장되지
-        않고 이 화면에서만 유지됩니다.
+        바꾸세요. 단가는 제공사가 내려주는 값이 아니라 운영이 적어 두는 값이라,
+        제공사가 가격을 바꾸면 &apos;AI 모델 관리&apos;의 설정 수정에서 고칩니다.
+        테스트 호출 결과는 저장되지 않고 이 화면에서만 유지됩니다.
       </Alert>
 
       <Card noPadding>

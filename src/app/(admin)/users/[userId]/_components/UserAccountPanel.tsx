@@ -23,6 +23,7 @@ import {
   type AgreementChannel,
   type AgreementType,
 } from "@/api/user/getUserAgreements";
+import { useUserProfileResetsQuery } from "@/api/user/profileReset";
 
 const AGREEMENT_TYPE_LABEL: Record<AgreementType, string> = {
   TERMS_OF_SERVICE: "이용약관",
@@ -106,6 +107,62 @@ const AgreementHistoryCard = ({ userId }: { userId: string }) => {
           </tbody>
         </table>
       )}
+    </Card>
+  );
+};
+
+/**
+ * 프로필 강제 초기화 기록. 기록이 있을 때만 보인다 — 대부분의 계정은 한 번도 겪지 않는다.
+ * 옛 닉네임 · 소개는 근거로 남긴 값이라 그대로 보여 준다.
+ */
+const ProfileResetHistoryCard = ({ userId }: { userId: string }) => {
+  const { data } = useUserProfileResetsQuery(userId);
+
+  if (!data || data.length === 0) return null;
+
+  return (
+    <Card title="프로필 초기화 기록" className="col-span-2" noPadding>
+      <table className="w-full body-5">
+        <thead>
+          <tr className="border-b border-border-main text-left text-font-2">
+            <th className="px-5 py-2.5 font-medium">되돌린 항목</th>
+            <th className="px-5 py-2.5 font-medium">옛 값</th>
+            <th className="px-5 py-2.5 font-medium">사유</th>
+            <th className="px-5 py-2.5 font-medium">처리자</th>
+            <th className="px-5 py-2.5 text-right font-medium">일시</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item) => (
+            <tr
+              key={item.resetId}
+              className="border-b border-border-main align-top last:border-b-0"
+            >
+              <td className="px-5 py-2.5">
+                <div className="flex flex-wrap gap-1">
+                  {item.nicknameReset && <Badge tone="neutral">닉네임</Badge>}
+                  {item.bioReset && <Badge tone="neutral">소개</Badge>}
+                  {item.imageReset && <Badge tone="neutral">사진</Badge>}
+                </div>
+              </td>
+              <td className="px-5 py-2.5 text-font-1">
+                {item.oldNickname && <p>{item.oldNickname}</p>}
+                {item.oldBio && (
+                  <p className="mt-0.5 break-all text-font-2">{item.oldBio}</p>
+                )}
+                {!item.oldNickname && !item.oldBio && "-"}
+              </td>
+              <td className="px-5 py-2.5 break-all text-font-1">
+                {item.reason}
+              </td>
+              <td className="px-5 py-2.5 text-font-2">{item.adminName}</td>
+              <td className="px-5 py-2.5 text-right text-font-2 tabular-nums">
+                {formatDateTime(item.resetAt)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </Card>
   );
 };
@@ -257,6 +314,8 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
           )}
         </Card>
       </div>
+
+      <ProfileResetHistoryCard userId={user.userId} />
 
       <AgreementHistoryCard userId={user.userId} />
     </div>
