@@ -4,7 +4,11 @@ import { ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserDetailQuery } from "@/api/user/getUserDetail";
 import { useUserMutation } from "@/api/user/mutateUser";
-import { Ban, CheckCircle, ListLines } from "@/icons";
+import {
+  useUserProfileResetMutation,
+  type ProfileResetRequest,
+} from "@/api/user/profileReset";
+import { Ban, CheckCircle, ListLines, Refresh } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
 import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatCurrency, formatWithCommas } from "@/lib/utils";
@@ -32,6 +36,7 @@ import UserCharacterPanel from "./UserCharacterPanel";
 import UserCommentPanel from "./UserCommentPanel";
 import UserEarningPanel from "./UserEarningPanel";
 import UserQnaPanel from "./UserQnaPanel";
+import UserProfileResetModal from "./UserProfileResetModal";
 import UserReportPanel from "./UserReportPanel";
 import UserUniversePanel from "./UserUniversePanel";
 import {
@@ -69,6 +74,7 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
   */
   const [params, setParams] = useListParams(TAB_PARAMS_DEFAULT);
   const [isSuspendOpen, setIsSuspendOpen] = useState(false);
+  const [isProfileResetOpen, setIsProfileResetOpen] = useState(false);
   const router = useRouter();
   const canReadLog = useHasPermission("log:read");
   const canWrite = useCan("user:write");
@@ -92,6 +98,14 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
 
   const { data: user, isLoading, isError, error } = useUserDetailQuery(userId);
   const { statusMutation } = useUserMutation();
+  const profileResetMutation = useUserProfileResetMutation();
+
+  const handleProfileReset = (body: ProfileResetRequest) => {
+    profileResetMutation
+      .mutateAsync({ userId, body })
+      .then(() => setIsProfileResetOpen(false))
+      .catch(() => undefined);
+  };
 
   const handleUnsuspend = (target: UserDetail) => {
     openConfirm({
@@ -157,6 +171,16 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
         label: "정지 해제",
         icon: <CheckCircle size={15} />,
         onSelect: () => handleUnsuspend(target),
+      });
+    }
+
+    /* 탈퇴 계정은 이미 익명화돼 되돌릴 것이 없다. */
+    if (target.status !== "WITHDRAWN") {
+      items.push({
+        label: "프로필 초기화",
+        icon: <Refresh size={15} />,
+        tone: "danger",
+        onSelect: () => setIsProfileResetOpen(true),
       });
     }
 
@@ -330,6 +354,13 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
             onClose={() => setIsSuspendOpen(false)}
             onSubmit={handleSuspend}
             isSubmitting={statusMutation.isPending}
+          />
+
+          <UserProfileResetModal
+            user={isProfileResetOpen ? user : null}
+            onClose={() => setIsProfileResetOpen(false)}
+            onSubmit={handleProfileReset}
+            isSubmitting={profileResetMutation.isPending}
           />
         </>
       )}
