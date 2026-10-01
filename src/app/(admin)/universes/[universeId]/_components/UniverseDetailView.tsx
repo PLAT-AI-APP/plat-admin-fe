@@ -12,6 +12,7 @@ import {
 import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
+import { useCan } from "@/hooks/useCan";
 import { universeBlockReason, type UniverseDetail } from "@/type/character";
 import {
   universeRejectSchema,
@@ -94,6 +95,8 @@ const koreanOf = (universe: UniverseDetail) =>
 const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   const { data, isError } = useUniverseDetailQuery(universeId);
   const { patchMutation, reviewMutation } = useUniverseMutation();
+  /* 심사 · 상태 · 공개 범위 · 분류 · 댓글 조치는 서버에서 모두 `universe:write` 다. */
+  const canWrite = useCan("universe:write");
   const [isRejectOpen, setRejectOpen] = useState(false);
   const [settingsMode, setSettingsMode] = useState<UniverseSettingsMode | null>(
     null,
@@ -291,7 +294,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                 { label: "대화량", value: formatWithCommas(data.chatCount) },
                 { label: "좋아요", value: formatWithCommas(data.likeCount) },
               ]}
-              action={<Dropdown items={actions} />}
+              action={canWrite ? <Dropdown items={actions} /> : undefined}
               createdAt={data.createdAt}
               updatedAt={data.updatedAt}
             />

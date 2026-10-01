@@ -7,7 +7,7 @@ import { Plus, ShieldCheck, Trash, Users } from "@/icons";
 import { showErrorToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
-import { useHasPermission } from "@/store/useAdminStore";
+import { useAdminStore, useHasPermission } from "@/store/useAdminStore";
 import type { AdminRole } from "@/type/ops";
 import {
   ALL_PERMISSIONS,
@@ -20,6 +20,7 @@ import {
   permissionKey,
   type PermissionAction,
   type PermissionResource,
+  UNWIRED_PERMISSIONS,
 } from "@/type/permission";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
@@ -102,8 +103,14 @@ const findFormError = (role: AdminRole): string | null => {
  */
 const RoleManager = () => {
   const canRead = useHasPermission("role:read");
-  const canWrite = useHasPermission("role:write");
-  const canDelete = useHasPermission("role:delete");
+  /*
+    직책을 만들고 · 고치고 · 지우는 일은 **최고관리자만** 한다(서버도 그 외엔 403).
+    직책 권한만 가진 운영자가 자기 직책에 권한을 더 붙이면 스스로 권한을 올릴 수 있기 때문이다.
+    `role:write` · `role:delete` 는 그대로 보되 최고관리자 여부를 함께 본다.
+  */
+  const isSuperAdmin = useAdminStore((state) => Boolean(state.admin?.isSuperAdmin));
+  const canWrite = useHasPermission("role:write") && isSuperAdmin;
+  const canDelete = useHasPermission("role:delete") && isSuperAdmin;
 
   const { data: roles = [], isLoading } = useAdminRoleListQuery();
   const { createMutation, updateMutation, deleteMutation } =
@@ -222,6 +229,13 @@ const RoleManager = () => {
   }
 
   return (
+    <>
+    {!isSuperAdmin && (
+      <Alert tone="info" title="직책은 최고관리자만 만들고 고칠 수 있습니다.">
+        이 화면에서는 직책과 권한 구성을 확인만 할 수 있습니다. 바꿔야 하면
+        최고관리자에게 요청해 주세요.
+      </Alert>
+    )}
     <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
       {/* ------------------------------ 직책 목록 ----------------------------- */}
       <Card
@@ -466,6 +480,12 @@ const RoleManager = () => {
                                     {def.isSensitive && (
                                       <Badge tone="warning">민감</Badge>
                                     )}
+                                    {/* 자료 전체가 서버와 아직 이어지지 않았으면 줄에서 바로 보인다. */}
+                                    {def.actions.every((action) =>
+                                      UNWIRED_PERMISSIONS.has(
+                                        permissionKey(resource, action),
+                                      ),
+                                    ) && <Badge tone="neutral">미연결</Badge>}
                                   </span>
                                   <span className="block truncate body-6 text-font-2">
                                     {def.description}
@@ -482,14 +502,32 @@ const RoleManager = () => {
                                       className="flex items-center justify-center"
                                     >
                                       {supported ? (
-                                        <Checkbox
-                                          aria-label={`${def.label} ${def.actionLabels?.[action] ?? PERMISSION_ACTION_LABEL[action]}`}
-                                          disabled={!canWrite}
-                                          checked={granted.includes(action)}
-                                          onChange={() =>
-                                            togglePermission(resource, action)
+                                        <span
+                                          className="flex flex-col items-center gap-0.5"
+                                          title={
+                                            UNWIRED_PERMISSIONS.has(
+                                              permissionKey(resource, action),
+                                            )
+                                              ? "서버에 이 권한을 쓰는 기능이 아직 없습니다. 켜도 달라지는 것이 없습니다."
+                                              : undefined
                                           }
-                                        />
+                                        >
+                                          <Checkbox
+                                            aria-label={`${def.label} ${def.actionLabels?.[action] ?? PERMISSION_ACTION_LABEL[action]}`}
+                                            disabled={!canWrite}
+                                            checked={granted.includes(action)}
+                                            onChange={() =>
+                                              togglePermission(resource, action)
+                                            }
+                                          />
+                                          {UNWIRED_PERMISSIONS.has(
+                                            permissionKey(resource, action),
+                                          ) && (
+                                            <span className="caption-3 text-font-disabled">
+                                              미연결
+                                            </span>
+                                          )}
+                                        </span>
                                       ) : (
                                         /* 같은 갈래 안에서도 그 자료에 없는 행위는 선으로 둔다. 꺼진 것과 구분돼야 한다. */
                                         <span className="text-font-disabled">
@@ -522,6 +560,7 @@ const RoleManager = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import dayjs from "@/lib/dayjs";
+import { daysLeftKst } from "@/lib/dayjs";
 import type {
   AdjustmentType,
   AdminRefundReasonCode,
@@ -104,7 +104,7 @@ export const EXPIRING_DAYS = 90;
  * 돌릴지 판단하는 자리라 남은 기간을 화면이 대신 계산해 준다.
  */
 export const retentionDaysLeft = (retentionUntil: string): number =>
-  dayjs(retentionUntil).startOf("day").diff(dayjs().startOf("day"), "day");
+  daysLeftKst(retentionUntil);
 
 /* ------------------------------------------------------------------ */
 /* 환불 */

@@ -33,6 +33,7 @@ import {
   MANAGER_STATUS_LABEL,
   MANAGER_STATUS_TONE,
 } from "@/app/(admin)/ops/managers/_constants/managerOptions";
+import { isRoleAssignable } from "@/app/(admin)/ops/managers/_utils/roleScope";
 import CredentialResultModal from "./CredentialResultModal";
 import ManagerFormModal from "./ManagerFormModal";
 
@@ -89,6 +90,20 @@ const AdminAccountManager = () => {
 
   const isSelf = (manager: Manager) =>
     manager.managerId === currentAdmin?.managerId;
+
+  /*
+    최고관리자가 아니면 자기 권한 안의 직책을 가진 계정만 고치고 · 비밀번호를 초기화할 수 있다.
+    직책 목록을 볼 수 없으면(role:read 없음) 판단할 근거가 없으니 서버에 맡긴다.
+  */
+  const canHandle = (manager: Manager) => {
+    const role = roles.find((item) => item.roleId === manager.roleId);
+
+    return !role || isRoleAssignable(role, currentAdmin);
+  };
+
+  /* 최고관리자 계정의 삭제 · 잠금 해제는 최고관리자만 한다. */
+  const canHandleSuper = (manager: Manager) =>
+    Boolean(currentAdmin?.isSuperAdmin) || !isSuperAdminRole(manager.roleId);
 
   const handleOpenCreate = () => {
     setEditingManager(undefined);
@@ -188,7 +203,7 @@ const AdminAccountManager = () => {
   const rowActions = (manager: Manager) => {
     const items = [];
 
-    if (canWrite && manager.status === "LOCKED") {
+    if (canWrite && canHandleSuper(manager) && manager.status === "LOCKED") {
       items.push({
         label: "잠금 해제",
         icon: <Unlock size={15} />,
@@ -196,7 +211,7 @@ const AdminAccountManager = () => {
       });
     }
 
-    if (canWrite && manager.status === "INACTIVE") {
+    if (canWrite && canHandle(manager) && manager.status === "INACTIVE") {
       items.push({
         label: "활성화",
         icon: <Unlock size={15} />,
@@ -204,7 +219,11 @@ const AdminAccountManager = () => {
       });
     }
 
-    if (canWrite && (manager.status === "ACTIVE" || manager.status === "INVITED")) {
+    if (
+      canWrite &&
+      canHandle(manager) &&
+      (manager.status === "ACTIVE" || manager.status === "INVITED")
+    ) {
       items.push({
         label: "비활성화",
         icon: <Key size={15} />,
@@ -215,7 +234,7 @@ const AdminAccountManager = () => {
       });
     }
 
-    if (canWrite) {
+    if (canWrite && canHandle(manager)) {
       items.push({
         label: "비밀번호 초기화",
         icon: <Key size={15} />,
@@ -229,7 +248,7 @@ const AdminAccountManager = () => {
       onSelect: () => router.push(`/ops/logs?actorId=${manager.managerId}`),
     });
 
-    if (canDelete) {
+    if (canDelete && canHandleSuper(manager)) {
       items.push({
         label: "삭제",
         icon: <Trash size={15} />,
@@ -322,7 +341,7 @@ const AdminAccountManager = () => {
       align: "right",
       render: (manager) => (
         <div className="flex items-center justify-end gap-1">
-          {canWrite && (
+          {canWrite && canHandle(manager) && (
             <IconButton
               label="수정"
               icon={<Edit size={16} />}

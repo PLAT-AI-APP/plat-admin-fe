@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useListParams } from "@/hooks/useListParams";
+import { useCan } from "@/hooks/useCan";
 import { useUserListQuery } from "@/api/user/getUserList";
 import { useUserMutation } from "@/api/user/mutateUser";
 import { Ban, CheckCircle, Eye } from "@/icons";
@@ -96,6 +97,7 @@ const UserManager = () => {
   });
 
   const { statusMutation } = useUserMutation();
+  const canWrite = useCan("user:write");
 
   const handleUnsuspend = (user: User) => {
     openConfirm({
@@ -139,6 +141,8 @@ const UserManager = () => {
         onSelect: () => router.push(`/users/${user.userId}`),
       },
     ];
+
+    if (!canWrite) return items;
 
     if (user.status === "ACTIVE") {
       items.push({

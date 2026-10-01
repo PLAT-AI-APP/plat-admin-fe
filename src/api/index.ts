@@ -19,6 +19,7 @@ import type {
 } from "@/type/api";
 import type { TokenResponse } from "@/type/auth";
 import { reportError } from "@/lib/monitoring";
+import { FORBIDDEN_CODE, showAppToast } from "@/lib/toast";
 
 /** 기존 공통 응답 봉투만 골라내는 가드입니다. */
 const isLegacyApiSuccessEnvelope = <T>(
@@ -78,6 +79,33 @@ export const handleUnauthorized = () => {
   window.location.replace(
     `${LOGIN_PATH}?redirect=${encodeURIComponent(redirect)}&reason=expired`,
   );
+};
+
+/**
+ * 권한 거부(403 FORBIDDEN)를 받았을 때 부를 일. ReactQueryProvider 가 내 프로필(`get-me`)을
+ * 다시 읽도록 등록한다. 인터셉터는 React 밖이라 쿼리 클라이언트를 직접 쥐지 않는다.
+ */
+let forbiddenHandler: (() => void) | null = null;
+
+export const setForbiddenHandler = (handler: (() => void) | null) => {
+  forbiddenHandler = handler;
+};
+
+/**
+ * 권한 거부를 **한 곳에서** 알린다.
+ *
+ * 화면은 로그인 때 받은 권한으로 버튼을 그리는데, 그 사이 누가 직책 권한을 빼면 서버는
+ * 곧바로 막는다. 운영자에게는 "눌렀더니 안 된다"만 보이므로 권한이 바뀌었을 수 있다고
+ * 알리고, 내 권한을 다시 읽어 화면을 맞춘다. 동시에 여러 요청이 막혀도 안내는 하나다.
+ */
+const notifyForbidden = (message: string) => {
+  showAppToast("warning", message, {
+    id: "permission-forbidden",
+    description:
+      "권한이 바뀌었을 수 있어요. 내 권한을 다시 불러와 화면을 맞췄습니다. 계속 막히면 최고관리자에게 문의해 주세요.",
+  });
+
+  forbiddenHandler?.();
 };
 
 /**
@@ -257,7 +285,10 @@ const createAdminAxios = ({
       code: error.response?.data?.code ?? "UNKNOWN",
       fields: error.response?.data?.fields ?? {},
       message: error.response?.data?.message ?? "요청 처리에 실패했습니다.",
+      status,
     };
+
+    if (appError.code === FORBIDDEN_CODE) notifyForbidden(appError.message);
 
     return Promise.reject(Object.assign(new Error(appError.message), appError));
   };

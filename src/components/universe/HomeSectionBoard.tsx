@@ -25,6 +25,7 @@ import type { AdminUniverseListItem } from "@/type/character";
 import { SERVICE_LANGUAGE_LABEL, type ServiceLanguage } from "@/type/language";
 import type { HomeSectionItem, HomeSectionKey } from "@/type/mainExposure";
 import { openConfirm } from "@/store/useConfirmStore";
+import { useCan } from "@/hooks/useCan";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -61,6 +62,8 @@ const HomeSectionBoard = ({ section, guide }: HomeSectionBoardProps) => {
   const config = HOME_SECTION_CONFIG[section];
   const [language, setLanguage] = useState<ServiceLanguage>("KO");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const canWrite = useCan("mainExposure:write");
+  const canDelete = useCan("mainExposure:delete");
 
   const { data, isLoading } = useHomeSectionQuery(section, language);
   const languageCounts = useHomeSectionLanguageCountQuery(section);
@@ -214,6 +217,7 @@ const HomeSectionBoard = ({ section, guide }: HomeSectionBoardProps) => {
         title={`${SERVICE_LANGUAGE_LABEL[language]} · 편성된 세계관 ${items.length}/${config.maxCount}`}
         description="추가 · 해제 · 순서 변경은 누르는 즉시 저장됩니다."
         action={
+          canWrite && (
           <Button
             variant="primary"
             size="sm"
@@ -228,6 +232,7 @@ const HomeSectionBoard = ({ section, guide }: HomeSectionBoardProps) => {
           >
             세계관 추가
           </Button>
+          )
         }
         noPadding
         bodyClassName="p-5"
@@ -246,14 +251,16 @@ const HomeSectionBoard = ({ section, guide }: HomeSectionBoardProps) => {
             title={`${SERVICE_LANGUAGE_LABEL[language]} 목록에 편성된 세계관이 없습니다.`}
             description={`${SERVICE_LANGUAGE_LABEL[language]} 메인 화면에 노출할 세계관을 최대 ${config.maxCount}개까지 편성해 주세요.`}
             action={
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<Plus size={15} />}
-                onClick={() => setIsPickerOpen(true)}
-              >
-                세계관 추가
-              </Button>
+              canWrite && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<Plus size={15} />}
+                  onClick={() => setIsPickerOpen(true)}
+                >
+                  세계관 추가
+                </Button>
+              )
             }
           />
         )}
@@ -275,6 +282,7 @@ const HomeSectionBoard = ({ section, guide }: HomeSectionBoardProps) => {
                       key={item.homeSectionId}
                       draggableId={item.homeSectionId}
                       index={index}
+                      isDragDisabled={!canWrite}
                     >
                       {(draggable, snapshot) => (
                         <li
@@ -287,6 +295,7 @@ const HomeSectionBoard = ({ section, guide }: HomeSectionBoardProps) => {
                         >
                           <span
                             {...draggable.dragHandleProps}
+                            hidden={!canWrite}
                             className="flex cursor-grab items-center text-font-disabled transition hover:text-font-2 active:cursor-grabbing"
                             aria-label="순서 변경"
                           >
@@ -337,7 +346,7 @@ const HomeSectionBoard = ({ section, guide }: HomeSectionBoardProps) => {
                             )}
                           </div>
 
-                          {canPickScenario && (
+                          {canPickScenario && canWrite && (
                             <Button
                               variant="secondary"
                               size="sm"
@@ -355,13 +364,15 @@ const HomeSectionBoard = ({ section, guide }: HomeSectionBoardProps) => {
                             </Badge>
                           )}
 
-                          <IconButton
-                            label="편성 해제"
-                            icon={<Trash size={16} />}
-                            tone="danger"
-                            size="sm"
-                            onClick={() => handleRemove(item)}
-                          />
+                          {canDelete && (
+                            <IconButton
+                              label="편성 해제"
+                              icon={<Trash size={16} />}
+                              tone="danger"
+                              size="sm"
+                              onClick={() => handleRemove(item)}
+                            />
+                          )}
                         </li>
                       )}
                     </Draggable>

@@ -15,7 +15,6 @@ import {
 } from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import { openConfirm } from "@/store/useConfirmStore";
-import type { AppError } from "@/type/api";
 import type {
   AdminRefundReasonCode,
   PaymentAnomaly,
@@ -35,6 +34,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import RefundRejectModal from "@/components/billing/RefundRejectModal";
+import { openRefundApproveConfirm } from "@/components/billing/refundApprove";
 import PaymentStatusCell from "../../_components/PaymentStatusCell";
 import AdminRefundModal from "./AdminRefundModal";
 import ForceRefundModal from "./ForceRefundModal";
@@ -54,7 +54,6 @@ import {
   PG_TRANSACTION_RESULT_LABEL,
   PG_TRANSACTION_RESULT_TONE,
   PG_TRANSACTION_TYPE_LABEL,
-  REFUND_CHAT_IN_PROGRESS_CODE,
   REFUND_CHAT_IN_PROGRESS_MESSAGE,
   REFUND_CREDIT_USED_MESSAGE,
   REFUND_REASON_CODE_LABEL,
@@ -327,31 +326,21 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
   const canForceRefund = canForce && isRefundable && isNoteUsed;
   const nickname = order?.userNickname ?? (order ? `탈퇴 회원 #${order.userId}` : "");
 
-  const handleApprove = (target: PaymentOrderDetail, refund: PaymentOrderRefund) => {
-    openConfirm({
-      title: "환불을 승인할까요?",
-      description: `${PAYMENT_PG_PROVIDER_LABEL[target.pgProvider]}로 ${formatCurrency(refund.refundAmount)}을 취소하고, '${nickname}' 님의 노트 ${formatCredit(refund.refundCredit)}를 회수합니다.`,
-      warning: refund.creditUsedSinceRequest
-        ? "신청 뒤 유저가 노트를 사용했습니다. 승인하면 크레딧 사용으로 자동 거절됩니다."
-        : "승인하면 PG로 돈이 나가며 되돌릴 수 없습니다.",
-      confirmText: "승인",
-      tone: "danger",
-      onConfirm: async () => {
-        try {
-          await approveMutation.mutateAsync({
-            orderId: target.paymentOrderId,
-            refundId: refund.refundId,
-          });
-        } catch (caught) {
-          if ((caught as AppError).code === REFUND_CHAT_IN_PROGRESS_CODE) {
-            throw new Error(REFUND_CHAT_IN_PROGRESS_MESSAGE);
-          }
-
-          throw caught;
-        }
+  const handleApprove = (target: PaymentOrderDetail, refund: PaymentOrderRefund) =>
+    openRefundApproveConfirm(
+      {
+        refundAmount: refund.refundAmount,
+        refundCredit: refund.refundCredit,
+        pgProvider: target.pgProvider,
+        nickname,
+        creditUsedSinceRequest: refund.creditUsedSinceRequest,
       },
-    });
-  };
+      () =>
+        approveMutation.mutateAsync({
+          orderId: target.paymentOrderId,
+          refundId: refund.refundId,
+        }),
+    );
 
   const handleReject = (reason: string) => {
     if (!order || !rejectTarget) return;

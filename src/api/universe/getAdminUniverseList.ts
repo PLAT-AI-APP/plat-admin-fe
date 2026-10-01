@@ -1,9 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
+import { usePermittedQuery } from "@/api/usePermittedQuery";
 import {
   toPageRequest,
   toPageResponse,
-  type AppError,
   type PageResponse,
   type PageWith,
 } from "@/type/api";
@@ -162,7 +161,7 @@ export const getAdminUniverseList = async (
 };
 
 export const useAdminUniverseListQuery = (params: AdminUniverseListParams) => {
-  return useQuery<PageResponse<AdminUniverseListItem>, AppError>({
+  return usePermittedQuery<PageResponse<AdminUniverseListItem>>("universe:read", {
     queryKey: ["get-admin-universe-list", params],
     queryFn: () => getAdminUniverseList(params),
   });
@@ -192,7 +191,7 @@ export const useAdminUniverseCountQuery = (
   // 개수만 필요하므로 한 건만 받는다. 키를 목록과 같은 모양으로 두어 캐시를 나눈다.
   const params: AdminUniverseListParams = { page: 1, size: 1, ...filter };
 
-  return useQuery<PageResponse<AdminUniverseListItem>, AppError, number>({
+  return usePermittedQuery<PageResponse<AdminUniverseListItem>, number>("universe:read", {
     queryKey: ["get-admin-universe-list", params],
     queryFn: () => getAdminUniverseList(params),
     select: (page) => page.totalCount,

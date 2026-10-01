@@ -7,6 +7,10 @@ export { default as ChevronLeft } from "./ChevronLeft";
 export { default as ChevronRight } from "./ChevronRight";
 export { default as ExternalLink } from "./ExternalLink";
 
+// 브랜드
+export { default as AppIcon } from "./AppIcon";
+export { default as LogoWordmark } from "./LogoWordmark";
+
 // 2. 메뉴 (좌측 네비게이션 전용)
 export { default as Activity } from "./Activity";
 export { default as Bell } from "./Bell";

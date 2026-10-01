@@ -16,13 +16,21 @@ const ConfirmDialogHost = () => {
   const isDanger = options?.tone === "danger";
 
   const handleConfirm = async () => {
-    if (!options) return;
+    /*
+      연타 방지. 버튼이 로딩으로 바뀌기 전에 두 번 눌리면 onConfirm 이 두 번 돈다 —
+      지급 · 삭제가 두 번 나간다. 렌더 값은 한 박자 늦으므로 스토어에서 바로 읽는다.
+    */
+    if (!options || useConfirmStore.getState().isProcessing) return;
 
     try {
       setProcessing(true);
       await options.onConfirm();
       closeConfirm();
     } catch (error) {
+      /*
+        실패 안내는 여기 한 곳이다. 뮤테이션 훅의 onError 가 이미 같은 실패를 띄웠으면
+        showErrorToast 가 걸러 두 번 뜨지 않는다.
+      */
       showErrorToast(error);
       setProcessing(false);
     }

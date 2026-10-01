@@ -1,6 +1,6 @@
 "use client";
 
-import dayjs from "@/lib/dayjs";
+import { nowKst, todayKst } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import Input from "./Input";
 
@@ -30,8 +30,8 @@ const PRESETS: RangePreset[] = [
 ];
 
 const toRange = ({ days }: RangePreset): DateRange => ({
-  startDate: dayjs().subtract(days, "day").format("YYYY-MM-DD"),
-  endDate: dayjs().format("YYYY-MM-DD"),
+  startDate: nowKst().subtract(days, "day").format("YYYY-MM-DD"),
+  endDate: todayKst(),
 });
 
 /**

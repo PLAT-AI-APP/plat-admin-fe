@@ -15,6 +15,11 @@ export interface EarningAccountActionInput extends EarningActionInput {
   accountId: string;
   action: EarningAccountAction;
   amount?: number;
+  /**
+   * 지급 · 차감의 멱등키. 모달을 한 번 열 때 하나를 쥐고 재시도에도 같은 값을 보낸다.
+   * 응답이 늦어 다시 눌러도 서버가 첫 결과를 돌려줘 두 번 지급되지 않는다.
+   */
+  idempotencyKey?: string;
 }
 
 const ACCOUNT_ACTION_PATH: Record<EarningAccountAction, string> = {
@@ -42,10 +47,14 @@ export const useEarningAccountActionMutation = () => {
   const invalidate = useInvalidateEarning();
 
   return useMutation<void, AppError, EarningAccountActionInput>({
-    mutationFn: async ({ accountId, action, reasonCode, memo, amount }) => {
+    mutationFn: async ({ accountId, action, reasonCode, memo, amount, idempotencyKey }) => {
+      const withAmount = action === "GRANT" || action === "DEDUCT";
+
       await liveAxios.post(
         `/earnings/accounts/${accountId}/${ACCOUNT_ACTION_PATH[action]}`,
-        { reasonCode, memo, amount },
+        withAmount
+          ? { reasonCode, memo, amount, idempotencyKey }
+          : { reasonCode, memo },
       );
     },
     onSuccess: (_, { action }) => {

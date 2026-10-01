@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Users } from "@/icons";
+import { createIdempotencyKey } from "@/lib/idempotency";
 import { cn, formatCredit, formatSignedCredit } from "@/lib/utils";
 import {
   creditAdjustmentSchema,
@@ -34,27 +35,6 @@ const EMPTY_VALUES: CreditAdjustmentSchema = {
   type: "GRANT",
   amount: 0,
   reason: "",
-};
-
-/**
- * 멱등키 한 개.
- *
- * `crypto.randomUUID`는 **보안 컨텍스트(https · localhost)에서만** 존재한다.
- * 사내망 http나 LAN IP(`http://192.168.x.x:3100`)로 열면 `undefined`인데,
- * 이 모달은 닫혀 있어도 항상 렌더되므로 그냥 부르면 모달이 아니라
- * **크레딧 조정 페이지 전체가 렌더 중 예외로 죽는다.**
- *
- * `getRandomValues`는 비보안 컨텍스트에서도 쓸 수 있어 그쪽으로 물러선다.
- * 키의 용도는 중복 요청 식별이라 UUID 형식일 필요는 없고 충돌만 없으면 된다.
- */
-const createIdempotencyKey = (): string => {
-  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
-
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-    "",
-  );
 };
 
 const CreditAdjustmentFormModal = ({

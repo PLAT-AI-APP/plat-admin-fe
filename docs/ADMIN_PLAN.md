@@ -63,7 +63,7 @@
 
 | # | 1뎁스 | 2뎁스 | 라우트 | 비고 |
 |---|---|---|---|---|
-| 1 | 대시보드 | — | `/` | 단독 메뉴 · **MOCK** |
+| 1 | 대시보드 | — | `/` | 단독 메뉴 · 권한(`dashboard:read`) 없으면 볼 수 있는 첫 메뉴로 보낸다 |
 | 2 | 메인 노출 관리 | 배너 관리 | `/main-exposure/banners` | 언어별 캐러셀 |
 | | | 오늘의 PICK | `/main-exposure/today-pick` | 언어별 최대 10개 |
 | | | 공식 캐릭터 맛보기 | `/main-exposure/official-pick` | **감춤**(`hidden`) · 언어별 최대 3개 |
@@ -77,30 +77,32 @@
 | | | 신고 관리 | `/community/reports` | 대상별 케이스 · 상세 `/community/reports/[caseId]` |
 | 5 | 유저/크리에이터 | 유저 관리 | `/users` | 상세 `/users/[userId]` |
 | | | 공식 계정 | `/users/official` | 공식으로 취급할 **유저 ID** 등록 |
+| | | 서비스 관리자 | `/users/service-admins` | 서비스 계정에 `ADMIN` 역할 부여·회수(`serviceAdmin:*`) · 사유·이력 |
 | 6 | AI 운영 | 모델 카탈로그 | `/ai/catalog` | |
 | | | AI 모델 관리 | `/ai/models` | |
 | | | 시스템 프롬프트 | `/ai/prompts` | |
+| | | API 키 | `/ai/keys` | 제공사별 메인·서브 키 교체·확인·메인 복귀(`server:read`·`server:write`) |
 | 7 | 결제/크레딧 | 상품/결제금액 관리 | `/billing/products` | |
-| | | 크레딧 정책 관리 | `/billing/credit-policies` | **MOCK** |
-| | | 크레딧 수동 조정 | `/billing/credit-adjustments` | |
-| | | 결제 장부 | `/billing/ledger` | |
-| | | 결제 보존 원장 | `/billing/retention` | **MOCK** · 탈퇴/파기 후에도 법정 5년 보존 · PG 거래번호로 조회 |
+| | | 크레딧 정책 관리 | `/billing/credit-policies` | 고정 금액 정책 9개의 금액·on/off |
+| | | 크레딧 수동 조정 | `/billing/credit-adjustments` | 단건 조정(상한 100,000) · 일괄 지급(멱등키) |
+| | | 결제 내역 | `/billing/payments` | 결제 장부 · 환불 관리 · 보존 열람을 결제 한 건 기준으로 합친 화면 · 상세 `/billing/payments/[orderId]` |
 | 7-1 | 제작자 수익 | 제작자 수익 | `/earnings/creators` | 상세 `/earnings/creators/[accountId]` · 동결 · 차감 |
 | | | 교환 요청 | `/earnings/redemptions` | 상품권 수동 발송 · 반려 · 처리 대기 뱃지 |
 | | | 수익 정책 · 교환 상품 | `/earnings/policy` | 정책은 이력으로 쌓인다 · 상품 이미지 업로드 |
 | | | 대사 결과 | `/earnings/reconciliation` | 매일 00:40 대사 · 불일치는 Slack |
 | 8 | 커뮤니케이션 | 공지사항 관리 | `/communication/notices` | 마크다운 |
-| | | Q&A 관리 | `/communication/qna` | **MOCK** |
+| | | Q&A 관리 | `/communication/qna` | 답변은 관리자가 직접 · 환불 문의는 결제 내역으로 |
+| | | FAQ 관리 | `/communication/faq` | |
 | | | 알림 관리 | `/communication/notifications` | **MOCK** |
 | | | 선제 메시지 | `/communication/proactive-messages` | **MOCK** |
 | | | 푸시 발송 | `/communication/push` | **MOCK** |
-| 9 | 법적 고지 | — | `/legal` | 단독 메뉴 · **MOCK**(현재 Notion 관리) |
+| 9 | 법적 고지 | — | `/legal` | 단독 메뉴 · 약관 버전 · 게시(`legal:publish`) · 번역 삭제(`legal:delete`) |
 | 10 | 운영 | 직책 · 권한 | `/ops/roles` | 권한은 직책이 갖는다 |
 | | | 관리자 관리 | `/ops/managers` | 계정에 직책만 배정 |
 | | | 앱 버전 관리 | `/ops/app-versions` | **MOCK** |
 | | | 서버 상태 | `/ops/server` | |
 | | | 배치 관리 | `/ops/batch` | 잡 정의 + 실행 이력 · 수동 재실행 |
-| | | 로그 | `/ops/logs` | 탭 2개 — 관리자 활동 · 시스템 이벤트 |
+| | | 로그 | `/ops/logs` | 탭 — 관리자 활동 · 접근 로그 · 시스템 이벤트 |
 
 메뉴 밖의 화면: `/login`(로그인), `/ops/my-account`(헤더 프로필 → 내 계정).
 
@@ -114,15 +116,18 @@ MVP에서 앱이 그 섹션을 읽지 않아 **담아도 어디에도 나가지 
 말이었다. 여기서 한 일이 앱에 반영되지 않는다.
 
 그래서 배지가 붙는 기준은 "MVP 범위인가"가 아니라 **"지금 실서버에 붙어 있는가"**다.
-MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. 현재 배지가 붙은 화면은
-아래 11개이며, 기준 목록은 `src/constants/menu.tsx`의 `isMock`이다.
+MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. 2026-09 클로즈베타 기준 배지가 붙은 화면은
+아래 6개이며, 기준 목록은 `src/constants/menu.tsx`의 `isMock`이다. 목업이 꺼진 개발·운영(`develop`·`main`)에서는
+이 메뉴가 사이드바에서 숨는다.
 
 | 배지가 붙은 이유 | 화면 |
 |---|---|
-| 아직 실서버에 연결되지 않음 | 대시보드 · 캐릭터 · 채팅 내보내기 · 크레딧 정책 관리 · 결제 보존 원장 · Q&A 관리 |
+| 아직 실서버에 연결되지 않음 | 캐릭터 · 채팅 내보내기 |
 | 현재 다른 도구(Discord)로 운영 | 알림 관리 · 선제 메시지 · 푸시 발송 |
-| 현재 다른 도구(Notion)로 운영 | 법적 고지 |
 | 앱이 아직 이 정책을 읽어 가지 않음 | 앱 버전 관리 |
+
+대시보드 · 크레딧 정책 · Q&A · FAQ · 법적 고지 · 결제 내역 · 서비스 관리자 · API 키는 실서버에 붙었다.
+직책 편집 화면은 서버에 자원 키는 있으나 쓰는 API 가 없는 권한(`character`·`notification`·`push`·`appVersion`)에 "서버 미연결"을 표시한다.
 
 ### 3.1 커뮤니티 도메인을 따로 둔 이유
 
@@ -170,7 +175,11 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 `SUCCESS` · `DENIED`(권한 없어 거부) · `FAILED`(오류). 성공만 남기면 감사가 되지
 않는다. 권한이 없어 막힌 시도가 오히려 먼저 봐야 할 기록이다.
 
-### 3.3 결제 보존 원장을 장부와 나눈 이유
+### 3.3 결제 보존 원장을 장부와 나눈 이유 (결제 내역으로 합침)
+
+> 2026-09 에 `결제 장부` · 환불 관리 · `결제 보존 원장`을 **결제 한 건 기준의 `결제 내역`(`/billing/payments`, 서버 `/payment-orders/**`)** 으로
+> 합쳤다. 환불 승인 · 이상 조치 · 5년 보존 열람이 모두 여기서 끝나고, 결제와 무관한 크레딧 흐름은 유저 상세의 크레딧 원장에서 본다.
+> 아래는 두 질문을 나눠 생각한 근거로 남겨 둔다(보존 범위 원칙은 그대로 유효하다).
 
 `결제 장부`와 `결제 보존 원장`은 같은 결제를 다루지만 **답해야 하는 질문이 다르다.**
 
@@ -224,10 +233,10 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | 갈래 | 화면 | 서버 자료 | 앱에서 읽는 곳 |
 |---|---|---|---|
-| 배너 | 배너 관리 | `/admin/main-banners` | `GET /home/banners` |
-| 홈 편성 | 오늘의 PICK | `/admin/home-sections` (`TODAY_PICK`) | `GET /home/today-pick` |
-| | 공식 캐릭터 맛보기 (감춤) | `/admin/home-sections` (`OFFICIAL_PREVIEW`) | 없음 |
-| | 에셋 추천 (감춤) | `/admin/home-sections` (`ASSET_PREVIEW`) | 없음 |
+| 배너 | 배너 관리 | `/main-banners` | `GET /home/banners` |
+| 홈 편성 | 오늘의 PICK | `/home-sections` (`TODAY_PICK`) | `GET /home/today-pick` |
+| | 공식 캐릭터 맛보기 (감춤) | `/home-sections` (`OFFICIAL_PREVIEW`) | 없음 |
+| | 에셋 추천 (감춤) | `/home-sections` (`ASSET_PREVIEW`) | 없음 |
 
 **모든 목록은 언어별로 따로다.** 앱이 언어를 붙여 가져가는 목록이 곧 한 칸이라,
 배너도 편성도 언어 탭(한국어 · 영어 · 일본어 · 중국어 · 태국어 · 베트남어)마다 따로
@@ -281,7 +290,7 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 - 후보는 `officialOnly`로 좁힌다. 공식 여부는 세계관에 저장된 값이 아니라 **소유
   크리에이터가 공식 계정으로 지정되어 있는지**로 계산된다(→ 5.5). 후보가 비면 세계관을 찾을
   것이 아니라 `유저/크리에이터 > 공식 계정`(`/users/official`)에 계정이 등록되어 있는지 먼저 본다.
-- 이 섹션만 **맛보기 회차(`scenarioId`)를 지목한다**(`PATCH /admin/home-sections/{id}/scenario`,
+- 이 섹션만 **맛보기 회차(`scenarioId`)를 지목한다**(`PATCH /home-sections/{id}/scenario`,
   `src/components/universe/ScenarioPickerModal.tsx`). 세계관만 고르면 앱이 어느 회차를 실어야
   할지 알 수 없어서다.
 
@@ -332,36 +341,39 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | 도메인 | 연동 | 경로 | 소스 |
 |---|---|---|---|
-| 인증 · 내 계정 | 실서버 | `/admin/auth/**` | `src/api/auth/` |
-| 관리자 계정 · 직책 | 실서버 | `/admin/managers` · `/admin/roles` | `src/api/ops/` |
-| 유저 | 실서버 | `/admin/users` | `src/api/user/` |
-| 세계관 | 실서버 | `/admin/universes` | `src/api/universe/` |
-| 공식 계정 | 실서버 | `/admin/official-accounts` | `src/api/official/` |
-| 해시태그 · 제안 | 실서버 | `/admin/hashtags/**` | `src/api/hashtag/` |
-| 금지어 | 실서버 | `/admin/banned-words` | `src/api/word/` |
-| 댓글 | 실서버 | `/admin/comments` | `src/api/comment/` |
-| 메인 배너 · 이미지 업로드 | 실서버 | `/admin/main-banners/**` | `src/api/main-exposure/` · `src/api/file/` |
-| 홈 편성 | 실서버 | `/admin/home-sections` | `src/api/main-exposure/` |
-| 공지사항 | 실서버 | `/admin/notices` | `src/api/notice/` |
-| AI 모델 · 카탈로그 · 시스템 프롬프트 | 실서버 | `/admin/ai/models/**` · `/admin/ai/prompts` | `src/api/ai/` |
-| 상품 | 실서버 | `/admin/billing/products` | `src/api/billing/` |
-| 크레딧 수동 조정 | 실서버 | `/admin/credits/adjustments` · `/admin/credits/users` | `src/api/billing/` |
-| 결제 장부 | 실서버 | `/admin/ledgers/**` | `src/api/billing/` |
-| 제작자 수익 · 교환 상품 | 실서버 | `/admin/earnings/**` · `/admin/reward-products/**` | `src/api/earning/` |
-| 관리자 활동 · 시스템 로그 | 실서버 | `/admin/logs/**` | `src/api/ops/` |
-| 배치 | 실서버 | `/admin/batch/**` | `src/api/ops/` |
-| 서버 상태 | 실서버 | `/admin/server/**` | `src/api/ops/` |
-| 신고 | 실서버 | `/admin/reports/**` | `src/api/report/` |
-| 대시보드 | 목업 | `/admin/dashboard/summary` | `src/api/dashboard/` |
-| 캐릭터 · 채팅 내보내기 | 목업 | `/admin/characters` · `/admin/chat-exports` | `src/api/character/` |
-| 크레딧 정책 | 목업 | `/admin/credits/policies` | `src/api/billing/` |
-| 결제 보존 원장 | 목업 | `/admin/payment-records/**` | `src/api/billing/` |
-| Q&A · 알림 템플릿 · 선제 메시지 · 푸시 | 목업 | `/admin/qna` · `/admin/notifications/templates` · `/admin/proactive-messages` · `/admin/push/campaigns` | `src/api/communication/` |
-| 법적 고지 | 목업 | `/admin/legal` | `src/api/legal/` |
-| 앱 버전 | 목업 | `/admin/app-versions` | `src/api/ops/` |
-| 처리 대기 건수 | 목업 | `/admin/ops/pending-counts` | `src/api/ops/getPendingCounts.ts` |
-| 교환 요청 대기 건수 | 실서버 | `/admin/earnings/redemptions/pending-count` | `src/api/earning/getRedemptionList.ts` |
-| 전역 검색(⌘K 엔티티) | 목업 | `/admin/search` | `src/api/search/` |
+| 인증 · 내 계정 | 실서버 | `/auth/**` | `src/api/auth/` |
+| 대시보드 | 실서버 | `/dashboard/summary` | `src/api/dashboard/` |
+| 처리 대기 건수 | 실서버 | `/ops/pending-counts` | `src/api/ops/getPendingCounts.ts` |
+| 교환 요청 대기 건수 | 실서버 | `/earnings/redemptions/pending-count` | `src/api/earning/getRedemptionList.ts` |
+| 관리자 계정 · 직책 | 실서버 | `/managers` · `/roles` | `src/api/ops/` |
+| 유저 | 실서버 | `/users` | `src/api/user/` |
+| 서비스 관리자 | 실서버 | `/service-admins` · `/service-admins/history` | `src/api/serviceAdmin/` |
+| 세계관 | 실서버 | `/universes` | `src/api/universe/` |
+| 공식 계정 | 실서버 | `/official-accounts` | `src/api/official/` |
+| 해시태그 · 제안 | 실서버 | `/hashtags/**` | `src/api/hashtag/` |
+| 금지어 | 실서버 | `/banned-words` | `src/api/word/` |
+| 댓글 | 실서버 | `/comments` | `src/api/comment/` |
+| 신고 · 앞뒤 대화 열람 | 실서버 | `/reports/**` (`POST /reports/{caseId}/context`) | `src/api/report/` |
+| 메인 배너 · 이미지 업로드 | 실서버 | `/main-banners/**` | `src/api/main-exposure/` · `src/api/file/` |
+| 홈 편성 | 실서버 | `/home-sections` | `src/api/main-exposure/` |
+| 공지사항 | 실서버 | `/notices` | `src/api/notice/` |
+| Q&A · FAQ | 실서버 | `/qna` · `/faqs` | `src/api/communication/` |
+| 법적 고지 | 실서버 | `/legal` | `src/api/legal/` |
+| AI 모델 · 카탈로그 · 시스템 프롬프트 | 실서버 | `/ai/models/**` · `/ai/prompts` | `src/api/ai/` |
+| AI API 키 | 실서버 | `/server/ai-keys/**` | `src/api/ai/getAiKeys.ts` · `mutateAiKey.ts` |
+| 상품 | 실서버 | `/billing/products` | `src/api/billing/` |
+| 크레딧 정책 | 실서버 | `/credits/policies` | `src/api/billing/` |
+| 크레딧 수동 조정 · 일괄 지급 | 실서버 | `/credits/adjustments` · `/credits/adjustments/bulk` · `/credits/users` | `src/api/billing/` |
+| 결제 내역 · 환불 조치 | 실서버 | `/payment-orders/**` | `src/api/billing/` |
+| 결제 장부 | 실서버 | `/ledgers` | `src/api/billing/` |
+| 제작자 수익 · 교환 상품 | 실서버 | `/earnings/**` · `/reward-products/**` | `src/api/earning/` |
+| 관리자 활동 · 접근 · 시스템 로그 | 실서버 | `/logs/**` | `src/api/ops/` |
+| 배치 | 실서버 | `/batch/**` | `src/api/ops/` |
+| 서버 상태 · 점검 | 실서버 | `/server/**` | `src/api/ops/` |
+| 캐릭터 · 채팅 내보내기 | 목업 | `/characters` · `/chat-exports` | `src/api/character/` |
+| 알림 템플릿 · 선제 메시지 · 푸시 | 목업 | `/notifications/templates` · `/proactive-messages` · `/push/campaigns` | `src/api/communication/` |
+| 앱 버전 | 목업 | `/app-versions` | `src/api/ops/` |
+| 전역 검색(⌘K 엔티티) | 목업 | `/search` | `src/api/search/` |
 
 아래는 경로만으로는 알 수 없는 **계약의 이유**가 있는 도메인만 적는다.
 
@@ -369,17 +381,17 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | Method | Path | 목적 |
 |---|---|---|
-| GET | `/admin/main-banners?language=` | 언어별 배너 목록 |
-| GET | `/admin/main-banners/languages` | 언어별 배너 건수 |
-| POST | `/admin/main-banners` | 배너 추가 |
-| PUT | `/admin/main-banners/{bannerId}` | 배너 수정 |
-| DELETE | `/admin/main-banners/{bannerId}` | 배너 삭제 |
-| PATCH | `/admin/main-banners/order` | 배너 순서 저장 (`language` + 그 언어 전체 `orderedIds`) |
-| GET | `/admin/home-sections?section=&language=` | 편성 목록 |
-| POST | `/admin/home-sections` | 편성 등록 (한 건씩, 맨 뒤에 붙는다) |
-| DELETE | `/admin/home-sections/{homeSectionId}` | 편성 해제 |
-| PATCH | `/admin/home-sections/{homeSectionId}/scenario` | 맛보기 회차 지정 · 해제 (`OFFICIAL_PREVIEW`만) |
-| PATCH | `/admin/home-sections/order` | 편성 순서 저장 (섹션 · 언어 전체) |
+| GET | `/main-banners?language=` | 언어별 배너 목록 |
+| GET | `/main-banners/languages` | 언어별 배너 건수 |
+| POST | `/main-banners` | 배너 추가 |
+| PUT | `/main-banners/{bannerId}` | 배너 수정 |
+| DELETE | `/main-banners/{bannerId}` | 배너 삭제 |
+| PATCH | `/main-banners/order` | 배너 순서 저장 (`language` + 그 언어 전체 `orderedIds`) |
+| GET | `/home-sections?section=&language=` | 편성 목록 |
+| POST | `/home-sections` | 편성 등록 (한 건씩, 맨 뒤에 붙는다) |
+| DELETE | `/home-sections/{homeSectionId}` | 편성 해제 |
+| PATCH | `/home-sections/{homeSectionId}/scenario` | 맛보기 회차 지정 · 해제 (`OFFICIAL_PREVIEW`만) |
+| PATCH | `/home-sections/order` | 편성 순서 저장 (섹션 · 언어 전체) |
 
 - 배너 순서는 **그 언어의 배너 전체를 보내야 한다.** 개수가 어긋나면 서버가 400으로 거절한다.
 - 홈 편성에는 언어별 건수 엔드포인트가 없어, 언어마다 목록을 받아 센다. 목록 조회와 같은
@@ -392,7 +404,7 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | Method | Path | 목적 |
 |---|---|---|
-| POST | `/admin/main-banners/image` | 배너 이미지 업로드 (multipart, `file` 필드) → `201 { fileId }` |
+| POST | `/main-banners/image` | 배너 이미지 업로드 (multipart, `file` 필드) → `201 { fileId }` |
 | GET | `/images/{type}/{fileId}/{variant}` | 공개 이미지 조회 (인증 없음) |
 
 - 업로드는 URL이 아니라 `fileId`만 준다. 폼은 `fileId`만 들고 있다가 생성 · 수정 API에 넘긴다.
@@ -409,13 +421,13 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | Method | Path | 목적 |
 |---|---|---|
-| GET | `/admin/hashtags` | 해시태그 목록/검색 |
-| GET | `/admin/hashtags/{hashtagId}` | 해시태그 상세 (언어별 라벨) |
-| POST | `/admin/hashtags` | 해시태그 추가 |
-| PATCH | `/admin/hashtags/{hashtagId}` | 해시태그 수정 · 노출 여부 변경 (부분 갱신) |
-| DELETE | `/admin/hashtags/{hashtagId}` | 해시태그 삭제 (사용 중이면 409 `HASHTAG_IN_USE`) |
-| GET | `/admin/hashtags/suggestions` · `/admin/hashtags/suggestions/items` | 유저 태그 제안 묶음 · 개별 제안 |
-| DELETE | `/admin/hashtags/suggestions` · `/admin/hashtags/suggestions/items/{suggestId}` | 제안 정리 |
+| GET | `/hashtags` | 해시태그 목록/검색 |
+| GET | `/hashtags/{hashtagId}` | 해시태그 상세 (언어별 라벨) |
+| POST | `/hashtags` | 해시태그 추가 |
+| PATCH | `/hashtags/{hashtagId}` | 해시태그 수정 · 노출 여부 변경 (부분 갱신) |
+| DELETE | `/hashtags/{hashtagId}` | 해시태그 삭제 (사용 중이면 409 `HASHTAG_IN_USE`) |
+| GET | `/hashtags/suggestions` · `/hashtags/suggestions/items` | 유저 태그 제안 묶음 · 개별 제안 |
+| DELETE | `/hashtags/suggestions` · `/hashtags/suggestions/items/{suggestId}` | 제안 정리 |
 | GET | `/hashtag/list?lang=KO` | 앱에서 사용할 활성 태그 목록 (public) |
 
 분류 11종(서버 `HashtagCategory`와 이름 · 순서가 같다): `GENRE`(장르) · `BACKGROUND`(배경) ·
@@ -438,12 +450,12 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | Method | Path | 목적 |
 |---|---|---|
-| GET | `/admin/notices` | 공지 목록/검색 |
-| GET | `/admin/notices/{noticeId}` | 공지 상세 |
-| POST | `/admin/notices` | 공지 등록 |
-| PUT | `/admin/notices/{noticeId}` | 공지 수정 |
-| PATCH | `/admin/notices/{noticeId}/status` | 게시 상태 변경 |
-| DELETE | `/admin/notices/{noticeId}` | 공지 삭제 |
+| GET | `/notices` | 공지 목록/검색 |
+| GET | `/notices/{noticeId}` | 공지 상세 |
+| POST | `/notices` | 공지 등록 |
+| PUT | `/notices/{noticeId}` | 공지 수정 |
+| PATCH | `/notices/{noticeId}/status` | 게시 상태 변경 |
+| DELETE | `/notices/{noticeId}` | 공지 삭제 |
 
 상태 3종: `DRAFT`(임시 저장) · `PUBLISHED`(게시 중) · `HIDDEN`(숨김)
 
@@ -459,9 +471,9 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | Method | Path | 목적 |
 |---|---|---|
-| GET | `/admin/official-accounts` | 공식 계정 목록 |
-| POST | `/admin/official-accounts` | 공식 계정 등록 (`{ userId }`) |
-| DELETE | `/admin/official-accounts/{userId}` | 공식 지정 해제 |
+| GET | `/official-accounts` | 공식 계정 목록 |
+| POST | `/official-accounts` | 공식 계정 등록 (`{ userId }`) |
+| DELETE | `/official-accounts/{userId}` | 공식 지정 해제 |
 
 - 등록·해제는 그 계정이 가진 **세계관·캐릭터 전부의 공식 표시를 한 번에** 바꾼다.
   따라서 mutation 성공 시 세계관 · 캐릭터 · 홈 편성 쿼리를 함께 무효화한다.
@@ -494,8 +506,8 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 |---|---|---|
 | `profileImageFileId` · `profileImageUrl` | | 세계관 대표 이미지 |
 | `visibility` | `PUBLIC` · `PRIVATE` · `UNLISTED`(일부공개) | |
-| `status` | `ACTIVE` · `INACTIVE` | 운영 조치(`PATCH /admin/universes/{id}`) |
-| `reviewStatus` | `PENDING` · `APPROVED` · `REJECTED` (+ 반려 사유) | 심사(`PATCH /admin/universes/{id}/review`) |
+| `status` | `ACTIVE` · `INACTIVE` | 운영 조치(`PATCH /universes/{id}`) |
+| `reviewStatus` | `PENDING` · `APPROVED` · `REJECTED` (+ 반려 사유) | 심사(`PATCH /universes/{id}/review`) |
 | `category` | 장르 (`UniverseCategory`) | |
 | `tendency` | `ALL` · `MALE_ORIENTED` · `FEMALE_ORIENTED` | |
 | `commentEnabled` | boolean | 크리에이터가 세계관마다 정한다 |
@@ -521,11 +533,11 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | Method | Path | 목적 |
 |---|---|---|
-| GET | `/admin/comments` | 댓글 목록/검색 (대상 · 상태 · 신고 여부 필터) |
-| GET | `/admin/comments/{commentId}` | 댓글 상세 |
-| POST | `/admin/comments/{commentId}/hide` | 숨김 (사유 필수) |
-| POST | `/admin/comments/{commentId}/restore` | 재노출 |
-| POST | `/admin/comments/bulk-hide` | 선택한 댓글 일괄 숨김 |
+| GET | `/comments` | 댓글 목록/검색 (대상 · 상태 · 신고 여부 필터) |
+| GET | `/comments/{commentId}` | 댓글 상세 |
+| POST | `/comments/{commentId}/hide` | 숨김 (사유 필수) |
+| POST | `/comments/{commentId}/restore` | 재노출 |
+| POST | `/comments/bulk-hide` | 선택한 댓글 일괄 숨김 |
 
 - `targetType`: `UNIVERSE` | `CHARACTER` | `POST` | `CREATOR` (`POST` · `CREATOR`는 서버 enum에만
   있고 아직 댓글이 달리지 않는다). 공지사항에는 댓글이 없다.
@@ -539,11 +551,11 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | Method | Path | 권한 | 목적 |
 |---|---|---|---|
-| GET | `/admin/reports` | `report:read` | 케이스 목록 (상태 · 대상 · 사유 · 검색 · 피신고자 필터, 누적 신고순 / 최근 신고순) |
-| GET | `/admin/reports/{caseId}` | `report:read` | 케이스 상세 (최신 스냅샷 · 대상 현재 상태 · 사유별 건수 · 처리 결과 · 지난 케이스) |
-| GET | `/admin/reports/{caseId}/reports` | `report:read` | 케이스에 묶인 개별 신고 (신고 시점 스냅샷 포함) |
-| GET | `/admin/reports/items?reporterUserId=` | `report:read` | 유저 상세의 "넣은 신고" |
-| POST | `/admin/reports/{caseId}/resolve` | `report:write` + 조치별 권한 | 판정 · 조치 · 제재 · 메모로 케이스를 닫는다 (204) |
+| GET | `/reports` | `report:read` | 케이스 목록 (상태 · 대상 · 사유 · 검색 · 피신고자 필터, 누적 신고순 / 최근 신고순) |
+| GET | `/reports/{caseId}` | `report:read` | 케이스 상세 (최신 스냅샷 · 대상 현재 상태 · 사유별 건수 · 처리 결과 · 지난 케이스) |
+| GET | `/reports/{caseId}/reports` | `report:read` | 케이스에 묶인 개별 신고 (신고 시점 스냅샷 포함) |
+| GET | `/reports/items?reporterUserId=` | `report:read` | 유저 상세의 "넣은 신고" |
+| POST | `/reports/{caseId}/resolve` | `report:write` + 조치별 권한 | 판정 · 조치 · 제재 · 메모로 케이스를 닫는다 (204) |
 
 - `targetType`: `COMMENT` | `UNIVERSE`. 새 대상은 docs/19의 체크리스트대로 `src/type/report.ts`와
   상세의 스냅샷 렌더러 레지스트리(`community/reports/[caseId]/_components/snapshot/index.ts`)에 더한다.
@@ -559,12 +571,12 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | Method | Path | 목적 |
 |---|---|---|
-| GET | `/admin/logs/admin` | 관리자 활동 로그. `keyword` · `domain` · `result` · `actorId` |
-| GET | `/admin/logs/system` | 시스템 이벤트. `keyword` · `level` · `source` |
-| GET | `/admin/batch/jobs` | 배치 잡 정의 + 최근 실행 결과 · 다음 예정 (페이지네이션 없음) |
-| GET | `/admin/batch/runs` | 배치 실행 이력. `jobKey` · `status` · `trigger` |
-| POST | `/admin/batch/jobs/{jobKey}/run` | 수동 실행. 새 실행 이력을 반환한다 |
-| PATCH | `/admin/batch/jobs/{jobKey}/enabled` | 스케줄 on/off. 잡 정의는 지우지 않는다 |
+| GET | `/logs/admin` | 관리자 활동 로그. `keyword` · `domain` · `result` · `actorId` |
+| GET | `/logs/system` | 시스템 이벤트. `keyword` · `level` · `source` |
+| GET | `/batch/jobs` | 배치 잡 정의 + 최근 실행 결과 · 다음 예정 (페이지네이션 없음) |
+| GET | `/batch/runs` | 배치 실행 이력. `jobKey` · `status` · `trigger` |
+| POST | `/batch/jobs/{jobKey}/run` | 수동 실행. 새 실행 이력을 반환한다 |
+| PATCH | `/batch/jobs/{jobKey}/enabled` | 스케줄 on/off. 잡 정의는 지우지 않는다 |
 
 - **잡 목록은 페이지네이션하지 않는다.** 잡은 코드에 있는 만큼만 존재해 수십 건을
   넘지 않고, 이 화면에서 먼저 봐야 하는 것은 "전부 정상인가"라 한눈에 들어와야 한다.
@@ -586,15 +598,15 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
   구분된다. 예전 목업은 요청을 가로채는 시점에 적재해 항상 `SUCCESS`였고, 실서버로 나간 요청은
   보지도 못해 핸들러째로 걷어냈다.
 
-### 5.9 결제 보존 원장 (MOCK)
+### 5.9 결제 보존 원장 (폐기된 목업 계약)
 
-**서버에 아직 엔드포인트가 없다.** 아래는 목업(`src/mocks/handlers/paymentRecord.ts`)이 따르는
-계약 초안이고, 서버가 붙을 때 서버 계약으로 맞춘다.
+> 이 화면은 `결제 내역`(`/payment-orders/**`, plat-be `docs/18-Payment-Guide.md`)으로 합쳐졌고 아래 `/payment-records` 계약은 서버에 만들지 않는다.
+> 보존 열람에 필요한 원칙(검색 키·파기 대기 표시)을 결제 내역에 옮길 때의 참고로만 남긴다.
 
 | Method | Path | 목적 |
 |---|---|---|
-| GET | `/admin/payment-records` | 보존 원장 목록. `keyword` · `provider` · `status` · `member` · `startDate` · `endDate` · `userId` |
-| GET | `/admin/payment-records/summary` | 보존 건수 · 탈퇴 회원 건 · 만료 임박 · 순 승인금액 |
+| GET | `/payment-records` | 보존 원장 목록. `keyword` · `provider` · `status` · `member` · `startDate` · `endDate` · `userId` |
+| GET | `/payment-records/summary` | 보존 건수 · 탈퇴 회원 건 · 만료 임박 · 순 승인금액 |
 
 - **`keyword`는 PG 거래번호 · 주문번호 · 승인번호 · 회원 해시 · 상품 코드로만 건다.**
   파기된 건에는 검색할 개인정보가 없다. 닉네임은 아직 파기 전인 건에서만 잡힌다.
@@ -632,7 +644,7 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 - 실서버로 옮긴 도메인이어도 시드가 남아 있을 수 있다. `src/mocks/db/user.ts` · `src/mocks/db/official.ts`는
   전역 검색 · 캐릭터 · 결제 목업이 유저와 공식 뱃지를 빌려 쓰기 때문에 남겼다.
 - **메뉴 밖에서 도는 목업 조회는 목업이 꺼지면 부르지 않는다.** 처리 대기 뱃지
-  (`/admin/ops/pending-counts`)와 ⌘K 엔티티 검색(`/admin/search`)은 `IS_MOCKING`
+  (`/ops/pending-counts`)와 ⌘K 엔티티 검색(`/search`)은 `IS_MOCKING`
   (`src/api/baseUri.ts`)으로 막는다. ⌘K의 메뉴 검색은 그대로 된다.
 - **세션은 실서버가 준다.** 목업 화면이어도 401은 진짜 세션 만료다.
 
@@ -655,7 +667,7 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 자료는 그대로다.
 
 **권한 목록의 출처는 서버 `AdminResource` · `AdminAction` enum 하나다**(plat-be
-`plat-core/src/main/java/so/plat/core/type/admin/account/AdminResource.java`). 어드민은 같은 목록을
+`plat-modules/plat-core/src/main/java/so/plat/module/core/type/admin/account/AdminResource.java`). 어드민은 같은 목록을
 `src/type/permission.ts`에 라벨 · 설명 · 갈래와 함께 들고 있다.
 
 - **서버에 자원이 늘면 이 파일도 함께 고친다.** 빠뜨리면 그 권한은 직책 편집 화면에 나타나지 않아
@@ -688,6 +700,10 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 - **`write`는 `read`를 품는다.** 저장할 때 `normalizePermissions`로 한 번 정규화하고,
   판정하는 쪽은 단순 포함 검사만 한다.
+- **직책의 생성 · 수정 · 삭제는 최고관리자만 한다**(서버가 아니면 403). 그 밖의 관리자에게 직책 화면은 읽기 전용이다
+  (`me.isSuperAdmin` 일 때만 편집 UI). `role:write` 로 자기 직책에 권한을 더해 스스로 올라가는 길을 막기 위해서다.
+- **관리자 계정에는 요청자 권한의 부분집합인 직책만 줄 수 있다**(최고관리자 제외). 넘으면 403 `ADMIN_ACCOUNT_ROLE_EXCEEDS_ACTOR`.
+  계정 화면은 고를 수 있는 직책만 보여 준다(`src/app/(admin)/ops/managers/_utils/roleScope.ts`).
 - **최고관리자 직책은 잠겨 있다.** 권한을 뺄 수 있으면 실수 한 번으로
   "권한을 되돌릴 사람이 아무도 없는" 상태가 만들어진다. 판정도 목록을 보지 않고 전부 통과시킨다.
 - **속한 관리자가 있는 직책은 지울 수 없다**(409 `ADMIN_ROLE_IN_USE`). 지우면 그 사람의 권한이 사라진다.
@@ -728,10 +744,10 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | Method | Path | 목적 |
 |---|---|---|
-| GET | `/admin/roles` | 직책 목록 |
-| POST | `/admin/roles` | 직책 추가 |
-| PATCH | `/admin/roles/{roleId}` | 직책 이름 · 설명 · 권한 저장 |
-| DELETE | `/admin/roles/{roleId}` | 직책 삭제 (속한 관리자가 있으면 409) |
+| GET | `/roles` | 직책 목록 |
+| POST | `/roles` | 직책 추가 (최고관리자만) |
+| PATCH | `/roles/{roleId}` | 직책 이름 · 설명 · 권한 저장 (최고관리자만) |
+| DELETE | `/roles/{roleId}` | 직책 삭제 (최고관리자만 · 속한 관리자가 있으면 409) |
 
 ---
 
@@ -742,18 +758,18 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 
 | Method | Path | 목적 |
 |---|---|---|
-| POST | `/admin/auth/login` | `{ username(이메일), password }` → `{ accessToken, refreshToken, admin, mustChangePassword }` |
-| POST | `/admin/auth/refresh` | `{ refreshToken }` → 새 토큰 한 쌍 (회전) |
-| POST | `/admin/auth/logout` | 세션 종료 |
-| GET | `/admin/auth/me` | 세션 복구 · 내 정보 |
-| PATCH | `/admin/auth/me` | 내 이름 변경 |
-| POST | `/admin/auth/password` | 비밀번호 변경 → 새 토큰 한 쌍 |
-| GET | `/admin/managers` | 관리자 목록 (서버가 전체를 준다. 검색 · 필터 · 페이지는 화면에서) |
-| POST | `/admin/managers` | 초대 → 임시 비밀번호 1회 발급 |
-| PATCH | `/admin/managers/{managerId}` | 이름 · 직책 · 상태 저장 (세 값을 통째로 보낸다) |
-| POST | `/admin/managers/{managerId}/unlock` | 잠금 해제 |
-| POST | `/admin/managers/{managerId}/reset-password` | 임시 비밀번호 재발급 |
-| DELETE | `/admin/managers/{managerId}` | 관리자 삭제 |
+| POST | `/auth/login` | `{ username(이메일), password }` → `{ accessToken, refreshToken, admin, mustChangePassword }` |
+| POST | `/auth/refresh` | `{ refreshToken }` → 새 토큰 한 쌍 (회전) |
+| POST | `/auth/logout` | 세션 종료 |
+| GET | `/auth/me` | 세션 복구 · 내 정보 |
+| PATCH | `/auth/me` | 내 이름 변경 |
+| POST | `/auth/password` | 비밀번호 변경 → 새 토큰 한 쌍 |
+| GET | `/managers` | 관리자 목록 (서버가 전체를 준다. 검색 · 필터 · 페이지는 화면에서) |
+| POST | `/managers` | 초대 → 임시 비밀번호 1회 발급 |
+| PATCH | `/managers/{managerId}` | 이름 · 직책 · 상태 저장 (세 값을 통째로 보낸다) |
+| POST | `/managers/{managerId}/unlock` | 잠금 해제 |
+| POST | `/managers/{managerId}/reset-password` | 임시 비밀번호 재발급 |
+| DELETE | `/managers/{managerId}` | 관리자 삭제 |
 
 ### 8.1 세션
 
@@ -779,18 +795,19 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. �
 - **초대 = 계정 생성 + 임시 비밀번호 1회 발급.** 응답에서 한 번만 내려오고 다시 볼 수 없다.
   저장해 두고 재조회를 열면 평문 비밀번호를 언제든 꺼낼 수 있다는 뜻이라, 초기화 기능이
   있는 의미가 없어진다. 이메일은 로그인 계정이라 초대할 때만 정할 수 있다.
-- 임시 비밀번호 상태(`passwordUpdatedAt`이 비어 있음)면 서버가 `/admin/auth/**` 밖을 전부 막고,
+- 임시 비밀번호 상태(`passwordUpdatedAt`이 비어 있음)면 서버가 `/auth/**` 밖을 전부 막고,
   콘솔은 `mustChangePassword`로 **닫을 수 없는 변경 모달**을 띄운다. 바꾸면 서버가 그 계정의 세션을
   모두 끊고 새 토큰을 주므로 화면은 그 토큰으로 갈아 끼운다.
-- 로그인 5회 실패 시 자동 잠금. 잠금 해제는 다른 관리자가 전용 동작(`unlock`)으로 한다 —
+- 로그인 5회 실패 시 자동 잠금, **15분 뒤 자동 해제.** 그 전에 풀려면 다른 관리자가 전용 동작(`unlock`)으로 한다 —
   상태만 `ACTIVE`로 바꾸면 실패 누적이 남아 다음 오타 한 번에 다시 잠긴다.
 - **삭제는 계정을 실제로 지운다.** 같은 이메일로 다시 초대할 수 있지만 새 id를 받으므로, 운영 로그가
   id로만 적은 이전 활동과는 이어지지 않는다.
 - **안전장치는 서버가 막는다.** 화면에서 버튼을 감추는 것만으로는 주소를 직접 부르면 통과한다.
   1. 자기 계정: 직책 변경 · 삭제 불가 (409 `ADMIN_ACCOUNT_SELF_ROLE_DENIED` · `ADMIN_ACCOUNT_SELF_DELETE_DENIED`)
   2. 마지막 활성 최고관리자: 비활성 · 직책 변경 · 삭제 불가 (409 `ADMIN_ACCOUNT_LAST_SUPER`)
-  3. 최고관리자를 만들거나 건드리는 일은 최고관리자만 (403 `ADMIN_ACCOUNT_SUPER_GRANT_DENIED`)
-  4. `LOCKED`는 직접 지정할 수 없다(로그인 실패로만 걸린다)
+  3. 최고관리자를 만들거나 건드리는 일(수정 · 삭제 · 잠금 해제 · 비밀번호 초기화)은 최고관리자만 (403 `ADMIN_ACCOUNT_SUPER_GRANT_DENIED`)
+  4. 요청자 권한보다 넓은 직책의 계정을 만들거나 수정 · 초기화 불가 (403 `ADMIN_ACCOUNT_ROLE_EXCEEDS_ACTOR`)
+  5. `LOCKED`는 직접 지정할 수 없다(로그인 실패로만 걸린다)
 
   화면은 자기 계정 행의 상태 · 삭제 동작을 미리 비활성으로 둔다.
 

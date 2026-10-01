@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseKst } from "@/lib/dayjs";
 
 /**
  * 점검 예약 폼.
@@ -9,7 +10,7 @@ import { z } from "zod";
 export const maintenanceScheduleSchema = z
   .object({
     startMode: z.enum(["NOW", "SCHEDULED"]),
-    /** datetime-local 값(브라우저 시간대). startMode 가 SCHEDULED 일 때만 쓴다. */
+    /** datetime-local 값(KST 로 읽는다). startMode 가 SCHEDULED 일 때만 쓴다. */
     drainStartsAt: z.string(),
     drainMinutes: z
       .number({ message: "숫자로 입력해 주세요." })
@@ -28,7 +29,7 @@ export const maintenanceScheduleSchema = z
           path: ["drainStartsAt"],
           message: "시작 시각을 골라 주세요.",
         });
-      } else if (new Date(values.drainStartsAt).getTime() <= Date.now()) {
+      } else if (parseKst(values.drainStartsAt).valueOf() <= Date.now()) {
         context.addIssue({
           code: "custom",
           path: ["drainStartsAt"],

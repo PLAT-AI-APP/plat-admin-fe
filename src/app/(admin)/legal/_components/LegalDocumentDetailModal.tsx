@@ -16,7 +16,8 @@ interface LegalDocumentDetailModalProps {
   onClose: () => void;
   /** 목록에서 클릭한 문서. 본문은 상세 API로 다시 조회한다. */
   legalDocument?: LegalDocument;
-  onPublish: (legalDocument: LegalDocument) => void;
+  /** 비우면 게시 버튼을 그리지 않는다(게시 권한이 없을 때). */
+  onPublish?: (legalDocument: LegalDocument) => void;
 }
 
 const LegalDocumentDetailModal = ({
@@ -55,7 +56,7 @@ const LegalDocumentDetailModal = ({
             닫기
           </Button>
 
-          {target?.status === "DRAFT" && (
+          {target?.status === "DRAFT" && onPublish && (
             <Button variant="primary" onClick={() => onPublish(target)}>
               게시
             </Button>

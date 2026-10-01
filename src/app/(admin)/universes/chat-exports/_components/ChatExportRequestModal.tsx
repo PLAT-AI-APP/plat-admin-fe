@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useCharacterListQuery } from "@/api/character/getCharacterList";
-import dayjs, { toDateInputValue } from "@/lib/dayjs";
+import { nowKst, toDateInputValue } from "@/lib/dayjs";
 import {
   chatExportSchema,
   type ChatExportSchema,
@@ -65,7 +65,7 @@ const ChatExportRequestModal = ({
     reset({
       ...EMPTY_VALUES,
       startDate: toDateInputValue(
-        dayjs().subtract(DEFAULT_PERIOD_DAYS, "day").toDate(),
+        nowKst().subtract(DEFAULT_PERIOD_DAYS, "day").toDate(),
       ),
       endDate: toDateInputValue(new Date()),
     });

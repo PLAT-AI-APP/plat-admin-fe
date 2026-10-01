@@ -1,9 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
+import { usePermittedQuery } from "@/api/usePermittedQuery";
 import {
   toPageRequest,
   toPageResponse,
-  type AppError,
   type PageResponse,
   type PageWith,
 } from "@/type/api";
@@ -81,7 +80,7 @@ export const getCreditAdjustmentList = async (
 export const useCreditAdjustmentListQuery = (
   params: CreditAdjustmentListParams,
 ) => {
-  return useQuery<PageResponse<CreditAdjustment>, AppError>({
+  return usePermittedQuery<PageResponse<CreditAdjustment>>("creditAdjustment:read", {
     queryKey: ["get-credit-adjustment-list", params],
     queryFn: () => getCreditAdjustmentList(params),
   });

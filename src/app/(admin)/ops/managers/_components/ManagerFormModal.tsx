@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { managerSchema, type ManagerSchema } from "@/schema/manager.schema";
 import { useAdminRoleListQuery } from "@/api/ops/getAdminRoleList";
+import { useAdminStore } from "@/store/useAdminStore";
+import { isRoleAssignable } from "@/app/(admin)/ops/managers/_utils/roleScope";
 import type { Manager, ManagerFormValues } from "@/type/ops";
 import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
@@ -61,11 +63,19 @@ const ManagerFormModal = ({
   }, [isOpen, manager, reset]);
 
   const { data: roles = [] } = useAdminRoleListQuery();
+  const me = useAdminStore((state) => state.admin);
 
-  const roleOptions: SelectOption[] = roles.map((role) => ({
-    label: role.name,
-    value: String(role.roleId),
-  }));
+  /*
+    최고관리자가 아니면 자기 권한 안의 직책만 고를 수 있다. 서버가 막을 직책을 목록에 두면
+    끝까지 입력한 뒤에야 거부당한다.
+  */
+  const roleOptions: SelectOption[] = roles
+    .filter((role) => isRoleAssignable(role, me))
+    .map((role) => ({
+      label: role.name,
+      value: String(role.roleId),
+    }));
+  const hiddenRoleCount = roles.length - roleOptions.length;
 
   const selectedRoleId = useWatch({ control, name: "roleId" });
   const selectedRole = roles.find((role) => role.roleId === selectedRoleId);
@@ -139,7 +149,12 @@ const ManagerFormModal = ({
           required
           error={errors.roleId?.message}
           /* 권한은 직책이 갖는다. 어떤 직책인지 고르면 그 직책의 설명을 그대로 보여 준다. */
-          hint={selectedRole?.description || "권한은 직책에 따라 정해집니다."}
+          hint={
+            selectedRole?.description ||
+            (hiddenRoleCount > 0
+              ? `내 권한보다 넓은 직책 ${hiddenRoleCount}개는 최고관리자만 지정할 수 있어 목록에서 뺐습니다.`
+              : "권한은 직책에 따라 정해집니다.")
+          }
         >
           <Controller
             control={control}

@@ -10,6 +10,7 @@ import { formatDate } from "@/lib/dayjs";
 import { showErrorToast } from "@/lib/toast";
 import { formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
+import { useCan } from "@/hooks/useCan";
 import { DEFAULT_PAGE_SIZE, type AppError } from "@/type/api";
 import {
   HASHTAG_CATEGORY_LABEL,
@@ -95,6 +96,8 @@ const HashtagManager = () => {
 
   const { createMutation, updateMutation, statusMutation, deleteMutation } =
     useHashtagMutation();
+  const canWrite = useCan("hashtag:write");
+  const canDelete = useCan("hashtag:delete");
 
   const hashtags = data?.content ?? [];
 
@@ -158,17 +161,25 @@ const HashtagManager = () => {
    * **상세 보기는 넣지 않는다** — 행을 누르면 어차피 상세가 열린다.
    */
   const buildRowActions = (hashtag: Hashtag): DropdownItem[] => [
-    {
-      label: "수정",
-      icon: <Edit size={15} />,
-      onSelect: () => handleOpenEdit(hashtag.hashtagId),
-    },
-    {
-      label: "삭제",
-      icon: <Trash size={15} />,
-      tone: "danger",
-      onSelect: () => handleDelete(hashtag),
-    },
+    ...(canWrite
+      ? [
+          {
+            label: "수정",
+            icon: <Edit size={15} />,
+            onSelect: () => handleOpenEdit(hashtag.hashtagId),
+          },
+        ]
+      : []),
+    ...(canDelete
+      ? [
+          {
+            label: "삭제",
+            icon: <Trash size={15} />,
+            tone: "danger" as const,
+            onSelect: () => handleDelete(hashtag),
+          },
+        ]
+      : []),
   ];
 
   const columns: TableColumn<Hashtag>[] = [
@@ -237,7 +248,7 @@ const HashtagManager = () => {
             label={`${row.name} 노출 여부`}
             checked={row.isActive}
             onChange={(next) => handleToggleActive(row, next)}
-            disabled={statusMutation.isPending}
+            disabled={!canWrite || statusMutation.isPending}
           />
         </div>
       ),
@@ -247,14 +258,20 @@ const HashtagManager = () => {
       header: "",
       width: "56px",
       align: "center",
-      render: (row) => (
-        <div
-          className="flex justify-center"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <Dropdown items={buildRowActions(row)} />
-        </div>
-      ),
+      render: (row) => {
+        const items = buildRowActions(row);
+
+        if (items.length === 0) return null;
+
+        return (
+          <div
+            className="flex justify-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Dropdown items={items} />
+          </div>
+        );
+      },
     },
   ];
 
@@ -281,14 +298,16 @@ const HashtagManager = () => {
               disabled={isLoading}
             />
 
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleOpenCreate}
-            >
-              해시태그 추가
-            </Button>
+            {canWrite && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={handleOpenCreate}
+              >
+                해시태그 추가
+              </Button>
+            )}
           </>
         }
         noPadding
@@ -344,14 +363,16 @@ const HashtagManager = () => {
           emptyTitle="등록된 해시태그가 없습니다."
           emptyDescription="사용자가 고를 수 있도록 자주 쓰는 태그부터 등록해 주세요."
           emptyAction={
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleOpenCreate}
-            >
-              해시태그 추가
-            </Button>
+            canWrite && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={handleOpenCreate}
+              >
+                해시태그 추가
+              </Button>
+            )
           }
         />
 
@@ -366,7 +387,7 @@ const HashtagManager = () => {
       <HashtagDetailModal
         hashtag={detailHashtag}
         onClose={() => setDetailHashtag(null)}
-        onEdit={handleOpenEdit}
+        onEdit={canWrite ? handleOpenEdit : undefined}
       />
 
       <HashtagFormModal

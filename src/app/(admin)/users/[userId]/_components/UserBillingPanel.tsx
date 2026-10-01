@@ -75,6 +75,8 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
     없다"로 읽혀 장부와 어긋나 보인다.
   */
   const canReadPayment = useHasPermission("payment:read");
+  const canReadLedger = useHasPermission("ledger:read");
+  const canReadAdjustment = useHasPermission("creditAdjustment:read");
 
   const { data: ledger, isLoading: isLedgerLoading } = useLedgerListQuery({
     page: ledgerPage,
@@ -376,6 +378,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
         </Card>
       )}
 
+      {canReadLedger && (
       <Card
         title={`크레딧 원장 ${formatWithCommas(ledger?.totalCount ?? 0)}건`}
         description="충전 · 사용 · 만료 · 환불 회수 · 수동 조정으로 잔액이 움직인 줄이 시간순으로 쌓입니다."
@@ -398,7 +401,9 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
           onChange={setLedgerPage}
         />
       </Card>
+      )}
 
+      {canReadAdjustment && (
       <Card
         title={`크레딧 수동 조정 ${formatWithCommas(adjustments?.totalCount ?? 0)}건`}
         description="운영자가 직접 지급하거나 차감한 이력입니다."
@@ -421,6 +426,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
           onChange={setAdjustmentPage}
         />
       </Card>
+      )}
 
     </div>
   );

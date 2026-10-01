@@ -1,9 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
+import { usePermittedQuery } from "@/api/usePermittedQuery";
 import {
   toPageRequest,
   toPageResponse,
-  type AppError,
   type PageResponse,
   type PageWith,
 } from "@/type/api";
@@ -106,7 +105,7 @@ export const getCommentList = async (
 
 /** 전 영역의 댓글을 한 화면에서 조회합니다. 대상 종류는 targetType으로 구분합니다. */
 export const useCommentListQuery = (params: CommentListParams) => {
-  return useQuery<PageResponse<Comment>, AppError>({
+  return usePermittedQuery<PageResponse<Comment>>("comment:read", {
     queryKey: ["get-comment-list", params],
     queryFn: () => getCommentList(params),
   });

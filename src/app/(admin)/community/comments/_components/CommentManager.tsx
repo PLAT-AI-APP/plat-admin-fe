@@ -6,6 +6,7 @@ import { useListParams } from "@/hooks/useListParams";
 import { useState } from "react";
 import { useCommentListQuery } from "@/api/comment/getCommentList";
 import { useCommentMutation } from "@/api/comment/mutateComment";
+import { useCan } from "@/hooks/useCan";
 import { ExternalLink, Eye, EyeOff, Flag } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
@@ -109,6 +110,8 @@ const CommentManager = () => {
 
   const { hideMutation, restoreMutation, bulkHideMutation } =
     useCommentMutation();
+  /* 숨김 · 복원 · 일괄 숨김은 서버에서 모두 `comment:write` 다. */
+  const canWrite = useCan("comment:write");
 
   const comments = data?.content ?? [];
 
@@ -368,7 +371,7 @@ const CommentManager = () => {
         description="행을 클릭하면 댓글 상세가 열리고, 대상을 클릭하면 그 대상의 상세로 바로 이동합니다."
         action={
           <>
-            {selectedIds.length > 0 && (
+            {canWrite && selectedIds.length > 0 && (
               <Button
                 variant="danger"
                 size="sm"
@@ -449,7 +452,13 @@ const CommentManager = () => {
         </div>
 
         <Table
-          columns={columns}
+          columns={
+            canWrite
+              ? columns
+              : columns.filter(
+                  (column) => column.key !== "select" && column.key !== "actions",
+                )
+          }
           rows={comments}
           getRowKey={(row) => row.commentId}
           isLoading={isLoading}

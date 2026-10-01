@@ -44,6 +44,8 @@ const LegalTranslationPanel = ({
   originalContent,
 }: LegalTranslationPanelProps) => {
   const canWrite = useHasPermission("legal:write");
+  /* 번역 내리기는 서버에서 `legal:delete` 다. */
+  const canDelete = useHasPermission("legal:delete");
   const { data: translations = [], isLoading } =
     useLegalTranslationsQuery(documentId);
   const { saveMutation, deleteMutation } = useLegalTranslationMutation();
@@ -177,20 +179,24 @@ const LegalTranslationPanel = ({
               translation.updatedById ?? undefined,
             )}
           </span>
-          {canWrite && (
+          {(canWrite || canDelete) && (
             <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => handleDelete(language, label)}
-              >
-                내리기
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => startEditing(language)}
-              >
-                수정
-              </Button>
+              {canDelete && (
+                <Button
+                  variant="ghost"
+                  onClick={() => handleDelete(language, label)}
+                >
+                  내리기
+                </Button>
+              )}
+              {canWrite && (
+                <Button
+                  variant="secondary"
+                  onClick={() => startEditing(language)}
+                >
+                  수정
+                </Button>
+              )}
             </div>
           )}
         </div>

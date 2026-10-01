@@ -5,7 +5,7 @@ import { useEffect, type KeyboardEvent } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useLoginMutation } from "@/api/auth/login";
-import { ShieldCheck } from "@/icons";
+import { AppIcon } from "@/icons";
 import { loginSchema, type LoginSchema } from "@/schema/auth.schema";
 import { useAdminStore } from "@/store/useAdminStore";
 import Alert from "@/components/ui/Alert";
@@ -110,8 +110,9 @@ const LoginForm = () => {
   return (
     <div className="flex w-full max-w-[400px] flex-col gap-4">
       <div className="flex flex-col items-center gap-2 text-center">
-        <span className="flex size-11 items-center justify-center rounded-card bg-brand text-font-4">
-          <ShieldCheck size={22} />
+        {/* 시안은 각진 정사각형이라 모서리는 여기서 깎는다. */}
+        <span className="flex size-12 items-center justify-center overflow-hidden rounded-card border border-border-main">
+          <AppIcon className="size-12" />
         </span>
 
         <div>

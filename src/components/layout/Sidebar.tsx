@@ -11,7 +11,7 @@ import {
   isMenuShown,
 } from "@/constants/menu";
 import { usePendingCountsQuery } from "@/api/ops/getPendingCounts";
-import { ChevronDown, ChevronLeft } from "@/icons";
+import { ChevronDown, ChevronLeft, LogoWordmark } from "@/icons";
 import { cn } from "@/lib/utils";
 import { useAdminStore } from "@/store/useAdminStore";
 import { useSidebarStore } from "@/store/useSidebarStore";
@@ -99,7 +99,9 @@ const Sidebar = () => {
         <button
           type="button"
           // 접힌 상태에선 서브메뉴가 안 보이므로 펼치면서 이 그룹을 연다.
-          onClick={() => (isCollapsed ? expandToGroup(group.key) : toggleGroup(group.key))}
+          onClick={() =>
+            isCollapsed ? expandToGroup(group.key) : toggleGroup(group.key)
+          }
           title={isCollapsed ? group.label : undefined}
           aria-expanded={isOpen && !isCollapsed}
           className={cn(
@@ -150,20 +152,18 @@ const Sidebar = () => {
                   >
                     <span className="flex-1 truncate">{item.label}</span>
 
-                    {item.pendingKey && Boolean(pendingCounts?.[item.pendingKey]) && (
-                      <Badge
-                        tone="danger"
-                        className="min-w-5 justify-center px-1.5 py-0.5 caption-3 tabular-nums"
-                      >
-                        {pendingCounts?.[item.pendingKey]}
-                      </Badge>
-                    )}
+                    {item.pendingKey &&
+                      Boolean(pendingCounts?.[item.pendingKey]) && (
+                        <Badge
+                          tone="danger"
+                          className="min-w-5 justify-center px-1.5 py-0.5 caption-3 tabular-nums"
+                        >
+                          {pendingCounts?.[item.pendingKey]}
+                        </Badge>
+                      )}
 
                     {item.isMock && (
-                      <Badge
-                        tone="neutral"
-                        className="px-1.5 py-0.5 caption-3"
-                      >
+                      <Badge tone="neutral" className="px-1.5 py-0.5 caption-3">
                         MOCK
                       </Badge>
                     )}
@@ -191,13 +191,13 @@ const Sidebar = () => {
         )}
       >
         {!isCollapsed && (
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-chip bg-brand body-5 font-bold text-font-4">
-              P
-            </span>
-            <span className="body-3 font-bold text-font-0">
-              PLAT 관리자
-            </span>
+          <Link
+            href="/"
+            aria-label="PLAT 관리자 홈"
+            className="flex items-center gap-2"
+          >
+            <LogoWordmark aria-hidden className="h-5 w-auto shrink-0" />
+            <span className="body-5 font-semibold text-font-2">관리자</span>
           </Link>
         )}
 

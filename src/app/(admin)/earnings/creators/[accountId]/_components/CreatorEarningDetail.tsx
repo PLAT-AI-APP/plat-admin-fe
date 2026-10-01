@@ -11,7 +11,7 @@ import {
 } from "@/api/earning/getEarningAccountDetail";
 import { useEarningAccountActionMutation } from "@/api/earning/mutateEarning";
 import { ChevronDown } from "@/icons";
-import dayjs, { formatDateTime } from "@/lib/dayjs";
+import { formatDateTime, toKst } from "@/lib/dayjs";
 import { cn, formatWithCommas } from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import {
@@ -199,18 +199,21 @@ const CreatorEarningDetail = ({ accountId }: { accountId: string }) => {
 
   const closeModal = () => setAction(null);
 
-  const handleSubmit = (input: AccountActionInput) => {
+  const handleSubmit = async (input: AccountActionInput) => {
     if (!action) return;
-    actionMutation.mutate(
-      {
-        accountId,
-        action,
-        reasonCode: input.reasonCode,
-        memo: input.memo,
-        amount: action === "GRANT" || action === "DEDUCT" ? input.amount : undefined,
-      },
-      { onSuccess: closeModal },
-    );
+
+    const withAmount = action === "GRANT" || action === "DEDUCT";
+
+    await actionMutation.mutateAsync({
+      accountId,
+      action,
+      reasonCode: input.reasonCode,
+      memo: input.memo,
+      amount: withAmount ? input.amount : undefined,
+      idempotencyKey: withAmount ? input.idempotencyKey : undefined,
+    });
+
+    closeModal();
   };
 
   const redemptionColumns: TableColumn<Redemption>[] = [
@@ -315,7 +318,7 @@ const CreatorEarningDetail = ({ accountId }: { accountId: string }) => {
                 render: (row) => (
                   <TableCellStack
                     primary={row.nickname ?? row.userId}
-                    secondary={row.joinedAt ? `가입 ${dayjs(row.joinedAt).format("YYYY-MM-DD")}` : undefined}
+                    secondary={row.joinedAt ? `가입 ${toKst(row.joinedAt).format("YYYY-MM-DD")}` : undefined}
                   />
                 ),
               },

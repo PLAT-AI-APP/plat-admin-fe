@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useModelCatalogQuery } from "@/api/ai/getModelCatalog";
 import { useModelPingMutation } from "@/api/ai/pingModel";
+import { useCan } from "@/hooks/useCan";
 import { Activity, CheckCircle, Warning } from "@/icons";
 import { formatWithCommas } from "@/lib/utils";
 import type {
@@ -39,6 +40,8 @@ const ModelCatalogManager = () => {
   });
 
   const pingMutation = useModelPingMutation();
+  /* 제공사를 실제로 불러 비용이 들어 서버가 `aiModel:write` 를 요구한다. */
+  const canPing = useCan("aiModel:write");
 
   const handlePing = (model: string) => {
     pingMutation.mutate(model, {
@@ -131,7 +134,8 @@ const ModelCatalogManager = () => {
       header: "",
       width: "120px",
       align: "center",
-      render: (item) => (
+      render: (item) =>
+        canPing && (
         <Button
           size="sm"
           leftIcon={<Activity size={15} />}
@@ -143,7 +147,7 @@ const ModelCatalogManager = () => {
         >
           테스트 호출
         </Button>
-      ),
+        ),
     },
   ];
 

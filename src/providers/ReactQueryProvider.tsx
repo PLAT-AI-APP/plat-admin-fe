@@ -5,8 +5,20 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { setForbiddenHandler } from "@/api";
 import { earningQueryKeys } from "@/api/earning/queryKeys";
+import type { AppError } from "@/type/api";
+
+/**
+ * 조회 재시도 기준. 권한 거부(403)는 몇 번을 다시 불러도 같은 답이라 다시 부르지 않는다 —
+ * 재시도하는 동안 화면은 로딩에 머물고 거부 안내만 늦어진다.
+ */
+const shouldRetryQuery = (failureCount: number, error: unknown) => {
+  if ((error as Partial<AppError> | null)?.status === 403) return false;
+
+  return failureCount < 1;
+};
 
 interface ReactQueryProviderProps {
   children: ReactNode;
@@ -32,12 +44,24 @@ const ReactQueryProvider = ({ children }: ReactQueryProviderProps) => {
           staleTime: 1000 * 60 * 5,
           // 창 포커스 시 재요청 비활성화 (개발 중 콘솔 중복 방지)
           refetchOnWindowFocus: false,
-          retry: 1,
+          retry: shouldRetryQuery,
         },
       },
     });
     return client;
   });
+
+  /*
+    권한 거부를 받으면 내 권한을 다시 읽는다. 권한이 줄었으면 메뉴 · 버튼이 곧바로 맞춰지고,
+    그대로면 서버가 다른 이유로 막은 것이라 화면은 그대로다.
+  */
+  useEffect(() => {
+    setForbiddenHandler(() => {
+      void queryClient.invalidateQueries({ queryKey: ["get-me"] });
+    });
+
+    return () => setForbiddenHandler(null);
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

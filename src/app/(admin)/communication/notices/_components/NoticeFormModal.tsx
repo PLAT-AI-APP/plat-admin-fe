@@ -27,6 +27,11 @@ interface NoticeFormModalProps {
   noticeId?: number;
   onSubmit: (values: NoticeFormValues) => void;
   isSubmitting: boolean;
+  /**
+   * 게시 권한이 있는지. 없으면 상태에서 '게시'를 고를 수 없다.
+   * 게시는 앱에 곧바로 나가는 일이라 작성 권한만으로 열어 두지 않는다.
+   */
+  canPublish?: boolean;
 }
 
 type EditorTab = "WRITE" | "PREVIEW";
@@ -50,6 +55,7 @@ const NoticeFormModal = ({
   noticeId,
   onSubmit,
   isSubmitting,
+  canPublish = true,
 }: NoticeFormModalProps) => {
   const [tab, setTab] = useState<EditorTab>("WRITE");
   const [wasOpen, setWasOpen] = useState(isOpen);
@@ -153,7 +159,13 @@ const NoticeFormModal = ({
               render={({ field }) => (
                 <Select
                   id="notice-status"
-                  options={NOTICE_STATUS_OPTIONS}
+                  options={
+                    canPublish || notice?.status === "PUBLISHED"
+                      ? NOTICE_STATUS_OPTIONS
+                      : NOTICE_STATUS_OPTIONS.filter(
+                          (option) => option.value !== "PUBLISHED",
+                        )
+                  }
                   value={field.value}
                   onChange={field.onChange}
                 />
