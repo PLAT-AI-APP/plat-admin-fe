@@ -411,8 +411,11 @@ export interface SystemEventLog {
  * 접근 로그
  * ---------------------------------------------------------------------- */
 
-/** 요청을 받은 plat-be 앱. 네 앱이 한 테이블에 쌓으므로 경로만으로는 갈리지 않는다. */
-export const ACCESS_LOG_APPS = ["api", "admin", "ai", "batch"] as const;
+/**
+ * 요청을 받은 plat-be 앱. 여러 앱이 한 테이블에 쌓으므로 경로만으로는 갈리지 않는다.
+ * 배치는 요청을 받지 않고, 지금은 관리자 앱 안에서 돌아(admin 으로 남는다) 필터에 두지 않는다.
+ */
+export const ACCESS_LOG_APPS = ["api", "admin", "ai"] as const;
 
 export type AccessLogApp = (typeof ACCESS_LOG_APPS)[number];
 

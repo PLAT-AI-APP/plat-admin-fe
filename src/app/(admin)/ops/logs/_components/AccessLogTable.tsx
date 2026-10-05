@@ -57,7 +57,7 @@ interface AccessLogTableProps {
  * 여기는 **"이 요청이 실제로 어떻게 오갔나"**다. 4xx는 예외가 아니라 시스템
  * 이벤트에 남지 않으므로, "결제가 안 된다" 같은 문의는 여기서만 되짚을 수 있다.
  *
- * 네 앱이 한 테이블에 쌓고 관리자 API 경로에는 `/admin`이 없어서, 앱 필터가
+ * 여러 앱이 한 테이블에 쌓고 관리자 API 경로에는 `/admin`이 없어서, 앱 필터가
  * 없으면 서비스 API의 `/users/...`와 관리자 API의 `/users/...`가 섞여 보인다.
  */
 const AccessLogTable = ({ params, setParams }: AccessLogTableProps) => {

@@ -122,7 +122,6 @@ export const ACCESS_LOG_APP_LABEL: Record<AccessLogApp, string> = {
   api: "서비스 API",
   admin: "관리자 API",
   ai: "AI 채팅",
-  batch: "배치",
 };
 
 export const ACCESS_LOG_APP_OPTIONS: SelectOption[] = [

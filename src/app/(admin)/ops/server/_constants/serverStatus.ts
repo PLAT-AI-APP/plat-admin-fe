@@ -24,13 +24,19 @@ export const HEALTH_STATUS_DESCRIPTION: Record<HealthStatus, string> = {
 /**
  * 서비스 이름. 서버가 주는 `app`(spring.application.name)에 한국어 라벨을 붙인다.
  * 모르는 이름(새로 나뉜 서비스)은 원문을 그대로 보여 준다 — 값의 주인은 서버다.
+ *
+ * 지금 배치는 관리자 앱 안에서 돈다(plat-app-admin-and-batch 임시 합본). 서버는 `admin` 하나로 알리므로
+ * 라벨에 배치를 함께 적는다. 다시 나뉘면 `admin` 은 "관리자 API" 로 돌리고, `batch` 가 따로 올라온다.
  */
 export const SERVICE_LABEL: Record<string, string> = {
   api: "사용자 API",
   ai: "AI 채팅",
-  admin: "관리자 API",
+  admin: "관리자 API · 배치",
   batch: "배치",
 };
+
+/** 화면에 늘 나오는 서비스 수. 로딩 자리와 카드 칸 수를 맞춘다. */
+export const SERVICE_COUNT = 3;
 
 export const getServiceLabel = (app: string) => SERVICE_LABEL[app] ?? app;
 

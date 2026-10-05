@@ -18,6 +18,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import { openConfirm } from "@/store/useConfirmStore";
 import {
   HEALTH_STATUS_TONE,
+  SERVICE_COUNT,
   USAGE_TONE_COLOR,
   USAGE_TONE_TEXT_CLASS,
   formatUptime,
@@ -251,7 +252,10 @@ const ServiceStatusCard = ({
         "진행 중인 요청을 마무리한 뒤 내려가고, 컨테이너가 다시 띄웁니다. 보통 1분 안팎입니다.",
       warning: isOnlyInstance
         ? `이 서비스의 유일한 인스턴스입니다. 다시 뜰 때까지 ${getServiceLabel(service.app)} 요청이 모두 끊깁니다.${
-            service.app === "admin" ? " 이 화면도 잠시 끊겼다가 돌아옵니다." : ""
+            /* 배치가 관리자 앱 안에서 돈다. 재시작하면 돌던 잡도 끊기고 다음 주기에 다시 돈다. */
+            service.app === "admin"
+              ? " 이 화면도 잠시 끊겼다가 돌아오고, 돌고 있던 배치 잡은 중단돼 다음 주기에 다시 실행됩니다."
+              : ""
           }`
         : undefined,
       confirmText: "재시작",
@@ -277,13 +281,13 @@ const ServiceStatusCard = ({
           있습니다.
         </Alert>
       ) : isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }, (_, index) => (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: SERVICE_COUNT }, (_, index) => (
             <Skeleton key={index} className="h-48 w-full" />
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {services.map((service) => {
             const isSelected = service.app === selectedApp;
 
