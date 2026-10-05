@@ -45,7 +45,7 @@ const collectWarnings = (
 
 const ServerStatusBoard = () => {
   const [range, setRange] = useState<MetricRange>("24h");
-  /* 추이는 서비스 하나씩 본다. 네 앱의 힙을 한 선에 섞으면 어느 앱이 찼는지 읽을 수 없다. */
+  /* 추이는 서비스 하나씩 본다. 여러 앱의 힙을 한 선에 섞으면 어느 앱이 찼는지 읽을 수 없다. */
   const [selectedApp, setSelectedApp] = useState(DEFAULT_SERVICE);
   const [autoRefreshSeconds, setAutoRefreshSeconds] =
     useState<AutoRefreshSeconds>(0);
