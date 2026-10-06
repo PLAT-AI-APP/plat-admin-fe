@@ -295,6 +295,12 @@ const UniverseManager = () => {
                   공식
                 </Badge>
               )}
+              {/* 탈퇴한 제작자가 남긴 것을 공식 계정이 인수해 운영하는 세계관 */}
+              {row.isAdopted && (
+                <Badge tone="info" className="shrink-0 px-1.5 py-0.5 caption-3">
+                  운영 인수
+                </Badge>
+              )}
               <p className="title-5 truncate text-font-1">{row.title}</p>
             </div>
             <p className="body-6 mt-0.5 truncate text-font-2">
@@ -415,6 +421,7 @@ const UniverseManager = () => {
     { header: "장르", value: (row) => UNIVERSE_CATEGORY_LABEL[row.category] },
     { header: "성향", value: (row) => UNIVERSE_TENDENCY_LABEL[row.tendency] },
     { header: "공식", value: (row) => (row.isOfficial ? "Y" : "N") },
+    { header: "운영 인수", value: (row) => (row.isAdopted ? "Y" : "N") },
     {
       header: "공개 범위",
       value: (row) => UNIVERSE_VISIBILITY_LABEL[row.visibility],

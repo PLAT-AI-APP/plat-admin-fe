@@ -143,6 +143,8 @@ const BATCH_JOB_CATEGORY_BY_KEY: Record<string, BatchJobCategory> = {
   "purge-expired-drafts": "content",
   "purge-deleted-comments": "content",
   "refresh-stat-rankings": "content",
+  "expire-universe-handovers": "content",
+  "purge-universe-handover-records": "content",
 
   "purge-admin-logs": "cleanup",
   "purge-admin-activity-logs": "cleanup",

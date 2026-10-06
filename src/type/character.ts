@@ -48,13 +48,26 @@ export interface CharacterDetail extends Character {
 export type UniverseVisibility = "PUBLIC" | "PRIVATE" | "UNLISTED";
 
 /**
- * 세계관 운영 상태. 서버 `UniverseStatus` 중 **운영에서 만날 수 있는 값**이다.
+ * 세계관 운영 상태. 서버 `UniverseStatus`와 같다.
  *
- * 세계관 삭제는 하드 딜리트다 — 지우면 데이터가 그대로 폐기되어 조회 자체가
- * 되지 않는다. 그래서 "삭제 대기"·"콘텐츠 파기" 같은 중간 상태가 존재할 수 없고,
- * 화면이 다룰 상태는 운영 중(`ACTIVE`)과 내려둔 것(`INACTIVE`) 둘뿐이다.
+ * - `ACTIVE` · `INACTIVE`: 운영이 직접 켜고 끄는 상태. 운영 조치로 오갈 수 있는 것은 이 둘뿐이다.
+ * - `ORPHANED`: 제작자가 탈퇴하며 이용허락과 함께 남긴 세계관. 인수 심사를 기다리며,
+ *   노출 · 새 대화는 닫히고 이미 있던 채팅방 대화만 이어진다.
+ * - `DELETED`: 삭제 대기. 삭제는 소프트 삭제라 파기 예정 시각까지 행이 남는다.
+ * - `PURGED`: 콘텐츠 파기. 파기 배치가 이미지 · 본문을 지운 뒤 껍데기만 남은 상태다.
+ *
+ * 관리자 목록 · 상세는 상태로 거르지 않아 다섯 값이 모두 올 수 있다.
  */
-export type UniverseStatus = "ACTIVE" | "INACTIVE";
+export type UniverseStatus =
+  | "ACTIVE"
+  | "INACTIVE"
+  | "ORPHANED"
+  | "DELETED"
+  | "PURGED";
+
+/** 운영 조치(활성화 · 비활성화)로 오갈 수 있는 상태인지. 서버 `UniverseModerationService`와 같다. */
+export const isOperableUniverseStatus = (status: UniverseStatus) =>
+  status === "ACTIVE" || status === "INACTIVE";
 
 /** 세계관 심사 상태. 서버 `ReviewStatus`와 같다. 승인 전에는 앱에 노출되지 않는다. */
 export type UniverseReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -226,6 +239,9 @@ export const isExposableUniverse = (universe: UniverseExposureState) =>
 export const universeBlockReason = (
   universe: UniverseExposureState,
 ): string | undefined => {
+  if (universe.status === "ORPHANED") return "인수 대기";
+  if (universe.status === "DELETED") return "삭제 대기";
+  if (universe.status === "PURGED") return "콘텐츠 파기";
   if (universe.status === "INACTIVE") return "비활성";
   if (universe.reviewStatus === "PENDING") return "심사 대기";
   if (universe.reviewStatus === "REJECTED") return "심사 반려";
@@ -289,6 +305,8 @@ export interface AdminUniverseListItem {
   scenarioCount: number;
   /** 번역이 채워진 언어 수 */
   translationCount: number;
+  /** 탈퇴한 제작자가 남긴 것을 공식 계정이 인수해 운영하는지. */
+  isAdopted: boolean;
   createdAt: string;
   updatedAt: string | null;
 }
@@ -359,7 +377,7 @@ export interface UniverseScenarioDetail {
 /**
  * 세계관 상세(실서버).
  *
- * 서비스 경로가 status=ACTIVE만 보는 것과 달리 삭제·파기까지 전부 조회한다.
+ * 서비스 경로가 status=ACTIVE만 보는 것과 달리 인수 대기·삭제·파기까지 전부 조회한다.
  * 목록에 없는 번역·에셋·시나리오 본문을 담아 운영 검수에 쓴다.
  */
 export interface UniverseDetail {
@@ -379,6 +397,8 @@ export interface UniverseDetail {
   profileImageUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
+  /** 탈퇴한 제작자가 남긴 것을 공식 계정이 인수한 시각. 인수하지 않았으면 null. */
+  adoptedAt: string | null;
   translations: UniverseTranslationView[];
   hashtags: UniverseHashtagView[];
   character: UniverseCharacterView | null;

@@ -547,6 +547,8 @@ export interface PendingCounts {
   report: number;
   /** 발송 대기 상품권 교환. 수익 서버의 별도 엔드포인트에서 온다. */
   redemption: number;
+  /** 심사를 기다리는 탈퇴 캐릭터 인수 건. */
+  handover: number;
 }
 
 /**
