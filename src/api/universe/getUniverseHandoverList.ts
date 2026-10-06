@@ -9,6 +9,7 @@ import {
 import type {
   UniverseHandover,
   UniverseHandoverAssignee,
+  UniverseHandoverConsent,
   UniverseHandoverStatus,
 } from "@/type/universeHandover";
 
@@ -32,6 +33,8 @@ export const universeHandoverQueryKeys = {
   list: (params: UniverseHandoverListParams) =>
     ["universe-handover", "list", params] as const,
   assignees: () => ["universe-handover", "assignees"] as const,
+  consent: (handoverId: string) =>
+    ["universe-handover", "consent", handoverId] as const,
 };
 
 export const getUniverseHandoverList = async (
@@ -78,4 +81,24 @@ export const useUniverseHandoverAssigneesQuery = (enabled: boolean) =>
     queryFn: getUniverseHandoverAssignees,
     enabled,
     staleTime: 0,
+  });
+
+export const getUniverseHandoverConsent = async (handoverId: string) =>
+  (
+    await liveAxios.get<UniverseHandoverConsent>(
+      `/universe-handovers/${handoverId}/consent`,
+    )
+  ).data;
+
+/**
+ * 심사 건의 제작자가 동의한 동의서 원문. 버전을 눌렀을 때만 부른다.
+ *
+ * 한 번 동의한 원문은 바뀌지 않으므로 캐시를 오래 둔다.
+ */
+export const useUniverseHandoverConsentQuery = (handoverId?: string) =>
+  usePermittedQuery<UniverseHandoverConsent>("universeHandover:read", {
+    queryKey: universeHandoverQueryKeys.consent(handoverId ?? ""),
+    queryFn: () => getUniverseHandoverConsent(handoverId!),
+    enabled: handoverId !== undefined,
+    staleTime: Infinity,
   });

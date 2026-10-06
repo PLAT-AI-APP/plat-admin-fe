@@ -36,8 +36,8 @@ import {
   HANDOVER_STATUS_TONE,
 } from "../_constants/handoverOptions";
 import HandoverApproveModal from "./HandoverApproveModal";
+import HandoverConsentModal from "./HandoverConsentModal";
 import HandoverRejectModal from "./HandoverRejectModal";
-import LegalDocumentDetailModal from "@/app/(admin)/legal/_components/LegalDocumentDetailModal";
 
 /** 기한 배치가 닫은 건은 서버가 처리자 이름을 SYSTEM 으로 남긴다. */
 const handlerLabel = (handlerName: string | null) =>
@@ -85,7 +85,7 @@ const UniverseHandoverManager = () => {
   const { page } = params;
   const statusTab = params.status as StatusTab;
   const [pending, setPending] = useState<Pending>(null);
-  const [viewingConsentId, setViewingConsentId] = useState<string>();
+  const [viewingConsent, setViewingConsent] = useState<UniverseHandover>();
 
   const canWrite = useHasPermission("universeHandover:write");
   const { data, isLoading, isError, error, refetch, isFetching } =
@@ -154,7 +154,7 @@ const UniverseHandoverManager = () => {
                 type="button"
                 className="text-info hover:underline"
                 title="동의한 동의서 원문 보기"
-                onClick={() => setViewingConsentId(row.consentDocumentId)}
+                onClick={() => setViewingConsent(row)}
               >
                 v{row.consentVersion}
               </button>{" "}
@@ -353,10 +353,9 @@ const UniverseHandoverManager = () => {
         />
       )}
 
-      <LegalDocumentDetailModal
-        isOpen={Boolean(viewingConsentId)}
-        onClose={() => setViewingConsentId(undefined)}
-        documentId={viewingConsentId}
+      <HandoverConsentModal
+        handover={viewingConsent}
+        onClose={() => setViewingConsent(undefined)}
       />
     </>
   );

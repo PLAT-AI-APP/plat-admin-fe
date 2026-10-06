@@ -67,6 +67,18 @@ export interface UniverseHandover {
   handledAt: string | null;
 }
 
+/**
+ * 심사 건의 제작자가 동의한 동의서 원문(한국어 원본)과 동의 시각.
+ * 인수 심사 권한으로 본다 — 법무 문서 권한(`legal:read`)은 필요 없다.
+ */
+export interface UniverseHandoverConsent {
+  documentId: string;
+  version: string;
+  effectiveAt: string;
+  consentedAt: string;
+  content: string;
+}
+
 /** 인수받을 수 있는 공식 계정. */
 export interface UniverseHandoverAssignee {
   userId: string;
