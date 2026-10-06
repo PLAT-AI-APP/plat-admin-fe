@@ -37,6 +37,11 @@ import {
 } from "../_constants/handoverOptions";
 import HandoverApproveModal from "./HandoverApproveModal";
 import HandoverRejectModal from "./HandoverRejectModal";
+import LegalDocumentDetailModal from "@/app/(admin)/legal/_components/LegalDocumentDetailModal";
+
+/** 기한 배치가 닫은 건은 서버가 처리자 이름을 SYSTEM 으로 남긴다. */
+const handlerLabel = (handlerName: string | null) =>
+  !handlerName || handlerName === "SYSTEM" ? "시스템" : handlerName;
 
 type StatusTab = UniverseHandoverStatus | typeof HANDOVER_STATUS_ALL;
 
@@ -80,6 +85,7 @@ const UniverseHandoverManager = () => {
   const { page } = params;
   const statusTab = params.status as StatusTab;
   const [pending, setPending] = useState<Pending>(null);
+  const [viewingConsentId, setViewingConsentId] = useState<string>();
 
   const canWrite = useHasPermission("universeHandover:write");
   const { data, isLoading, isError, error, refetch, isFetching } =
@@ -144,7 +150,15 @@ const UniverseHandoverManager = () => {
           primary={formatDateTime(row.consentedAt)}
           secondary={
             <span className={cn(row.ageBasis === "SELF_ATTESTED" && "text-warning")}>
-              v{row.consentVersion} · {HANDOVER_AGE_BASIS_LABEL[row.ageBasis]}
+              <button
+                type="button"
+                className="text-info hover:underline"
+                title="동의한 동의서 원문 보기"
+                onClick={() => setViewingConsentId(row.consentDocumentId)}
+              >
+                v{row.consentVersion}
+              </button>{" "}
+              · {HANDOVER_AGE_BASIS_LABEL[row.ageBasis]}
             </span>
           }
         />
@@ -239,7 +253,7 @@ const UniverseHandoverManager = () => {
                   "-"
                 )
               }
-              secondary={`${row.handlerName ?? "시스템"} · ${formatDateTime(row.handledAt)}`}
+              secondary={`${handlerLabel(row.handlerName)} · ${formatDateTime(row.handledAt)}`}
             />
             {row.handlerNote && (
               <p className="mt-0.5 max-w-60 truncate body-6 text-font-2" title={row.handlerNote}>
@@ -338,6 +352,12 @@ const UniverseHandoverManager = () => {
           }
         />
       )}
+
+      <LegalDocumentDetailModal
+        isOpen={Boolean(viewingConsentId)}
+        onClose={() => setViewingConsentId(undefined)}
+        documentId={viewingConsentId}
+      />
     </>
   );
 };

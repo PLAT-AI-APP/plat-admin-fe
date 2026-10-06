@@ -16,6 +16,8 @@ interface LegalDocumentDetailModalProps {
   onClose: () => void;
   /** 목록에서 클릭한 문서. 본문은 상세 API로 다시 조회한다. */
   legalDocument?: LegalDocument;
+  /** 목록 행 없이 문서 ID 만 알 때(예: 인수 심사의 동의서 버전). */
+  documentId?: string;
   /** 비우면 게시 버튼을 그리지 않는다(게시 권한이 없을 때). */
   onPublish?: (legalDocument: LegalDocument) => void;
 }
@@ -24,10 +26,11 @@ const LegalDocumentDetailModal = ({
   isOpen,
   onClose,
   legalDocument,
+  documentId,
   onPublish,
 }: LegalDocumentDetailModalProps) => {
   const { data, isLoading } = useLegalDocumentQuery(
-    isOpen ? legalDocument?.documentId : undefined,
+    isOpen ? (documentId ?? legalDocument?.documentId) : undefined,
   );
 
   // 상세 응답이 오기 전에는 목록에 있는 값으로 먼저 그려 빈 화면을 피한다.

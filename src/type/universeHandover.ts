@@ -62,7 +62,7 @@ export interface UniverseHandover {
   targetNickname: string | null;
   reasonCode: UniverseHandoverReason | null;
   handlerNote: string | null;
-  /** 처리한 관리자 이름. 시스템 처리(만료)면 null. */
+  /** 처리한 관리자 이름. 시스템 처리(만료)는 "SYSTEM". */
   handlerName: string | null;
   handledAt: string | null;
 }
