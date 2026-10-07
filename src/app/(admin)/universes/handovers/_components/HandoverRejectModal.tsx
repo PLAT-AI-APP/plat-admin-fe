@@ -13,6 +13,7 @@ import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import Textarea from "@/components/ui/Textarea";
 import { HANDOVER_REJECT_OPTIONS } from "../_constants/handoverOptions";
+import HandoverSummary from "./HandoverSummary";
 
 interface HandoverRejectModalProps {
   handover: UniverseHandover;
@@ -40,7 +41,7 @@ const HandoverRejectModal = ({
       onClose={onClose}
       size="md"
       title="인수 반려"
-      description={`#${handover.handoverId} · ${handover.universeTitle ?? "제목 없음"}. 반려하면 세계관이 삭제됩니다. 되돌릴 수 없습니다.`}
+      description="세계관이 삭제되고 되돌릴 수 없습니다. 대화하던 방은 읽기 전용이 됩니다."
       closeOnOverlayClick={false}
       isDirty={Boolean(reason || note)}
       footer={
@@ -60,6 +61,8 @@ const HandoverRejectModal = ({
       }
     >
       <div className="flex flex-col gap-4">
+        <HandoverSummary handover={handover} />
+
         <FormField label="반려 사유" required>
           <div role="radiogroup" aria-label="반려 사유" className="grid grid-cols-2 gap-2">
             {HANDOVER_REJECT_OPTIONS.map((option) => {

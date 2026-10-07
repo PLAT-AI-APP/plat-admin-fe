@@ -11,6 +11,7 @@ import {
 import { useListParams } from "@/hooks/useListParams";
 import { Refresh, Warning } from "@/icons";
 import dayjs, { daysLeftKst, formatDate, formatDateTime } from "@/lib/dayjs";
+import { resolveImageUrl } from "@/lib/imageUrl";
 import { cn, formatWithCommas } from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
@@ -26,6 +27,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
+import EntityImage from "@/components/ui/EntityImage";
 import Pagination from "@/components/ui/Pagination";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
@@ -117,27 +119,32 @@ const UniverseHandoverManager = () => {
 
   const columns: TableColumn<UniverseHandover>[] = [
     {
-      key: "handoverId",
-      header: "인수 번호",
-      width: "170px",
-      numeric: true,
-      render: (row) => <span className="text-font-2">#{row.handoverId}</span>,
-    },
-    {
       key: "universe",
       header: "캐릭터",
+      width: "300px",
       render: (row) => (
-        <TableCellStack
-          primary={
-            <Link
-              href={`/universes/${row.universeId}`}
-              className="font-medium hover:text-brand hover:underline"
-            >
-              {row.universeTitle ?? "(제목 없음)"}
-            </Link>
-          }
-          secondary={<span className="tabular-nums">#{row.universeId}</span>}
-        />
+        <div className="flex min-w-0 items-center gap-3">
+          {/* 실존 인물 · 도용 이미지는 목록에서 먼저 눈에 걸린다. UNIVERSE_PROFILE 의 가장 작은 규격이 SQ80 이다. */}
+          <EntityImage
+            src={resolveImageUrl(null, row.profileImageFileId, "UNIVERSE_PROFILE", "SQ80")}
+            alt={row.universeTitle ?? "(제목 없음)"}
+            fileId={row.profileImageFileId}
+            className="w-11 shrink-0"
+          />
+          <div className="min-w-0">
+            <TableCellStack
+              primary={
+                <Link
+                  href={`/universes/${row.universeId}`}
+                  className="block truncate font-medium hover:text-brand hover:underline"
+                >
+                  {row.universeTitle ?? "(제목 없음)"}
+                </Link>
+              }
+              secondary={<span className="tabular-nums">인수 #{row.handoverId}</span>}
+            />
+          </div>
+        </div>
       ),
     },
     {
@@ -186,7 +193,7 @@ const UniverseHandoverManager = () => {
     },
     {
       key: "report",
-      header: "신고 누적 / 미처리",
+      header: "신고 / 미처리",
       align: "right",
       numeric: true,
       render: (row) => (

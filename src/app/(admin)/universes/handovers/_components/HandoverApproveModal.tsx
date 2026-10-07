@@ -14,6 +14,7 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import Skeleton from "@/components/ui/Skeleton";
 import Textarea from "@/components/ui/Textarea";
+import HandoverSummary from "./HandoverSummary";
 
 interface HandoverApproveModalProps {
   handover: UniverseHandover;
@@ -57,7 +58,7 @@ const HandoverApproveModal = ({
       onClose={onClose}
       size="md"
       title="인수 승인"
-      description={`#${handover.handoverId} · ${handover.universeTitle ?? "제목 없음"}. 고른 공식 계정이 세계관과 이미지를 넘겨받아 운영합니다.`}
+      description="고른 공식 계정이 세계관과 이미지를 넘겨받아 '운영 PLAT'으로 운영합니다."
       closeOnOverlayClick={false}
       isDirty={Boolean(picked || note)}
       footer={
@@ -77,16 +78,10 @@ const HandoverApproveModal = ({
       }
     >
       <div className="flex flex-col gap-4">
-        <p className="body-5 text-font-2">
-          실존 인물 · 원작 IP · 도용 이미지 · 개인정보 · 신고 이력이 있으면 반려하세요.{" "}
-          <Link
-            href={`/universes/${handover.universeId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-info hover:underline"
-          >
-            설정 · 이미지 보기
-          </Link>
+        <HandoverSummary handover={handover} />
+
+        <p className="body-6 text-font-2">
+          실존 인물 · 원작 IP · 도용 이미지 · 개인정보 · 신고 이력이 있으면 반려하세요.
         </p>
 
         {handover.pendingReportCount > 0 && (

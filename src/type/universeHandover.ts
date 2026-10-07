@@ -44,6 +44,8 @@ export interface UniverseHandover {
   universeId: string;
   /** 세계관이 파기돼 제목이 없으면 null. */
   universeTitle: string | null;
+  /** 세계관 대표 이미지. 실존 인물 · 도용 이미지 심사에 쓴다. 파기돼 없으면 null. */
+  profileImageFileId: string | null;
   status: UniverseHandoverStatus;
   consentDocumentId: string;
   consentVersion: string;
