@@ -64,6 +64,10 @@ export const describeCron = (expression: string): string | undefined => {
     return `${minute.slice(2)}분마다`;
   }
 
+  if (hour === "*" && /^\d+$/.test(minute ?? "")) {
+    return `매시 ${minute.padStart(2, "0")}분`;
+  }
+
   /* 정각에만 도는 N시간 주기. 분이 0이 아니면 설명이 그 분을 잃으므로 옮기지 않는다. */
   if (hour?.startsWith("*/") && minute === "0") {
     return `${hour.slice(2)}시간마다`;
