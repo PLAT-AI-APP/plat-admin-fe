@@ -53,7 +53,10 @@ type StatusTab = UniverseHandoverStatus | typeof HANDOVER_STATUS_ALL;
 type Pending = { mode: "APPROVE" | "REJECT"; row: UniverseHandover } | null;
 
 /** 주소에 실리는 목록 조건. 처음 열면 심사 대기부터 본다. */
-const DEFAULT_PARAMS = { page: 1, status: "PENDING" };
+const DEFAULT_PARAMS = { page: 1, status: "PENDING", size: DEFAULT_PAGE_SIZE };
+
+/** 한 페이지 건수. 한 제작자가 수백 개를 남겼을 때 한 번에 더 많이 훑고 고를 수 있게 한다. 100 은 일괄 승인 상한과 같다. */
+const PAGE_SIZE_OPTIONS = [DEFAULT_PAGE_SIZE, 50, 100];
 
 /** 남은 기한. 지났으면 붉게, 사흘 안이면 경고색으로 칠한다. */
 const DeadlineCell = ({ deadlineAt }: { deadlineAt: string }) => {
@@ -88,6 +91,7 @@ const DeadlineCell = ({ deadlineAt }: { deadlineAt: string }) => {
 const UniverseHandoverManager = () => {
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
   const { page } = params;
+  const pageSize = PAGE_SIZE_OPTIONS.includes(params.size) ? params.size : DEFAULT_PAGE_SIZE;
   const statusTab = params.status as StatusTab;
   const [pending, setPending] = useState<Pending>(null);
   const [viewingConsent, setViewingConsent] = useState<UniverseHandover>();
@@ -100,7 +104,7 @@ const UniverseHandoverManager = () => {
   const { data, isLoading, isError, error, refetch, isFetching } =
     useUniverseHandoverListQuery({
       page,
-      size: DEFAULT_PAGE_SIZE,
+      size: pageSize,
       status: statusTab === HANDOVER_STATUS_ALL ? "" : statusTab,
     });
   const { data: pendingCounts } = usePendingCountsQuery();
@@ -341,21 +345,49 @@ const UniverseHandoverManager = () => {
         title={`인수 심사 ${formatWithCommas(data?.totalCount ?? 0)}건`}
         description="신고 · 방 수는 탈퇴 시점 기준입니다. 썸네일을 누르면 원본을 크게 넘겨 볼 수 있습니다."
         action={
-          canWrite && selectedRows.length > 0 ? (
-            <>
-              <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
-                선택 해제
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                leftIcon={<CheckCircle size={15} />}
-                onClick={() => setIsBulkApproving(true)}
-              >
-                선택 {formatWithCommas(selectedRows.length)}건 일괄 승인
-              </Button>
-            </>
-          ) : undefined
+          <>
+            {canWrite && selectedRows.length > 0 && (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
+                  선택 해제
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<CheckCircle size={15} />}
+                  onClick={() => setIsBulkApproving(true)}
+                >
+                  선택 {formatWithCommas(selectedRows.length)}건 일괄 승인
+                </Button>
+              </>
+            )}
+            <div
+              role="radiogroup"
+              aria-label="한 페이지 건수"
+              className="flex rounded-field border border-border-main p-0.5"
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  role="radio"
+                  aria-checked={pageSize === size}
+                  onClick={() => {
+                    setSelectedIds([]);
+                    setParams({ size });
+                  }}
+                  className={cn(
+                    "body-6 h-7 rounded-[6px] px-2.5 tabular-nums transition",
+                    pageSize === size
+                      ? "bg-subtle font-semibold text-font-1"
+                      : "text-font-2 hover:text-font-1",
+                  )}
+                >
+                  {size}건
+                </button>
+              ))}
+            </div>
+          </>
         }
         noPadding
       >
@@ -402,7 +434,7 @@ const UniverseHandoverManager = () => {
             <Pagination
               page={page}
               totalCount={data?.totalCount ?? 0}
-              pageSize={DEFAULT_PAGE_SIZE}
+              pageSize={pageSize}
               onChange={(next) => {
                 setSelectedIds([]);
                 setParams({ page: next });
