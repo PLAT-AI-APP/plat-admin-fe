@@ -4,7 +4,10 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useListParams } from "@/hooks/useListParams";
 import { useCan } from "@/hooks/useCan";
-import { useUserListQuery } from "@/api/user/getUserList";
+import {
+  useUserListQuery,
+  type UserVerificationFilter,
+} from "@/api/user/getUserList";
 import { useUserMutation } from "@/api/user/mutateUser";
 import { Ban, CheckCircle, Eye } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
@@ -17,9 +20,13 @@ import {
   GENDER_LABEL,
   NO_AGREEMENT_RECORD_LABEL,
   UNCOLLECTED_LABEL,
+  VERIFICATION_STATE_LABEL,
+  verificationStateOf,
+  verifiedAtFromUntil,
   type User,
   type UserStatus,
 } from "@/type/user";
+import AdultMark from "@/components/detail/AdultMark";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import CsvExportButton from "@/components/ui/CsvExportButton";
@@ -36,9 +43,11 @@ import {
   LOGIN_PROVIDER_BADGE_CLASS,
   LOGIN_PROVIDER_LABEL,
   USER_STATUS_FILTER_OPTIONS,
+  USER_VERIFICATION_FILTER_OPTIONS,
 } from "@/app/(admin)/users/_constants/userOptions";
 import { USER_STATUS_LABEL, USER_STATUS_TONE } from "@/constants/userOptions";
 import UserSuspendModal from "./UserSuspendModal";
+import VerificationStatus from "./VerificationStatus";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
 const USER_CSV_COLUMNS: CsvColumn<User>[] = [
@@ -62,6 +71,41 @@ const USER_CSV_COLUMNS: CsvColumn<User>[] = [
     value: (row) => (row.provider ? LOGIN_PROVIDER_LABEL[row.provider] : "-"),
   },
   { header: "상태", value: (row) => USER_STATUS_LABEL[row.status] },
+  /*
+    인증은 상태 · 인증(갱신)일 · 만료일을 따로 적는다. 한 칸에 합치면 스프레드시트에서
+    "만료 임박"이나 "올해 인증"으로 걸러 낼 수 없다. 인증(갱신)일은 목록에 오지 않아
+    만료일에서 유효 기간을 빼서 구한다.
+  */
+  {
+    header: "본인인증",
+    value: (row) =>
+      VERIFICATION_STATE_LABEL[verificationStateOf(row.identityVerifiedUntil)],
+  },
+  {
+    header: "본인인증 갱신일",
+    value: (row) => formatDate(verifiedAtFromUntil(row.identityVerifiedUntil)),
+  },
+  {
+    header: "본인인증 만료일",
+    value: (row) => formatDate(row.identityVerifiedUntil),
+  },
+  {
+    header: "성인인증",
+    value: (row) =>
+      VERIFICATION_STATE_LABEL[verificationStateOf(row.adultVerifiedUntil)],
+  },
+  {
+    header: "성인인증 갱신일",
+    value: (row) => formatDate(verifiedAtFromUntil(row.adultVerifiedUntil)),
+  },
+  {
+    header: "성인인증 만료일",
+    value: (row) => formatDate(row.adultVerifiedUntil),
+  },
+  {
+    header: "19 콘텐츠 보기",
+    value: (row) => (row.adultContentEnabled ? "Y" : "N"),
+  },
   { header: "마지막 로그인", value: (row) => formatDateTime(row.lastLoginAt) },
   {
     header: "최근 접속 기기",
@@ -78,6 +122,7 @@ const DEFAULT_PARAMS = {
   page: 1,
   keyword: "",
   status: "",
+  verification: "",
 };
 
 const UserManager = () => {
@@ -85,6 +130,7 @@ const UserManager = () => {
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
   const { page, keyword } = params;
   const status = params.status as UserStatus | "";
+  const verification = params.verification as UserVerificationFilter | "";
 
   // 모달은 대상 유저를 상태로 들고 있는 방식으로 하나씩만 연다.
   const [suspendTarget, setSuspendTarget] = useState<User | null>(null);
@@ -94,6 +140,7 @@ const UserManager = () => {
     size: DEFAULT_PAGE_SIZE,
     keyword: keyword || undefined,
     status: status || undefined,
+    verification: verification || undefined,
   });
 
   const { statusMutation } = useUserMutation();
@@ -229,6 +276,32 @@ const UserManager = () => {
       ),
     },
     {
+      key: "identityVerification",
+      header: "본인인증",
+      render: (user) => (
+        <VerificationStatus until={user.identityVerifiedUntil} />
+      ),
+    },
+    {
+      key: "adultVerification",
+      header: "성인인증",
+      render: (user) => (
+        <div className="flex items-start gap-1.5">
+          <VerificationStatus until={user.adultVerifiedUntil} />
+          {/* 19 토글은 켠 사람만 작게 표시한다. 꺼진 쪽이 대부분이라 표시하면 잡음이 된다. */}
+          {user.adultContentEnabled && (
+            <span
+              className="mt-1 inline-flex items-center gap-0.5 caption-3 text-font-2"
+              title="앱의 19 콘텐츠 보기를 켜 둔 유저입니다."
+            >
+              <AdultMark />
+              켬
+            </span>
+          )}
+        </div>
+      ),
+    },
+    {
       key: "lastLoginAt",
       header: "마지막 로그인",
       numeric: true,
@@ -291,6 +364,16 @@ const UserManager = () => {
               }}
               selectBoxClassName="w-36"
             />
+
+            <Select
+              options={USER_VERIFICATION_FILTER_OPTIONS}
+              value={verification}
+              onChange={(event) => {
+                setParams({ verification: event.target.value });
+              }}
+              selectBoxClassName="w-44"
+              aria-label="인증 상태 필터"
+            />
           </div>
         </div>
 
@@ -301,7 +384,7 @@ const UserManager = () => {
           isLoading={isLoading}
           getRowHref={(user) => `/users/${user.userId}`}
           emptyTitle="조건에 맞는 유저가 없습니다."
-          emptyDescription="검색어나 상태 필터를 바꿔서 다시 찾아보세요."
+          emptyDescription="검색어나 상태 · 인증 필터를 바꿔서 다시 찾아보세요."
         />
 
         <Pagination
