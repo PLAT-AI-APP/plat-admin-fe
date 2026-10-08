@@ -12,6 +12,19 @@ export interface ApproveUniverseHandoverInput {
   note?: string;
 }
 
+export interface BulkApproveUniverseHandoverInput {
+  /** 최대 100건. 서버가 건마다 따로 승인한다. */
+  handoverIds: string[];
+  targetUserId: string;
+  note?: string;
+}
+
+/** 일괄 승인 결과. 그사이 다른 운영자가 처리했거나 기한이 지난 건은 `failures` 로 온다. */
+export interface BulkApproveUniverseHandoverResult {
+  approvedCount: number;
+  failures: { handoverId: string; code: string }[];
+}
+
 export interface RejectUniverseHandoverInput {
   handoverId: string;
   reason: UniverseHandoverRejectReason;
@@ -75,6 +88,35 @@ export const useUniverseHandoverMutation = () => {
     onError: handleError,
   });
 
+  const bulkApproveMutation = useMutation<
+    BulkApproveUniverseHandoverResult,
+    AppError,
+    BulkApproveUniverseHandoverInput
+  >({
+    mutationFn: async ({ handoverIds, targetUserId, note }) =>
+      (
+        await liveAxios.post<BulkApproveUniverseHandoverResult>(
+          "/universe-handovers/bulk-approve",
+          { handoverIds, targetUserId, note: note?.trim() || null },
+        )
+      ).data,
+    onSuccess: ({ approvedCount, failures }) => {
+      // 보낸 건수와 다를 수 있어 서버가 돌려준 숫자를 그대로 알린다.
+      if (failures.length > 0) {
+        showAppToast("warning", `${approvedCount}건을 승인했습니다.`, {
+          description: `${failures.length}건은 그사이 처리됐거나 사라져 건너뛰었습니다.`,
+        });
+      } else {
+        showAppToast("success", `${approvedCount}건을 승인했습니다.`, {
+          description: "공식 계정이 세계관과 이미지를 넘겨받았습니다.",
+        });
+      }
+      invalidateAfterSuccess();
+      queryClient.invalidateQueries({ queryKey: ["get-pending-counts"] });
+    },
+    onError: handleError,
+  });
+
   const rejectMutation = useMutation<void, AppError, RejectUniverseHandoverInput>({
     mutationFn: async ({ handoverId, reason, note }) => {
       await liveAxios.post(`/universe-handovers/${handoverId}/reject`, {
@@ -89,5 +131,5 @@ export const useUniverseHandoverMutation = () => {
     onError: handleError,
   });
 
-  return { approveMutation, rejectMutation };
+  return { approveMutation, bulkApproveMutation, rejectMutation };
 };

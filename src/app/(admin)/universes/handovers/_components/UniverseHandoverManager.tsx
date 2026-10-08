@@ -9,7 +9,7 @@ import {
   useUniverseHandoverMutation,
 } from "@/api/universe/mutateUniverseHandover";
 import { useListParams } from "@/hooks/useListParams";
-import { Refresh, Warning } from "@/icons";
+import { CheckCircle, Refresh, Warning } from "@/icons";
 import dayjs, { daysLeftKst, formatDate, formatDateTime } from "@/lib/dayjs";
 import { resolveImageUrl } from "@/lib/imageUrl";
 import { cn, formatWithCommas } from "@/lib/utils";
@@ -25,6 +25,7 @@ import {
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import Checkbox from "@/components/ui/Checkbox";
 import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import EntityImage from "@/components/ui/EntityImage";
@@ -39,6 +40,7 @@ import {
   HANDOVER_STATUS_TONE,
 } from "../_constants/handoverOptions";
 import HandoverApproveModal from "./HandoverApproveModal";
+import HandoverBulkApproveModal from "./HandoverBulkApproveModal";
 import HandoverConsentModal from "./HandoverConsentModal";
 import HandoverRejectModal from "./HandoverRejectModal";
 
@@ -90,6 +92,9 @@ const UniverseHandoverManager = () => {
   const [pending, setPending] = useState<Pending>(null);
   const [viewingConsent, setViewingConsent] = useState<UniverseHandover>();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  // 일괄 승인할 건. 페이지 · 탭을 옮기면 비운다(보이지 않는 건이 섞여 승인되지 않게).
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkApproving, setIsBulkApproving] = useState(false);
 
   const canWrite = useHasPermission("universeHandover:write");
   const { data, isLoading, isError, error, refetch, isFetching } =
@@ -111,7 +116,7 @@ const UniverseHandoverManager = () => {
     const index = lightboxItems.findIndex((item) => item.id === handoverId);
     if (index >= 0) setLightboxIndex(index);
   };
-  const { approveMutation, rejectMutation } = useUniverseHandoverMutation();
+  const { approveMutation, bulkApproveMutation, rejectMutation } = useUniverseHandoverMutation();
 
   const tabs: TabItem<StatusTab>[] = [
     { label: "심사 대기", value: "PENDING", count: pendingCounts.handover },
@@ -123,6 +128,19 @@ const UniverseHandoverManager = () => {
 
   const close = () => setPending(null);
 
+  const rows = data?.content ?? [];
+  /** 심사 대기만 일괄 승인할 수 있다. */
+  const selectableRows = rows.filter((row) => row.status === "PENDING");
+  const selectedRows = selectableRows.filter((row) => selectedIds.includes(row.handoverId));
+  const isAllSelected =
+    selectableRows.length > 0 && selectableRows.every((row) => selectedIds.includes(row.handoverId));
+  const toggleSelect = (handoverId: string) =>
+    setSelectedIds((prev) =>
+      prev.includes(handoverId) ? prev.filter((id) => id !== handoverId) : [...prev, handoverId],
+    );
+  const toggleSelectAll = () =>
+    setSelectedIds(isAllSelected ? [] : selectableRows.map((row) => row.handoverId));
+
   /* 이미 처리됐거나 사라진 건은 모달을 닫는다. 받을 계정 무효는 열어 두고 다시 고르게 한다. */
   const done = {
     onSuccess: close,
@@ -131,7 +149,31 @@ const UniverseHandoverManager = () => {
     },
   };
 
+  const selectColumn: TableColumn<UniverseHandover> = {
+    key: "select",
+    header: (
+      <Checkbox
+        label=""
+        aria-label="이 페이지의 심사 대기 전체 선택"
+        checked={isAllSelected}
+        onChange={toggleSelectAll}
+        disabled={selectableRows.length === 0}
+      />
+    ),
+    width: "44px",
+    render: (row) => (
+      <Checkbox
+        label=""
+        aria-label={`${row.universeTitle ?? "(제목 없음)"} 선택`}
+        checked={selectedIds.includes(row.handoverId)}
+        onChange={() => toggleSelect(row.handoverId)}
+        disabled={row.status !== "PENDING"}
+      />
+    ),
+  };
+
   const columns: TableColumn<UniverseHandover>[] = [
+    ...(canWrite ? [selectColumn] : []),
     {
       key: "universe",
       header: "캐릭터",
@@ -297,13 +339,33 @@ const UniverseHandoverManager = () => {
 
       <Card
         title={`인수 심사 ${formatWithCommas(data?.totalCount ?? 0)}건`}
-        description="신고 · 방 수는 탈퇴 시점 기준입니다."
+        description="신고 · 방 수는 탈퇴 시점 기준입니다. 썸네일을 누르면 원본을 크게 넘겨 볼 수 있습니다."
+        action={
+          canWrite && selectedRows.length > 0 ? (
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
+                선택 해제
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<CheckCircle size={15} />}
+                onClick={() => setIsBulkApproving(true)}
+              >
+                선택 {formatWithCommas(selectedRows.length)}건 일괄 승인
+              </Button>
+            </>
+          ) : undefined
+        }
         noPadding
       >
         <Tabs
           items={tabs}
           value={statusTab}
-          onChange={(next) => setParams({ status: next })}
+          onChange={(next) => {
+            setSelectedIds([]);
+            setParams({ status: next });
+          }}
           className="px-3"
         />
 
@@ -328,7 +390,7 @@ const UniverseHandoverManager = () => {
           <>
             <Table
               columns={columns}
-              rows={data?.content ?? []}
+              rows={rows}
               isLoading={isLoading}
               getRowKey={(row) => row.handoverId}
               emptyTitle={
@@ -341,7 +403,10 @@ const UniverseHandoverManager = () => {
               page={page}
               totalCount={data?.totalCount ?? 0}
               pageSize={DEFAULT_PAGE_SIZE}
-              onChange={(next) => setParams({ page: next })}
+              onChange={(next) => {
+                setSelectedIds([]);
+                setParams({ page: next });
+              }}
             />
           </>
         )}
@@ -356,6 +421,29 @@ const UniverseHandoverManager = () => {
             approveMutation.mutate(
               { handoverId: pending.row.handoverId, targetUserId, note },
               done,
+            )
+          }
+        />
+      )}
+
+      {isBulkApproving && selectedRows.length > 0 && (
+        <HandoverBulkApproveModal
+          handovers={selectedRows}
+          onClose={() => setIsBulkApproving(false)}
+          isSubmitting={bulkApproveMutation.isPending}
+          onSubmit={({ targetUserId, note }) =>
+            bulkApproveMutation.mutate(
+              {
+                handoverIds: selectedRows.map((row) => row.handoverId),
+                targetUserId,
+                note,
+              },
+              {
+                onSuccess: () => {
+                  setIsBulkApproving(false);
+                  setSelectedIds([]);
+                },
+              },
             )
           }
         />
