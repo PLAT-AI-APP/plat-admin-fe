@@ -11,6 +11,8 @@ interface DetailHeroProps {
   image: ReactNode;
   chips?: ReactNode;
   title: string;
+  /** 제목 바로 뒤에 붙는 작은 표시(성인 19 등). */
+  titleMark?: ReactNode;
   /** 제목 옆 회색 식별자. 문의 · 로그 대조에 쓰는 `#ID`. */
   idLabel?: string;
   subtitle?: string;
@@ -33,6 +35,7 @@ const DetailHero = ({
   image,
   chips,
   title,
+  titleMark,
   idLabel,
   subtitle,
   hashtags,
@@ -54,6 +57,7 @@ const DetailHero = ({
 
       <h1 className="mt-1.5 break-words">
         <span className="heading-3 font-bold text-font-0">{title}</span>
+        {titleMark && <span className="ml-1.5 align-top">{titleMark}</span>}
         {idLabel && (
           <span className="ml-2 body-6 text-font-disabled tabular-nums">
             {idLabel}

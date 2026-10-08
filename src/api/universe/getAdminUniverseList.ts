@@ -47,6 +47,8 @@ export interface AdminUniverseFilterParams {
   reviewStatus?: UniverseReviewStatus | "";
   tendency?: UniverseTendency | "";
   commentEnabled?: "true" | "false" | "";
+  /** 성인 분류. 서버는 Boolean 쿼리로 받으므로 문자열 "true"/"false"를 보낸다. */
+  adult?: "true" | "false" | "";
   /** 제작자 드릴다운. 상세 화면의 "제작자"가 이 값으로 링크를 건다. */
   creatorId?: string;
   /**
@@ -102,6 +104,7 @@ interface AdminUniverseItemResponse {
   translationCount: number;
   createdAt: string;
   updatedAt: string | null;
+  adult: boolean;
 }
 
 const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
@@ -127,6 +130,8 @@ const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
   translationCount: item.translationCount,
   createdAt: item.createdAt,
   updatedAt: item.updatedAt,
+  // 배포 순서가 어긋나 아직 값을 주지 않는 서버에서는 일반으로 읽는다.
+  isAdult: item.adult ?? false,
 });
 
 /** 빈 문자열 필터는 아예 빼고, 페이지는 0부터로 낮춰 서버가 받는 형태로 만든다. */
@@ -139,6 +144,7 @@ const toRequestParams = (params: AdminUniverseListParams) => {
   if (params.reviewStatus) clean.reviewStatus = params.reviewStatus;
   if (params.tendency) clean.tendency = params.tendency;
   if (params.commentEnabled) clean.commentEnabled = params.commentEnabled;
+  if (params.adult) clean.adult = params.adult;
   if (params.creatorId) clean.creatorId = params.creatorId;
   if (params.userId) clean.userId = params.userId;
   if (params.hashtagId) clean.hashtagId = params.hashtagId;
