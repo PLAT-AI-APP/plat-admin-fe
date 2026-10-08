@@ -28,6 +28,7 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import EntityImage from "@/components/ui/EntityImage";
+import Lightbox, { type LightboxItem } from "@/components/ui/Lightbox";
 import Pagination from "@/components/ui/Pagination";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
@@ -88,6 +89,7 @@ const UniverseHandoverManager = () => {
   const statusTab = params.status as StatusTab;
   const [pending, setPending] = useState<Pending>(null);
   const [viewingConsent, setViewingConsent] = useState<UniverseHandover>();
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const canWrite = useHasPermission("universeHandover:write");
   const { data, isLoading, isError, error, refetch, isFetching } =
@@ -97,6 +99,18 @@ const UniverseHandoverManager = () => {
       status: statusTab === HANDOVER_STATUS_ALL ? "" : statusTab,
     });
   const { data: pendingCounts } = usePendingCountsQuery();
+
+  /* 대표 이미지를 원본으로 크게 넘겨 본다. 실존 인물 · 도용 이미지는 80px 썸네일로는 가릴 수 없다. */
+  const lightboxItems: LightboxItem[] = (data?.content ?? []).flatMap((row) => {
+    const url = resolveImageUrl(null, row.profileImageFileId, "UNIVERSE_PROFILE", "ORIGIN");
+    return url
+      ? [{ id: row.handoverId, url, title: row.universeTitle ?? "(제목 없음)", caption: `인수 #${row.handoverId}` }]
+      : [];
+  });
+  const openLightbox = (handoverId: string) => {
+    const index = lightboxItems.findIndex((item) => item.id === handoverId);
+    if (index >= 0) setLightboxIndex(index);
+  };
   const { approveMutation, rejectMutation } = useUniverseHandoverMutation();
 
   const tabs: TabItem<StatusTab>[] = [
@@ -130,6 +144,7 @@ const UniverseHandoverManager = () => {
             alt={row.universeTitle ?? "(제목 없음)"}
             fileId={row.profileImageFileId}
             className="w-11 shrink-0"
+            onClick={row.profileImageFileId ? () => openLightbox(row.handoverId) : undefined}
           />
           <div className="min-w-0">
             <TableCellStack
@@ -363,6 +378,13 @@ const UniverseHandoverManager = () => {
       <HandoverConsentModal
         handover={viewingConsent}
         onClose={() => setViewingConsent(undefined)}
+      />
+
+      <Lightbox
+        items={lightboxItems}
+        index={lightboxIndex}
+        onChangeIndex={setLightboxIndex}
+        onClose={() => setLightboxIndex(null)}
       />
     </>
   );
