@@ -31,5 +31,18 @@ export const useSecretMutation = () => {
     },
   );
 
-  return { saveMutation };
+  // 바로 앞 버전의 값을 새 버전으로 다시 쓴다. 다시 누르면 되돌리기 전 값으로 돌아간다.
+  const restoreMutation = useMutation<SecretOverview, AppError, string>({
+    mutationFn: async (name) =>
+      (
+        await liveAxios.post<SecretOverview>(
+          `/server/secrets/${name}/restore-previous`,
+        )
+      ).data,
+    onSuccess: (overview) =>
+      queryClient.setQueryData(SECRETS_QUERY_KEY, overview),
+    onError: (error) => showErrorToast(error),
+  });
+
+  return { saveMutation, restoreMutation };
 };

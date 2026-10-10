@@ -7,6 +7,7 @@ import { useSecretMutation } from "@/api/ops/mutateSecret";
 import { daysLeftKst, formatDateTime } from "@/lib/dayjs";
 import { showAppToast } from "@/lib/toast";
 import { useHasPermission } from "@/store/useAdminStore";
+import { openConfirm } from "@/store/useConfirmStore";
 import { SECRET_GRADE_LABEL, type SecretItem } from "@/type/secret";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
@@ -39,7 +40,7 @@ const principalName = (arn: string | null) => {
 const SecretManager = () => {
   const canWrite = useHasPermission("server:write");
   const { data, isLoading, isError } = useSecretsQuery();
-  const { saveMutation } = useSecretMutation();
+  const { saveMutation, restoreMutation } = useSecretMutation();
   const [target, setTarget] = useState<SecretItem | null>(null);
   const [pendingRestart, setPendingRestart] = useState<string[]>([]);
 
@@ -56,9 +57,7 @@ const SecretManager = () => {
         onSuccess: () => {
           setTarget(null);
           if (input.secretValue !== null) {
-            setPendingRestart((previous) =>
-              Array.from(new Set([...previous, ...restartApps])),
-            );
+            markRestart(restartApps);
             showAppToast(
               "success",
               `저장했습니다. ${restartApps.join(" · ")} 를 다시 띄워야 반영됩니다.`,
@@ -70,6 +69,27 @@ const SecretManager = () => {
       },
     );
   };
+
+  const markRestart = (apps: string[]) =>
+    setPendingRestart((previous) =>
+      Array.from(new Set([...previous, ...apps])),
+    );
+
+  const handleRestore = (secret: SecretItem) =>
+    openConfirm({
+      title: `${secret.label}을(를) 이전 값으로 되돌릴까요?`,
+      description: `v${(secret.version ?? 1) - 1} 의 값을 새 버전으로 다시 씁니다. 다시 누르면 지금 값으로 돌아갑니다. 반영하려면 ${secret.restartApps.join(" · ")} 를 다시 띄워야 합니다.`,
+      confirmText: "되돌리기",
+      tone: "danger",
+      onConfirm: () =>
+        restoreMutation.mutateAsync(secret.name).then(() => {
+          markRestart(secret.restartApps);
+          showAppToast(
+            "success",
+            `되돌렸습니다. ${secret.restartApps.join(" · ")} 를 다시 띄워야 반영됩니다.`,
+          );
+        }),
+    });
 
   if (isLoading) return <Skeleton className="h-96" />;
   if (isError || !data) {
@@ -150,13 +170,25 @@ const SecretManager = () => {
               )}
             </div>
             {editable && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setTarget(secret)}
-              >
-                {secret.lockedReason ? "정보 수정" : "변경"}
-              </Button>
+              <div className="flex gap-2">
+                {!secret.lockedReason && (secret.version ?? 0) > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={restoreMutation.isPending}
+                    onClick={() => handleRestore(secret)}
+                  >
+                    되돌리기
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setTarget(secret)}
+                >
+                  {secret.lockedReason ? "정보 수정" : "변경"}
+                </Button>
+              </div>
             )}
           </div>
         ))}
