@@ -26,6 +26,11 @@ export interface UniversePatchBody {
   commentEnabled?: boolean;
   /** ACTIVE ↔ INACTIVE 만 있다. 삭제는 하드 딜리트라 상태로 남지 않는다. */
   status?: UniverseStatus;
+  /**
+   * 성인(19) 재분류. 켜면 성인인증 유저에게만 보이고 이미지가 보호 저장소로 옮겨진다.
+   * 끄면 반대로 일반 세계관이 된다.
+   */
+  adult?: boolean;
 }
 
 export interface UniverseReviewBody {

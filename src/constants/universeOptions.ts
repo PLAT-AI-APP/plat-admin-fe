@@ -221,3 +221,13 @@ export const EXPORT_STATUS_FILTER_OPTIONS: SelectOption[] = [
   { label: EXPORT_STATUS_LABEL.DONE, value: "DONE" },
   { label: EXPORT_STATUS_LABEL.FAILED, value: "FAILED" },
 ];
+
+/**
+ * 성인 분류 필터. 서버는 Boolean 쿼리(`adult=true|false`)로 받는다.
+ * 빈 문자열이 "전체"다.
+ */
+export const UNIVERSE_ADULT_FILTER_OPTIONS: SelectOption[] = [
+  { label: "성인 분류 전체", value: "" },
+  { label: "성인", value: "true" },
+  { label: "일반", value: "false" },
+];

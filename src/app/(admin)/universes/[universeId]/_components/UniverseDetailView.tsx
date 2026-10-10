@@ -36,6 +36,7 @@ import DetailHero from "@/components/detail/DetailHero";
 import DetailSection from "@/components/detail/DetailSection";
 import DetailSectionTabs from "@/components/detail/DetailSectionTabs";
 import HashtagLine from "@/components/detail/HashtagLine";
+import AdultMark from "@/components/detail/AdultMark";
 import StatusChip from "@/components/detail/StatusChip";
 import UniverseScenarioPanel from "./UniverseScenarioPanel";
 import UniverseSettingsFormModal, {
@@ -170,6 +171,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
           }),
         onChangeVisibility: () => setSettingsMode("visibility"),
         onChangeClassification: () => setSettingsMode("classification"),
+        onChangeAdult: () => setSettingsMode("adult"),
         onToggleComment: (next) => {
           if (next) {
             runPatch({ commentEnabled: true }, "댓글을 다시 허용했습니다.");
@@ -199,6 +201,18 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   });
 
   const onChangeSettings = (body: UniversePatchBody) => {
+    if (body.adult !== undefined) {
+      runPatch(
+        body,
+        body.adult
+          ? "성인 콘텐츠로 분류했습니다."
+          : "일반 콘텐츠로 분류했습니다.",
+        () => setSettingsMode(null),
+      );
+
+      return;
+    }
+
     const message =
       body.visibility !== undefined
         ? `공개 범위를 ${UNIVERSE_VISIBILITY_LABEL[body.visibility]}(으)로 바꿨습니다.`
@@ -273,6 +287,11 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                 </>
               }
               title={universeTitleOf(data)}
+              titleMark={
+                data.isAdult ? (
+                  <AdultMark title="성인 콘텐츠 · 성인인증 유저에게만 보입니다." />
+                ) : undefined
+              }
               idLabel={`#${data.universeId}`}
               subtitle={koreanOf(data)?.introduce.trim() || undefined}
               hashtags={

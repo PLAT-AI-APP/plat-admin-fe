@@ -17,7 +17,7 @@ import { hasPermission } from "@/type/permission";
 import { openConfirm } from "@/store/useConfirmStore";
 import { useCan } from "@/hooks/useCan";
 import { useListParams } from "@/hooks/useListParams";
-import type { UserDetail } from "@/type/user";
+import { detailVerificationStateOf, type UserDetail } from "@/type/user";
 import BackLink from "@/components/layout/BackLink";
 import PageHeader from "@/components/layout/PageHeader";
 import Alert from "@/components/ui/Alert";
@@ -99,6 +99,10 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
   const { data: user, isLoading, isError, error } = useUserDetailQuery(userId);
   const { statusMutation } = useUserMutation();
   const profileResetMutation = useUserProfileResetMutation();
+  /* 성인 인증은 만료를 반영해 읽는다. 지난 인증을 "인증"으로 그리면 CS 판단이 틀어진다. */
+  const adultState = user
+    ? detailVerificationStateOf(user.isAdultVerified, user.adultVerifiedUntil)
+    : "NONE";
 
   const handleProfileReset = (body: ProfileResetRequest) => {
     profileResetMutation
@@ -268,8 +272,11 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
                   <Badge tone={USER_STATUS_TONE[user.status]}>
                     {USER_STATUS_LABEL[user.status]}
                   </Badge>
-                  {user.isAdultVerified && (
+                  {adultState === "VERIFIED" && (
                     <Badge tone="info">성인 인증</Badge>
+                  )}
+                  {adultState === "EXPIRED" && (
+                    <Badge tone="warning">성인 인증 만료</Badge>
                   )}
                   {user.role === "ADMIN" && (
                     <Badge tone="warning">서비스 관리자</Badge>
@@ -320,7 +327,13 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
               <StatBox
                 label="성인 인증일"
                 value={
-                  user.isAdultVerified ? formatDate(user.adultVerifiedAt) : "-"
+                  adultState === "VERIFIED" ? (
+                    formatDate(user.adultVerifiedAt)
+                  ) : adultState === "EXPIRED" ? (
+                    <span className="text-warning">만료</span>
+                  ) : (
+                    "-"
+                  )
                 }
               />
             </div>

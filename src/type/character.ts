@@ -291,6 +291,11 @@ export interface AdminUniverseListItem {
   translationCount: number;
   createdAt: string;
   updatedAt: string | null;
+  /**
+   * 성인(19) 세계관인가. 성인인증 유저에게만 보이고 이미지는 보호 저장소에 둔다.
+   * 운영자가 `PATCH /universes/{id}`의 `adult`로 재분류할 수 있다.
+   */
+  isAdult: boolean;
 }
 
 /** 소유 크리에이터 요약. 공식 판정·계정 이동의 근거다. */
@@ -385,6 +390,8 @@ export interface UniverseDetail {
   assets: UniverseAssetView[];
   /** 회차 오름차순으로 정렬되어 온다. */
   scenarios: UniverseScenarioDetail[];
+  /** 성인(19) 세계관인가. 뜻은 `AdminUniverseListItem.isAdult`와 같다. */
+  isAdult: boolean;
 }
 
 /** 채팅 내보내기 작업 */

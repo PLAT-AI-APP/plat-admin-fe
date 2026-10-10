@@ -41,6 +41,9 @@ export const DEVICE_PLATFORM_LABEL: Record<DevicePlatform, string> = {
  * 한 사람을 확인하려고 스무 명의 번호를 화면에 띄울 이유가 없다.
  *
  * 셋 다 상세(`UserDetail`)에 있다. 필요한 한 명을 열어서 본다.
+ *
+ * 본인인증 · 성인인증 만료 시각과 19 토글은 **유저 행의 컬럼**이라 목록에도 싣는다.
+ * 집계와 달리 추가 조회가 없고, "성인인증 유저만 골라 보기"처럼 걸러서 볼 일이 있다.
  */
 export interface User {
   /**
@@ -84,25 +87,42 @@ export interface User {
    */
   lastLoginPlatform?: DevicePlatform;
   createdAt: string;
+  /**
+   * 본인인증(휴대폰) 만료 시각. 비어 있으면 인증한 적이 없거나 철회된 것이다.
+   * **값이 있어도 지났으면 미인증이다** — 유효 여부는 `verificationStateOf()`로 읽는다.
+   */
+  identityVerifiedUntil?: string;
+  /** 성인인증 만료 시각. 읽는 법은 `identityVerifiedUntil`과 같다. */
+  adultVerifiedUntil?: string;
+  /** 앱의 19 콘텐츠 보기 토글. 성인인증이 유효해야 켤 수 있고, 철회 · 만료되면 꺼진다. */
+  adultContentEnabled: boolean;
 }
 
 export interface UserDetail extends User {
   /** 앱 프로필의 자기소개. 크리에이터 한 줄 소개로도 쓴다. 비워 둔 유저가 많다. */
   bio?: string;
   /**
-   * 성인 인증 여부. NSFW 콘텐츠 노출 판단의 기준이다.
+   * 성인 인증이 **지금** 유효한가. NSFW 콘텐츠 노출 판단의 기준이다.
    *
-   * **목록에는 없다.** 한 명을 확인하러 오는 값이라 스무 줄에 늘어놓을 이유가 없고,
-   * 서버도 목록 한 페이지마다 인증 시각을 따로 훑어야 해서 조회가 한 번 더 나갔다.
+   * 서버가 조회 시각 기준으로 판정해 준 값이다(`adultVerifiedUntil`이 미래). 목록에는
+   * 이 불리언 대신 만료 시각만 오므로, 두 화면이 같은 답을 내도록 화면은
+   * `verificationStateOf()`로 읽는다.
    */
   isAdultVerified: boolean;
+  /** 철회되지 않은 가장 최근 성인인증 시각. */
   adultVerifiedAt?: string;
+  /** 본인인증(휴대폰)이 지금 유효한가. 서버가 조회 시각 기준으로 판정한다. */
+  isIdentityVerified: boolean;
+  /** 철회되지 않은 가장 최근 본인인증 시각. */
+  identityVerifiedAt?: string;
+  /** 본인 · 성인인증 이력. 최근 것부터 온다. 갱신으로 교체된 기록도 남아 있다. */
+  verificationHistory: VerificationRecord[];
   /**
-   * 본인인증에서 수집한 번호.
+   * 휴대폰번호.
    *
-   * **아직 모으지 않는 값이라 항상 비어 있다.** 본인인증으로 번호를 받아 두는
-   * 코드가 서버에 없다. 곧 붙을 기능이라 자리를 비워 두고, 붙는 날 서버가 이 칸만
-   * 채우면 화면이 그대로 살아난다.
+   * 본인인증은 붙었지만 **서버가 번호를 관리자 응답에 싣지 않아 항상 비어 있다**
+   * (`UserDetailResponse.phoneNumber`는 늘 null). 인증 여부는 `isIdentityVerified`와
+   * 인증 이력으로 본다. 서버가 번호를 싣기 시작하면 이 칸만 채우면 화면이 살아난다.
    */
   phoneNumber?: string;
   creditBalance: number;
@@ -128,6 +148,128 @@ export interface UserDetail extends User {
   universeChatCount: number;
   universeLikeCount: number;
 }
+
+/** 인증 이력의 종류. PHONE이 본인인증, ADULT가 성인인증이다. */
+export type VerificationType = "PHONE" | "ADULT";
+
+export const VERIFICATION_TYPE_LABEL: Record<VerificationType, string> = {
+  PHONE: "본인인증",
+  ADULT: "성인인증",
+};
+
+/** 본인 · 성인인증 이력 한 줄. */
+export interface VerificationRecord {
+  type: VerificationType;
+  /** 인증 수단 표기(`MOCK` · `KG_INICIS_PASS` 등). 표시는 `formatVerificationMethod()`. */
+  method: string;
+  verifiedAt: string;
+  expiresAt?: string;
+  revokedAt?: string;
+  /**
+   * 철회 사유 원문. `RENEWED`면 다시 인증해 새 기록으로 교체된 것이고,
+   * `ADMIN:{관리자 ID}:{사유}`면 관리자가 철회한 것이다. 해석은 `describeRevokedReason()`.
+   */
+  revokedReason?: string;
+}
+
+/**
+ * 인증 상태.
+ * - `VERIFIED` 만료 시각이 지금보다 뒤
+ * - `EXPIRED` 만료 시각이 지났다(다시 인증해야 한다)
+ * - `NONE` 인증한 적이 없거나 철회돼 만료 시각이 비어 있다
+ */
+export type VerificationState = "VERIFIED" | "EXPIRED" | "NONE";
+
+export const VERIFICATION_STATE_LABEL: Record<VerificationState, string> = {
+  VERIFIED: "인증됨",
+  EXPIRED: "만료",
+  NONE: "미인증",
+};
+
+export const VERIFICATION_STATE_TONE: Record<
+  VerificationState,
+  "success" | "warning" | "neutral"
+> = {
+  VERIFIED: "success",
+  EXPIRED: "warning",
+  NONE: "neutral",
+};
+
+/** 만료 시각으로 인증 상태를 읽는다. 서버 판정과 같게 "만료 시각이 지금보다 뒤"만 유효로 본다. */
+export const verificationStateOf = (until?: string): VerificationState => {
+  if (!until) return "NONE";
+
+  return new Date(until).getTime() > Date.now() ? "VERIFIED" : "EXPIRED";
+};
+
+/**
+ * 상세 화면의 인증 상태. 목록과 같은 답을 내도록 만료 시각을 먼저 본다.
+ *
+ * 만료 시각이 비어 있는데 서버가 유효하다고 한 경우(만료 시각이 생기기 전 기록)만
+ * 서버 판정을 따른다.
+ */
+export const detailVerificationStateOf = (
+  isVerified: boolean,
+  until?: string,
+): VerificationState => {
+  const state = verificationStateOf(until);
+
+  return state === "NONE" && isVerified ? "VERIFIED" : state;
+};
+
+/** 인증 유효 기간(일). 서버는 인증 시각에 1년을 더해 만료 시각을 정한다. */
+export const VERIFICATION_VALID_DAYS = 365;
+
+/**
+ * 만료 시각에서 거꾸로 계산한 인증(갱신) 시각.
+ *
+ * 목록에는 인증 시각이 오지 않고 만료 시각만 온다. 운영자는 "언제 인증했나"를 더 자주
+ * 묻기 때문에, 유효 기간을 빼서 마지막으로 인증 · 갱신한 날을 구한다.
+ */
+export const verifiedAtFromUntil = (until?: string): string | undefined => {
+  if (!until) return undefined;
+
+  const date = new Date(until);
+  date.setDate(date.getDate() - VERIFICATION_VALID_DAYS);
+
+  return date.toISOString();
+};
+
+const VERIFICATION_METHOD_LABEL: Record<string, string> = {
+  MOCK: "모의 인증(개발)",
+  KG_INICIS_PASS: "KG이니시스 PASS",
+};
+
+/** 인증 수단 표기. 모르는 값은 서버 원문을 그대로 보여 준다(새 수단이 붙어도 깨지지 않게). */
+export const formatVerificationMethod = (method: string): string =>
+  VERIFICATION_METHOD_LABEL[method] ?? method;
+
+/** 관리자 철회 사유의 접두사. 서버가 `ADMIN:{관리자 ID}:{사유}`로 남긴다. */
+const ADMIN_REVOKE_PREFIX = "ADMIN:";
+
+/** 철회 사유 원문을 운영자가 읽는 문구로 옮긴다. */
+export const describeRevokedReason = (
+  reason?: string,
+): { label: string; detail?: string } | undefined => {
+  if (!reason) return undefined;
+
+  if (reason === "RENEWED") return { label: "갱신으로 교체" };
+
+  if (reason.startsWith(ADMIN_REVOKE_PREFIX)) {
+    const rest = reason.slice(ADMIN_REVOKE_PREFIX.length);
+    const separator = rest.indexOf(":");
+    // 사유 안에 `:`가 있어도 첫 구분자까지만 관리자 ID다.
+    const adminId = separator >= 0 ? rest.slice(0, separator) : rest;
+    const detail = separator >= 0 ? rest.slice(separator + 1) : undefined;
+
+    return {
+      label: `관리자 철회 (관리자 #${adminId})`,
+      detail: detail || undefined,
+    };
+  }
+
+  return { label: reason };
+};
 
 /**
  * 크레딧 조정 대상으로 고르는 유저.
