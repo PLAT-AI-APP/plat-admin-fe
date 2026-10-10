@@ -47,6 +47,10 @@ const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
   const admin = useAdminStore((state) => state.admin);
+  // 옛 세션(localStorage)에는 roles 가 없을 수 있다.
+  const adminRoleNames = (admin?.roles ?? [])
+    .map((role) => role.roleName)
+    .join(", ");
   const { mutate: submitLogout, isPending: isLoggingOut } = useLogoutMutation();
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -153,12 +157,16 @@ const Header = () => {
                     {admin.name.slice(0, 1)}
                   </span>
 
-                  <span className="text-left leading-tight">
+                  <span className="min-w-0 max-w-[180px] text-left leading-tight">
                     <span className="block body-5 font-medium text-font-1">
                       {admin.name}
                     </span>
-                    <span className="block body-6 text-font-2">
-                      {admin.roleName}
+                    {/* 직책이 여러 개면 이어 붙여 한 줄로 자르고, 전체는 title 로 보여 준다. */}
+                    <span
+                      className="block truncate body-6 text-font-2"
+                      title={adminRoleNames}
+                    >
+                      {adminRoleNames}
                     </span>
                   </span>
                 </button>

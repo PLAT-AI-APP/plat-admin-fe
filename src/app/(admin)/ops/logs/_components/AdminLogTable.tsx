@@ -84,13 +84,16 @@ const AdminLogTable = ({ params, setParams }: AdminLogTableProps) => {
       header: "실행자",
       width: "160px",
       render: (row) => (
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <span className="text-font-1">
             {formatAdmin(row.actor, row.actorId)}
           </span>
-          {/* 지금 직책이 아니라 실행 당시 직책이다. 권한을 되짚을 때 필요하다. */}
+          {/* 지금 직책이 아니라 실행 당시 직책(여럿이면 ", "로 이은 값)이다. 권한을 되짚을 때 필요하다. */}
           {row.roleName && (
-            <span className="body-6 text-font-2">{row.roleName}</span>
+            // 직책이 여럿이면 ", "로 이어 붙인 값이 와 길어질 수 있다.
+            <span className="truncate body-6 text-font-2" title={row.roleName}>
+              {row.roleName}
+            </span>
           )}
         </div>
       ),

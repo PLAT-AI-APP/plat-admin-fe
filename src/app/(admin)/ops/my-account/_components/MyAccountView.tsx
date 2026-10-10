@@ -40,9 +40,21 @@ const MyAccountView = () => {
 
   /* 직책 설명만 목록에서 가져온다. 권한 판정은 언제나 세션의 권한 키로 한다. */
   const { data: roles } = useAdminRoleListQuery();
-  const role = roles?.find((item) => item.roleId === admin?.roleId);
+  const myRoles = admin?.roles ?? [];
 
   if (!admin) return null;
+
+  const roleNames = myRoles.map((item) => item.roleName).join(", ");
+  /* 직책이 하나면 그 직책의 설명을, 여럿이면 합쳐진다는 사실을 보여 준다. */
+  const roleDescription =
+    myRoles.length > 1
+      ? "가진 직책들의 권한을 모두 합친 것입니다."
+      : (roles?.find((item) => item.roleId === myRoles[0]?.roleId)
+          ?.description ?? "직책에 따라 할 수 있는 일이 정해집니다.");
+  /* 목록을 볼 수 없으면(role:read 없음) 직책이 하나일 때만 세션 값으로 판단한다. */
+  const isSuperAdminRole = (roleId: number) =>
+    roles?.find((item) => item.roleId === roleId)?.isSuperAdmin ??
+    (myRoles.length === 1 && admin.isSuperAdmin);
 
   /* 최고관리자는 권한 목록을 보지 않고 전부 통과하므로 자료별로 세지 않는다. */
   const grantedByResource = (
@@ -78,9 +90,18 @@ const MyAccountView = () => {
         <InfoRow
           label="직책"
           value={
-            <Badge tone={admin.isSuperAdmin ? "brand" : "neutral"}>
-              {admin.roleName}
-            </Badge>
+            <span className="flex flex-wrap justify-end gap-1">
+              {myRoles.length > 0
+                ? myRoles.map((item) => (
+                    <Badge
+                      key={item.roleId}
+                      tone={isSuperAdminRole(item.roleId) ? "brand" : "neutral"}
+                    >
+                      {item.roleName}
+                    </Badge>
+                  ))
+                : "-"}
+            </span>
           }
         />
         <InfoRow
@@ -118,10 +139,8 @@ const MyAccountView = () => {
       </Card>
 
       <Card
-        title={`내 권한 · ${admin.roleName}`}
-        description={
-          role?.description ?? "직책에 따라 할 수 있는 일이 정해집니다."
-        }
+        title={`내 권한 · ${roleNames || "-"}`}
+        description={roleDescription}
         className="min-w-0 flex-1"
         noPadding
         bodyClassName="p-5"
