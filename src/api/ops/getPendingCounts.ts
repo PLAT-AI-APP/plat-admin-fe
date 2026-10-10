@@ -24,7 +24,7 @@ const PENDING_REFETCH_MS = 60_000;
  * 대시보드 요약과 따로 둔다. 대시보드는 화면을 열 때 한 번 보는 값이고,
  * 이 값은 콘솔에 머무는 내내 갱신되어야 한다.
  *
- * Q&A · 댓글 · 신고 목록이 모두 실서버라 건수도 목업 여부와 상관없이 실서버에서 받는다.
+ * Q&A · 댓글 · 신고 · 인수 심사 목록이 모두 실서버라 건수도 목업 여부와 상관없이 실서버에서 받는다.
  * 영역별 권한은 서버가 거른다. 교환 요청 건수는 수익 조회 권한이 없으면 부르지 않는다.
  */
 export const usePendingCountsQuery = () => {
@@ -42,6 +42,8 @@ export const usePendingCountsQuery = () => {
     qna: opsQuery.data?.qna ?? 0,
     comment: opsQuery.data?.comment ?? 0,
     report: opsQuery.data?.report ?? 0,
+    // 서버가 아직 필드를 주지 않는 환경(구버전)에서도 0으로 둔다.
+    handover: opsQuery.data?.handover ?? 0,
     redemption: redemptionQuery.data ?? 0,
   };
 

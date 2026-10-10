@@ -168,8 +168,8 @@ export const universes: Universe[] = characterBases.flatMap(
         심사·운영 상태를 섞어 둔다. 서버는 승인되지 않았거나 내려둔 세계관을
         홈 섹션에서 빼기 때문에, 운영 화면에서 그 이유를 구분할 수 있어야 한다.
 
-        삭제는 하드 딜리트라 상태로 남지 않는다 — 지운 세계관은 자료에서 통째로
-        사라지므로 목업도 살아 있는 것만 만든다.
+        목업은 살아 있는 것(활성 · 비활성)만 만든다. 실서버는 삭제 대기 · 파기 ·
+        인수 대기 세계관도 함께 준다.
       */
       const reviewStatus: UniverseReviewStatus =
         seed % 17 === 0 ? "REJECTED" : seed % 9 === 0 ? "PENDING" : "APPROVED";

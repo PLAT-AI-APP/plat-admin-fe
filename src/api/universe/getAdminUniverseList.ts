@@ -102,6 +102,8 @@ interface AdminUniverseItemResponse {
   hashtagCount: number;
   scenarioCount: number;
   translationCount: number;
+  /** 구버전 서버는 주지 않는다. 없으면 인수 아님으로 본다. */
+  adopted?: boolean;
   createdAt: string;
   updatedAt: string | null;
   adult: boolean;
@@ -128,6 +130,7 @@ const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
   hashtagCount: item.hashtagCount,
   scenarioCount: item.scenarioCount,
   translationCount: item.translationCount,
+  isAdopted: item.adopted ?? false,
   createdAt: item.createdAt,
   updatedAt: item.updatedAt,
   // 배포 순서가 어긋나 아직 값을 주지 않는 서버에서는 일반으로 읽는다.

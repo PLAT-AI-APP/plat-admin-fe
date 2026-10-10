@@ -24,7 +24,7 @@ export interface UniversePatchBody {
   tendency?: UniverseTendency;
   category?: UniverseCategory;
   commentEnabled?: boolean;
-  /** ACTIVE ↔ INACTIVE 만 있다. 삭제는 하드 딜리트라 상태로 남지 않는다. */
+  /** ACTIVE ↔ INACTIVE 만 보낼 수 있다. 인수 대기 · 삭제 · 파기는 탈퇴 · 삭제 · 파기 배치가 정한다. */
   status?: UniverseStatus;
   /**
    * 성인(19) 재분류. 켜면 성인인증 유저에게만 보이고 이미지가 보호 저장소로 옮겨진다.

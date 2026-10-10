@@ -12,7 +12,11 @@ import type {
   LegalDocumentFormValues,
   LegalDocumentType,
 } from "@/type/legal";
-import { LEGAL_DOCUMENT_LABEL, RECONSENT_DOCUMENT_TYPES } from "@/type/legal";
+import {
+  LEGAL_DOCUMENT_LABEL,
+  RECONSENT_DOCUMENT_TYPES,
+  legalDocumentPlaceOf,
+} from "@/type/legal";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -26,6 +30,10 @@ const LEGAL_TABS: TabItem<LegalDocumentType>[] = [
   { label: LEGAL_DOCUMENT_LABEL.TERMS_OF_SERVICE, value: "TERMS_OF_SERVICE" },
   { label: LEGAL_DOCUMENT_LABEL.PRIVACY_POLICY, value: "PRIVACY_POLICY" },
   { label: LEGAL_DOCUMENT_LABEL.YOUTH_PROTECTION, value: "YOUTH_PROTECTION" },
+  {
+    label: LEGAL_DOCUMENT_LABEL.UNIVERSE_HANDOVER_CONSENT,
+    value: "UNIVERSE_HANDOVER_CONSENT",
+  },
 ];
 
 /** 표에서 본문을 가늠할 수 있게 마크다운 기호를 걷어낸 앞 2줄만 남긴다. */
@@ -73,7 +81,7 @@ const LegalDocumentManager = () => {
       description: `${LEGAL_DOCUMENT_LABEL[legalDocument.documentType]} ${legalDocument.version} 버전이 ${effectiveDate}부터 시행됩니다.`,
       warning: RECONSENT_DOCUMENT_TYPES.includes(legalDocument.documentType)
         ? "게시한 문서는 고칠 수 없습니다. 시행일이 되면 모든 유저가 다음 방문 때 재동의 화면을 봅니다."
-        : "게시한 문서는 고칠 수 없습니다. 시행일이 되면 서비스의 약관 페이지에 이 버전이 보입니다.",
+        : `게시한 문서는 고칠 수 없습니다. 시행일이 되면 서비스의 ${legalDocumentPlaceOf(legalDocument.documentType)}에 이 버전이 보입니다.`,
       confirmText: "게시",
       onConfirm: async () => {
         await publishMutation.mutateAsync(legalDocument.documentId);
