@@ -25,9 +25,12 @@ const ExpiryBadge = ({ expiresOn }: { expiresOn: string | null }) => {
   return null;
 };
 
-/** AWS 주체 ARN 에서 사람이 읽을 부분만(역할·사용자 이름). */
-const principalName = (arn: string | null) =>
-  arn ? arn.split("/").slice(-2).join("/") : "";
+/** AWS 주체 ARN 에서 사람이 읽을 이름만. user/plat-admin → plat-admin, assumed-role/역할/세션 → 역할/세션. */
+const principalName = (arn: string | null) => {
+  if (!arn) return "";
+  const resource = arn.slice(arn.lastIndexOf(":") + 1);
+  return resource.replace(/^(user|assumed-role|role)\//, "");
+};
 
 /**
  * 시크릿 목록. 값은 서버도 읽지 않는다 — 저장소의 버전 · 수정 시각과 관리자 화면에서 넣은 값의 끝 4자리만 보인다.
@@ -86,7 +89,7 @@ const SecretManager = () => {
           </Link>
         </Alert>
       )}
-      {missing.length > 0 && (
+      {missing.length > 0 && !data.readOnly && (
         <Alert tone="danger" title="저장소에 없는 시크릿이 있습니다">
           {missing.map((secret) => secret.label).join(", ")} — 이대로 다시
           띄우면 서버가 뜨지 않습니다.

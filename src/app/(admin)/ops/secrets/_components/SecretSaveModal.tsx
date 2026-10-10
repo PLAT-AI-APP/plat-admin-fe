@@ -77,7 +77,7 @@ const SecretSaveModal = ({
             hint={
               hasEdgeSpace
                 ? "앞뒤에 공백이나 줄바꿈이 있습니다."
-                : `비워 두면 값은 그대로 두고 만료일 · 메모만 바꿉니다. 저장 뒤 ${target.restartApps.join(" · ")} 를 다시 띄워야 반영됩니다.`
+                : "비워 두면 값은 그대로 둡니다."
             }
           >
             <Input
@@ -91,7 +91,12 @@ const SecretSaveModal = ({
           </FormField>
         )}
 
-        {!isLocked && target.note && <Alert tone="info">{target.note}</Alert>}
+        {!isLocked && (
+          <Alert tone="info">
+            저장 뒤 {target.restartApps.join(" · ")} 를 다시 띄워야 반영됩니다.
+            {target.note && ` ${target.note}`}
+          </Alert>
+        )}
 
         <FormField
           label="만료일"
