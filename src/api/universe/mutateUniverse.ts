@@ -26,6 +26,11 @@ export interface UniversePatchBody {
   commentEnabled?: boolean;
   /** ACTIVE ↔ INACTIVE 만 보낼 수 있다. 인수 대기 · 삭제 · 파기는 탈퇴 · 삭제 · 파기 배치가 정한다. */
   status?: UniverseStatus;
+  /**
+   * 성인(19) 재분류. 켜면 성인인증 유저에게만 보이고 이미지가 보호 저장소로 옮겨진다.
+   * 끄면 반대로 일반 세계관이 된다.
+   */
+  adult?: boolean;
 }
 
 export interface UniverseReviewBody {

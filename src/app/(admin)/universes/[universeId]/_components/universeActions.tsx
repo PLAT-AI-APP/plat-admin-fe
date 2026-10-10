@@ -28,6 +28,8 @@ interface BuildUniverseActionsParams {
   onDeactivate: () => void;
   onChangeVisibility: () => void;
   onChangeClassification: () => void;
+  /** 성인(19) 재분류. 넘기지 않으면 메뉴에 두지 않는다. */
+  onChangeAdult?: () => void;
   onToggleComment: (next: boolean) => void;
 }
 
@@ -51,6 +53,7 @@ export const buildUniverseActions = ({
   onDeactivate,
   onChangeVisibility,
   onChangeClassification,
+  onChangeAdult,
   onToggleComment,
 }: BuildUniverseActionsParams): DropdownItem[] => {
   const reviewActions: DropdownItem[] = [
@@ -104,6 +107,15 @@ export const buildUniverseActions = ({
       icon: <Layers size={15} />,
       onSelect: onChangeClassification,
     },
+    ...(onChangeAdult
+      ? [
+          {
+            label: "성인 콘텐츠 분류 변경",
+            icon: <ShieldAlert size={15} />,
+            onSelect: onChangeAdult,
+          },
+        ]
+      : []),
   ];
 
   const commentAction: DropdownItem = {

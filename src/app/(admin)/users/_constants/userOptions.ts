@@ -37,3 +37,14 @@ export const SUSPEND_PERIOD_OPTIONS: SelectOption[] = [
   { label: "30일", value: "30" },
   { label: "영구 정지", value: "PERMANENT" },
 ];
+
+/**
+ * 인증 상태 필터. 값은 서버 `VerificationFilter` enum 그대로다.
+ * 판정은 서버가 조회 시각 기준으로 한다 — 만료가 지난 인증은 "완료"에 걸리지 않는다.
+ */
+export const USER_VERIFICATION_FILTER_OPTIONS: SelectOption[] = [
+  { label: "인증 전체", value: "" },
+  { label: "본인인증 완료", value: "IDENTITY_VERIFIED" },
+  { label: "성인인증 완료", value: "ADULT_VERIFIED" },
+  { label: "본인인증 없음 · 만료", value: "UNVERIFIED" },
+];

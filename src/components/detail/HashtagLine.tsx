@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import AdultMark from "./AdultMark";
 
 export interface HashtagLineItem {
   key: string;
@@ -34,7 +35,7 @@ const HashtagLine = ({ items, className }: HashtagLineProps) => {
           title={item.isDisabled ? "비활성 태그 · 앱에 노출되지 않습니다" : undefined}
         >
           #{item.label}
-          {item.isAdult && <span className="caption-3 text-danger">19</span>}
+          {item.isAdult && <AdultMark />}
         </span>
       ))}
     </p>

@@ -36,6 +36,8 @@ export const universeSettingsSchema = z.object({
     "MYSTERY",
   ]),
   tendency: z.enum(["ALL", "MALE_ORIENTED", "FEMALE_ORIENTED"]),
+  /** 성인(19) 분류. 켜면 성인인증 유저에게만 보인다. */
+  adult: z.boolean(),
 });
 
 export type UniverseSettingsSchema = z.infer<typeof universeSettingsSchema>;

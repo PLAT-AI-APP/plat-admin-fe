@@ -29,6 +29,7 @@ import Select, { type SelectOption } from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import {
+  UNIVERSE_ADULT_FILTER_OPTIONS,
   UNIVERSE_CATEGORY_FILTER_OPTIONS,
   UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_ORDER_OPTIONS,
@@ -44,6 +45,7 @@ import {
 import UniverseStateBadge from "@/components/universe/UniverseStateBadge";
 import UniverseTendencyDot from "@/components/universe/UniverseTendencyDot";
 import UniverseTendencyLegend from "@/components/universe/UniverseTendencyLegend";
+import AdultMark from "@/components/detail/AdultMark";
 
 /** 주소에 실리는 목록 조건. 전역 검색(⌘K)이 넘겨 주는 keyword도 여기로 들어온다. */
 const DEFAULT_PARAMS = {
@@ -56,6 +58,7 @@ const DEFAULT_PARAMS = {
   reviewStatus: "",
   tendency: "",
   commentEnabled: "",
+  adult: "",
   /*
     드릴다운 수신용. 세계관 상세의 "제작자"가 `/universes?creatorId=...`로
     링크를 걸고, 해시태그 화면에서도 `hashtagId`로 사용처를 보러 온다.
@@ -177,6 +180,7 @@ const UniverseManager = () => {
   const tendency = params.tendency as AdminUniverseListParams["tendency"];
   const commentEnabled =
     params.commentEnabled as AdminUniverseListParams["commentEnabled"];
+  const adult = params.adult as AdminUniverseListParams["adult"];
 
   const { data, isLoading, isError, error, refetch, isFetching } =
     useAdminUniverseListQuery({
@@ -190,6 +194,7 @@ const UniverseManager = () => {
       reviewStatus,
       tendency,
       commentEnabled,
+      adult,
       creatorId,
       hashtagId,
     });
@@ -302,6 +307,10 @@ const UniverseManager = () => {
                 </Badge>
               )}
               <p className="title-5 truncate text-font-1">{row.title}</p>
+              {/* 제목 뒤에 두되 줄지 않게 한다. 긴 제목이 잘려도 19는 남는다. */}
+              {row.isAdult && (
+                <AdultMark title="성인 콘텐츠 · 성인인증 유저에게만 보입니다." />
+              )}
             </div>
             <p className="body-6 mt-0.5 truncate text-font-2">
               {row.introduce}
@@ -422,6 +431,7 @@ const UniverseManager = () => {
     { header: "성향", value: (row) => UNIVERSE_TENDENCY_LABEL[row.tendency] },
     { header: "공식", value: (row) => (row.isOfficial ? "Y" : "N") },
     { header: "운영 인수", value: (row) => (row.isAdopted ? "Y" : "N") },
+    { header: "성인", value: (row) => (row.isAdult ? "Y" : "N") },
     {
       header: "공개 범위",
       value: (row) => UNIVERSE_VISIBILITY_LABEL[row.visibility],
@@ -529,6 +539,13 @@ const UniverseManager = () => {
               }
               selectBoxClassName="w-28"
               aria-label="댓글 허용 필터"
+            />
+            <Select
+              options={UNIVERSE_ADULT_FILTER_OPTIONS}
+              value={adult}
+              onChange={(event) => setParams({ adult: event.target.value })}
+              selectBoxClassName="w-36"
+              aria-label="성인 분류 필터"
             />
             <Select
               options={UNIVERSE_REVIEW_FILTER_OPTIONS}

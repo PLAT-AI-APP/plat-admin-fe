@@ -13,6 +13,8 @@ import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
+import Switch from "@/components/ui/Switch";
+import AdultMark from "@/components/detail/AdultMark";
 import {
   UNIVERSE_CATEGORY_OPTIONS,
   UNIVERSE_TENDENCY_OPTIONS,
@@ -20,11 +22,14 @@ import {
 } from "@/app/(admin)/universes/[universeId]/_lib/universeMeta";
 
 /** 무엇을 바꾸러 열었는지. 한 번에 한 가지만 바꾸게 해 오조작을 줄인다. */
-export type UniverseSettingsMode = "visibility" | "classification";
+export type UniverseSettingsMode = "visibility" | "classification" | "adult";
 
 interface UniverseSettingsFormModalProps {
   mode: UniverseSettingsMode | null;
-  universe: Pick<UniverseDetail, "visibility" | "category" | "tendency">;
+  universe: Pick<
+    UniverseDetail,
+    "visibility" | "category" | "tendency" | "isAdult"
+  >;
   isPending: boolean;
   onClose: () => void;
   /** 바뀐 필드만 담긴 본문. 바뀐 것이 없으면 호출되지 않는다. */
@@ -44,6 +49,11 @@ const MODE_TEXT: Record<
     title: "장르 · 성향 변경",
     description:
       "장르와 성향은 앱의 탐색·추천 분류에 쓰입니다. 신고로 분류 오류가 확인됐을 때 바로잡습니다.",
+  },
+  adult: {
+    title: "성인 콘텐츠 분류 변경",
+    description:
+      "성인 콘텐츠로 분류하면 성인인증 유저에게만 보입니다. 신고로 분류 오류가 확인됐을 때 바로잡습니다.",
   },
 };
 
@@ -74,6 +84,7 @@ const UniverseSettingsFormModal = ({
       visibility: universe.visibility,
       category: universe.category,
       tendency: universe.tendency,
+      adult: universe.isAdult,
     },
   });
 
@@ -88,6 +99,10 @@ const UniverseSettingsFormModal = ({
     if (mode === "classification") {
       if (values.category !== universe.category) body.category = values.category;
       if (values.tendency !== universe.tendency) body.tendency = values.tendency;
+    }
+
+    if (mode === "adult" && values.adult !== universe.isAdult) {
+      body.adult = values.adult;
     }
 
     if (Object.keys(body).length === 0) {
@@ -165,6 +180,42 @@ const UniverseSettingsFormModal = ({
                 </FormField>
               )}
             />
+          </>
+        )}
+
+        {mode === "adult" && (
+          <>
+            <Controller
+              control={control}
+              name="adult"
+              render={({ field }) => (
+                <div className="flex items-center justify-between gap-4 rounded-field border border-border-main px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="inline-flex items-center gap-1 body-4 font-medium text-font-1">
+                      성인 콘텐츠
+                      <AdultMark />
+                    </p>
+                    <p className="mt-0.5 body-6 text-font-2">
+                      {field.value
+                        ? "성인인증 유저에게만 보입니다."
+                        : "모든 유저에게 보입니다."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={field.value}
+                    onChange={field.onChange}
+                    label="성인 콘텐츠"
+                  />
+                </div>
+              )}
+            />
+
+            {/* 재분류는 노출 대상과 이미지 저장 위치를 함께 바꾼다. 누르기 전에 알린다. */}
+            <Alert tone="warning">
+              성인 콘텐츠로 재분류하면 성인인증 유저에게만 보이게 되고, 이미지가
+              보호 저장소로 옮겨집니다. 일반으로 되돌리면 다시 모든 유저에게
+              보입니다.
+            </Alert>
           </>
         )}
       </div>

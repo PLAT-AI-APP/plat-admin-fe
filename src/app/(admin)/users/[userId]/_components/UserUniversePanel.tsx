@@ -20,6 +20,7 @@ import UniverseStateBadge from "@/components/universe/UniverseStateBadge";
 import UniverseTendencyDot from "@/components/universe/UniverseTendencyDot";
 import UniverseTendencyLegend from "@/components/universe/UniverseTendencyLegend";
 import { USER_DETAIL_PAGE_SIZE } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
+import AdultMark from "@/components/detail/AdultMark";
 
 interface UserUniversePanelProps {
   userId: string;
@@ -67,6 +68,7 @@ const UserUniversePanel = ({ userId, nickname }: UserUniversePanelProps) => {
             <div className="flex min-w-0 items-center gap-1.5">
               <UniverseTendencyDot tendency={row.tendency} />
               <p className="title-5 truncate text-font-1">{row.title}</p>
+              {row.isAdult && <AdultMark title="성인 콘텐츠" />}
             </div>
             <p className="body-6 mt-0.5 truncate text-font-2">
               {row.introduce}
