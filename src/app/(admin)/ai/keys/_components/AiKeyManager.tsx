@@ -130,7 +130,7 @@ const AiKeyManager = () => {
           <span className="body-6 font-mono text-font-1">
             {slot.registered ? slot.maskedKey : "등록 안 됨"}
           </span>
-          <span className="body-7 text-font-2">
+          <span className="body-6 text-font-2">
             {slot.registered
               ? `${slot.expiresOn ? `만료 ${slot.expiresOn} · ` : ""}${formatDateTime(slot.updatedAt)} ${slot.updatedBy ?? ""}`
               : slot.slot === "MAIN"
@@ -139,7 +139,7 @@ const AiKeyManager = () => {
           </span>
           {check && (
             <span
-              className={`body-7 ${check.isSuccess ? "text-success" : "text-danger"}`}
+              className={`body-6 ${check.isSuccess ? "text-success" : "text-danger"}`}
             >
               {check.isSuccess ? "연결 정상" : "연결 실패"} · {check.message} (
               {formatDateTime(check.checkedAt)})
