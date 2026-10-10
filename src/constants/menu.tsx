@@ -430,6 +430,12 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Server size={SUB_ICON_SIZE} />,
       },
       {
+        label: "시크릿",
+        href: "/ops/secrets",
+        permission: "server:read",
+        icon: <Key size={SUB_ICON_SIZE} />,
+      },
+      {
         label: "배치 관리",
         href: "/ops/batch",
         permission: "batch:read",
