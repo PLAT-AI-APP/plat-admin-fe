@@ -111,7 +111,7 @@ const UniverseHandoverManager = () => {
 
   /* 대표 이미지를 원본으로 크게 넘겨 본다. 실존 인물 · 도용 이미지는 80px 썸네일로는 가릴 수 없다. */
   const lightboxItems: LightboxItem[] = (data?.content ?? []).flatMap((row) => {
-    const url = resolveImageUrl(null, row.profileImageFileId, "UNIVERSE_PROFILE", "ORIGIN");
+    const url = resolveImageUrl(row.profileImageUrl, row.profileImageFileId, "UNIVERSE_PROFILE", "ORIGIN");
     return url
       ? [{ id: row.handoverId, url, title: row.universeTitle ?? "(제목 없음)", caption: `인수 #${row.handoverId}` }]
       : [];
@@ -186,7 +186,7 @@ const UniverseHandoverManager = () => {
         <div className="flex min-w-0 items-center gap-3">
           {/* 실존 인물 · 도용 이미지는 목록에서 먼저 눈에 걸린다. UNIVERSE_PROFILE 의 가장 작은 규격이 SQ80 이다. */}
           <EntityImage
-            src={resolveImageUrl(null, row.profileImageFileId, "UNIVERSE_PROFILE", "SQ80")}
+            src={resolveImageUrl(row.profileImageUrl, row.profileImageFileId, "UNIVERSE_PROFILE", "SQ80")}
             alt={row.universeTitle ?? "(제목 없음)"}
             fileId={row.profileImageFileId}
             className="w-11 shrink-0"

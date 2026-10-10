@@ -46,6 +46,11 @@ export interface UniverseHandover {
   universeTitle: string | null;
   /** 세계관 대표 이미지. 실존 인물 · 도용 이미지 심사에 쓴다. 파기돼 없으면 null. */
   profileImageFileId: string | null;
+  /**
+   * 성인 세계관 대표 이미지의 서명 URL. 이미지가 보호 경로로 옮겨져 fileId 로 만든 주소로는 읽히지 않는다.
+   * 일반 세계관은 null 이고 화면이 fileId 로 만든다. 구버전 서버는 주지 않는다.
+   */
+  profileImageUrl?: string | null;
   status: UniverseHandoverStatus;
   consentDocumentId: string;
   consentVersion: string;

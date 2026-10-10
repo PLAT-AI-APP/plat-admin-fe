@@ -95,7 +95,7 @@ const HandoverBulkApproveModal = ({
             {preview.map((handover) => (
               <li key={handover.handoverId} title={handover.universeTitle ?? "(제목 없음)"}>
                 <EntityImage
-                  src={resolveImageUrl(null, handover.profileImageFileId, "UNIVERSE_PROFILE", "SQ80")}
+                  src={resolveImageUrl(handover.profileImageUrl, handover.profileImageFileId, "UNIVERSE_PROFILE", "SQ80")}
                   alt={handover.universeTitle ?? "(제목 없음)"}
                   fileId={handover.profileImageFileId}
                   className="w-full"

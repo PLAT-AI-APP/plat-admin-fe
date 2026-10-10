@@ -34,7 +34,7 @@ const HandoverSummary = ({ handover }: { handover: UniverseHandover }) => {
   return (
     <div className="flex gap-3 rounded-card border border-border-main bg-subtle p-3">
       <EntityImage
-        src={resolveImageUrl(null, handover.profileImageFileId, "UNIVERSE_PROFILE", "SQ140")}
+        src={resolveImageUrl(handover.profileImageUrl, handover.profileImageFileId, "UNIVERSE_PROFILE", "SQ140")}
         alt={title}
         fileId={handover.profileImageFileId}
         className="w-18 shrink-0"
