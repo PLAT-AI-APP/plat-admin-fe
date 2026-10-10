@@ -9,10 +9,13 @@ export interface SecretItem {
   /** Parameter Store 이름(/plat/<env>/secret/<name>). */
   name: string;
   label: string;
+  /** 화면에서 묶는 단위. 서버가 주는 순서가 화면 순서다. */
+  group: string;
+  groupLabel: string;
   grade: SecretGrade;
   /** 화면에서 바꾸지 못하는 사유. null 이면 바꿀 수 있다. */
   lockedReason: string | null;
-  /** 값을 바꾸면 다시 띄워야 하는 앱. */
+  /** 값을 바꾸면 다시 띄워야 하는 앱. 서버 상태의 app 이름(api · ai · admin)이다. */
   restartApps: string[];
   /** 바꾸기 전에 알아야 할 것. 없으면 빈 문자열. */
   note: string;
