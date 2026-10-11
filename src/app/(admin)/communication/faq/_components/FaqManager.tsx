@@ -6,7 +6,7 @@ import { useFaqMutation } from "@/api/communication/mutateFaq";
 import { useListParams } from "@/hooks/useListParams";
 import { formatDateTime } from "@/lib/dayjs";
 import { showErrorToast } from "@/lib/toast";
-import { formatAdmin, formatWithCommas } from "@/lib/utils";
+import { formatAdmin, formatWithCommas, stripMarkdown } from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import { openConfirm } from "@/store/useConfirmStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
@@ -136,7 +136,7 @@ const FaqManager = () => {
       render: (row) => (
         <TableCellStack
           primary={<span className="block max-w-120 truncate">{row.question}</span>}
-          secondary={<span className="block max-w-120 truncate">{row.answer}</span>}
+          secondary={<span className="block max-w-120 truncate">{stripMarkdown(row.answer)}</span>}
         />
       ),
     },

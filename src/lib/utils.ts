@@ -158,3 +158,12 @@ export const formatBytes = (bytes: number): string => {
   // B 단위는 소수점이 의미 없다. 512.0 B 는 읽는 사람을 멈칫하게 한다.
   return `${exponent === 0 ? value : value.toFixed(1)} ${BYTE_UNITS[exponent]}`;
 };
+
+/** 목록 요약용: 마크다운 기호(제목·굵게·기울임·목록·인라인코드·링크)를 걷어 한 줄 글자만 남긴다. */
+export const stripMarkdown = (markdown: string) =>
+  markdown
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^\s{0,3}(#{1,6}|[-*+]|\d+\.|>)\s+/gm, "")
+    .replace(/(\*\*|__|\*|_|`)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
