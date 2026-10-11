@@ -1,7 +1,18 @@
 import { z } from "zod";
 
 export const faqSchema = z.object({
-  category: z.enum(["ACCOUNT", "PAYMENT", "REFUND", "CHARACTER", "CHAT", "ETC"]),
+  category: z.enum([
+    "SERVICE",
+    "ACCOUNT",
+    "VERIFICATION",
+    "PAYMENT",
+    "REFUND",
+    "CHARACTER",
+    "CHAT",
+    "CREATOR",
+    "REPORT",
+    "ETC",
+  ]),
   question: z
     .string()
     .trim()
