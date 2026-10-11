@@ -464,21 +464,6 @@ const DocsPageEditor = ({
                   {...register(`translations.${key}.summary`)}
                 />
               </FormField>
-
-              <FormField label="본문" error={errors.translations?.[key]?.content?.message}>
-                <Controller
-                  control={control}
-                  name={`translations.${key}.content`}
-                  render={({ field }) => (
-                    <DocsMarkdownEditor
-                      value={field.value}
-                      onChange={field.onChange}
-                      hasError={Boolean(errors.translations?.[key]?.content)}
-                      disabled={isReadOnly}
-                    />
-                  )}
-                />
-              </FormField>
             </div>
           ))}
 
@@ -520,6 +505,25 @@ const DocsPageEditor = ({
               {...register("slug", { onChange: () => setIsSlugTouched(true) })}
             />
           </FormField>
+
+          {codes.map((key) => (
+            <div key={key} hidden={key !== locale}>
+              <FormField label="본문" error={errors.translations?.[key]?.content?.message}>
+                <Controller
+                  control={control}
+                  name={`translations.${key}.content`}
+                  render={({ field }) => (
+                    <DocsMarkdownEditor
+                      value={field.value}
+                      onChange={field.onChange}
+                      hasError={Boolean(errors.translations?.[key]?.content)}
+                      disabled={isReadOnly}
+                    />
+                  )}
+                />
+              </FormField>
+            </div>
+          ))}
         </form>
       )}
     </Card>
