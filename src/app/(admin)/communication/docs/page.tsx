@@ -7,7 +7,7 @@ export default function DocsPage() {
   return (
     <>
       <PageHeader
-        title="문서"
+        title="문서 관리"
         description="사용자 사이트 문서(/docs)의 그룹과 페이지를 마크다운으로 작성하고 게시합니다."
       />
 
