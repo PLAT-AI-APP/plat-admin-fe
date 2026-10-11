@@ -52,6 +52,8 @@ interface AppProfilePreset {
   imageBaseUri: string;
   /** MSW 목업 워커를 띄우는가. */
   mocking: boolean;
+  /** 사용자 사이트(plat-fe) 오리진. 가이드 문서의 '사이트에서 보기' 링크가 쓴다. */
+  userSiteUri: string;
 }
 
 /**
@@ -67,6 +69,7 @@ export const APP_PROFILE_PRESETS: Record<AppProfile, AppProfilePreset> = {
     liveBaseUri: "http://localhost:8081",
     imageBaseUri: "http://localhost:8080",
     mocking: true,
+    userSiteUri: "http://localhost:3000",
   },
   develop: {
     label: "개발",
@@ -74,12 +77,14 @@ export const APP_PROFILE_PRESETS: Record<AppProfile, AppProfilePreset> = {
     imageBaseUri: "https://api-dev.plat.so",
     // 클로즈베타는 dev 서버로 운영한다. 운영자가 가짜 화면을 진짜로 착각하지 않게 목업을 끈다.
     mocking: false,
+    userSiteUri: "https://dev.plat.so",
   },
   main: {
     label: "운영",
     liveBaseUri: "https://admin-api.plat.so",
     imageBaseUri: "https://api.plat.so",
     mocking: false,
+    userSiteUri: "https://plat.so",
   },
 };
 
@@ -118,6 +123,8 @@ export interface AppEnv {
   liveBaseUri: string;
   /** 이미지 서빙 베이스. */
   imageBaseUri: string;
+  /** 사용자 사이트 오리진. */
+  userSiteUri: string;
 }
 
 const override = (value: string | undefined) => value?.trim() || undefined;
@@ -150,6 +157,8 @@ export const resolveAppEnv = (
     liveBaseUri,
     imageBaseUri:
       override(env.NEXT_PUBLIC_IMAGE_BASE_URI) ?? preset.imageBaseUri,
+    userSiteUri:
+      override(env.NEXT_PUBLIC_USER_SITE_URI) ?? preset.userSiteUri,
     /* 목업을 끄면 죽은 오리진을 둘 이유가 없다. 실서버가 직접 받게 한다. */
     mockBaseUri:
       override(env.NEXT_PUBLIC_BASE_URI) ?? (mocking ? MOCK_ORIGIN : liveBaseUri),
