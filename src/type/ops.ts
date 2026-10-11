@@ -3,7 +3,8 @@ import type { PermissionKey } from "./permission";
 /**
  * 직책.
  *
- * 권한은 사람이 아니라 **직책**이 갖는다. 관리자는 직책에 들어갈 뿐이다.
+ * 권한은 사람이 아니라 **직책**이 갖는다. 관리자는 직책을 여러 개 가질 수 있고,
+ * 권한은 가진 직책들의 권한을 모두 합친 것이다.
  * 사람이 바뀌어도 직책은 남고, 규칙이 바뀌면 직책 하나만 고치면 된다.
  */
 export interface AdminRole {
@@ -18,9 +19,18 @@ export interface AdminRole {
    * "권한을 되돌릴 수 있는 사람이 아무도 없는" 상태가 만들어진다.
    */
   isSuperAdmin: boolean;
-  /** 이 직책에 속한 관리자 수. 지우기 전에 옮길 사람이 있는지 보여 준다. */
+  /**
+   * 이 직책을 가진 관리자 수. 지우기 전에 직책에서 뺄 사람이 있는지 보여 준다.
+   * 한 관리자가 여러 직책을 가질 수 있어 직책별 수를 더하면 전체 인원보다 클 수 있다.
+   */
   memberCount: number;
   createdAt: string;
+}
+
+/** 관리자가 가진 직책 하나. 표 · 헤더에서 바로 보여 주기 위해 이름을 함께 받는다. */
+export interface AdminRoleRef {
+  roleId: number;
+  roleName: string;
 }
 
 export interface AdminRoleFormValues {
@@ -38,14 +48,13 @@ export interface AdminRoleFormValues {
  */
 export type ManagerStatus = "INVITED" | "ACTIVE" | "INACTIVE" | "LOCKED";
 
-/** 관리자 계정. 권한은 직접 갖지 않고 배정된 직책에서 가져온다. */
+/** 관리자 계정. 권한은 직접 갖지 않고 가진 직책들에서 가져온다. */
 export interface Manager {
   managerId: number;
   name: string;
   email: string;
-  roleId: number;
-  /** 표에서 바로 보여 주기 위해 서버가 함께 내려준다. */
-  roleName: string;
+  /** 가진 직책들. roleId 오름차순이며 최소 1개다. */
+  roles: AdminRoleRef[];
   status: ManagerStatus;
   /** 로그인 실패 누적. 성공하면 0으로 돌아간다. */
   failedLoginCount: number;
@@ -71,7 +80,8 @@ export interface Manager {
 export interface ManagerFormValues {
   name: string;
   email: string;
-  roleId: number;
+  /** 가질 직책들. 수정 때는 이 목록으로 통째로 바꾼다. */
+  roleIds: number[];
 }
 
 /**

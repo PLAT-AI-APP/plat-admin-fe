@@ -18,7 +18,7 @@ import type {
  */
 interface ManagerUpdateBody {
   name: string;
-  roleId: number;
+  roleIds: number[];
   status: ManagerStatus;
 }
 
@@ -27,7 +27,8 @@ const toUpdateBody = (
   patch: Partial<ManagerUpdateBody>,
 ): ManagerUpdateBody => ({
   name: patch.name ?? manager.name,
-  roleId: patch.roleId ?? manager.roleId,
+  // 상태만 바꿀 때도 지금 가진 직책 전체를 보낸다(전체 교체라 빠지면 직책이 사라진다).
+  roleIds: patch.roleIds ?? manager.roles.map((role) => role.roleId),
   status: patch.status ?? manager.status,
 });
 
@@ -115,7 +116,7 @@ export const useManagerMutation = () => {
     { manager: Manager; values: ManagerFormValues }
   >({
     mutationFn: ({ manager, values }) =>
-      updateManager(manager, { name: values.name, roleId: values.roleId }),
+      updateManager(manager, { name: values.name, roleIds: values.roleIds }),
     onSuccess: () => {
       showAppToast("success", "관리자 정보를 수정했습니다.");
       invalidateManagerList();

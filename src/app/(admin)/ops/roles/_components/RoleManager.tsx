@@ -94,7 +94,7 @@ const findFormError = (role: AdminRole): string | null => {
 /**
  * 직책 · 권한 설정.
  *
- * **권한은 사람이 아니라 직책이 갖는다.** 관리자는 직책에 들어갈 뿐이다.
+ * **권한은 사람이 아니라 직책이 갖는다.** 관리자는 직책을 (여러 개) 가질 뿐이다.
  * 사람마다 권한을 주면 관리자가 열 명일 때 설정도 열 번, 점검도 열 번이고,
  * 규칙이 바뀌면 열 곳을 고쳐야 한다. 한 곳만 빠뜨리면 그 사람만 조용히 다른 권한을 갖는다.
  *
@@ -206,7 +206,7 @@ const RoleManager = () => {
   const handleDelete = (role: AdminRole) =>
     openConfirm({
       title: `'${role.name}' 직책을 삭제할까요?`,
-      description: "이 직책에 속한 관리자가 없어야 지울 수 있습니다.",
+      description: "이 직책을 가진 관리자가 없어야 지울 수 있습니다. 먼저 관리자 관리에서 이 직책을 빼 주세요.",
       warning: "삭제한 직책은 되돌릴 수 없습니다.",
       confirmText: "삭제",
       tone: "danger",

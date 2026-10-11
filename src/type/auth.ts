@@ -1,4 +1,5 @@
 import type { PermissionKey } from "./permission";
+import type { AdminRoleRef } from "./ops";
 
 /**
  * 로그인한 관리자.
@@ -10,10 +11,14 @@ export interface AdminProfile {
   managerId: number;
   name: string;
   email: string;
-  roleId: number;
-  roleName: string;
-  /** 최고관리자는 권한 목록을 보지 않고 전부 통과한다. */
+  /**
+   * 가진 직책들(roleId 오름차순).
+   * 옛 세션(localStorage)에는 없을 수 있으므로 읽을 때는 `?? []` 로 막는다.
+   */
+  roles: AdminRoleRef[];
+  /** 직책 중 하나라도 최고관리자면 참. 최고관리자는 권한 목록을 보지 않고 전부 통과한다. */
   isSuperAdmin: boolean;
+  /** 가진 직책들의 권한을 모두 합친 것(최고관리자면 빈 배열). */
   permissions: PermissionKey[];
   lastLoginAt: string | null;
   lastLoginIp: string | null;

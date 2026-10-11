@@ -30,7 +30,8 @@ export const getManagerList = async ({
       // 이름 · 이메일 어느 쪽에 걸려도 찾은 것으로 본다.
       matchesKeyword(keyword, manager.name, manager.email) &&
       (!status || manager.status === status) &&
-      (!roleId || String(manager.roleId) === roleId),
+      (!roleId ||
+        manager.roles.some((role) => String(role.roleId) === roleId)),
   );
 };
 

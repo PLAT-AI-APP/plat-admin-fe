@@ -92,18 +92,20 @@ const AdminAccountManager = () => {
     manager.managerId === currentAdmin?.managerId;
 
   /*
-    최고관리자가 아니면 자기 권한 안의 직책을 가진 계정만 고치고 · 비밀번호를 초기화할 수 있다.
-    직책 목록을 볼 수 없으면(role:read 없음) 판단할 근거가 없으니 서버에 맡긴다.
+    최고관리자가 아니면 가진 직책이 **모두** 자기 권한 안에 있는 계정만 고치고 · 비밀번호를
+    초기화할 수 있다. 목록에 없는 직책(role:read 없음 등)은 판단할 근거가 없으니 서버에 맡긴다.
   */
-  const canHandle = (manager: Manager) => {
-    const role = roles.find((item) => item.roleId === manager.roleId);
+  const canHandle = (manager: Manager) =>
+    (manager.roles ?? []).every((managerRole) => {
+      const role = roles.find((item) => item.roleId === managerRole.roleId);
 
-    return !role || isRoleAssignable(role, currentAdmin);
-  };
+      return !role || isRoleAssignable(role, currentAdmin);
+    });
 
-  /* 최고관리자 계정의 삭제 · 잠금 해제는 최고관리자만 한다. */
+  /* 최고관리자 직책을 가진 계정의 삭제 · 잠금 해제는 최고관리자만 한다. */
   const canHandleSuper = (manager: Manager) =>
-    Boolean(currentAdmin?.isSuperAdmin) || !isSuperAdminRole(manager.roleId);
+    Boolean(currentAdmin?.isSuperAdmin) ||
+    !(manager.roles ?? []).some((role) => isSuperAdminRole(role.roleId));
 
   const handleOpenCreate = () => {
     setEditingManager(undefined);
@@ -282,11 +284,15 @@ const AdminAccountManager = () => {
     {
       key: "role",
       header: "직책",
-      width: "120px",
+      width: "200px",
       render: (manager) => (
-        <Badge tone={roleTone(isSuperAdminRole(manager.roleId))}>
-          {manager.roleName}
-        </Badge>
+        <span className="flex flex-wrap gap-1">
+          {(manager.roles ?? []).map((role) => (
+            <Badge key={role.roleId} tone={roleTone(isSuperAdminRole(role.roleId))}>
+              {role.roleName}
+            </Badge>
+          ))}
+        </span>
       ),
     },
     {

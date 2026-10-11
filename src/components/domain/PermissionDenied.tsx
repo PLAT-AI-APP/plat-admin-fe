@@ -46,7 +46,7 @@ const PermissionDenied = ({
           이 화면을 볼 권한이 없습니다.
         </p>
         <p className="body-5 text-font-2">
-          현재 직책은 <b className="text-font-1">{admin?.roleName ?? "-"}</b>
+          현재 직책은 <b className="text-font-1">{admin?.roles?.map((role) => role.roleName).join(", ") || "-"}</b>
           입니다.
         </p>
       </div>
