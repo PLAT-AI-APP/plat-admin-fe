@@ -36,12 +36,11 @@ export const DOCS_LOCALE_OPTIONS: SelectOption<DocsLocale>[] = DOCS_LOCALES.map(
 /** md 일괄 업로드 한 번에 보낼 수 있는 최대 개수. 서버 제한과 같다. */
 export const DOCS_BULK_MAX = 50;
 
-/** 문서 이미지 업로드 허용 형식. 서버(jpg · png · webp · gif)와 같다. */
+/** 문서 이미지 업로드 허용 형식. 서버(jpg · png · webp)와 같다. gif 는 서버가 받지 않는다. */
 export const DOCS_IMAGE_MIME_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
-  "image/gif",
 ];
 
 /** 업로드 최대 용량 (10MB). 다른 이미지 업로드와 같은 제한이다. */
