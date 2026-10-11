@@ -121,11 +121,15 @@ export const replaceChildren = (
   );
 };
 
-/** 항목을 다른 그룹(또는 최상위) 맨 뒤로 옮긴다. */
-export const moveNode = (
+/**
+ * 항목을 떼어 `targetParentId`(최상위는 `null`)의 `index` 자리에 끼운다.
+ * `index` 는 **떼어 낸 뒤** 자식 목록 기준이다. 넘치면 맨 뒤다.
+ */
+export const insertNode = (
   nodes: DocsTreeNode[],
   ref: DocsNodeRef,
   targetParentId: string | null,
+  index: number,
 ): DocsTreeNode[] => {
   const [rest, detached] = detach(nodes, ref);
   if (!detached) return nodes;
@@ -133,9 +137,20 @@ export const moveNode = (
   const moved = detached as DocsTreeNode;
 
   return withDepths(
-    replaceChildren(rest, targetParentId, (children) => [...children, moved]),
+    replaceChildren(rest, targetParentId, (children) => [
+      ...children.slice(0, index),
+      moved,
+      ...children.slice(index),
+    ]),
   );
 };
+
+/** 항목을 다른 그룹(또는 최상위) 맨 뒤로 옮긴다. */
+export const moveNode = (
+  nodes: DocsTreeNode[],
+  ref: DocsNodeRef,
+  targetParentId: string | null,
+): DocsTreeNode[] => insertNode(nodes, ref, targetParentId, Number.MAX_SAFE_INTEGER);
 
 export interface DocsMoveTarget {
   /** 최상위는 `null` */
