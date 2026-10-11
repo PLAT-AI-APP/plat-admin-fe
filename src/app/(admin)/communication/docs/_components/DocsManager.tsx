@@ -47,7 +47,7 @@ const namesOf = (nodes: DocsTreeNode[], ref: DocsNodeRef | null) =>
   ref ? findPath(nodes, ref).map((node) => node.name) : [];
 
 /**
- * 가이드 문서 관리.
+ * 문서 관리.
  *
  * 왼쪽 트리에서 고르고 오른쪽에서 바로 고친다. 목록 → 모달 → 저장을 오가지 않고 한 화면에서
  * 등록 · 수정 · 삭제 · 순서 변경을 끝낸다. 문서는 한 번에 여러 개를 이어서 손보는 일이 많아서다.

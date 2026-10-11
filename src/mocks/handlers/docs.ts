@@ -20,7 +20,7 @@ import {
 import { MOCK_DELAY_MS } from "@/mocks/utils";
 
 /**
- * 가이드 문서 목업.
+ * 문서 목업.
  *
  * **다른 목업과 달리 실서버 경로(`/live-api/docs/**`)를 가로챈다.** 화면은 처음부터
  * `liveAxios` 로 계약된 실서버 API 를 부르고, 서버가 아직 없는 동안만 여기서 답한다.
