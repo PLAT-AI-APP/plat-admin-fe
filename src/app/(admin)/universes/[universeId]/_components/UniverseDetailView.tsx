@@ -54,7 +54,6 @@ import {
   universeTitleOf,
 } from "@/app/(admin)/universes/[universeId]/_lib/universeMeta";
 import {
-  UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_REVIEW_LABEL,
   UNIVERSE_REVIEW_TONE,
   UNIVERSE_STATUS_LABEL,
@@ -89,7 +88,7 @@ const koreanOf = (universe: UniverseDetail) =>
  *
  * - **판단에 필요한 것을 실제로 보여 준다.** 이미지(대표·에셋·캐릭터)를 원본
  *   경로로 그리고, 비어 있는 번역까지 드러내고, 회차 본문을 언어별로 대조한다.
- * - **판단한 것을 바로 조치한다.** 서버가 받는 값(심사·상태·공개 범위·장르·성향·
+ * - **판단한 것을 바로 조치한다.** 서버가 받는 값(심사·상태·공개 범위·성향·
  *   댓글)은 전부 헤더 드롭다운에서 처리한다.
  *
  * 삭제는 소프트 삭제라 삭제 대기 · 파기 세계관도 이 화면으로 열린다. 삭제 · 복구 조치는 다루지 않는다.
@@ -220,7 +219,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
     const message =
       body.visibility !== undefined
         ? `공개 범위를 ${UNIVERSE_VISIBILITY_LABEL[body.visibility]}(으)로 바꿨습니다.`
-        : "장르 · 성향을 바꿨습니다.";
+        : "성향을 바꿨습니다.";
 
     runPatch(body, message, () => setSettingsMode(null));
   };
@@ -286,7 +285,6 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                     {UNIVERSE_REVIEW_LABEL[data.reviewStatus]}
                   </StatusChip>
                   {/* 좋고 나쁨이 없는 분류라 점 없이 둔다. 더보기에서 바꾸는 값이다. */}
-                  <StatusChip>{UNIVERSE_CATEGORY_LABEL[data.category]}</StatusChip>
                   <StatusChip>{UNIVERSE_TENDENCY_LABEL[data.tendency]}</StatusChip>
                   {!data.commentEnabled && (
                     <StatusChip tone="danger">댓글 중지</StatusChip>

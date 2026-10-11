@@ -16,7 +16,6 @@ import Select from "@/components/ui/Select";
 import Switch from "@/components/ui/Switch";
 import AdultMark from "@/components/detail/AdultMark";
 import {
-  UNIVERSE_CATEGORY_OPTIONS,
   UNIVERSE_TENDENCY_OPTIONS,
   UNIVERSE_VISIBILITY_OPTIONS,
 } from "@/app/(admin)/universes/[universeId]/_lib/universeMeta";
@@ -28,7 +27,7 @@ interface UniverseSettingsFormModalProps {
   mode: UniverseSettingsMode | null;
   universe: Pick<
     UniverseDetail,
-    "visibility" | "category" | "tendency" | "isAdult"
+    "visibility" | "tendency" | "isAdult"
   >;
   isPending: boolean;
   onClose: () => void;
@@ -46,9 +45,9 @@ const MODE_TEXT: Record<
       "공개는 앱 목록·검색에 노출, 일부공개는 링크를 아는 사람만, 비공개는 크리에이터만 볼 수 있습니다.",
   },
   classification: {
-    title: "장르 · 성향 변경",
+    title: "성향 변경",
     description:
-      "장르와 성향은 앱의 탐색·추천 분류에 쓰입니다. 신고로 분류 오류가 확인됐을 때 바로잡습니다.",
+      "성향은 앱의 탐색·추천 분류에 쓰입니다. 신고로 분류 오류가 확인됐을 때 바로잡습니다.",
   },
   adult: {
     title: "성인 콘텐츠 분류 변경",
@@ -58,9 +57,9 @@ const MODE_TEXT: Record<
 };
 
 /**
- * 공개 범위 · 장르 · 성향 변경 모달.
+ * 공개 범위 · 성향 변경 모달.
  *
- * `PATCH /universes/{id}`는 이 세 값을 받는데 화면에는 수단이 아예 없어,
+ * `PATCH /universes/{id}`는 이 값들을 받는데 화면에는 수단이 아예 없어,
  * 분류가 잘못된 세계관을 발견해도 운영자가 할 수 있는 일이 "비활성화"뿐이었다.
  * 잘못 분류된 것을 통째로 내리는 것은 크리에이터에게 과한 조치다.
  *
@@ -82,7 +81,6 @@ const UniverseSettingsFormModal = ({
     resolver: zodResolver(universeSettingsSchema),
     values: {
       visibility: universe.visibility,
-      category: universe.category,
       tendency: universe.tendency,
       adult: universe.isAdult,
     },
@@ -97,7 +95,6 @@ const UniverseSettingsFormModal = ({
     }
 
     if (mode === "classification") {
-      if (values.category !== universe.category) body.category = values.category;
       if (values.tendency !== universe.tendency) body.tendency = values.tendency;
     }
 
@@ -161,16 +158,6 @@ const UniverseSettingsFormModal = ({
 
         {mode === "classification" && (
           <>
-            <Controller
-              control={control}
-              name="category"
-              render={({ field }) => (
-                <FormField label="장르" error={errors.category?.message}>
-                  <Select {...field} options={UNIVERSE_CATEGORY_OPTIONS} />
-                </FormField>
-              )}
-            />
-
             <Controller
               control={control}
               name="tendency"

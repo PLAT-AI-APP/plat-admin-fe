@@ -25,16 +25,6 @@ export type UniverseRejectSchema = z.infer<typeof universeRejectSchema>;
  */
 export const universeSettingsSchema = z.object({
   visibility: z.enum(["PUBLIC", "PRIVATE", "UNLISTED"]),
-  category: z.enum([
-    "ROMANCE",
-    "FANTASY",
-    "DRAMA",
-    "MARTIAL_ARTS",
-    "GL",
-    "BL",
-    "HORROR",
-    "MYSTERY",
-  ]),
   tendency: z.enum(["ALL", "MALE_ORIENTED", "FEMALE_ORIENTED"]),
   /** 성인(19) 분류. 켜면 성인인증 유저에게만 보인다. */
   adult: z.boolean(),
