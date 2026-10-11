@@ -80,6 +80,7 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_API_MOCKING: appEnv.mocking ? "enabled" : "disabled",
     NEXT_PUBLIC_LIVE_BASE_URI: appEnv.liveBaseUri,
     NEXT_PUBLIC_IMAGE_BASE_URI: appEnv.imageBaseUri,
+    NEXT_PUBLIC_USER_SITE_URI: appEnv.userSiteUri,
   },
 
   /**

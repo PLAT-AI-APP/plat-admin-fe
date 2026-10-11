@@ -376,6 +376,12 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <ListLines size={SUB_ICON_SIZE} />,
       },
       {
+        label: "가이드 문서",
+        href: "/communication/docs",
+        permission: "docs:read",
+        icon: <Layers size={SUB_ICON_SIZE} />,
+      },
+      {
         label: "알림 관리",
         href: "/communication/notifications",
         permission: "notification:read",

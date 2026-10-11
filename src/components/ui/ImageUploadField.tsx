@@ -13,18 +13,41 @@ import { cn } from "@/lib/utils";
 import Button from "./Button";
 import Spinner from "./Spinner";
 
-interface ImageUploadFieldProps {
-  /** 업로드 완료된 이미지의 파일 ID. 비어 있으면 빈 상태를 보여준다. */
-  value: string;
-  onChange: (fileId: string) => void;
-  /** 서버가 용도별로 보관 정책을 다르게 가져가므로 반드시 지정한다. */
-  fileType: FileUploadType;
+interface ImageUploadFieldBaseProps {
   /** 미리보기 비율. 배너처럼 가로로 긴 이미지는 직접 지정한다. */
   aspectRatio?: string;
   hasError?: boolean;
   disabled?: boolean;
   className?: string;
 }
+
+/** 공용 업로드: 파일 ID를 받아 들고, 미리보기 URL은 화면이 조립한다. */
+interface FileIdUploadProps extends ImageUploadFieldBaseProps {
+  /** 업로드 완료된 이미지의 파일 ID. 비어 있으면 빈 상태를 보여준다. */
+  value: string;
+  onChange: (fileId: string) => void;
+  /** 서버가 용도별로 보관 정책을 다르게 가져가므로 반드시 지정한다. */
+  fileType: FileUploadType;
+  upload?: never;
+  accept?: never;
+}
+
+/**
+ * 자료 전용 업로드: 업로드 응답이 **공개 URL** 인 자료(가이드 문서 등).
+ * 값이 곧 URL 이라 미리보기도 그 값을 그대로 그린다.
+ */
+interface UrlUploadProps extends ImageUploadFieldBaseProps {
+  /** 업로드 완료된 이미지 URL. */
+  value: string;
+  onChange: (url: string) => void;
+  fileType?: never;
+  /** 파일을 올리고 공개 URL 을 돌려준다. */
+  upload: (file: File) => Promise<string>;
+  /** 허용 MIME. 기본은 JPG · PNG · WEBP. */
+  accept?: string[];
+}
+
+type ImageUploadFieldProps = FileIdUploadProps | UrlUploadProps;
 
 /** 업로드 허용 확장자 */
 const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -45,6 +68,8 @@ const ImageUploadField = ({
   value,
   onChange,
   fileType,
+  upload,
+  accept = ACCEPTED_MIME_TYPES,
   aspectRatio = "16 / 9",
   hasError = false,
   disabled = false,
@@ -54,14 +79,22 @@ const ImageUploadField = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const { mutateAsync: uploadFile, isPending } = useFileUploadMutation();
+  const { mutateAsync: uploadFile, isPending: isFilePending } =
+    useFileUploadMutation();
+  const [isUrlPending, setIsUrlPending] = useState(false);
+  const isPending = isFilePending || isUrlPending;
 
   const isBusy = isPending || disabled;
 
+  /** 허용 형식 안내 문구. `image/jpeg` → `JPG` */
+  const acceptLabel = accept
+    .map((type) => type.replace("image/", "").replace("jpeg", "jpg").toUpperCase())
+    .join(", ");
+
   /** 확장자·용량을 미리 걸러 불필요한 업로드 요청을 막는다. */
   const validate = (file: File) => {
-    if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
-      showAppToast("warning", "JPG, PNG, WEBP 파일만 업로드할 수 있습니다.");
+    if (!accept.includes(file.type)) {
+      showAppToast("warning", `${acceptLabel} 파일만 업로드할 수 있습니다.`);
       return false;
     }
 
@@ -77,11 +110,18 @@ const ImageUploadField = ({
     if (!validate(file)) return;
 
     try {
-      const uploaded = await uploadFile({ fileType, file });
-      onChange(uploaded.fileId);
+      if (upload) {
+        setIsUrlPending(true);
+        onChange(await upload(file));
+      } else if (fileType) {
+        const uploaded = await uploadFile({ fileType, file });
+        onChange(uploaded.fileId);
+      }
       showAppToast("success", "이미지를 업로드했습니다.");
     } catch (error) {
       showErrorToast(error, "이미지 업로드에 실패했습니다.");
+    } finally {
+      setIsUrlPending(false);
     }
   };
 
@@ -105,7 +145,9 @@ const ImageUploadField = ({
   const handleRemove = () => onChange("");
 
   /* 업로드 직후에도 서버에 파일이 이미 있어 같은 URL로 바로 보인다. */
-  const previewUrl = buildImageUrl(value, fileType);
+  const previewUrl = upload
+    ? value || undefined
+    : fileType && buildImageUrl(value, fileType);
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -113,7 +155,7 @@ const ImageUploadField = ({
         ref={inputRef}
         id={inputId}
         type="file"
-        accept={ACCEPTED_MIME_TYPES.join(",")}
+        accept={accept.join(",")}
         disabled={isBusy}
         onChange={(event) => handleSelect(event.target.files)}
         className="hidden"
@@ -187,7 +229,7 @@ const ImageUploadField = ({
                 클릭하거나 이미지를 끌어다 놓으세요
               </p>
               <p className="body-6 text-font-2">
-                JPG · PNG · WEBP / 10MB 이하
+                {acceptLabel.replaceAll(", ", " · ")} / 10MB 이하
               </p>
             </>
           )}
