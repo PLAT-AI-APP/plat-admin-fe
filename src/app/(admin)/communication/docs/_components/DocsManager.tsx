@@ -6,6 +6,7 @@ import { useDocsMutation } from "@/api/docs/mutateDocs";
 import { useCan } from "@/hooks/useCan";
 import { useListParams } from "@/hooks/useListParams";
 import { FileText } from "@/icons";
+import { showAppToast } from "@/lib/toast";
 import { truncate } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
 import type { DocsNodeType, DocsTreeNode } from "@/type/docs";
@@ -118,12 +119,10 @@ const DocsManager = () => {
   const handleDelete = (node: DocsTreeNode) => {
     const isGroup = node.type === "GROUP";
 
+    /* 물어볼 것이 없는 안내라 확인창이 아니라 경고 토스트로 알린다. */
     if (isGroup && node.children.length > 0) {
-      openConfirm({
-        title: "비어 있지 않은 그룹은 삭제할 수 없습니다.",
+      showAppToast("warning", "비어 있지 않은 그룹은 삭제할 수 없습니다.", {
         description: `'${truncate(node.name, 30)}' 안에 ${node.children.length}개 항목이 있습니다. 먼저 옮기거나 삭제해 주세요.`,
-        confirmText: "확인",
-        onConfirm: () => undefined,
       });
       return;
     }
