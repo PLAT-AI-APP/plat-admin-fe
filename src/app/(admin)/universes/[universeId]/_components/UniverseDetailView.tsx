@@ -367,6 +367,12 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
               </p>
             )}
 
+            {data.rightsAgreedAt && (
+              <p className="body-5 text-font-2">
+                제작자 권리 책임 동의 · {formatDateTime(data.rightsAgreedAt)}
+              </p>
+            )}
+
             {/* 심사 반려 사유는 크리에이터 문의로 이어지므로 눈에 띄게 둔다. */}
             {data.reviewStatus === "REJECTED" && data.reviewRejectionReason && (
               <Alert tone="danger" title="심사 반려">

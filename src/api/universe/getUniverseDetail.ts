@@ -100,6 +100,8 @@ interface UniverseDetailResponse {
   updatedAt: string | null;
   /** 구버전 서버는 주지 않는다. */
   adoptedAt?: string | null;
+  /** 구버전 서버는 주지 않는다. */
+  rightsAgreedAt?: string | null;
   adult: boolean;
   translations: TranslationResponse[];
   hashtags: HashtagResponse[];
@@ -135,6 +137,7 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
   createdAt: response.createdAt,
   updatedAt: response.updatedAt,
   adoptedAt: response.adoptedAt ?? null,
+  rightsAgreedAt: response.rightsAgreedAt ?? null,
   // 아직 값을 주지 않는 서버에서는 일반으로 읽는다.
   isAdult: response.adult ?? false,
   translations: response.translations.map((t) => ({
