@@ -504,7 +504,7 @@ const UniverseManager = () => {
           <SearchInput
             value={keyword}
             onSearch={(next) => setParams({ keyword: next })}
-            placeholder="세계관 제목, 소개 검색"
+            placeholder="세계관 제목 · 소개 · ID · 인수 번호 검색"
           />
 
           <div className="flex flex-wrap items-center justify-end gap-2">

@@ -31,6 +31,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import EntityImage from "@/components/ui/EntityImage";
 import Lightbox, { type LightboxItem } from "@/components/ui/Lightbox";
 import Pagination from "@/components/ui/Pagination";
+import SearchInput from "@/components/ui/SearchInput";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
@@ -52,8 +53,8 @@ type StatusTab = UniverseHandoverStatus | typeof HANDOVER_STATUS_ALL;
 
 type Pending = { mode: "APPROVE" | "REJECT"; row: UniverseHandover } | null;
 
-/** 주소에 실리는 목록 조건. 처음 열면 심사 대기부터 본다. */
-const DEFAULT_PARAMS = { page: 1, status: "PENDING", size: DEFAULT_PAGE_SIZE };
+/** 주소에 실리는 목록 조건. 처음 열면 심사 대기부터 본다. 세계관 상세가 keyword 에 세계관 ID 를 실어 보낸다. */
+const DEFAULT_PARAMS = { page: 1, status: "PENDING", size: DEFAULT_PAGE_SIZE, keyword: "" };
 
 /** 한 페이지 건수. 한 제작자가 수백 개를 남겼을 때 한 번에 더 많이 훑고 고를 수 있게 한다. 100 은 일괄 승인 상한과 같다. */
 const PAGE_SIZE_OPTIONS = [DEFAULT_PAGE_SIZE, 50, 100];
@@ -90,7 +91,7 @@ const DeadlineCell = ({ deadlineAt }: { deadlineAt: string }) => {
  */
 const UniverseHandoverManager = () => {
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
-  const { page } = params;
+  const { page, keyword } = params;
   const pageSize = PAGE_SIZE_OPTIONS.includes(params.size) ? params.size : DEFAULT_PAGE_SIZE;
   const statusTab = params.status as StatusTab;
   const [pending, setPending] = useState<Pending>(null);
@@ -106,6 +107,7 @@ const UniverseHandoverManager = () => {
       page,
       size: pageSize,
       status: statusTab === HANDOVER_STATUS_ALL ? "" : statusTab,
+      keyword,
     });
   const { data: pendingCounts } = usePendingCountsQuery();
 
@@ -401,6 +403,21 @@ const UniverseHandoverManager = () => {
           className="px-3"
         />
 
+        <div className="flex items-center gap-3 border-b border-border-main px-5 py-3.5">
+          {/*
+            탈퇴한 제작자는 완료 화면 · 사본 메일의 인수 번호로 문의한다. 번호만으로는 상태를 모르니
+            검색하면 전체 탭에서 찾는다.
+          */}
+          <SearchInput
+            value={keyword}
+            onSearch={(next) => {
+              setSelectedIds([]);
+              setParams(next.trim() ? { keyword: next, status: HANDOVER_STATUS_ALL } : { keyword: next });
+            }}
+            placeholder="인수 번호 · 세계관 ID 검색"
+          />
+        </div>
+
         {isError ? (
           <EmptyState
             icon={<Warning size={22} />}
@@ -426,9 +443,11 @@ const UniverseHandoverManager = () => {
               isLoading={isLoading}
               getRowKey={(row) => row.handoverId}
               emptyTitle={
-                statusTab === "PENDING"
-                  ? "심사할 캐릭터가 없습니다."
-                  : "인수 심사 기록이 없습니다."
+                keyword
+                  ? "이 번호의 인수 심사 기록이 없습니다."
+                  : statusTab === "PENDING"
+                    ? "심사할 캐릭터가 없습니다."
+                    : "인수 심사 기록이 없습니다."
               }
             />
             <Pagination

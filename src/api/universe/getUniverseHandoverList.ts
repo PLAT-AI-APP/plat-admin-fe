@@ -25,6 +25,11 @@ export interface UniverseHandoverListParams {
   size: number;
   /** 비우면 전체. 서버는 최신순으로 준다. */
   status?: UniverseHandoverStatus | "";
+  /**
+   * 인수 번호(탈퇴 완료 화면 · 사본 메일이 제작자에게 준 번호)나 세계관 ID. 정확히 같은 건만 찾는다.
+   * 서버가 공백 · 하이픈을 무시하므로 넷씩 띄어 적은 번호도 그대로 보낸다. 숫자가 아니면 빈 목록이다.
+   */
+  keyword?: string;
 }
 
 /** 캐시 키. 승인 · 반려 뒤에는 목록과 받을 계정을 함께 버린다. */
@@ -46,6 +51,7 @@ export const getUniverseHandoverList = async (
       params: {
         ...toPageRequest(params),
         status: params.status || undefined,
+        keyword: params.keyword?.trim() || undefined,
       },
     },
   );

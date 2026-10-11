@@ -97,6 +97,8 @@ const koreanOf = (universe: UniverseDetail) =>
  */
 const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   const { data, isError } = useUniverseDetailQuery(universeId);
+  // 인수 심사 목록은 세계관 ID 로도 찾는다. 인수 번호와 처리 이력이 거기 있다.
+  const handoverListHref = `/universes/handovers?status=ALL&keyword=${universeId}`;
   const { patchMutation, reviewMutation } = useUniverseMutation();
   /* 심사 · 상태 · 공개 범위 · 분류 · 댓글 조치는 서버에서 모두 `universe:write` 다. */
   const canWrite = useCan("universe:write");
@@ -349,7 +351,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
             {data.status === "ORPHANED" && (
               <Alert tone="warning" title="탈퇴한 제작자가 남긴 캐릭터입니다.">
                 인수 심사를 기다립니다. 기존 채팅방 대화만 이어집니다.{" "}
-                <Link href="/universes/handovers" className="underline">
+                <Link href={handoverListHref} className="underline">
                   인수 심사로 이동
                 </Link>
               </Alert>
@@ -358,7 +360,10 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
             {data.adoptedAt && (
               <p className="body-5 text-font-2">
                 탈퇴한 제작자에게서 공식 계정이 인수해 운영 중입니다 · 인수{" "}
-                {formatDateTime(data.adoptedAt)}
+                {formatDateTime(data.adoptedAt)} ·{" "}
+                <Link href={handoverListHref} className="underline">
+                  인수 기록
+                </Link>
               </p>
             )}
 
