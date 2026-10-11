@@ -323,6 +323,7 @@ const DocsGroupEditor = ({
                 render={({ field }) => (
                   <ImageUploadField
                     value={field.value?.url ?? ""}
+                    maxSizeMb={5}
                     upload={async (file) => {
                       const image = await postDocsImage(file);
                       field.onChange(image);
