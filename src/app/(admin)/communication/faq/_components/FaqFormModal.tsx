@@ -1,16 +1,18 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { faqSchema, type FaqSchema } from "@/schema/faq.schema";
 import type { FaqFormValues, FaqItem } from "@/type/communication";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
+import MarkdownContent from "@/components/ui/MarkdownContent";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
+import Tabs from "@/components/ui/Tabs";
 import Textarea from "@/components/ui/Textarea";
 import { FAQ_CATEGORY_OPTIONS } from "@/app/(admin)/communication/_constants/communicationOptions";
 
@@ -22,6 +24,20 @@ interface FaqFormModalProps {
   onSubmit: (values: FaqFormValues) => void;
   isSubmitting: boolean;
 }
+
+type EditorTab = "WRITE" | "PREVIEW";
+
+const EDITOR_TABS = [
+  { label: "작성", value: "WRITE" as const },
+  { label: "미리보기", value: "PREVIEW" as const },
+];
+
+const ANSWER_PLACEHOLDER = [
+  "**설정 > 결제 내역**에서 신청할 수 있습니다.",
+  "",
+  "- 결제 후 7일 이내",
+  "- 노트를 사용하지 않은 경우",
+].join("\n");
 
 const EMPTY_VALUES: FaqSchema = {
   category: "SERVICE",
@@ -37,6 +53,15 @@ const FaqFormModal = ({
   onSubmit,
   isSubmitting,
 }: FaqFormModalProps) => {
+  const [tab, setTab] = useState<EditorTab>("WRITE");
+  const [wasOpen, setWasOpen] = useState(isOpen);
+
+  /* 열릴 때마다 작성 탭에서 시작한다. 이펙트 대신 열림이 바뀐 렌더에서 곧바로 맞춘다. */
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) setTab("WRITE");
+  }
+
   const {
     control,
     register,
@@ -64,6 +89,8 @@ const FaqFormModal = ({
     );
   }, [isOpen, faq, reset]);
 
+  const answer = useWatch({ control, name: "answer" });
+
   const submit = handleSubmit((values) => onSubmit(values));
 
   return (
@@ -72,7 +99,7 @@ const FaqFormModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title={faq ? "FAQ 수정" : "FAQ 등록"}
-      description="유저 고객센터의 자주 하는 질문에 노출됩니다. 새 질문은 카테고리 맨 아래에 붙습니다."
+      description="유저 고객센터의 자주 하는 질문에 노출됩니다. 답변은 마크다운으로 작성하며, 새 질문은 카테고리 맨 아래에 붙습니다."
       size="lg"
       closeOnOverlayClick={false}
       footer={
@@ -137,18 +164,34 @@ const FaqFormModal = ({
 
         <FormField
           label="답변"
-          htmlFor="faq-answer"
           required
           error={errors.answer?.message}
-          hint="최대 2000자 · 줄바꿈은 그대로 노출됩니다."
+          hint="최대 5000자 · 마크다운(굵게 · 기울임 · 목록 · 링크 · 인라인 코드 · 제목)을 쓸 수 있고, 줄바꿈은 그대로 노출됩니다."
         >
-          <Textarea
-            id="faq-answer"
-            rows={8}
-            placeholder="유저가 따라 할 수 있도록 메뉴 경로까지 적어 주세요."
-            hasError={Boolean(errors.answer)}
-            {...register("answer")}
-          />
+          <div className="flex flex-col gap-2">
+            <Tabs items={EDITOR_TABS} value={tab} onChange={setTab} />
+
+            {tab === "WRITE" ? (
+              <Textarea
+                id="faq-answer"
+                rows={10}
+                placeholder={ANSWER_PLACEHOLDER}
+                hasError={Boolean(errors.answer)}
+                className="font-mono body-5"
+                {...register("answer")}
+              />
+            ) : (
+              <div className="min-h-60 rounded-field border border-border-main px-4 py-3 body-4">
+                {answer.trim() ? (
+                  <MarkdownContent content={answer} />
+                ) : (
+                  <p className="body-5 text-font-2">
+                    작성 탭에서 답변을 입력하면 여기에서 미리 볼 수 있습니다.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </FormField>
       </form>
     </Modal>
