@@ -293,8 +293,8 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     actions: ["read", "write", "delete"],
   },
   docs: {
-    label: "가이드 문서",
-    description: "사용자 사이트 도움말 센터의 그룹 · 페이지 작성과 게시",
+    label: "문서",
+    description: "사용자 사이트 문서(/docs)의 그룹 · 페이지 작성과 게시",
     actions: ["read", "write", "delete", "publish"],
   },
   notification: {
@@ -494,7 +494,7 @@ export const PERMISSION_CATEGORIES = [
   {
     id: "communication",
     label: "커뮤니케이션",
-    description: "공지 · 문의 · 가이드 문서 · 알림 · 푸시와 법적 고지. 게시 · 발송하면 이용자가 바로 봅니다.",
+    description: "공지 · 문의 · 문서 · 알림 · 푸시와 법적 고지. 게시 · 발송하면 이용자가 바로 봅니다.",
     resources: ["notice", "qna", "faq", "docs", "notification", "push", "legal"],
   },
   {

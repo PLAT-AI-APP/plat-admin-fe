@@ -112,7 +112,7 @@ export const saveDocsTree = async (nodes: DocsTreeNode[]) => {
 };
 
 /**
- * 가이드 문서의 모든 변경.
+ * 문서의 모든 변경.
  *
  * 그룹 · 페이지 하나를 고쳐도 트리의 이름 · 상태 · 언어 표시가 바뀌므로 트리를 늘 함께 다시 읽는다.
  */

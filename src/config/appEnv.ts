@@ -52,7 +52,7 @@ interface AppProfilePreset {
   imageBaseUri: string;
   /** MSW 목업 워커를 띄우는가. */
   mocking: boolean;
-  /** 사용자 사이트(plat-fe) 오리진. 가이드 문서의 '사이트에서 보기' 링크가 쓴다. */
+  /** 사용자 사이트(plat-fe) 오리진. 문서의 '사이트에서 보기' 링크가 쓴다. */
   userSiteUri: string;
 }
 

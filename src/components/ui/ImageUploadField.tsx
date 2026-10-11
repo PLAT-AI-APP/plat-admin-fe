@@ -33,7 +33,7 @@ interface FileIdUploadProps extends ImageUploadFieldBaseProps {
 }
 
 /**
- * 자료 전용 업로드: 업로드 응답이 **공개 URL** 인 자료(가이드 문서 등).
+ * 자료 전용 업로드: 업로드 응답이 **공개 URL** 인 자료(문서 등).
  * 값이 곧 URL 이라 미리보기도 그 값을 그대로 그린다.
  */
 interface UrlUploadProps extends ImageUploadFieldBaseProps {
