@@ -72,7 +72,7 @@ const OfficialAccountManager = () => {
       title: "공식 지정을 해제할까요?",
       description: `'${account.nickname}'의 세계관 ${account.universeCount}건에서 공식 표시가 사라집니다.`,
       warning:
-        "메인 노출의 '공식 캐릭터 맛보기' 후보에서도 함께 빠집니다. 세계관 자체는 삭제되지 않습니다.",
+        "메인 노출의 '공식 캐릭터 맛보기' 후보에서도 함께 빠집니다. 세계관 자체는 삭제되지 않습니다. 인수한 캐릭터를 운영 중인 계정은 해제할 수 없습니다.",
       confirmText: "해제",
       tone: "danger",
       onConfirm: () => releaseMutation.mutateAsync(account.userId),

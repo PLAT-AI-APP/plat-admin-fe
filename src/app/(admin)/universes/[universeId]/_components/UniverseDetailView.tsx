@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +10,7 @@ import {
   useUniverseMutation,
   type UniversePatchBody,
 } from "@/api/universe/mutateUniverse";
+import { formatDateTime } from "@/lib/dayjs";
 import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
@@ -90,8 +92,8 @@ const koreanOf = (universe: UniverseDetail) =>
  * - **판단한 것을 바로 조치한다.** 서버가 받는 값(심사·상태·공개 범위·장르·성향·
  *   댓글)은 전부 헤더 드롭다운에서 처리한다.
  *
- * 삭제는 하드 딜리트다. 지운 세계관은 데이터째 사라져 이 화면으로도 열리지 않으므로
- * 삭제·복구는 다루지 않는다.
+ * 삭제는 소프트 삭제라 삭제 대기 · 파기 세계관도 이 화면으로 열린다. 삭제 · 복구 조치는 다루지 않는다.
+ * 탈퇴한 제작자가 남긴 세계관은 "인수 대기"로, 공식 계정이 인수했으면 "운영 인수"로 표시한다.
  */
 const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   const { data, isError } = useUniverseDetailQuery(universeId);
@@ -272,6 +274,9 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                   <StatusChip tone={UNIVERSE_STATUS_TONE[data.status]}>
                     {UNIVERSE_STATUS_LABEL[data.status]}
                   </StatusChip>
+                  {data.adoptedAt && (
+                    <StatusChip tone="brand">운영 인수</StatusChip>
+                  )}
                   <StatusChip tone={UNIVERSE_VISIBILITY_TONE[data.visibility]}>
                     {UNIVERSE_VISIBILITY_LABEL[data.visibility]}
                   </StatusChip>
@@ -339,6 +344,22 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                 상태입니다. 심사를 승인해도 계정 조치로 다시 내려갈 수 있으니,
                 계정 상태를 먼저 확인하세요.
               </Alert>
+            )}
+
+            {data.status === "ORPHANED" && (
+              <Alert tone="warning" title="탈퇴한 제작자가 남긴 캐릭터입니다.">
+                인수 심사를 기다립니다. 기존 채팅방 대화만 이어집니다.{" "}
+                <Link href="/universes/handovers" className="underline">
+                  인수 심사로 이동
+                </Link>
+              </Alert>
+            )}
+
+            {data.adoptedAt && (
+              <p className="body-5 text-font-2">
+                탈퇴한 제작자에게서 공식 계정이 인수해 운영 중입니다 · 인수{" "}
+                {formatDateTime(data.adoptedAt)}
+              </p>
             )}
 
             {/* 심사 반려 사유는 크리에이터 문의로 이어지므로 눈에 띄게 둔다. */}

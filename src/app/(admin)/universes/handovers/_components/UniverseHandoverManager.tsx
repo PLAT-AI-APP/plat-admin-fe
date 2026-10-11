@@ -1,0 +1,513 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import { usePendingCountsQuery } from "@/api/ops/getPendingCounts";
+import { useUniverseHandoverListQuery } from "@/api/universe/getUniverseHandoverList";
+import {
+  isHandoverGoneError,
+  useUniverseHandoverMutation,
+} from "@/api/universe/mutateUniverseHandover";
+import { useListParams } from "@/hooks/useListParams";
+import { CheckCircle, Refresh, Warning } from "@/icons";
+import dayjs, { daysLeftKst, formatDate, formatDateTime } from "@/lib/dayjs";
+import { resolveImageUrl } from "@/lib/imageUrl";
+import { cn, formatWithCommas } from "@/lib/utils";
+import { useHasPermission } from "@/store/useAdminStore";
+import { DEFAULT_PAGE_SIZE } from "@/type/api";
+import {
+  HANDOVER_AGE_BASIS_LABEL,
+  UNIVERSE_HANDOVER_REASON_LABEL,
+  UNIVERSE_HANDOVER_STATUS_LABEL,
+  type UniverseHandover,
+  type UniverseHandoverStatus,
+} from "@/type/universeHandover";
+import Alert from "@/components/ui/Alert";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Checkbox from "@/components/ui/Checkbox";
+import Card from "@/components/ui/Card";
+import EmptyState from "@/components/ui/EmptyState";
+import EntityImage from "@/components/ui/EntityImage";
+import Lightbox, { type LightboxItem } from "@/components/ui/Lightbox";
+import Pagination from "@/components/ui/Pagination";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
+import Tabs, { type TabItem } from "@/components/ui/Tabs";
+import {
+  HANDOVER_DEADLINE_WARN_DAYS,
+  HANDOVER_STATUS_ALL,
+  HANDOVER_STATUS_TONE,
+} from "../_constants/handoverOptions";
+import HandoverApproveModal from "./HandoverApproveModal";
+import HandoverBulkApproveModal from "./HandoverBulkApproveModal";
+import HandoverConsentModal from "./HandoverConsentModal";
+import HandoverRejectModal from "./HandoverRejectModal";
+
+/** 기한 배치가 닫은 건은 서버가 처리자 이름을 SYSTEM 으로 남긴다. */
+const handlerLabel = (handlerName: string | null) =>
+  !handlerName || handlerName === "SYSTEM" ? "시스템" : handlerName;
+
+type StatusTab = UniverseHandoverStatus | typeof HANDOVER_STATUS_ALL;
+
+type Pending = { mode: "APPROVE" | "REJECT"; row: UniverseHandover } | null;
+
+/** 주소에 실리는 목록 조건. 처음 열면 심사 대기부터 본다. */
+const DEFAULT_PARAMS = { page: 1, status: "PENDING", size: DEFAULT_PAGE_SIZE };
+
+/** 한 페이지 건수. 한 제작자가 수백 개를 남겼을 때 한 번에 더 많이 훑고 고를 수 있게 한다. 100 은 일괄 승인 상한과 같다. */
+const PAGE_SIZE_OPTIONS = [DEFAULT_PAGE_SIZE, 50, 100];
+
+/** 남은 기한. 지났으면 붉게, 사흘 안이면 경고색으로 칠한다. */
+const DeadlineCell = ({ deadlineAt }: { deadlineAt: string }) => {
+  const isOver = dayjs(deadlineAt).isBefore(dayjs());
+  const daysLeft = daysLeftKst(deadlineAt);
+
+  return (
+    <TableCellStack
+      primary={
+        <span
+          className={cn(
+            "font-semibold tabular-nums",
+            isOver
+              ? "text-danger"
+              : daysLeft <= HANDOVER_DEADLINE_WARN_DAYS && "text-warning",
+          )}
+        >
+          {isOver ? "기한 지남" : daysLeft === 0 ? "D-day" : `D-${daysLeft}`}
+        </span>
+      }
+      secondary={formatDateTime(deadlineAt)}
+    />
+  );
+};
+
+/**
+ * 탈퇴 캐릭터 인수 심사 목록.
+ *
+ * 한 줄이 탈퇴한 제작자가 남긴 세계관 하나다. 원 제작자는 탈퇴해 닉네임이 없어 인수 번호와
+ * 세계관으로만 가린다. 설정 · 이미지는 세계관 상세에서 확인한다.
+ */
+const UniverseHandoverManager = () => {
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page } = params;
+  const pageSize = PAGE_SIZE_OPTIONS.includes(params.size) ? params.size : DEFAULT_PAGE_SIZE;
+  const statusTab = params.status as StatusTab;
+  const [pending, setPending] = useState<Pending>(null);
+  const [viewingConsent, setViewingConsent] = useState<UniverseHandover>();
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  // 일괄 승인할 건. 페이지 · 탭을 옮기면 비운다(보이지 않는 건이 섞여 승인되지 않게).
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkApproving, setIsBulkApproving] = useState(false);
+
+  const canWrite = useHasPermission("universeHandover:write");
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useUniverseHandoverListQuery({
+      page,
+      size: pageSize,
+      status: statusTab === HANDOVER_STATUS_ALL ? "" : statusTab,
+    });
+  const { data: pendingCounts } = usePendingCountsQuery();
+
+  /* 대표 이미지를 원본으로 크게 넘겨 본다. 실존 인물 · 도용 이미지는 80px 썸네일로는 가릴 수 없다. */
+  const lightboxItems: LightboxItem[] = (data?.content ?? []).flatMap((row) => {
+    const url = resolveImageUrl(row.profileImageUrl, row.profileImageFileId, "UNIVERSE_PROFILE", "ORIGIN");
+    return url
+      ? [{ id: row.handoverId, url, title: row.universeTitle ?? "(제목 없음)", caption: `인수 #${row.handoverId}` }]
+      : [];
+  });
+  const openLightbox = (handoverId: string) => {
+    const index = lightboxItems.findIndex((item) => item.id === handoverId);
+    if (index >= 0) setLightboxIndex(index);
+  };
+  const { approveMutation, bulkApproveMutation, rejectMutation } = useUniverseHandoverMutation();
+
+  const tabs: TabItem<StatusTab>[] = [
+    { label: "심사 대기", value: "PENDING", count: pendingCounts.handover },
+    { label: "인수", value: "APPROVED" },
+    { label: "반려", value: "REJECTED" },
+    { label: "기한 만료", value: "EXPIRED" },
+    { label: "전체", value: HANDOVER_STATUS_ALL },
+  ];
+
+  const close = () => setPending(null);
+
+  const rows = data?.content ?? [];
+  /** 심사 대기만 일괄 승인할 수 있다. */
+  const selectableRows = rows.filter((row) => row.status === "PENDING");
+  const selectedRows = selectableRows.filter((row) => selectedIds.includes(row.handoverId));
+  const isAllSelected =
+    selectableRows.length > 0 && selectableRows.every((row) => selectedIds.includes(row.handoverId));
+  const toggleSelect = (handoverId: string) =>
+    setSelectedIds((prev) =>
+      prev.includes(handoverId) ? prev.filter((id) => id !== handoverId) : [...prev, handoverId],
+    );
+  const toggleSelectAll = () =>
+    setSelectedIds(isAllSelected ? [] : selectableRows.map((row) => row.handoverId));
+
+  /* 이미 처리됐거나 사라진 건은 모달을 닫는다. 받을 계정 무효는 열어 두고 다시 고르게 한다. */
+  const done = {
+    onSuccess: close,
+    onError: (mutationError: Parameters<typeof isHandoverGoneError>[0]) => {
+      if (isHandoverGoneError(mutationError)) close();
+    },
+  };
+
+  const selectColumn: TableColumn<UniverseHandover> = {
+    key: "select",
+    header: (
+      <Checkbox
+        label=""
+        aria-label="이 페이지의 심사 대기 전체 선택"
+        checked={isAllSelected}
+        onChange={toggleSelectAll}
+        disabled={selectableRows.length === 0}
+      />
+    ),
+    width: "44px",
+    render: (row) => (
+      <Checkbox
+        label=""
+        aria-label={`${row.universeTitle ?? "(제목 없음)"} 선택`}
+        checked={selectedIds.includes(row.handoverId)}
+        onChange={() => toggleSelect(row.handoverId)}
+        disabled={row.status !== "PENDING"}
+      />
+    ),
+  };
+
+  const columns: TableColumn<UniverseHandover>[] = [
+    ...(canWrite ? [selectColumn] : []),
+    {
+      key: "universe",
+      header: "캐릭터",
+      width: "300px",
+      render: (row) => (
+        <div className="flex min-w-0 items-center gap-3">
+          {/* 실존 인물 · 도용 이미지는 목록에서 먼저 눈에 걸린다. UNIVERSE_PROFILE 의 가장 작은 규격이 SQ80 이다. */}
+          <EntityImage
+            src={resolveImageUrl(row.profileImageUrl, row.profileImageFileId, "UNIVERSE_PROFILE", "SQ80")}
+            alt={row.universeTitle ?? "(제목 없음)"}
+            fileId={row.profileImageFileId}
+            className="w-11 shrink-0"
+            onClick={row.profileImageFileId ? () => openLightbox(row.handoverId) : undefined}
+          />
+          <div className="min-w-0">
+            <TableCellStack
+              primary={
+                <Link
+                  href={`/universes/${row.universeId}`}
+                  className="block truncate font-medium hover:text-brand hover:underline"
+                >
+                  {row.universeTitle ?? "(제목 없음)"}
+                </Link>
+              }
+              secondary={<span className="tabular-nums">인수 #{row.handoverId}</span>}
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "consentedAt",
+      header: "동의 일시",
+      width: "170px",
+      numeric: true,
+      render: (row) => (
+        <TableCellStack
+          primary={formatDateTime(row.consentedAt)}
+          secondary={
+            <span className={cn(row.ageBasis === "SELF_ATTESTED" && "text-warning")}>
+              <button
+                type="button"
+                className="text-info hover:underline"
+                title="동의한 동의서 원문 보기"
+                onClick={() => setViewingConsent(row)}
+              >
+                v{row.consentVersion}
+              </button>{" "}
+              · {HANDOVER_AGE_BASIS_LABEL[row.ageBasis]}
+            </span>
+          }
+        />
+      ),
+    },
+    {
+      key: "deadlineAt",
+      header: "기한",
+      width: "150px",
+      render: (row) =>
+        row.status === "PENDING" ? (
+          <DeadlineCell deadlineAt={row.deadlineAt} />
+        ) : (
+          <span className="text-font-disabled tabular-nums">
+            {formatDate(row.deadlineAt)}
+          </span>
+        ),
+    },
+    {
+      key: "otherRoomCount",
+      header: "다른 유저 방",
+      align: "right",
+      numeric: true,
+      render: (row) => formatWithCommas(row.otherRoomCount),
+    },
+    {
+      key: "report",
+      header: "신고 / 미처리",
+      align: "right",
+      numeric: true,
+      render: (row) => (
+        <span title={`케이스 ${row.reportCaseCount}건 · 탈퇴 시점 기준`}>
+          {formatWithCommas(row.reportCount)} /{" "}
+          <span
+            className={cn(
+              row.pendingReportCount > 0 ? "font-semibold text-danger" : "text-font-2",
+            )}
+          >
+            {formatWithCommas(row.pendingReportCount)}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "상태",
+      width: "100px",
+      render: (row) => (
+        <Badge tone={HANDOVER_STATUS_TONE[row.status]}>
+          {UNIVERSE_HANDOVER_STATUS_LABEL[row.status]}
+        </Badge>
+      ),
+    },
+    {
+      key: "handling",
+      header: "처리",
+      width: "240px",
+      render: (row) => {
+        if (row.status === "PENDING") {
+          return canWrite ? (
+            <div className="flex gap-1.5">
+              <Button size="sm" onClick={() => setPending({ mode: "APPROVE", row })}>
+                승인
+              </Button>
+              <Button
+                size="sm"
+                variant="dangerGhost"
+                onClick={() => setPending({ mode: "REJECT", row })}
+              >
+                반려
+              </Button>
+            </div>
+          ) : (
+            <span className="text-font-disabled">-</span>
+          );
+        }
+
+        return (
+          <div className="min-w-0">
+            <TableCellStack
+              primary={
+                row.status === "APPROVED" && row.targetUserId ? (
+                  <Link
+                    href={`/users/${row.targetUserId}`}
+                    className="hover:text-brand hover:underline"
+                  >
+                    {row.targetNickname ?? `#${row.targetUserId}`} 인수
+                  </Link>
+                ) : row.reasonCode ? (
+                  UNIVERSE_HANDOVER_REASON_LABEL[row.reasonCode]
+                ) : (
+                  "-"
+                )
+              }
+              secondary={`${handlerLabel(row.handlerName)} · ${formatDateTime(row.handledAt)}`}
+            />
+            {row.handlerNote && (
+              <p className="mt-0.5 max-w-60 truncate body-6 text-font-2" title={row.handlerNote}>
+                메모: {row.handlerNote}
+              </p>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
+
+  return (
+    <>
+      <Alert tone="warning" title="회사가 직접 운영하면 권리침해 · 개인정보 책임을 직접 집니다.">
+        실존 인물 · 원작 IP · 도용 이미지 · 개인정보 · 신고 이력이 있는 캐릭터는 반려하세요.
+        캐릭터 이름을 누르면 설정 · 이미지를 볼 수 있습니다.
+      </Alert>
+
+      <Card
+        title={`인수 심사 ${formatWithCommas(data?.totalCount ?? 0)}건`}
+        description="신고 · 방 수는 탈퇴 시점 기준입니다. 썸네일을 누르면 원본을 크게 넘겨 볼 수 있습니다."
+        action={
+          <>
+            {canWrite && selectedRows.length > 0 && (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])}>
+                  선택 해제
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<CheckCircle size={15} />}
+                  onClick={() => setIsBulkApproving(true)}
+                >
+                  선택 {formatWithCommas(selectedRows.length)}건 일괄 승인
+                </Button>
+              </>
+            )}
+            <div
+              role="radiogroup"
+              aria-label="한 페이지 건수"
+              className="flex rounded-field border border-border-main p-0.5"
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  role="radio"
+                  aria-checked={pageSize === size}
+                  onClick={() => {
+                    setSelectedIds([]);
+                    setParams({ size });
+                  }}
+                  className={cn(
+                    "body-6 h-7 rounded-[6px] px-2.5 tabular-nums transition",
+                    pageSize === size
+                      ? "bg-subtle font-semibold text-font-1"
+                      : "text-font-2 hover:text-font-1",
+                  )}
+                >
+                  {size}건
+                </button>
+              ))}
+            </div>
+          </>
+        }
+        noPadding
+      >
+        <Tabs
+          items={tabs}
+          value={statusTab}
+          onChange={(next) => {
+            setSelectedIds([]);
+            setParams({ status: next });
+          }}
+          className="px-3"
+        />
+
+        {isError ? (
+          <EmptyState
+            icon={<Warning size={22} />}
+            title="인수 심사 목록을 불러오지 못했습니다."
+            description={error?.message ?? "잠시 후 다시 시도해 주세요."}
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<Refresh size={15} />}
+                isLoading={isFetching}
+                onClick={() => refetch()}
+              >
+                다시 시도
+              </Button>
+            }
+          />
+        ) : (
+          <>
+            <Table
+              columns={columns}
+              rows={rows}
+              isLoading={isLoading}
+              getRowKey={(row) => row.handoverId}
+              emptyTitle={
+                statusTab === "PENDING"
+                  ? "심사할 캐릭터가 없습니다."
+                  : "인수 심사 기록이 없습니다."
+              }
+            />
+            <Pagination
+              page={page}
+              totalCount={data?.totalCount ?? 0}
+              pageSize={pageSize}
+              onChange={(next) => {
+                setSelectedIds([]);
+                setParams({ page: next });
+              }}
+            />
+          </>
+        )}
+      </Card>
+
+      {pending?.mode === "APPROVE" && (
+        <HandoverApproveModal
+          handover={pending.row}
+          onClose={close}
+          isSubmitting={approveMutation.isPending}
+          onSubmit={({ targetUserId, note }) =>
+            approveMutation.mutate(
+              { handoverId: pending.row.handoverId, targetUserId, note },
+              done,
+            )
+          }
+        />
+      )}
+
+      {isBulkApproving && selectedRows.length > 0 && (
+        <HandoverBulkApproveModal
+          handovers={selectedRows}
+          onClose={() => setIsBulkApproving(false)}
+          isSubmitting={bulkApproveMutation.isPending}
+          onSubmit={({ targetUserId, note }) =>
+            bulkApproveMutation.mutate(
+              {
+                handoverIds: selectedRows.map((row) => row.handoverId),
+                targetUserId,
+                note,
+              },
+              {
+                onSuccess: () => {
+                  setIsBulkApproving(false);
+                  setSelectedIds([]);
+                },
+              },
+            )
+          }
+        />
+      )}
+
+      {pending?.mode === "REJECT" && (
+        <HandoverRejectModal
+          handover={pending.row}
+          onClose={close}
+          isSubmitting={rejectMutation.isPending}
+          onSubmit={({ reason, note }) =>
+            rejectMutation.mutate(
+              { handoverId: pending.row.handoverId, reason, note },
+              done,
+            )
+          }
+        />
+      )}
+
+      <HandoverConsentModal
+        handover={viewingConsent}
+        onClose={() => setViewingConsent(undefined)}
+      />
+
+      <Lightbox
+        items={lightboxItems}
+        index={lightboxIndex}
+        onChangeIndex={setLightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+      />
+    </>
+  );
+};
+
+export default UniverseHandoverManager;

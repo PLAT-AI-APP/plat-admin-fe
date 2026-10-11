@@ -62,24 +62,31 @@ export const UNIVERSE_VISIBILITY_TONE: Record<UniverseVisibility, BadgeTone> = {
 /**
  * 상태 라벨.
  *
- * 세계관 삭제는 하드 딜리트라 "삭제 대기"·"콘텐츠 파기"가 없다. 지운 세계관은
- * 데이터째 사라져 목록에도 상세에도 나타나지 않으므로, 화면이 칠할 상태는
- * 운영 중과 내려둔 것 둘뿐이다.
+ * 삭제는 소프트 삭제라 지운 세계관도 "삭제 대기" → "콘텐츠 파기"로 목록 · 상세에 남는다.
+ * 탈퇴한 제작자가 남긴 세계관은 심사가 끝날 때까지 "인수 대기"다.
  */
 export const UNIVERSE_STATUS_LABEL: Record<UniverseStatus, string> = {
   ACTIVE: "활성",
   INACTIVE: "비활성",
+  ORPHANED: "인수 대기",
+  DELETED: "삭제 대기",
+  PURGED: "콘텐츠 파기",
 };
 
 export const UNIVERSE_STATUS_TONE: Record<UniverseStatus, BadgeTone> = {
   ACTIVE: "success",
   INACTIVE: "neutral",
+  ORPHANED: "warning",
+  DELETED: "danger",
+  PURGED: "danger",
 };
 
 export const UNIVERSE_STATUS_FILTER_OPTIONS: SelectOption[] = [
   { label: "상태 전체", value: "" },
-  { label: UNIVERSE_STATUS_LABEL.ACTIVE, value: "ACTIVE" },
-  { label: UNIVERSE_STATUS_LABEL.INACTIVE, value: "INACTIVE" },
+  ...(Object.keys(UNIVERSE_STATUS_LABEL) as UniverseStatus[]).map((status) => ({
+    label: UNIVERSE_STATUS_LABEL[status],
+    value: status,
+  })),
 ];
 
 export const UNIVERSE_REVIEW_LABEL: Record<UniverseReviewStatus, string> = {

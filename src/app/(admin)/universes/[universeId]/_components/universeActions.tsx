@@ -9,7 +9,7 @@ import {
   ShieldCheck,
 } from "@/icons";
 import type { DropdownItem } from "@/components/ui/Dropdown";
-import type { UniverseDetail } from "@/type/character";
+import { isOperableUniverseStatus, type UniverseDetail } from "@/type/character";
 
 interface BuildUniverseActionsParams {
   universe: Pick<UniverseDetail, "status" | "reviewStatus" | "commentEnabled">;
@@ -40,8 +40,8 @@ interface BuildUniverseActionsParams {
  * 상태·분류·댓글 조치를 상세 헤더의 드롭다운으로 모은다. 이미 그 상태인 항목과
  * 조치 전송 중에는 항목을 비활성화한다.
  *
- * 삭제는 하드 딜리트라 이 메뉴에 없다. 지운 세계관은 데이터째 사라져 상세가
- * 열리지 않으므로, 조치할 대상 자체가 없다.
+ * 삭제는 이 메뉴에 없다. 삭제 · 파기는 제작자 삭제와 파기 배치가, 인수 대기는 탈퇴가 정한다.
+ * 그 상태(`ORPHANED` · `DELETED` · `PURGED`)에서는 활성화 · 비활성화도 서버가 막으므로 잠근다.
  */
 export const buildUniverseActions = ({
   universe,
@@ -84,14 +84,14 @@ export const buildUniverseActions = ({
     {
       label: "활성화",
       icon: <CheckCircle size={15} />,
-      disabled: universe.status === "ACTIVE",
+      disabled: universe.status === "ACTIVE" || !isOperableUniverseStatus(universe.status),
       onSelect: onActivate,
     },
     {
       label: "비활성화(앱에서 내림)",
       icon: <Ban size={15} />,
       tone: "danger" as const,
-      disabled: universe.status === "INACTIVE",
+      disabled: universe.status === "INACTIVE" || !isOperableUniverseStatus(universe.status),
       onSelect: onDeactivate,
     },
   ];

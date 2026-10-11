@@ -98,6 +98,8 @@ interface UniverseDetailResponse {
   profileImageUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
+  /** 구버전 서버는 주지 않는다. */
+  adoptedAt?: string | null;
   adult: boolean;
   translations: TranslationResponse[];
   hashtags: HashtagResponse[];
@@ -132,6 +134,7 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
   profileImageUrl: response.profileImageUrl,
   createdAt: response.createdAt,
   updatedAt: response.updatedAt,
+  adoptedAt: response.adoptedAt ?? null,
   // 아직 값을 주지 않는 서버에서는 일반으로 읽는다.
   isAdult: response.adult ?? false,
   translations: response.translations.map((t) => ({

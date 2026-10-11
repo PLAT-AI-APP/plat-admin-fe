@@ -3,6 +3,7 @@ import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import {
   RECONSENT_DOCUMENT_TYPES,
+  legalDocumentPlaceOf,
   type LegalDocument,
   type LegalDocumentFormValues,
 } from "@/type/legal";
@@ -55,17 +56,17 @@ export const useLegalDocumentMutation = () => {
   const publishMutation = useMutation<LegalDocument, AppError, string>({
     mutationFn: publishLegalDocument,
     onSuccess: (document) => {
-      // 청소년 보호 정책은 동의 대상이 아니라 약관 페이지에만 반영된다.
+      // 청소년 보호 정책 · 이용허락 동의서는 재동의 대상이 아니라 게시만 된다.
       const reconsent = RECONSENT_DOCUMENT_TYPES.includes(document.documentType);
       showAppToast(
         "success",
         document.status === "ACTIVE"
           ? reconsent
             ? "게시했습니다. 지금부터 유저에게 재동의를 받습니다."
-            : "게시했습니다. 지금부터 약관 페이지에 보입니다."
+            : `게시했습니다. 지금부터 ${legalDocumentPlaceOf(document.documentType)}에 보입니다.`
           : reconsent
             ? "게시했습니다. 시행일부터 유저에게 재동의를 받습니다."
-            : "게시했습니다. 시행일부터 약관 페이지에 보입니다.",
+            : `게시했습니다. 시행일부터 ${legalDocumentPlaceOf(document.documentType)}에 보입니다.`,
       );
       invalidateLegalDocuments();
     },

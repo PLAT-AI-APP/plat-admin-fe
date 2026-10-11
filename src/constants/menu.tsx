@@ -156,6 +156,14 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Globe size={SUB_ICON_SIZE} />,
       },
       {
+        /* 탈퇴한 제작자가 남긴 캐릭터. 승인하면 공식 계정이 인수하고, 반려하면 삭제된다. */
+        label: "인수 심사",
+        href: "/universes/handovers",
+        pendingKey: "handover",
+        permission: "universeHandover:read",
+        icon: <UserPlus size={SUB_ICON_SIZE} />,
+      },
+      {
         label: "캐릭터",
         href: "/universes/characters",
         permission: "character:read",

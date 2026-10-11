@@ -19,6 +19,7 @@ export type PermissionResource =
   | "officialAccount"
   | "serviceAdmin"
   | "universe"
+  | "universeHandover"
   | "hashtag"
   | "bannedWord"
   | "chatExport"
@@ -126,6 +127,17 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     description:
       "캐릭터와 시나리오를 품는 콘텐츠 단위. 심사 · 상태 · 댓글을 운영에서 조치한다.",
     actions: ["read", "write"],
+  },
+  universeHandover: {
+    /*
+      세계관 권한과 따로 뗀다. 승인하면 세계관과 이미지 소유가 공식 계정으로 넘어가 회사가
+      권리침해 · 개인정보 책임을 직접 지고, 반려하면 세계관이 삭제된다.
+    */
+    label: "탈퇴 캐릭터 인수",
+    description:
+      "탈퇴한 제작자가 남긴 캐릭터를 공식 계정이 인수할지 심사한다. 반려하면 삭제된다.",
+    actions: ["read", "write"],
+    actionLabels: { write: "승인 · 반려" },
   },
   hashtag: {
     label: "해시태그",
@@ -429,9 +441,10 @@ export const PERMISSION_CATEGORIES = [
   {
     id: "universe",
     label: "세계관",
-    description: "세계관 · 캐릭터와 이를 둘러싼 태그 · 금지어 · 대화 기록",
+    description: "세계관 · 캐릭터와 탈퇴 캐릭터 인수, 이를 둘러싼 태그 · 금지어 · 대화 기록",
     resources: [
       "universe",
+      "universeHandover",
       "character",
       "hashtag",
       "bannedWord",
