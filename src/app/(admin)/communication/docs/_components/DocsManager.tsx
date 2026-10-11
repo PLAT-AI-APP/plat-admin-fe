@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useDocsLocalesQuery } from "@/api/docs/getDocsLocales";
 import { useDocsTreeQuery } from "@/api/docs/getDocsTree";
 import { useDocsMutation } from "@/api/docs/mutateDocs";
 import { useCan } from "@/hooks/useCan";
@@ -13,6 +14,7 @@ import type { DocsNodeType, DocsTreeNode } from "@/type/docs";
 import Alert from "@/components/ui/Alert";
 import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
+import Skeleton from "@/components/ui/Skeleton";
 import DocsBulkUploadModal from "./DocsBulkUploadModal";
 import DocsGroupEditor from "./DocsGroupEditor";
 import DocsMoveModal from "./DocsMoveModal";
@@ -58,6 +60,8 @@ const DocsManager = () => {
   const [bulkGroupId, setBulkGroupId] = useState<string | null>(null);
 
   const { data: tree = [], isLoading, isError } = useDocsTreeQuery();
+  /* 번역 탭 · 언어 선택은 서버가 정한 지원 언어로 그린다. 받기 전에는 편집기를 열지 않는다. */
+  const { data: docsLocales, isError: isLocalesError } = useDocsLocalesQuery();
   const {
     deleteGroupMutation,
     deletePageMutation,
@@ -160,6 +164,25 @@ const DocsManager = () => {
   /* ---------------------------------------------------------------- */
 
   const renderEditor = () => {
+    if (isLocalesError) {
+      return (
+        <Alert tone="danger" title="지원 언어를 불러오지 못했습니다.">
+          잠시 후 다시 시도해 주세요.
+        </Alert>
+      );
+    }
+
+    if (!docsLocales) {
+      return (
+        <Card>
+          <div className="flex flex-col gap-3">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </Card>
+      );
+    }
+
     if (draft?.kind === "NEW_GROUP") {
       return (
         <DocsGroupEditor

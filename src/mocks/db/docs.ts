@@ -1,5 +1,6 @@
 import type {
   DocsGroupDetail,
+  DocsLocales,
   DocsPageDetail,
   DocsTreeNode,
 } from "@/type/docs";
@@ -18,6 +19,18 @@ export interface MockDocsPage extends DocsPageDetail {
   sortOrder: number;
 }
 
+/** 서버 `GET /docs/locales` 와 같은 모양. 실서버에서는 서버 enum 이 정한다. */
+export const MOCK_DOCS_LOCALES: DocsLocales = {
+  defaultLocale: "ko",
+  locales: [
+    { code: "ko", name: "한국어" },
+    { code: "en", name: "English" },
+  ],
+};
+
+/** 목업 업로드가 돌려준 이미지. 그룹 응답의 아이콘 · 커버 주소를 여기서 찾는다. */
+export const docsImages = new Map<string, string>();
+
 const at = (days: number) => daysAgo(days);
 
 export const docsGroups: MockDocsGroup[] = [
@@ -25,7 +38,9 @@ export const docsGroups: MockDocsGroup[] = [
     id: "1",
     parentId: null,
     slug: "user-guide",
+    iconFileId: null,
     iconUrl: null,
+    coverImageFileId: null,
     coverImageUrl: null,
     status: "VISIBLE",
     translations: [
@@ -40,7 +55,9 @@ export const docsGroups: MockDocsGroup[] = [
     id: "2",
     parentId: "1",
     slug: "getting-started",
+    iconFileId: null,
     iconUrl: null,
+    coverImageFileId: null,
     coverImageUrl: null,
     status: "VISIBLE",
     translations: [
@@ -55,7 +72,9 @@ export const docsGroups: MockDocsGroup[] = [
     id: "3",
     parentId: "2",
     slug: "account",
+    iconFileId: null,
     iconUrl: null,
+    coverImageFileId: null,
     coverImageUrl: null,
     status: "HIDDEN",
     translations: [{ locale: "ko", name: "계정", description: null }],
@@ -67,7 +86,9 @@ export const docsGroups: MockDocsGroup[] = [
     id: "4",
     parentId: null,
     slug: "creator-guide",
+    iconFileId: null,
     iconUrl: null,
+    coverImageFileId: null,
     coverImageUrl: null,
     status: "VISIBLE",
     translations: [
@@ -150,7 +171,7 @@ export const docsPages: MockDocsPage[] = [
 
 const nameOf = (translations: { locale: string; name?: string; title?: string }[]) => {
   const pick =
-    translations.find((item) => item.locale === "ko") ?? translations[0];
+    translations.find((item) => item.locale === MOCK_DOCS_LOCALES.defaultLocale) ?? translations[0];
 
   return pick?.name ?? pick?.title ?? "";
 };

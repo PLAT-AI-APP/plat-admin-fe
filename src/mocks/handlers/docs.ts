@@ -8,8 +8,10 @@ import type {
   DocsTreeOrderNode,
 } from "@/type/docs";
 import {
+  MOCK_DOCS_LOCALES,
   buildDocsTree,
   docsGroups,
+  docsImages,
   docsPages,
   groupDepth,
   nextDocsId,
@@ -91,7 +93,21 @@ const applyTree = (items: DocsTreeOrderNode[]) => {
   return null;
 };
 
+/** 폼이 보낸 파일 ID 로 그룹 응답의 아이콘 · 커버 주소를 채운다. */
+const withImageUrls = (values: DocsGroupFormValues) => ({
+  ...values,
+  iconUrl: values.iconFileId ? (docsImages.get(values.iconFileId) ?? null) : null,
+  coverImageUrl: values.coverImageFileId
+    ? (docsImages.get(values.coverImageFileId) ?? null)
+    : null,
+});
+
 const handlers = [
+  http.get(`${BASE}/locales`, async () => {
+    await delay(MOCK_DELAY_MS);
+    return HttpResponse.json(MOCK_DOCS_LOCALES);
+  }),
+
   http.get(`${BASE}/tree`, async () => {
     await delay(MOCK_DELAY_MS);
     return HttpResponse.json({ items: buildDocsTree() });
@@ -127,7 +143,8 @@ const handlers = [
     }
 
     const group = {
-      ...body,
+      ...withImageUrls(body),
+      parentId: body.parentId,
       id: nextDocsId(),
       sortOrder: nextSortOrder(body.parentId),
       createdAt: now(),
@@ -143,7 +160,7 @@ const handlers = [
     const group = docsGroups.find((item) => item.id === params.id);
     if (!group) return notFound();
 
-    Object.assign(group, (await request.json()) as DocsGroupFormValues, {
+    Object.assign(group, withImageUrls((await request.json()) as DocsGroupFormValues), {
       updatedAt: now(),
     });
 
@@ -262,7 +279,11 @@ const handlers = [
       return error(400, "INVALID_INPUT", "파일이 없습니다.");
     }
 
-    return HttpResponse.json({ url: URL.createObjectURL(file) });
+    const fileId = nextDocsId();
+    const url = URL.createObjectURL(file);
+    docsImages.set(fileId, url);
+
+    return HttpResponse.json({ fileId, url }, { status: 201 });
   }),
 ];
 

@@ -1,34 +1,29 @@
 import { useMutation } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
-
-interface DocsImageResponse {
-  url: string;
-}
+import type { DocsImage } from "@/type/docs";
 
 /**
- * 문서 이미지 업로드. 다른 업로드와 달리 파일 ID가 아니라 **공개 URL**이 온다 —
- * 마크다운 본문에 `![](url)` 로 그대로 박히기 때문이다.
+ * 문서 이미지 업로드. 파일 ID 와 공개 URL 이 함께 온다 — 아이콘 · 커버는 ID 를 저장하고,
+ * 본문은 `![](url)` 로 넣는다. 서버는 이미지를 임시로 받아 두고, 문서가 저장하며 가리켜야 남긴다.
  */
-export const postDocsImage = async (file: File): Promise<string> => {
+export const postDocsImage = async (file: File): Promise<DocsImage> => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await liveAxios.post<DocsImageResponse>(
-    "/docs/images",
-    formData,
-    { headers: { "Content-Type": "multipart/form-data" } },
-  );
+  const response = await liveAxios.post<DocsImage>("/docs/images", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 
-  if (!response.data?.url) {
-    throw new Error("업로드 응답에 url 이 없습니다.");
+  if (!response.data?.fileId || !response.data?.url) {
+    throw new Error("업로드 응답에 fileId · url 이 없습니다.");
   }
 
-  return response.data.url;
+  return response.data;
 };
 
 export const useDocsImageMutation = () => {
-  return useMutation<string, AppError, File>({
+  return useMutation<DocsImage, AppError, File>({
     mutationKey: ["post-docs-image"],
     mutationFn: postDocsImage,
   });

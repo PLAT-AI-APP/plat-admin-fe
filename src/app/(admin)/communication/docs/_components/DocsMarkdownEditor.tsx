@@ -126,7 +126,7 @@ const DocsMarkdownEditor = ({
     await Promise.all(
       jobs.map(async ({ file, placeholder }) => {
         try {
-          const url = await postDocsImage(file);
+          const { url } = await postDocsImage(file);
           replaceInValue(placeholder, `![${altOf(file.name)}](${url})`);
         } catch (error) {
           replaceInValue(placeholder, "");

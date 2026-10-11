@@ -22,37 +22,41 @@ const groupTranslationSchema = z.object({
     .max(200, "설명은 200자 이내로 입력해 주세요."),
 });
 
+/** 올린 문서 이미지. 아이콘 · 커버는 ID 를 저장하고 URL 로 미리보기를 그린다. */
+const docsImageSchema = z.object({ fileId: z.string(), url: z.string() }).nullable();
+
 /**
  * 언어별 입력은 **이름이 있을 때만 번역으로 친다.** 설명만 적고 이름을 비우면
  * 저장 때 조용히 빠지지 않도록 이름을 요구한다.
+ *
+ * `translations` 의 키는 서버가 준 지원 언어 코드다. 폼은 지원 언어마다 칸을 늘 띄워 둔다.
  */
 export const docsGroupSchema = z
   .object({
     slug: slugSchema,
     status: z.enum(["VISIBLE", "HIDDEN"]),
-    iconUrl: z.string(),
-    coverImageUrl: z.string(),
-    ko: groupTranslationSchema,
-    en: groupTranslationSchema,
+    icon: docsImageSchema,
+    coverImage: docsImageSchema,
+    translations: z.record(z.string(), groupTranslationSchema),
   })
   .superRefine((values, context) => {
-    (["ko", "en"] as const).forEach((locale) => {
-      const { name, description } = values[locale];
+    const entries = Object.entries(values.translations);
 
+    entries.forEach(([locale, { name, description }]) => {
       if (!name && description) {
         context.addIssue({
           code: "custom",
-          path: [locale, "name"],
+          path: ["translations", locale, "name"],
           message: "설명을 쓰려면 이름도 입력해 주세요.",
         });
       }
     });
 
-    if (!values.ko.name && !values.en.name) {
+    if (entries.length > 0 && entries.every(([, { name }]) => !name)) {
       context.addIssue({
         code: "custom",
-        path: ["ko", "name"],
-        message: "한국어 · 영어 중 하나 이상 이름을 입력해 주세요.",
+        path: ["translations", entries[0][0], "name"],
+        message: "한 언어 이상 이름을 입력해 주세요.",
       });
     }
   });
@@ -73,27 +77,26 @@ const pageTranslationSchema = z.object({
 export const docsPageSchema = z
   .object({
     slug: slugSchema,
-    ko: pageTranslationSchema,
-    en: pageTranslationSchema,
+    translations: z.record(z.string(), pageTranslationSchema),
   })
   .superRefine((values, context) => {
-    (["ko", "en"] as const).forEach((locale) => {
-      const { title, summary, content } = values[locale];
+    const entries = Object.entries(values.translations);
 
+    entries.forEach(([locale, { title, summary, content }]) => {
       if (!title && (summary || content.trim())) {
         context.addIssue({
           code: "custom",
-          path: [locale, "title"],
+          path: ["translations", locale, "title"],
           message: "요약 · 본문을 쓰려면 제목도 입력해 주세요.",
         });
       }
     });
 
-    if (!values.ko.title && !values.en.title) {
+    if (entries.length > 0 && entries.every(([, { title }]) => !title)) {
       context.addIssue({
         code: "custom",
-        path: ["ko", "title"],
-        message: "한국어 · 영어 중 하나 이상 제목을 입력해 주세요.",
+        path: ["translations", entries[0][0], "title"],
+        message: "한 언어 이상 제목을 입력해 주세요.",
       });
     }
   });

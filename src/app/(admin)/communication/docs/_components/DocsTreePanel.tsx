@@ -43,6 +43,7 @@ import {
   replaceChildren,
   type DocsNodeRef,
 } from "@/app/(admin)/communication/docs/_lib/docsTree";
+import { useDocsLocales } from "@/app/(admin)/communication/docs/_lib/useDocsLocales";
 
 interface DocsTreePanelProps {
   nodes: DocsTreeNode[];
@@ -96,6 +97,8 @@ const DocsTreePanel = ({
 }: DocsTreePanelProps) => {
   /** 접어 둔 그룹. 기본은 모두 펼침이다 — 문서 수가 많지 않고, 찾는 항목이 바로 보이는 편이 낫다. */
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  /** 번역이 이보다 적으면 있는 언어만 배지로 알린다. */
+  const supportedLocaleCount = useDocsLocales().codes.length;
 
   const toggle = (key: string) =>
     setCollapsed((current) => {
@@ -262,7 +265,7 @@ const DocsTreePanel = ({
                       )}
 
                       {/* 노출 · 게시 중이 기본이다. 기본이 아닌 상태와 빠진 번역만 표시한다(있는 언어 하나만 적는다). */}
-                      {node.locales.length < 2 && (
+                      {node.locales.length < supportedLocaleCount && (
                         <Badge tone="neutral" className="px-1.5 py-0.5 caption-3">
                           {node.locales.map((locale) => locale.toUpperCase()).join("")}
                         </Badge>

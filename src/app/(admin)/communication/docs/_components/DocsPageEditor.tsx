@@ -7,7 +7,6 @@ import { useDocsPageQuery } from "@/api/docs/getDocsPage";
 import { useDocsMutation } from "@/api/docs/mutateDocs";
 import { docsPageSchema, type DocsPageSchema } from "@/schema/docs.schema";
 import {
-  DOCS_LOCALE_LABEL,
   DOCS_PAGE_STATUS_LABEL,
   type DocsLocale,
   type DocsPageStatus,
@@ -27,15 +26,16 @@ import Tabs from "@/components/ui/Tabs";
 import Textarea from "@/components/ui/Textarea";
 import DocsMarkdownEditor from "./DocsMarkdownEditor";
 import {
-  DOCS_LOCALE_TABS,
   DOCS_PAGE_STATUS_TONE,
   docsArticleUrl,
 } from "@/app/(admin)/communication/docs/_constants/docsOptions";
 import {
-  EMPTY_PAGE_FORM,
+  emptyPageForm,
+  slugSourceOrder,
   toPageForm,
   toPagePayload,
 } from "@/app/(admin)/communication/docs/_lib/docsForm";
+import { useDocsLocales } from "@/app/(admin)/communication/docs/_lib/useDocsLocales";
 import {
   fallbackSlug,
   parseMarkdownFile,
@@ -95,7 +95,8 @@ const DocsPageEditor = ({
   onDirtyChange,
 }: DocsPageEditorProps) => {
   const isCreate = pageId === null;
-  const [locale, setLocale] = useState<DocsLocale>("ko");
+  const { defaultLocale, locales, codes, labelOf } = useDocsLocales();
+  const [locale, setLocale] = useState<DocsLocale>(defaultLocale);
   const [isSlugTouched, setIsSlugTouched] = useState(!isCreate);
   const [relativeImages, setRelativeImages] = useState<string[]>([]);
   const mdInputRef = useRef<HTMLInputElement>(null);
@@ -114,31 +115,39 @@ const DocsPageEditor = ({
     formState: { errors, isDirty },
   } = useForm<DocsPageSchema>({
     resolver: zodResolver(docsPageSchema),
-    defaultValues: EMPTY_PAGE_FORM,
+    defaultValues: emptyPageForm(codes),
   });
 
   useEffect(() => {
-    if (page) reset(toPageForm(page));
-  }, [page, reset]);
+    if (page) reset(toPageForm(page, codes));
+  }, [page, codes, reset]);
 
   useEffect(() => {
     onDirtyChange(isDirty);
   }, [isDirty, onDirtyChange]);
 
-  const [koTitle, enTitle, slug] = useWatch({
+  const [translations, slug] = useWatch({
     control,
-    name: ["ko.title", "en.title", "slug"],
+    name: ["translations", "slug"],
   });
+
+  /** 지원 언어 중 영어를 먼저 보고, 처음으로 slug 가 되는 제목을 쓴다. */
+  const slugFromTitles = () => {
+    const current = getValues("translations");
+
+    return slugSourceOrder(codes)
+      .map((code) => slugify(current[code]?.title ?? ""))
+      .find(Boolean);
+  };
 
   const suggestSlug = () => {
     if (isSlugTouched) return;
 
-    const { ko, en } = getValues();
-    setValue("slug", slugify(en.title) || slugify(ko.title), { shouldDirty: true });
+    setValue("slug", slugFromTitles() ?? "", { shouldDirty: true });
   };
 
   const submit = handleSubmit((values) => {
-    const payload = toPagePayload(values);
+    const payload = toPagePayload(values, codes);
 
     if (isCreate) {
       if (!groupId) return;
@@ -157,11 +166,11 @@ const DocsPageEditor = ({
 
     updatePageMutation.mutate(
       { pageId, values: payload },
-      { onSuccess: (updated) => reset(toPageForm(updated)) },
+      { onSuccess: (updated) => reset(toPageForm(updated, codes)) },
     );
   });
 
-  const errorLocale = (["ko", "en"] as const).find((key) => errors[key]);
+  const errorLocale = codes.find((code) => errors.translations?.[code]);
   const handleSave = () => {
     if (errorLocale && errorLocale !== locale) setLocale(errorLocale);
     submit();
@@ -174,7 +183,8 @@ const DocsPageEditor = ({
   const changeStatus = (status: DocsPageStatus) => {
     if (!page) return;
 
-    const title = koTitle || enTitle || page.slug;
+    const title =
+      codes.map((code) => translations?.[code]?.title).find(Boolean) || page.slug;
     const unsaved = isDirty
       ? "저장하지 않은 수정 내용은 반영되지 않습니다. 먼저 저장해 주세요."
       : undefined;
@@ -216,14 +226,16 @@ const DocsPageEditor = ({
       const fill = () => {
         const options = { shouldDirty: true, shouldValidate: false };
 
-        if (parsed.title) setValue(`${locale}.title`, parsed.title, options);
-        if (parsed.summary) setValue(`${locale}.summary`, parsed.summary, options);
-        setValue(`${locale}.content`, parsed.content, options);
+        if (parsed.title) setValue(`translations.${locale}.title`, parsed.title, options);
+        if (parsed.summary) {
+          setValue(`translations.${locale}.summary`, parsed.summary, options);
+        }
+        setValue(`translations.${locale}.content`, parsed.content, options);
 
         if (!isSlugTouched) {
           setValue(
             "slug",
-            parsed.slug || slugify(getValues("en.title")) || slugify(parsed.title),
+            parsed.slug || slugFromTitles() || slugify(parsed.title),
             options,
           );
         }
@@ -231,15 +243,15 @@ const DocsPageEditor = ({
         setRelativeImages(parsed.relativeImages);
         showAppToast(
           "success",
-          `${file.name} 을(를) ${DOCS_LOCALE_LABEL[locale]} 칸에 불러왔습니다.`,
+          `${file.name} 을(를) ${labelOf(locale)} 칸에 불러왔습니다.`,
         );
       };
 
-      const current = getValues(locale);
-      if (current.title || current.content.trim()) {
+      const current = getValues(`translations.${locale}`);
+      if (current?.title || current?.content.trim()) {
         openConfirm({
-          title: `${DOCS_LOCALE_LABEL[locale]} 내용을 바꿀까요?`,
-          description: `지금 입력한 ${DOCS_LOCALE_LABEL[locale]} 제목 · 요약 · 본문이 '${file.name}' 내용으로 바뀝니다. 저장하기 전까지는 서버에 반영되지 않습니다.`,
+          title: `${labelOf(locale)} 내용을 바꿀까요?`,
+          description: `지금 입력한 ${labelOf(locale)} 제목 · 요약 · 본문이 '${file.name}' 내용으로 바뀝니다. 저장하기 전까지는 서버에 반영되지 않습니다.`,
           confirmText: "불러오기",
           onConfirm: fill,
         });
@@ -254,13 +266,9 @@ const DocsPageEditor = ({
 
   const isSaving = createPageMutation.isPending || updatePageMutation.isPending;
   const isReadOnly = !canWrite;
-  const titles = { ko: koTitle, en: enTitle };
-
-  const localeTabs = DOCS_LOCALE_TABS.map((tab) => ({
-    ...tab,
-    label: titles[tab.value]?.trim()
-      ? tab.label
-      : `${DOCS_LOCALE_LABEL[tab.value]} (없음)`,
+  const localeTabs = locales.map(({ code, name }) => ({
+    value: code,
+    label: translations?.[code]?.title?.trim() ? name : `${name} (없음)`,
   }));
 
   /** 저장된 번역이 있는 언어만 사이트에서 볼 수 있다. */
@@ -423,47 +431,47 @@ const DocsPageEditor = ({
             </Alert>
           )}
 
-          {(["ko", "en"] as const).map((key) => (
+          {codes.map((key) => (
             <div key={key} hidden={key !== locale} className="flex flex-col gap-1">
               <FormField
                 label="제목"
                 htmlFor={`docs-page-title-${key}`}
-                error={errors[key]?.title?.message}
+                error={errors.translations?.[key]?.title?.message}
                 hint="최대 100자 · 비우면 이 언어 번역이 없어집니다"
               >
                 <Input
                   id={`docs-page-title-${key}`}
                   placeholder={key === "ko" ? "첫 대화하기" : "Your first chat"}
                   disabled={isReadOnly}
-                  hasError={Boolean(errors[key]?.title)}
-                  {...register(`${key}.title`, { onChange: suggestSlug })}
+                  hasError={Boolean(errors.translations?.[key]?.title)}
+                  {...register(`translations.${key}.title`, { onChange: suggestSlug })}
                 />
               </FormField>
 
               <FormField
                 label="요약"
                 htmlFor={`docs-page-summary-${key}`}
-                error={errors[key]?.summary?.message}
+                error={errors.translations?.[key]?.summary?.message}
                 hint="최대 300자 · 목록 · 검색 결과에 보입니다"
               >
                 <Textarea
                   id={`docs-page-summary-${key}`}
                   rows={2}
                   disabled={isReadOnly}
-                  hasError={Boolean(errors[key]?.summary)}
-                  {...register(`${key}.summary`)}
+                  hasError={Boolean(errors.translations?.[key]?.summary)}
+                  {...register(`translations.${key}.summary`)}
                 />
               </FormField>
 
-              <FormField label="본문" error={errors[key]?.content?.message}>
+              <FormField label="본문" error={errors.translations?.[key]?.content?.message}>
                 <Controller
                   control={control}
-                  name={`${key}.content`}
+                  name={`translations.${key}.content`}
                   render={({ field }) => (
                     <DocsMarkdownEditor
                       value={field.value}
                       onChange={field.onChange}
-                      hasError={Boolean(errors[key]?.content)}
+                      hasError={Boolean(errors.translations?.[key]?.content)}
                       disabled={isReadOnly}
                     />
                   )}

@@ -7,11 +7,7 @@ import { useDocsGroupQuery } from "@/api/docs/getDocsGroup";
 import { useDocsMutation } from "@/api/docs/mutateDocs";
 import { postDocsImage } from "@/api/docs/postDocsImage";
 import { docsGroupSchema, type DocsGroupSchema } from "@/schema/docs.schema";
-import {
-  DOCS_GROUP_STATUS_LABEL,
-  DOCS_LOCALE_LABEL,
-  type DocsLocale,
-} from "@/type/docs";
+import { DOCS_GROUP_STATUS_LABEL, type DocsLocale } from "@/type/docs";
 import { Trash } from "@/icons";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
@@ -28,13 +24,14 @@ import {
   DOCS_GROUP_STATUS_OPTIONS,
   DOCS_GROUP_STATUS_TONE,
   DOCS_IMAGE_MIME_TYPES,
-  DOCS_LOCALE_TABS,
 } from "@/app/(admin)/communication/docs/_constants/docsOptions";
 import {
-  EMPTY_GROUP_FORM,
+  emptyGroupForm,
+  slugSourceOrder,
   toGroupForm,
   toGroupPayload,
 } from "@/app/(admin)/communication/docs/_lib/docsForm";
+import { useDocsLocales } from "@/app/(admin)/communication/docs/_lib/useDocsLocales";
 import { fallbackSlug, slugify } from "@/app/(admin)/communication/docs/_lib/docsMarkdown";
 
 interface DocsGroupEditorProps {
@@ -68,7 +65,8 @@ const DocsGroupEditor = ({
   onDirtyChange,
 }: DocsGroupEditorProps) => {
   const isCreate = groupId === null;
-  const [locale, setLocale] = useState<DocsLocale>("ko");
+  const { defaultLocale, locales, codes } = useDocsLocales();
+  const [locale, setLocale] = useState<DocsLocale>(defaultLocale);
   /** slug 를 사람이 직접 고쳤는지. 고친 뒤로는 이름을 바꿔도 덮어쓰지 않는다. */
   const [isSlugTouched, setIsSlugTouched] = useState(!isCreate);
 
@@ -85,29 +83,32 @@ const DocsGroupEditor = ({
     formState: { errors, isDirty },
   } = useForm<DocsGroupSchema>({
     resolver: zodResolver(docsGroupSchema),
-    defaultValues: EMPTY_GROUP_FORM,
+    defaultValues: emptyGroupForm(codes),
   });
 
   useEffect(() => {
-    if (group) reset(toGroupForm(group));
-  }, [group, reset]);
+    if (group) reset(toGroupForm(group, codes));
+  }, [group, codes, reset]);
 
   useEffect(() => {
     onDirtyChange(isDirty);
   }, [isDirty, onDirtyChange]);
 
-  const names = useWatch({ control, name: ["ko.name", "en.name"] });
+  const translations = useWatch({ control, name: "translations" });
 
   /** 새 그룹은 이름에서 slug 를 제안한다. 영어 이름이 있으면 영어를 먼저 쓴다. */
   const suggestSlug = () => {
     if (isSlugTouched) return;
 
-    const { ko, en } = getValues();
-    setValue("slug", slugify(en.name) || slugify(ko.name), { shouldDirty: true });
+    const current = getValues("translations");
+    const suggested = slugSourceOrder(codes)
+      .map((code) => slugify(current[code]?.name ?? ""))
+      .find(Boolean);
+    setValue("slug", suggested ?? "", { shouldDirty: true });
   };
 
   const submit = handleSubmit((values) => {
-    const payload = toGroupPayload(values);
+    const payload = toGroupPayload(values, codes);
 
     if (isCreate) {
       createGroupMutation.mutate(
@@ -124,12 +125,12 @@ const DocsGroupEditor = ({
 
     updateGroupMutation.mutate(
       { groupId, values: payload },
-      { onSuccess: (updated) => reset(toGroupForm(updated)) },
+      { onSuccess: (updated) => reset(toGroupForm(updated, codes)) },
     );
   });
 
   /* 다른 언어 칸에서 난 오류는 탭을 넘겨야 보인다. 저장을 눌렀을 때 그 탭으로 옮긴다. */
-  const errorLocale = (["ko", "en"] as const).find((key) => errors[key]);
+  const errorLocale = codes.find((code) => errors.translations?.[code]);
   const handleSave = () => {
     if (errorLocale && errorLocale !== locale) setLocale(errorLocale);
     submit();
@@ -138,11 +139,9 @@ const DocsGroupEditor = ({
   const isSaving = createGroupMutation.isPending || updateGroupMutation.isPending;
   const isReadOnly = !canWrite;
 
-  const localeTabs = DOCS_LOCALE_TABS.map((tab, index) => ({
-    ...tab,
-    label: names[index]?.trim()
-      ? tab.label
-      : `${DOCS_LOCALE_LABEL[tab.value]} (없음)`,
+  const localeTabs = locales.map(({ code, name }) => ({
+    value: code,
+    label: translations?.[code]?.name?.trim() ? name : `${name} (없음)`,
   }));
 
   if (isError) {
@@ -218,28 +217,28 @@ const DocsGroupEditor = ({
           <div className="flex flex-col gap-3">
             <Tabs items={localeTabs} value={locale} onChange={setLocale} />
 
-            {/* 두 언어 칸을 모두 띄워 두고 탭으로 보이는 것만 바꾼다. 입력이 탭을 오가도 남는다. */}
-            {(["ko", "en"] as const).map((key) => (
+            {/* 모든 언어 칸을 띄워 두고 탭으로 보이는 것만 바꾼다. 입력이 탭을 오가도 남는다. */}
+            {codes.map((key) => (
               <div key={key} hidden={key !== locale} className="flex flex-col gap-1">
                 <FormField
                   label="이름"
                   htmlFor={`docs-group-name-${key}`}
-                  error={errors[key]?.name?.message}
+                  error={errors.translations?.[key]?.name?.message}
                   hint="최대 60자 · 비우면 이 언어 번역이 없어집니다"
                 >
                   <Input
                     id={`docs-group-name-${key}`}
                     placeholder={key === "ko" ? "유저 가이드" : "User Guide"}
                     disabled={isReadOnly}
-                    hasError={Boolean(errors[key]?.name)}
-                    {...register(`${key}.name`, { onChange: suggestSlug })}
+                    hasError={Boolean(errors.translations?.[key]?.name)}
+                    {...register(`translations.${key}.name`, { onChange: suggestSlug })}
                   />
                 </FormField>
 
                 <FormField
                   label="설명"
                   htmlFor={`docs-group-description-${key}`}
-                  error={errors[key]?.description?.message}
+                  error={errors.translations?.[key]?.description?.message}
                   hint="최대 200자 · 그룹 카드에 보입니다"
                 >
                   <Textarea
@@ -251,8 +250,8 @@ const DocsGroupEditor = ({
                         ? "캐릭터와 대화하는 유저를 위한 안내"
                         : "Guides for users chatting with characters"
                     }
-                    hasError={Boolean(errors[key]?.description)}
-                    {...register(`${key}.description`)}
+                    hasError={Boolean(errors.translations?.[key]?.description)}
+                    {...register(`translations.${key}.description`)}
                   />
                 </FormField>
               </div>
@@ -320,12 +319,18 @@ const DocsGroupEditor = ({
             <FormField label="아이콘">
               <Controller
                 control={control}
-                name="iconUrl"
+                name="icon"
                 render={({ field }) => (
                   <ImageUploadField
-                    value={field.value}
-                    onChange={field.onChange}
-                    upload={postDocsImage}
+                    value={field.value?.url ?? ""}
+                    upload={async (file) => {
+                      const image = await postDocsImage(file);
+                      field.onChange(image);
+                      return image.url;
+                    }}
+                    onChange={(url) => {
+                      if (!url) field.onChange(null);
+                    }}
                     accept={DOCS_IMAGE_MIME_TYPES}
                     aspectRatio="1 / 1"
                     disabled={isReadOnly}
@@ -337,12 +342,18 @@ const DocsGroupEditor = ({
             <FormField label="커버 이미지" hint="홈 · 그룹 화면 카드">
               <Controller
                 control={control}
-                name="coverImageUrl"
+                name="coverImage"
                 render={({ field }) => (
                   <ImageUploadField
-                    value={field.value}
-                    onChange={field.onChange}
-                    upload={postDocsImage}
+                    value={field.value?.url ?? ""}
+                    upload={async (file) => {
+                      const image = await postDocsImage(file);
+                      field.onChange(image);
+                      return image.url;
+                    }}
+                    onChange={(url) => {
+                      if (!url) field.onChange(null);
+                    }}
                     accept={DOCS_IMAGE_MIME_TYPES}
                     aspectRatio="16 / 9"
                     disabled={isReadOnly}

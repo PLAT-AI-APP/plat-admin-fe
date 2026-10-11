@@ -1,10 +1,7 @@
 import type { BadgeTone } from "@/components/ui/Badge";
 import type { SelectOption } from "@/components/ui/Select";
-import type { TabItem } from "@/components/ui/Tabs";
 import {
   DOCS_GROUP_STATUS_LABEL,
-  DOCS_LOCALES,
-  DOCS_LOCALE_LABEL,
   type DocsGroupStatus,
   type DocsLocale,
   type DocsPageStatus,
@@ -24,14 +21,6 @@ export const DOCS_PAGE_STATUS_TONE: Record<DocsPageStatus, BadgeTone> = {
 export const DOCS_GROUP_STATUS_OPTIONS: SelectOption<DocsGroupStatus>[] = (
   Object.keys(DOCS_GROUP_STATUS_LABEL) as DocsGroupStatus[]
 ).map((status) => ({ label: DOCS_GROUP_STATUS_LABEL[status], value: status }));
-
-export const DOCS_LOCALE_TABS: TabItem<DocsLocale>[] = DOCS_LOCALES.map(
-  (locale) => ({ label: DOCS_LOCALE_LABEL[locale], value: locale }),
-);
-
-export const DOCS_LOCALE_OPTIONS: SelectOption<DocsLocale>[] = DOCS_LOCALES.map(
-  (locale) => ({ label: DOCS_LOCALE_LABEL[locale], value: locale }),
-);
 
 /** md 일괄 업로드 한 번에 보낼 수 있는 최대 개수. 서버 제한과 같다. */
 export const DOCS_BULK_MAX = 50;

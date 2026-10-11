@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Trash, Upload } from "@/icons";
 import { showErrorToast } from "@/lib/toast";
-import { DOCS_LOCALE_LABEL, type DocsBulkPage, type DocsLocale } from "@/type/docs";
+import type { DocsBulkPage, DocsLocale } from "@/type/docs";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
@@ -15,7 +15,6 @@ import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
 import {
   DOCS_BULK_MAX,
-  DOCS_LOCALE_OPTIONS,
 } from "@/app/(admin)/communication/docs/_constants/docsOptions";
 import {
   fallbackSlug,
@@ -26,6 +25,7 @@ import {
   slugify,
   type ParsedMarkdown,
 } from "@/app/(admin)/communication/docs/_lib/docsMarkdown";
+import { useDocsLocales } from "@/app/(admin)/communication/docs/_lib/useDocsLocales";
 
 interface DocsBulkUploadModalProps {
   /** 올릴 그룹. 없으면 닫혀 있다. */
@@ -61,7 +61,11 @@ const DocsBulkUploadModal = ({
   onSubmit,
 }: DocsBulkUploadModalProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [locale, setLocale] = useState<DocsLocale>("ko");
+  const { defaultLocale, locales, labelOf } = useDocsLocales();
+  /* 창은 늘 떠 있어 지원 언어를 받기 전에 그려질 수 있다. 고르기 전에는 기본 언어를 따른다. */
+  const [chosenLocale, setLocale] = useState<DocsLocale | null>(null);
+  const locale = chosenLocale ?? defaultLocale;
+  const localeOptions = locales.map(({ code, name }) => ({ label: name, value: code }));
   const [rows, setRows] = useState<BulkRow[]>([]);
   const [openedFor, setOpenedFor] = useState<string | null>(groupId);
 
@@ -231,7 +235,7 @@ const DocsBulkUploadModal = ({
           >
             <Select
               id="docs-bulk-locale"
-              options={DOCS_LOCALE_OPTIONS}
+              options={localeOptions}
               value={locale}
               onChange={(event) => setLocale(event.target.value as DocsLocale)}
             />
@@ -271,7 +275,7 @@ const DocsBulkUploadModal = ({
             getRowKey={(row) => row.key}
             skeletonRows={3}
             emptyTitle=".md 파일을 골라 주세요."
-            emptyDescription={`front-matter 의 title · summary · slug 를 읽고, title 이 없으면 첫 # 제목을 씁니다. (${DOCS_LOCALE_LABEL[locale]})`}
+            emptyDescription={`front-matter 의 title · summary · slug 를 읽고, title 이 없으면 첫 # 제목을 씁니다. (${labelOf(locale)})`}
           />
       </div>
     </Modal>
