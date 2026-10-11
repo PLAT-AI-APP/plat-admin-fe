@@ -404,6 +404,8 @@ export interface UniverseDetail {
   updatedAt: string | null;
   /** 탈퇴한 제작자가 남긴 것을 공식 계정이 인수한 시각. 인수하지 않았으면 null. */
   adoptedAt: string | null;
+  /** 제작자가 처음 만들 때 권리 책임(저작권·초상권 등)에 동의한 시각. 앱에서 만든 세계관만 있다. */
+  rightsAgreedAt: string | null;
   translations: UniverseTranslationView[];
   hashtags: UniverseHashtagView[];
   character: UniverseCharacterView | null;
