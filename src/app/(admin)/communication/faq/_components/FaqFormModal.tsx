@@ -24,7 +24,7 @@ interface FaqFormModalProps {
 }
 
 const EMPTY_VALUES: FaqSchema = {
-  category: "REFUND",
+  category: "SERVICE",
   question: "",
   answer: "",
   isVisible: true,
