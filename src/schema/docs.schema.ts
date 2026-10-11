@@ -22,7 +22,7 @@ const groupTranslationSchema = z.object({
     .max(200, "설명은 200자 이내로 입력해 주세요."),
 });
 
-/** 올린 문서 이미지. 아이콘 · 커버는 ID 를 저장하고 URL 로 미리보기를 그린다. */
+/** 올린 문서 이미지. 커버는 ID 를 저장하고 URL 로 미리보기를 그린다. */
 const docsImageSchema = z.object({ fileId: z.string(), url: z.string() }).nullable();
 
 /**
@@ -35,7 +35,6 @@ export const docsGroupSchema = z
   .object({
     slug: slugSchema,
     status: z.enum(["VISIBLE", "HIDDEN"]),
-    icon: docsImageSchema,
     coverImage: docsImageSchema,
     translations: z.record(z.string(), groupTranslationSchema),
   })

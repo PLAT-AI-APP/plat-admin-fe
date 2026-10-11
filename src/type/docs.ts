@@ -26,7 +26,7 @@ export interface DocsLocales {
 }
 
 /**
- * 올린 문서 이미지. 아이콘 · 커버는 `fileId` 를 저장하고, 미리보기 · 본문은 `url` 을 쓴다.
+ * 올린 문서 이미지. 커버는 `fileId` 를 저장하고, 미리보기 · 본문은 `url` 을 쓴다.
  * 문서가 저장하며 가리키지 않은 이미지는 서버가 기한 뒤 지운다.
  */
 export interface DocsImage {
@@ -75,8 +75,6 @@ export interface DocsGroupDetail {
   id: string;
   parentId: string | null;
   slug: string;
-  iconFileId: string | null;
-  iconUrl: string | null;
   coverImageFileId: string | null;
   coverImageUrl: string | null;
   status: DocsGroupStatus;
@@ -89,7 +87,6 @@ export interface DocsGroupDetail {
 export interface DocsGroupFormValues {
   slug: string;
   /** 이미지 업로드가 준 파일 ID. 비우면 이미지를 뗀다. */
-  iconFileId: string | null;
   coverImageFileId: string | null;
   status: DocsGroupStatus;
   translations: DocsGroupTranslation[];

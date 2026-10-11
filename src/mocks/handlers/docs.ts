@@ -93,10 +93,9 @@ const applyTree = (items: DocsTreeOrderNode[]) => {
   return null;
 };
 
-/** 폼이 보낸 파일 ID 로 그룹 응답의 아이콘 · 커버 주소를 채운다. */
+/** 폼이 보낸 파일 ID 로 그룹 응답의 커버 주소를 채운다. */
 const withImageUrls = (values: DocsGroupFormValues) => ({
   ...values,
-  iconUrl: values.iconFileId ? (docsImages.get(values.iconFileId) ?? null) : null,
   coverImageUrl: values.coverImageFileId
     ? (docsImages.get(values.coverImageFileId) ?? null)
     : null,

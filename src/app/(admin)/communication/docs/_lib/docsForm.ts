@@ -21,7 +21,6 @@ const byLocales = <T>(locales: DocsLocale[], make: (locale: DocsLocale) => T) =>
 export const emptyGroupForm = (locales: DocsLocale[]): DocsGroupSchema => ({
   slug: "",
   status: "VISIBLE",
-  icon: null,
   coverImage: null,
   translations: byLocales(locales, () => ({ name: "", description: "" })),
 });
@@ -29,10 +28,6 @@ export const emptyGroupForm = (locales: DocsLocale[]): DocsGroupSchema => ({
 export const toGroupForm = (group: DocsGroupDetail, locales: DocsLocale[]): DocsGroupSchema => ({
   slug: group.slug,
   status: group.status,
-  icon:
-    group.iconFileId && group.iconUrl
-      ? { fileId: group.iconFileId, url: group.iconUrl }
-      : null,
   coverImage:
     group.coverImageFileId && group.coverImageUrl
       ? { fileId: group.coverImageFileId, url: group.coverImageUrl }
@@ -53,7 +48,6 @@ export const toGroupPayload = (
 ): DocsGroupFormValues => ({
   slug: values.slug.trim(),
   status: values.status,
-  iconFileId: values.icon?.fileId ?? null,
   coverImageFileId: values.coverImage?.fileId ?? null,
   translations: locales
     .filter((locale) => values.translations[locale]?.name.trim())

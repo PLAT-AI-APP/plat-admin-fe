@@ -28,7 +28,7 @@ export const MOCK_DOCS_LOCALES: DocsLocales = {
   ],
 };
 
-/** 목업 업로드가 돌려준 이미지. 그룹 응답의 아이콘 · 커버 주소를 여기서 찾는다. */
+/** 목업 업로드가 돌려준 이미지. 그룹 응답의 커버 주소를 여기서 찾는다. */
 export const docsImages = new Map<string, string>();
 
 const at = (days: number) => daysAgo(days);
@@ -38,8 +38,6 @@ export const docsGroups: MockDocsGroup[] = [
     id: "1",
     parentId: null,
     slug: "user-guide",
-    iconFileId: null,
-    iconUrl: null,
     coverImageFileId: null,
     coverImageUrl: null,
     status: "VISIBLE",
@@ -55,8 +53,6 @@ export const docsGroups: MockDocsGroup[] = [
     id: "2",
     parentId: "1",
     slug: "getting-started",
-    iconFileId: null,
-    iconUrl: null,
     coverImageFileId: null,
     coverImageUrl: null,
     status: "VISIBLE",
@@ -72,8 +68,6 @@ export const docsGroups: MockDocsGroup[] = [
     id: "3",
     parentId: "2",
     slug: "account",
-    iconFileId: null,
-    iconUrl: null,
     coverImageFileId: null,
     coverImageUrl: null,
     status: "HIDDEN",
@@ -86,8 +80,6 @@ export const docsGroups: MockDocsGroup[] = [
     id: "4",
     parentId: null,
     slug: "creator-guide",
-    iconFileId: null,
-    iconUrl: null,
     coverImageFileId: null,
     coverImageUrl: null,
     status: "VISIBLE",

@@ -315,30 +315,7 @@ const DocsGroupEditor = ({
             </FormField>
           </div>
 
-          <div className="grid grid-cols-[160px_1fr] gap-4">
-            <FormField label="아이콘">
-              <Controller
-                control={control}
-                name="icon"
-                render={({ field }) => (
-                  <ImageUploadField
-                    value={field.value?.url ?? ""}
-                    upload={async (file) => {
-                      const image = await postDocsImage(file);
-                      field.onChange(image);
-                      return image.url;
-                    }}
-                    onChange={(url) => {
-                      if (!url) field.onChange(null);
-                    }}
-                    accept={DOCS_IMAGE_MIME_TYPES}
-                    aspectRatio="1 / 1"
-                    disabled={isReadOnly}
-                  />
-                )}
-              />
-            </FormField>
-
+          <div className="max-w-xl">
             <FormField label="커버 이미지" hint="홈 · 그룹 화면 카드">
               <Controller
                 control={control}
