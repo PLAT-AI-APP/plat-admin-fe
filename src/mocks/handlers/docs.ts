@@ -251,6 +251,21 @@ const handlers = [
     if (!page) return notFound();
 
     const { status } = (await request.json()) as { status: DocsPageStatus };
+
+    /* 초안 → 게시, 게시 ↔ 숨김만 된다. 같은 상태는 그대로 둔다. */
+    const allowed: Record<DocsPageStatus, DocsPageStatus[]> = {
+      DRAFT: ["DRAFT", "PUBLISHED"],
+      PUBLISHED: ["PUBLISHED", "HIDDEN"],
+      HIDDEN: ["HIDDEN", "PUBLISHED"],
+    };
+    if (!allowed[page.status].includes(status)) {
+      return error(
+        409,
+        "DOCS_PAGE_STATUS_TRANSITION_INVALID",
+        "초안은 게시만, 게시한 문서는 숨김과 게시 사이로만 바꿀 수 있습니다.",
+      );
+    }
+
     Object.assign(page, { status, updatedAt: now() });
 
     return HttpResponse.json(stripSortOrder(page));

@@ -43,6 +43,9 @@ export const DOCS_GROUP_STATUS_LABEL: Record<DocsGroupStatus, string> = {
 
 export type DocsPageStatus = "DRAFT" | "PUBLISHED" | "HIDDEN";
 
+/** 상태 변경 API 로 보낼 수 있는 상태. 초안으로는 되돌리지 않는다(초안 → 게시, 게시 ↔ 숨김). */
+export type DocsPageStatusTarget = Exclude<DocsPageStatus, "DRAFT">;
+
 export const DOCS_PAGE_STATUS_LABEL: Record<DocsPageStatus, string> = {
   DRAFT: "초안",
   PUBLISHED: "게시 중",
