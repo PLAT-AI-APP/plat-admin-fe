@@ -1,29 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
-import type {
-  UserDetail,
-  VerificationRecord,
-  VerificationType,
-} from "@/type/user";
+import type { UserDetail } from "@/type/user";
 import { toUser, type UserSummaryResponse } from "./getUserList";
 
 /**
  * 유저 상세의 서버 응답.
  *
- * 목록 한 줄이 가진 것 전부에 집계와 제재 이력이 붙는다. 서버가 평평하게 내려주므로
+ * 목록 한 줄이 가진 것 전부에 본인 · 성인인증(지금 상태), 집계와 제재 이력이 붙는다. 서버가 평평하게 내려주므로
  * 여기서도 펴 둔다 — 두 겹으로 받으면 화면이 합치는 코드를 따로 들고 있어야 한다.
  */
 export interface UserDetailResponse extends UserSummaryResponse {
   bio: string | null;
-  /** 조회 시각 기준 유효 여부. 만료 시각(`adultVerifiedUntil`)은 목록 필드로 함께 온다. */
-  adultVerified: boolean;
-  /** 철회되지 않은 최근 인증 시각. */
-  adultVerifiedAt: string | null;
+  /** 조회 시각 기준 유효 여부. */
   identityVerified: boolean;
+  /** 마지막 본인인증 시각. */
   identityVerifiedAt: string | null;
-  /** 최근 것부터. */
-  verificationHistory: VerificationRecordResponse[];
+  identityVerifiedUntil: string | null;
+  adultVerified: boolean;
+  /** 마지막 성인인증 시각. 최신 본인인증이 미성년이면 null이다. */
+  adultVerifiedAt: string | null;
+  adultVerifiedUntil: string | null;
+  adultContentEnabled: boolean;
   /** 본인인증은 붙었지만 서버가 번호를 관리자 응답에 싣지 않아 항상 null이다. */
   phoneNumber: string | null;
   creditBalance: number;
@@ -45,37 +43,16 @@ export interface UserDetailResponse extends UserSummaryResponse {
   withdrawnReason: string | null;
 }
 
-interface VerificationRecordResponse {
-  type: VerificationType;
-  method: string;
-  verifiedAt: string;
-  expiresAt: string | null;
-  revokedAt: string | null;
-  revokedReason: string | null;
-}
-
-const toVerificationRecord = (
-  record: VerificationRecordResponse,
-): VerificationRecord => ({
-  type: record.type,
-  method: record.method,
-  verifiedAt: record.verifiedAt,
-  expiresAt: record.expiresAt ?? undefined,
-  revokedAt: record.revokedAt ?? undefined,
-  revokedReason: record.revokedReason ?? undefined,
-});
-
 export const toUserDetail = (user: UserDetailResponse): UserDetail => ({
   ...toUser(user),
   bio: user.bio ?? undefined,
-  isAdultVerified: user.adultVerified,
-  adultVerifiedAt: user.adultVerifiedAt ?? undefined,
   isIdentityVerified: user.identityVerified,
   identityVerifiedAt: user.identityVerifiedAt ?? undefined,
-  // 배포 순서가 어긋나 필드가 아직 없는 서버에서도 화면이 깨지지 않게 빈 배열로 받는다.
-  verificationHistory: (user.verificationHistory ?? []).map(
-    toVerificationRecord,
-  ),
+  identityVerifiedUntil: user.identityVerifiedUntil ?? undefined,
+  isAdultVerified: user.adultVerified,
+  adultVerifiedAt: user.adultVerifiedAt ?? undefined,
+  adultVerifiedUntil: user.adultVerifiedUntil ?? undefined,
+  adultContentEnabled: user.adultContentEnabled,
   phoneNumber: user.phoneNumber ?? undefined,
   creditBalance: user.creditBalance,
   characterCount: user.characterCount,

@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
 import {
   DEVICE_PLATFORM_LABEL,
@@ -9,22 +9,15 @@ import {
   UNCOLLECTED_LABEL,
   VERIFICATION_STATE_LABEL,
   VERIFICATION_STATE_TONE,
-  VERIFICATION_TYPE_LABEL,
   calculateAge,
-  describeRevokedReason,
   detailVerificationStateOf,
   formatPhoneNumber,
-  formatVerificationMethod,
   type UserDetail,
   type VerificationState,
 } from "@/type/user";
-import { useCan } from "@/hooks/useCan";
-import { useAdultVerificationRevokeMutation } from "@/api/user/revokeAdultVerification";
 import AdultMark from "@/components/detail/AdultMark";
 import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
-import AdultVerificationRevokeModal from "./AdultVerificationRevokeModal";
 import {
   LOGIN_PROVIDER_BADGE_CLASS,
   LOGIN_PROVIDER_LABEL,
@@ -179,82 +172,6 @@ const ProfileResetHistoryCard = ({ userId }: { userId: string }) => {
   );
 };
 
-/**
- * 본인 · 성인인증 이력. 갱신 · 철회된 기록까지 최근 것부터 그대로 보여 준다 —
- * "언제 인증했고 누가 왜 철회했나"는 CS와 신고 대응의 근거다.
- */
-const VerificationHistoryCard = ({ user }: { user: UserDetail }) => {
-  const history = user.verificationHistory;
-
-  return (
-    <Card
-      title="인증 이력"
-      description="다시 인증하면 이전 기록은 '갱신으로 교체'로 남습니다. 같은 종류는 철회되지 않은 가장 위 줄이 지금 인증입니다."
-      className="col-span-2"
-      noPadding
-    >
-      {history.length === 0 ? (
-        <p className="px-5 py-4 body-5 text-font-2">
-          본인인증 · 성인인증 기록이 없습니다.
-        </p>
-      ) : (
-        <table className="w-full body-5">
-          <thead>
-            <tr className="border-b border-border-main text-left text-font-2">
-              <th className="px-5 py-2.5 font-medium">종류</th>
-              <th className="px-5 py-2.5 font-medium">수단</th>
-              <th className="px-5 py-2.5 font-medium">인증 시각</th>
-              <th className="px-5 py-2.5 font-medium">만료</th>
-              <th className="px-5 py-2.5 font-medium">철회 시각</th>
-              <th className="px-5 py-2.5 font-medium">철회 사유</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((item, index) => {
-              const revoked = describeRevokedReason(item.revokedReason);
-
-              return (
-                <tr
-                  key={`${item.type}-${item.verifiedAt}-${index}`}
-                  className="border-b border-border-main align-top last:border-b-0"
-                >
-                  <td className="px-5 py-2.5 text-font-1">
-                    {VERIFICATION_TYPE_LABEL[item.type]}
-                  </td>
-                  <td className="px-5 py-2.5 text-font-2">
-                    {formatVerificationMethod(item.method)}
-                  </td>
-                  <td className="px-5 py-2.5 text-font-2 tabular-nums">
-                    {formatDateTime(item.verifiedAt)}
-                  </td>
-                  <td className="px-5 py-2.5 text-font-2 tabular-nums">
-                    {formatDate(item.expiresAt)}
-                  </td>
-                  <td className="px-5 py-2.5 text-font-2 tabular-nums">
-                    {formatDateTime(item.revokedAt)}
-                  </td>
-                  <td className="px-5 py-2.5 break-all text-font-1">
-                    {revoked ? (
-                      <>
-                        <p>{revoked.label}</p>
-                        {revoked.detail && (
-                          <p className="mt-0.5 text-font-2">{revoked.detail}</p>
-                        )}
-                      </>
-                    ) : (
-                      "-"
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
-    </Card>
-  );
-};
-
 /** 인증 상태 뱃지 + 인증일 · 만료일. 상세 카드의 한 줄 값이다. */
 const VerificationValue = ({
   state,
@@ -296,11 +213,6 @@ const InfoRow = ({ label, value }: { label: ReactNode; value: ReactNode }) => (
  * 항목이 많아 가입 정보 · 인증/동의 · 운영 정보 세 묶음으로 나눠 읽는 순서를 정해 둔다.
  */
 const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
-  /* 성인인증 철회는 서버에서 `user:write` 다. */
-  const canWrite = useCan("user:write");
-  const [isRevokeOpen, setIsRevokeOpen] = useState(false);
-  const revokeMutation = useAdultVerificationRevokeMutation();
-
   const identityState = detailVerificationStateOf(
     user.isIdentityVerified,
     user.identityVerifiedUntil,
@@ -309,15 +221,6 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
     user.isAdultVerified,
     user.adultVerifiedUntil,
   );
-  /* 철회할 인증이 있어야 버튼을 보인다. 만료 · 미인증은 이미 꺼져 있다. */
-  const canRevokeAdult = canWrite && adultState === "VERIFIED";
-
-  const handleRevoke = (reason: string) => {
-    revokeMutation
-      .mutateAsync({ userId: user.userId, body: { reason } })
-      .then(() => setIsRevokeOpen(false))
-      .catch(() => undefined);
-  };
 
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -358,21 +261,7 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
       </Card>
 
       <div className="flex flex-col gap-4">
-        <Card
-          title="인증 · 동의"
-          bodyClassName="px-5 py-1"
-          action={
-            canRevokeAdult && (
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => setIsRevokeOpen(true)}
-              >
-                성인인증 철회
-              </Button>
-            )
-          }
-        >
+        <Card title="인증 · 동의" bodyClassName="px-5 py-1">
           <InfoRow
             label="본인인증"
             value={
@@ -484,18 +373,9 @@ const UserAccountPanel = ({ user }: UserAccountPanelProps) => {
         </Card>
       </div>
 
-      <VerificationHistoryCard user={user} />
-
       <ProfileResetHistoryCard userId={user.userId} />
 
       <AgreementHistoryCard userId={user.userId} />
-
-      <AdultVerificationRevokeModal
-        user={isRevokeOpen ? user : null}
-        onClose={() => setIsRevokeOpen(false)}
-        onSubmit={handleRevoke}
-        isSubmitting={revokeMutation.isPending}
-      />
     </div>
   );
 };
