@@ -4,7 +4,6 @@ import type {
   LoginProvider,
   UserDetail,
   UserStatus,
-  VerificationRecord,
 } from "@/type/user";
 import { calculateAge } from "@/type/user";
 import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
@@ -54,17 +53,10 @@ const SUSPEND_REASONS = [
 /** 인증 유효 기간. 서버는 인증 시각에 1년을 더해 만료 시각을 정한다. */
 const VERIFICATION_VALID_DAYS = 365;
 
-const ADMIN_REVOKE_REASONS = [
-  "미성년자 명의 도용 신고",
-  "가족 명의로 인증했다는 본인 문의",
-];
-
 /**
  * 본인 · 성인인증 시드. 서버(`IdentityVerificationService`)와 같은 규칙을 따른다.
- * - 본인인증 한 번에 PHONE 기록이 생기고, 만 19세 이상이면 같은 시각에 ADULT 기록도 생긴다.
- * - 만료 시각은 인증 시각 + 1년. 다시 인증하면 이전 기록은 `RENEWED`로 철회된다.
- * - 관리자가 성인인증을 철회하면 ADULT 기록에 `ADMIN:{관리자 ID}:{사유}`가 남고
- *   유저 행의 성인인증 만료 시각 · 19 토글이 비워진다.
+ * - 유저 행에는 마지막 인증 시각과 만료 시각만 남는다(인증 결과 · 이력은 저장하지 않는다).
+ * - 만 19세 이상이면 같은 시각에 성인인증도 함께 남는다. 만료 시각은 인증 시각 + 1년.
  */
 const buildVerification = ({
   seed,
@@ -81,11 +73,8 @@ const buildVerification = ({
   createdDaysAgo: number;
   isLongTimeUser: boolean;
 }) => {
-  const history: VerificationRecord[] = [];
-
   if (!hasIdentity) {
     return {
-      history,
       identityVerifiedUntil: undefined,
       adultVerifiedUntil: undefined,
       identityVerifiedAt: undefined,
@@ -94,75 +83,19 @@ const buildVerification = ({
     };
   }
 
-  const method = index % 7 === 3 ? "MOCK" : "KG_INICIS_PASS";
   // 오래된 유저 일부는 1년 넘게 다시 인증하지 않아 만료된 상태로 둔다.
   const verifiedDaysAgo = isLongTimeUser
     ? randomInt(seed * 24, VERIFICATION_VALID_DAYS + 5, createdDaysAgo)
     : randomInt(seed * 24, 0, Math.min(createdDaysAgo, 300));
   const verifiedAt = daysAgo(verifiedDaysAgo, 13);
   const expiresAt = daysAgo(verifiedDaysAgo - VERIFICATION_VALID_DAYS, 13);
-
-  // 인증 화면을 두 번 거친 유저. 앞선 기록은 갱신으로 교체돼 이력에만 남는다.
-  const hasRenewed =
-    !isLongTimeUser && index % 6 === 1 && createdDaysAgo - verifiedDaysAgo > 20;
-  // 성인인증을 관리자가 철회한 유저.
-  const isAdminRevoked = !isLongTimeUser && isAdultAge && index % 8 === 5;
-  const revokedDaysAgo = Math.max(verifiedDaysAgo - 3, 0);
-
-  history.push({ type: "PHONE", method, verifiedAt, expiresAt });
-
-  if (isAdultAge) {
-    history.push({
-      type: "ADULT",
-      method,
-      verifiedAt,
-      expiresAt,
-      ...(isAdminRevoked
-        ? {
-            revokedAt: daysAgo(revokedDaysAgo, 16),
-            revokedReason: `ADMIN:7:${pickOne(seed * 25, ADMIN_REVOKE_REASONS)}`,
-          }
-        : {}),
-    });
-  }
-
-  if (hasRenewed) {
-    const previousDaysAgo = randomInt(
-      seed * 26,
-      verifiedDaysAgo + 10,
-      createdDaysAgo,
-    );
-    const previous = {
-      method,
-      verifiedAt: daysAgo(previousDaysAgo, 11),
-      expiresAt: daysAgo(previousDaysAgo - VERIFICATION_VALID_DAYS, 11),
-      revokedAt: verifiedAt,
-      revokedReason: "RENEWED",
-    };
-
-    history.push({ type: "PHONE", ...previous });
-    if (isAdultAge) history.push({ type: "ADULT", ...previous });
-  }
-
-  // 이력은 최근 것부터 온다. 같은 시각이면 PHONE이 먼저 저장되므로 ADULT를 위로 둔다.
-  history.sort((a, b) =>
-    a.verifiedAt === b.verifiedAt
-      ? a.type === "ADULT"
-        ? -1
-        : 1
-      : b.verifiedAt.localeCompare(a.verifiedAt),
-  );
-
-  const hasAdult = isAdultAge && !isAdminRevoked;
-  const adultValid = hasAdult && !isLongTimeUser;
+  const adultValid = isAdultAge && !isLongTimeUser;
 
   return {
-    history,
     identityVerifiedUntil: expiresAt,
-    // 관리자 철회는 유저 행의 만료 시각을 비운다. 만료는 값이 남은 채 지나간다.
-    adultVerifiedUntil: hasAdult ? expiresAt : undefined,
+    adultVerifiedUntil: isAdultAge ? expiresAt : undefined,
     identityVerifiedAt: verifiedAt,
-    adultVerifiedAt: hasAdult ? verifiedAt : undefined,
+    adultVerifiedAt: isAdultAge ? verifiedAt : undefined,
     // 19 토글은 성인인증이 유효한 유저만 켤 수 있다. 그중 셋에 둘꼴로 켜 둔다.
     adultContentEnabled: adultValid && index % 3 !== 1,
   };
@@ -242,7 +175,6 @@ export const users: UserDetail[] = Array.from({ length: 45 }, (_, index) => {
     adultVerifiedAt: verification.adultVerifiedAt,
     adultVerifiedUntil: verification.adultVerifiedUntil,
     adultContentEnabled: verification.adultContentEnabled,
-    verificationHistory: verification.history,
     birthDate: isVerified ? birthDate : undefined,
     gender: isVerified ? pickOne(seed * 20, GENDERS) : "UNKNOWN",
     isMarketingAgreed: index % 3 !== 0,
