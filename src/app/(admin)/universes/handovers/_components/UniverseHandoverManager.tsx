@@ -111,9 +111,9 @@ const UniverseHandoverManager = () => {
     });
   const { data: pendingCounts } = usePendingCountsQuery();
 
-  /* 대표 이미지를 원본으로 크게 넘겨 본다. 실존 인물 · 도용 이미지는 80px 썸네일로는 가릴 수 없다. */
+  /* 대표 이미지를 큰 이미지(LG)로 넘겨 본다. 실존 인물 · 도용 이미지는 80px 썸네일로는 가릴 수 없다. */
   const lightboxItems: LightboxItem[] = (data?.content ?? []).flatMap((row) => {
-    const url = resolveImageUrl(row.profileImageUrl, row.profileImageFileId, "UNIVERSE_PROFILE", "ORIGIN");
+    const url = resolveImageUrl(row.profileImageUrl, row.profileImageFileId, "UNIVERSE_PROFILE", "LG");
     return url
       ? [{ id: row.handoverId, url, title: row.universeTitle ?? "(제목 없음)", caption: `인수 #${row.handoverId}` }]
       : [];

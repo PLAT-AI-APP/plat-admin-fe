@@ -8,6 +8,9 @@
  *
  * 이 파일이 있는 이유: 화면마다 조립하면 그 타입에 없는 variant를 요청해(400)
  * 이미지가 조용히 깨진다. 타입별로 **허용된 variant만** 고를 수 있게 여기서 막는다.
+ *
+ * 원본 해상도(`ORIGIN`)는 공개 경로로 열리지 않는다(서명 없으면 404). 화면 표시는
+ * 긴 변 최대 1600px 로 줄인 `LG`를 쓰고, 원본이 꼭 필요한 곳은 서버가 서명 URL 을 준다.
  */
 
 /**
@@ -29,14 +32,14 @@ const IMAGE_BASE_URI =
  * 아바타처럼 40px로 받으려다 깨지는 사고가 실제로 나기 쉬운 자리다.
  */
 export const IMAGE_VARIANTS = {
-  USER_PROFILE: ["ORIGIN", "SQ40", "SQ80"],
-  UNIVERSE_PROFILE: ["ORIGIN", "SQ80", "SQ140"],
-  UNIVERSE_ASSET: ["ORIGIN", "SQ80"],
-  CHARACTER_PROFILE: ["ORIGIN", "SQ40", "SQ140"],
+  USER_PROFILE: ["LG", "SQ40", "SQ80"],
+  UNIVERSE_PROFILE: ["LG", "SQ80", "SQ140"],
+  UNIVERSE_ASSET: ["LG", "SQ80"],
+  CHARACTER_PROFILE: ["LG", "SQ40", "SQ140"],
   /** 배너는 가로로 긴 그림이라 정사각 변형본이 없다. 목록 썸네일은 `FIT400`을 쓴다. */
-  MAIN_BANNER: ["ORIGIN", "FIT400"],
+  MAIN_BANNER: ["LG", "FIT400"],
   /** 교환 상품 아이콘. 제작자 화면은 SQ140, 어드민 목록은 SQ80을 쓴다. */
-  REWARD_PRODUCT: ["ORIGIN", "SQ80", "SQ140"],
+  REWARD_PRODUCT: ["LG", "SQ80", "SQ140"],
 } as const;
 
 export type ImageFileType = keyof typeof IMAGE_VARIANTS;
@@ -58,7 +61,7 @@ export type ImageVariantOf<T extends ImageFileType> =
 export const buildImageUrl = <T extends ImageFileType>(
   fileId: string | null | undefined,
   type: T,
-  variant: ImageVariantOf<T> = "ORIGIN" as ImageVariantOf<T>,
+  variant: ImageVariantOf<T> = "LG" as ImageVariantOf<T>,
 ): string | undefined => {
   if (!fileId || !IMAGE_BASE_URI) return undefined;
 
@@ -70,5 +73,5 @@ export const resolveImageUrl = <T extends ImageFileType>(
   url: string | null | undefined,
   fileId: string | null | undefined,
   type: T,
-  variant: ImageVariantOf<T> = "ORIGIN" as ImageVariantOf<T>,
+  variant: ImageVariantOf<T> = "LG" as ImageVariantOf<T>,
 ): string | undefined => url || buildImageUrl(fileId, type, variant);
