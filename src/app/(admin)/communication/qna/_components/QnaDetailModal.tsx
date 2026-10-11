@@ -46,6 +46,9 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
   const refund = qna?.refund;
   /* 답변은 한 번만 단다. 유저에게 이미 나간 글이라 답변 완료 뒤에는 읽기만 한다(서버도 409로 막는다). */
   const isAnswered = qna?.status === "ANSWERED";
+  /* 유저가 취소한 문의에는 답변하지 않는다(서버도 409 QNA_CANCELLED 로 막는다). */
+  const isCancelled = qna?.status === "CANCELLED";
+  const isAnswerLocked = isAnswered || isCancelled;
 
   const {
     register,
@@ -121,7 +124,7 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
         닫기
       </Button>
 
-      {!isAnswered && (
+      {!isAnswerLocked && (
         <Button
           variant="primary"
           onClick={submit}
@@ -190,7 +193,7 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              {refund && !isAnswered && (
+              {refund && !isAnswerLocked && (
                 <p className="body-6 text-font-2">
                   환불 결과는 유저에게 자동으로 전달되지 않습니다. 결과와 사유를 답변으로 알려 주세요.
                 </p>
@@ -204,18 +207,22 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
                 hint={
                   qna.answeredAt
                     ? `답변 ${formatDateTime(qna.answeredAt)} · 답변자 ${formatAdmin(qna.answeredBy ?? undefined, qna.answeredById ?? undefined)} · 답변은 수정할 수 없습니다.`
-                    : canAnswer
-                      ? "아직 답변이 등록되지 않았습니다."
-                      : "답변 발송 권한(qna:send)이 없어 조회만 가능합니다."
+                    : isCancelled
+                      ? `유저가 ${qna.cancelledAt ? formatDateTime(qna.cancelledAt) : ""}에 취소한 문의입니다. 취소된 문의에는 답변할 수 없습니다.`
+                        : canAnswer
+                        ? "아직 답변이 등록되지 않았습니다."
+                        : "답변 발송 권한(qna:send)이 없어 조회만 가능합니다."
                 }
               >
                 <Textarea
                   id="qna-answer"
                   rows={6}
-                  placeholder="문의 내용에 대한 답변을 입력해 주세요."
+                  placeholder={
+                    isCancelled ? "취소된 문의입니다." : "문의 내용에 대한 답변을 입력해 주세요."
+                  }
                   hasError={Boolean(errors.answer)}
-                  readOnly={isAnswered}
-                  disabled={isAnswered}
+                  readOnly={isAnswerLocked}
+                  disabled={isAnswerLocked}
                   {...register("answer")}
                 />
               </FormField>

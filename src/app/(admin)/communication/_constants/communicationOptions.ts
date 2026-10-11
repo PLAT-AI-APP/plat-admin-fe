@@ -21,11 +21,14 @@ import type { TabItem } from "@/components/ui/Tabs";
 export const QNA_STATUS_LABEL: Record<QnaStatus, string> = {
   OPEN: "답변 대기",
   ANSWERED: "답변 완료",
+  CANCELLED: "취소",
 };
 
 export const QNA_STATUS_TONE: Record<QnaStatus, BadgeTone> = {
   OPEN: "warning",
   ANSWERED: "success",
+  /* 유저가 거둔 문의. 처리할 일이 없으므로 눈에 띄지 않게 둔다. */
+  CANCELLED: "neutral",
 };
 
 export const QNA_CATEGORY_LABEL: Record<QnaCategory, string> = {
@@ -58,6 +61,7 @@ export const QNA_STATUS_TABS: TabItem<QnaStatus | "">[] = [
   { label: "전체", value: "" },
   { label: QNA_STATUS_LABEL.OPEN, value: "OPEN" },
   { label: QNA_STATUS_LABEL.ANSWERED, value: "ANSWERED" },
+  { label: QNA_STATUS_LABEL.CANCELLED, value: "CANCELLED" },
 ];
 
 export const QNA_CATEGORY_OPTIONS: SelectOption[] = [

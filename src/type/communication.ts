@@ -6,8 +6,8 @@ import type { RefundRejectReasonCode, RefundStatus } from "@/type/billing";
  * 나중에 켜기만 하면 되도록 화면과 타입을 미리 구현한다.
  */
 
-/** Q&A */
-export type QnaStatus = "OPEN" | "ANSWERED";
+/** Q&A. `CANCELLED` 는 유저가 답변 전에 거둔 문의이며 답변할 수 없다(서버가 409 `QNA_CANCELLED` 로 막는다). */
+export type QnaStatus = "OPEN" | "ANSWERED" | "CANCELLED";
 export type QnaCategory =
   | "REFUND"
   | "ACCOUNT"
@@ -67,6 +67,8 @@ export interface QnaItem {
   /** 답변 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
   answeredById: number | null;
   answeredAt: string | null;
+  /** 유저가 취소한 시각. `CANCELLED` 문의에만 있다. */
+  cancelledAt: string | null;
   createdAt: string;
   /** `REFUND` 문의에만 있다. */
   refund: QnaRefundLink | null;
