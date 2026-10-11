@@ -3,7 +3,6 @@ import { liveAxios } from "..";
 import { showAppToast } from "@/lib/toast";
 import type { AppError } from "@/type/api";
 import type {
-  UniverseCategory,
   UniverseReviewStatus,
   UniverseStatus,
   UniverseTendency,
@@ -22,7 +21,6 @@ import type {
 export interface UniversePatchBody {
   visibility?: UniverseVisibility;
   tendency?: UniverseTendency;
-  category?: UniverseCategory;
   commentEnabled?: boolean;
   /** ACTIVE ↔ INACTIVE 만 보낼 수 있다. 인수 대기 · 삭제 · 파기는 탈퇴 · 삭제 · 파기 배치가 정한다. */
   status?: UniverseStatus;
@@ -103,7 +101,7 @@ export const useUniverseMutation = () => {
     queryClient.invalidateQueries({ queryKey: ["get-universe-detail"] });
   };
 
-  /** 상태·공개범위·성향·카테고리·댓글 등 일반 운영 값 변경. */
+  /** 상태·공개범위·성향·댓글 등 일반 운영 값 변경. */
   const patchMutation = useMutation<
     void,
     AppError,

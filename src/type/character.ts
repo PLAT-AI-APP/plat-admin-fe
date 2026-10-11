@@ -72,17 +72,6 @@ export const isOperableUniverseStatus = (status: UniverseStatus) =>
 /** 세계관 심사 상태. 서버 `ReviewStatus`와 같다. 승인 전에는 앱에 노출되지 않는다. */
 export type UniverseReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
 
-/** 세계관 장르. 서버 `UniverseCategory`와 같다. */
-export type UniverseCategory =
-  | "ROMANCE"
-  | "FANTASY"
-  | "DRAMA"
-  | "MARTIAL_ARTS"
-  | "GL"
-  | "BL"
-  | "HORROR"
-  | "MYSTERY";
-
 /** 세계관 성향. 서버 `UniverseTendency`와 같다. */
 export type UniverseTendency = "ALL" | "MALE_ORIENTED" | "FEMALE_ORIENTED";
 
@@ -188,7 +177,6 @@ export interface Universe {
   creatorNickname: string;
   visibility: UniverseVisibility;
   status: UniverseStatus;
-  category: UniverseCategory;
   tendency: UniverseTendency;
   reviewStatus: UniverseReviewStatus;
   /** 심사 반려 사유. `reviewStatus`가 `REJECTED`일 때만 있다. */
@@ -268,7 +256,6 @@ export interface AdminUniverseListItem {
   universeId: string;
   title: string;
   introduce: string;
-  category: UniverseCategory;
   tendency: UniverseTendency;
   visibility: UniverseVisibility;
   status: UniverseStatus;
@@ -388,7 +375,6 @@ export interface UniverseScenarioDetail {
 export interface UniverseDetail {
   universeId: string;
   creator: UniverseCreatorSummary;
-  category: UniverseCategory;
   tendency: UniverseTendency;
   visibility: UniverseVisibility;
   status: UniverseStatus;

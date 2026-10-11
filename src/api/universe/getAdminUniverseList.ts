@@ -8,7 +8,6 @@ import {
 } from "@/type/api";
 import type {
   AdminUniverseListItem,
-  UniverseCategory,
   UniverseReviewStatus,
   UniverseStatus,
   UniverseTendency,
@@ -41,7 +40,6 @@ export type UniverseOrder =
 
 /** 서버가 실제로 받는 조건. 빈 문자열은 보내지 않는다(enum 파싱 실패 방지). */
 export interface AdminUniverseFilterParams {
-  category?: UniverseCategory | "";
   visibility?: UniverseVisibility | "";
   status?: UniverseStatus | "";
   reviewStatus?: UniverseReviewStatus | "";
@@ -85,7 +83,6 @@ interface AdminUniverseItemResponse {
   id: string;
   title: string;
   introduce: string;
-  category: UniverseCategory;
   tendency: UniverseTendency;
   visibility: UniverseVisibility;
   status: UniverseStatus;
@@ -113,7 +110,6 @@ const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
   universeId: item.id,
   title: item.title,
   introduce: item.introduce,
-  category: item.category,
   tendency: item.tendency,
   visibility: item.visibility,
   status: item.status,
@@ -141,7 +137,6 @@ const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
 const toRequestParams = (params: AdminUniverseListParams) => {
   const clean: Record<string, string | number> = { ...toPageRequest(params) };
   if (params.keyword?.trim()) clean.keyword = params.keyword.trim();
-  if (params.category) clean.category = params.category;
   if (params.visibility) clean.visibility = params.visibility;
   if (params.status) clean.status = params.status;
   if (params.reviewStatus) clean.reviewStatus = params.reviewStatus;

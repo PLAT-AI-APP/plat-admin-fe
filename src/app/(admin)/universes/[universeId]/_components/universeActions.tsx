@@ -103,7 +103,7 @@ export const buildUniverseActions = ({
       onSelect: onChangeVisibility,
     },
     {
-      label: "장르 · 성향 변경",
+      label: "성향 변경",
       icon: <Layers size={15} />,
       onSelect: onChangeClassification,
     },

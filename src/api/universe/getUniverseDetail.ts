@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type {
-  UniverseCategory,
   UniverseDetail,
   UniverseReviewStatus,
   UniverseStatus,
@@ -85,7 +84,6 @@ interface ScenarioResponse {
 interface UniverseDetailResponse {
   id: string;
   creator: CreatorSummaryResponse;
-  category: UniverseCategory;
   tendency: UniverseTendency;
   visibility: UniverseVisibility;
   status: UniverseStatus;
@@ -121,7 +119,6 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
     grade: response.creator.grade,
     status: response.creator.status,
   },
-  category: response.category,
   tendency: response.tendency,
   visibility: response.visibility,
   status: response.status,
