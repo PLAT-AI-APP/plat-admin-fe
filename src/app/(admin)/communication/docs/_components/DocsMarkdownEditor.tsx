@@ -1,31 +1,17 @@
 "use client";
 
-import {
-  useRef,
-  useState,
-  type ClipboardEvent,
-  type DragEvent,
-} from "react";
+import { useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { postDocsImage } from "@/api/docs/postDocsImage";
-import { ImageIcon, Layers } from "@/icons";
+import { ImageIcon } from "@/icons";
 import { showAppToast, showErrorToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
-import MarkdownContent from "@/components/ui/MarkdownContent";
 import Spinner from "@/components/ui/Spinner";
-import Tabs from "@/components/ui/Tabs";
 import Textarea from "@/components/ui/Textarea";
 import {
   DOCS_IMAGE_MAX_SIZE,
   DOCS_IMAGE_MIME_TYPES,
 } from "@/app/(admin)/communication/docs/_constants/docsOptions";
-
-type EditorTab = "WRITE" | "PREVIEW";
-
-const EDITOR_TABS = [
-  { label: "작성", value: "WRITE" as const },
-  { label: "미리보기", value: "PREVIEW" as const },
-];
 
 interface DocsMarkdownEditorProps {
   id?: string;
@@ -46,8 +32,7 @@ const altOf = (fileName: string) =>
 /**
  * 가이드 문서 본문 편집기.
  *
- * 공지 등록 모달과 같은 작성 | 미리보기 탭에, 넓은 화면에서는 좌우로 나란히 보며
- * 쓰는 보기를 더했다. 문서는 공지보다 훨씬 길어 탭을 오가며 확인하기 어렵다.
+ * 미리보기는 두지 않는다. 게시한 모습은 사이트에서 본다.
  *
  * 이미지는 버튼 · 붙여넣기 · 끌어다 놓기로 올리고, 올리는 동안 커서 자리에
  * 자리표시를 먼저 넣어 둔다. 업로드가 끝나기 전에 계속 써도 자리가 밀리지 않는다.
@@ -61,8 +46,6 @@ const DocsMarkdownEditor = ({
 }: DocsMarkdownEditorProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [tab, setTab] = useState<EditorTab>("WRITE");
-  const [isSplit, setIsSplit] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadingCount, setUploadingCount] = useState(0);
 
@@ -75,7 +58,7 @@ const DocsMarkdownEditor = ({
     const start = textarea?.selectionStart ?? source.length;
     const end = textarea?.selectionEnd ?? source.length;
 
-    /* 이미지는 문단 하나로 두어야 미리보기에서 글 사이에 끼지 않는다. */
+    /* 이미지는 문단 하나로 두어야 글 사이에 끼지 않는다. */
     const before = source.slice(0, start);
     const after = source.slice(end);
     const lead = before && !before.endsWith("\n") ? "\n" : "";
@@ -101,12 +84,18 @@ const DocsMarkdownEditor = ({
   const uploadImages = async (files: File[]) => {
     const images = files.filter((file) => {
       if (!DOCS_IMAGE_MIME_TYPES.includes(file.type)) {
-        showAppToast("warning", `${file.name}: JPG · PNG · WEBP · GIF 만 올릴 수 있습니다.`);
+        showAppToast(
+          "warning",
+          `${file.name}: JPG · PNG · WEBP · GIF 만 올릴 수 있습니다.`,
+        );
         return false;
       }
 
       if (file.size > DOCS_IMAGE_MAX_SIZE) {
-        showAppToast("warning", `${file.name}: 10MB 이하 이미지만 올릴 수 있습니다.`);
+        showAppToast(
+          "warning",
+          `${file.name}: 10MB 이하 이미지만 올릴 수 있습니다.`,
+        );
         return false;
       }
 
@@ -183,84 +172,40 @@ const DocsMarkdownEditor = ({
     />
   );
 
-  const preview = (
-    <div className="min-h-120 overflow-y-auto rounded-field border border-border-main px-4 py-3 body-4 scrollbar-thin">
-      {value.trim() ? (
-        <MarkdownContent content={value} />
-      ) : (
-        <p className="body-5 text-font-2">
-          본문을 입력하면 여기에서 미리 볼 수 있습니다.
-        </p>
-      )}
-    </div>
-  );
-
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-end justify-between gap-2">
-        {isSplit ? (
-          <p className="py-2.5 body-5 text-font-2">작성 · 미리보기 나란히 보기</p>
-        ) : (
-          <Tabs items={EDITOR_TABS} value={tab} onChange={setTab} />
+      <div className="flex items-center justify-end gap-1.5">
+        {uploadingCount > 0 && (
+          <span className="flex items-center gap-1.5 body-6 text-font-2">
+            <Spinner size={13} className="text-brand" />
+            이미지 {uploadingCount}개 올리는 중
+          </span>
         )}
 
-        <div className="flex items-center gap-1.5 pb-1">
-          {uploadingCount > 0 && (
-            <span className="flex items-center gap-1.5 body-6 text-font-2">
-              <Spinner size={13} className="text-brand" />
-              이미지 {uploadingCount}개 올리는 중
-            </span>
-          )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept={DOCS_IMAGE_MIME_TYPES.join(",")}
+          className="hidden"
+          onChange={(event) => {
+            uploadImages(Array.from(event.target.files ?? []));
+            event.target.value = "";
+          }}
+        />
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept={DOCS_IMAGE_MIME_TYPES.join(",")}
-            className="hidden"
-            onChange={(event) => {
-              uploadImages(Array.from(event.target.files ?? []));
-              event.target.value = "";
-            }}
-          />
-
-          <Button
-            size="sm"
-            variant="ghost"
-            leftIcon={<ImageIcon size={14} />}
-            disabled={disabled}
-            onClick={() => {
-              /* 미리보기 탭에서는 커서가 없다. 작성 탭으로 돌아가 끝에 넣는다. */
-              setTab("WRITE");
-              fileInputRef.current?.click();
-            }}
-          >
-            이미지
-          </Button>
-
-          {/* 좁은 화면에서는 나란히 놓으면 둘 다 읽을 수 없어 버튼을 감춘다. */}
-          <Button
-            size="sm"
-            variant={isSplit ? "secondary" : "ghost"}
-            leftIcon={<Layers size={14} />}
-            className="hidden xl:inline-flex"
-            onClick={() => setIsSplit((current) => !current)}
-          >
-            {isSplit ? "탭으로 보기" : "나란히 보기"}
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          leftIcon={<ImageIcon size={14} />}
+          disabled={disabled}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          이미지
+        </Button>
       </div>
 
-      {isSplit ? (
-        <div className="grid gap-3 xl:grid-cols-2">
-          {editor}
-          {preview}
-        </div>
-      ) : tab === "WRITE" ? (
-        editor
-      ) : (
-        preview
-      )}
+      {editor}
     </div>
   );
 };
