@@ -247,11 +247,24 @@ const DocsTreePanel = ({
                         {node.name}
                       </span>
 
-                      {/* 노출 · 게시 중이 기본이다. 기본이 아닌 상태와 빠진 번역만 표시한다. */}
+                      {/* 가장 자주 하는 일은 메뉴를 열지 않고 바로 한다. 배지보다 앞에 둬야 그룹·페이지 배지가 같은 자리에 선다. */}
+                      {canWrite && isGroup && (
+                        <IconButton
+                          size="sm"
+                          label="페이지 추가"
+                          icon={<Plus size={14} />}
+                          className="opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onCreatePage(node.id);
+                          }}
+                        />
+                      )}
+
+                      {/* 노출 · 게시 중이 기본이다. 기본이 아닌 상태와 빠진 번역만 표시한다(있는 언어 하나만 적는다). */}
                       {node.locales.length < 2 && (
                         <Badge tone="neutral" className="px-1.5 py-0.5 caption-3">
                           {node.locales.map((locale) => locale.toUpperCase()).join("")}
-                          {" 만"}
                         </Badge>
                       )}
                       {isGroup
@@ -271,20 +284,6 @@ const DocsTreePanel = ({
                               {DOCS_PAGE_STATUS_LABEL[node.status as DocsPageStatus]}
                             </Badge>
                           )}
-
-                      {/* 가장 자주 하는 일은 메뉴를 열지 않고 바로 한다. */}
-                      {canWrite && isGroup && (
-                        <IconButton
-                          size="sm"
-                          label="페이지 추가"
-                          icon={<Plus size={14} />}
-                          className="opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onCreatePage(node.id);
-                          }}
-                        />
-                      )}
 
                       {actions.length > 0 && (
                         <div
