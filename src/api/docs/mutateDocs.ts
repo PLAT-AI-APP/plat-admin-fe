@@ -9,6 +9,7 @@ import type {
   DocsPageDetail,
   DocsPageFormValues,
   DocsPageStatus,
+  DocsPageStatusTarget,
   DocsTreeNode,
   DocsTreeOrderNode,
 } from "@/type/docs";
@@ -68,7 +69,7 @@ export const updateDocsPage = async (
 
 export const updateDocsPageStatus = async (
   pageId: string,
-  status: DocsPageStatus,
+  status: DocsPageStatusTarget,
 ) => {
   const response = await liveAxios.patch<DocsPageDetail>(
     `/docs/pages/${pageId}/status`,
@@ -200,7 +201,7 @@ export const useDocsMutation = () => {
   const pageStatusMutation = useMutation<
     DocsPageDetail,
     AppError,
-    { pageId: string; status: DocsPageStatus }
+    { pageId: string; status: DocsPageStatusTarget }
   >({
     mutationFn: ({ pageId, status }) => updateDocsPageStatus(pageId, status),
     onSuccess: (page) => {
