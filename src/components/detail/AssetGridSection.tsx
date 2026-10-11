@@ -27,8 +27,8 @@ interface AssetGridSectionProps {
  *
  * - 그리드는 `contain`으로 그린다. 세로로 긴 일러스트가 잘리면 문제가 되는
  *   부분이 프레임 밖으로 나가 "괜찮아 보이는" 상태가 된다.
- * - 클릭하면 **ORIGIN 원본**을 라이트박스로 띄운다. 썸네일 변환본은 화질이
- *   낮아 워터마크·문구 식별에 쓸 수 없다.
+ * - 클릭하면 **LG 큰 이미지**(긴 변 최대 1600px)를 라이트박스로 띄운다. 썸네일
+ *   변환본은 화질이 낮아 워터마크·문구 식별에 쓸 수 없다. 원본 해상도는 공개로 열리지 않는다.
  */
 const AssetGridSection = ({ id, assets }: AssetGridSectionProps) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -48,7 +48,7 @@ const AssetGridSection = ({ id, assets }: AssetGridSectionProps) => {
         asset.url,
         asset.fileId,
         "UNIVERSE_ASSET",
-        "ORIGIN",
+        "LG",
       ),
     }))
     .filter(

@@ -39,7 +39,7 @@ export interface CharacterImageSource {
 /**
  * 캐릭터 이미지 URL. 서버가 준 URL을 우선하고 없으면 fileId로 만든다.
  *
- * `CHARACTER_PROFILE`에 허용된 variant는 `ORIGIN | SQ40 | SQ140`뿐이다.
+ * `CHARACTER_PROFILE`에 허용된 variant는 `LG | SQ40 | SQ140`뿐이다.
  * (`SQ80`은 없다 — 보내면 422가 난다)
  */
 export const characterImageSrc = (

@@ -145,7 +145,7 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
     });
   };
 
-  const originImage = data ? characterImageSrc(data, "ORIGIN") : undefined;
+  const originImage = data ? characterImageSrc(data, "LG") : undefined;
   // 이미지가 없으면 확대해도 볼 것이 없다.
   const openImage = originImage ? () => setLightboxIndex(0) : undefined;
 
