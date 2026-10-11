@@ -7,7 +7,7 @@ import type {
 import { daysAgo } from "@/mocks/utils";
 
 /**
- * 가이드 문서 목업 씨앗. 계약(`DOCS_API_CONTRACT.md`)의 관리자 응답 모양 그대로다.
+ * 문서 목업 씨앗. 계약(`DOCS_API_CONTRACT.md`)의 관리자 응답 모양 그대로다.
  *
  * 그룹 · 페이지는 같은 부모 안에서 `sortOrder` 하나를 함께 쓴다.
  */

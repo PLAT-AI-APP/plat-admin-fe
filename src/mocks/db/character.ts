@@ -4,7 +4,6 @@ import type {
   ScenarioLifecycle,
   ScenarioType,
   Universe,
-  UniverseCategory,
   UniverseReviewStatus,
   UniverseScenario,
   UniverseStatus,
@@ -112,17 +111,6 @@ const characterBases = CHARACTER_NAMES.map((name, index) => {
   };
 });
 
-const UNIVERSE_CATEGORIES: readonly UniverseCategory[] = [
-  "ROMANCE",
-  "FANTASY",
-  "DRAMA",
-  "MARTIAL_ARTS",
-  "GL",
-  "BL",
-  "HORROR",
-  "MYSTERY",
-];
-
 const UNIVERSE_TENDENCIES: readonly UniverseTendency[] = [
   "ALL",
   "MALE_ORIENTED",
@@ -205,7 +193,6 @@ export const universes: Universe[] = characterBases.flatMap(
               : ("PUBLIC" as const)
             : ("PRIVATE" as const),
         status,
-        category: pickOne(seed * 2, UNIVERSE_CATEGORIES),
         tendency: pickOne(seed * 4, UNIVERSE_TENDENCIES),
         reviewStatus,
         reviewRejectionReason:

@@ -7,7 +7,6 @@ import type {
 } from "@/type/character";
 import { SERVICE_LANGUAGES, type ServiceLanguage } from "@/type/language";
 import {
-  UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_TENDENCY_LABEL,
   UNIVERSE_VISIBILITY_LABEL,
 } from "@/constants/universeOptions";
@@ -89,10 +88,6 @@ export const UNIVERSE_VISIBILITY_OPTIONS: SelectOption[] = [
     value: "UNLISTED",
   },
 ];
-
-export const UNIVERSE_CATEGORY_OPTIONS: SelectOption[] = (
-  Object.keys(UNIVERSE_CATEGORY_LABEL) as (keyof typeof UNIVERSE_CATEGORY_LABEL)[]
-).map((value) => ({ label: UNIVERSE_CATEGORY_LABEL[value], value }));
 
 export const UNIVERSE_TENDENCY_OPTIONS: SelectOption[] = (
   Object.keys(UNIVERSE_TENDENCY_LABEL) as (keyof typeof UNIVERSE_TENDENCY_LABEL)[]

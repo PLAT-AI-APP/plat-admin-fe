@@ -9,6 +9,7 @@ import type {
   DocsPageDetail,
   DocsPageFormValues,
   DocsPageStatus,
+  DocsPageStatusTarget,
   DocsTreeNode,
   DocsTreeOrderNode,
 } from "@/type/docs";
@@ -68,7 +69,7 @@ export const updateDocsPage = async (
 
 export const updateDocsPageStatus = async (
   pageId: string,
-  status: DocsPageStatus,
+  status: DocsPageStatusTarget,
 ) => {
   const response = await liveAxios.patch<DocsPageDetail>(
     `/docs/pages/${pageId}/status`,
@@ -112,7 +113,7 @@ export const saveDocsTree = async (nodes: DocsTreeNode[]) => {
 };
 
 /**
- * 가이드 문서의 모든 변경.
+ * 문서의 모든 변경.
  *
  * 그룹 · 페이지 하나를 고쳐도 트리의 이름 · 상태 · 언어 표시가 바뀌므로 트리를 늘 함께 다시 읽는다.
  */
@@ -200,7 +201,7 @@ export const useDocsMutation = () => {
   const pageStatusMutation = useMutation<
     DocsPageDetail,
     AppError,
-    { pageId: string; status: DocsPageStatus }
+    { pageId: string; status: DocsPageStatusTarget }
   >({
     mutationFn: ({ pageId, status }) => updateDocsPageStatus(pageId, status),
     onSuccess: (page) => {

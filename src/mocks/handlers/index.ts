@@ -34,6 +34,6 @@ export const handlers = [
   ...characterHandlers,
   ...communicationHandlers,
   ...opsHandlers,
-  /* 가이드 문서는 실서버 경로를 가로챈다. 이유는 `./docs.ts` 머리 주석에. */
+  /* 문서는 실서버 경로를 가로챈다. 이유는 `./docs.ts` 머리 주석에. */
   ...docsHandlers,
 ];

@@ -76,11 +76,15 @@ export interface QnaItem {
 
 /** 자주 하는 질문 */
 export type FaqCategory =
+  | "SERVICE"
   | "ACCOUNT"
+  | "VERIFICATION"
   | "PAYMENT"
   | "REFUND"
   | "CHARACTER"
   | "CHAT"
+  | "CREATOR"
+  | "REPORT"
   | "ETC";
 
 export interface FaqItem {

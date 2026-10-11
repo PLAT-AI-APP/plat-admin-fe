@@ -74,21 +74,30 @@ export const QNA_CATEGORY_OPTIONS: SelectOption[] = [
 
 /* ------------------------------- FAQ ------------------------------- */
 
+/** 키 순서가 곧 선택지 순서다. 서버 enum 선언 순서(= 고객센터 노출 순서)와 맞춘다. */
 export const FAQ_CATEGORY_LABEL: Record<FaqCategory, string> = {
+  SERVICE: "서비스 이용",
   ACCOUNT: "계정",
-  PAYMENT: "결제",
+  VERIFICATION: "본인·성인인증",
+  PAYMENT: "결제·노트",
   REFUND: "환불",
   CHARACTER: "캐릭터",
   CHAT: "대화",
+  CREATOR: "제작·수익",
+  REPORT: "신고·제재",
   ETC: "기타",
 };
 
 export const FAQ_CATEGORY_TONE: Record<FaqCategory, BadgeTone> = {
+  SERVICE: "neutral",
   ACCOUNT: "info",
+  VERIFICATION: "info",
   PAYMENT: "warning",
   REFUND: "danger",
   CHARACTER: "brand",
   CHAT: "success",
+  CREATOR: "brand",
+  REPORT: "danger",
   ETC: "neutral",
 };
 

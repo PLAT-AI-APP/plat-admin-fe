@@ -1,5 +1,5 @@
 /**
- * 가이드 문서(도움말 센터).
+ * 문서(사용자 사이트 /docs).
  *
  * 그룹(최대 3단) 아래에 마크다운 페이지를 둔다. 그룹 · 페이지 모두 언어별 번역을
  * 따로 갖고, 번역이 없는 언어에서는 사용자 사이트에 나타나지 않는다. 어떤 언어가
@@ -42,6 +42,9 @@ export const DOCS_GROUP_STATUS_LABEL: Record<DocsGroupStatus, string> = {
 };
 
 export type DocsPageStatus = "DRAFT" | "PUBLISHED" | "HIDDEN";
+
+/** 상태 변경 API 로 보낼 수 있는 상태. 초안으로는 되돌리지 않는다(초안 → 게시, 게시 ↔ 숨김). */
+export type DocsPageStatusTarget = Exclude<DocsPageStatus, "DRAFT">;
 
 export const DOCS_PAGE_STATUS_LABEL: Record<DocsPageStatus, string> = {
   DRAFT: "초안",

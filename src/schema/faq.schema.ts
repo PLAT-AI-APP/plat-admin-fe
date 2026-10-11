@@ -1,7 +1,18 @@
 import { z } from "zod";
 
 export const faqSchema = z.object({
-  category: z.enum(["ACCOUNT", "PAYMENT", "REFUND", "CHARACTER", "CHAT", "ETC"]),
+  category: z.enum([
+    "SERVICE",
+    "ACCOUNT",
+    "VERIFICATION",
+    "PAYMENT",
+    "REFUND",
+    "CHARACTER",
+    "CHAT",
+    "CREATOR",
+    "REPORT",
+    "ETC",
+  ]),
   question: z
     .string()
     .trim()
@@ -11,7 +22,7 @@ export const faqSchema = z.object({
     .string()
     .trim()
     .min(10, "답변은 10자 이상 입력해 주세요.")
-    .max(2000, "답변은 2000자 이내로 입력해 주세요."),
+    .max(5000, "답변은 5000자 이내로 입력해 주세요."),
   isVisible: z.boolean(),
 });
 

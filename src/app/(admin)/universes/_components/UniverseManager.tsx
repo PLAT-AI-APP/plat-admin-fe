@@ -30,8 +30,6 @@ import Table, { type TableColumn } from "@/components/ui/Table";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import {
   UNIVERSE_ADULT_FILTER_OPTIONS,
-  UNIVERSE_CATEGORY_FILTER_OPTIONS,
-  UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_ORDER_OPTIONS,
   UNIVERSE_REVIEW_FILTER_OPTIONS,
   UNIVERSE_REVIEW_LABEL,
@@ -52,7 +50,6 @@ const DEFAULT_PARAMS = {
   page: 1,
   keyword: "",
   order: "CREATED_DESC",
-  category: "",
   visibility: "",
   status: "",
   reviewStatus: "",
@@ -172,7 +169,6 @@ const UniverseManager = () => {
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
   const { page, keyword, creatorId, hashtagId } = params;
   const order = isSupportedOrder(params.order) ? params.order : "CREATED_DESC";
-  const category = params.category as AdminUniverseListParams["category"];
   const visibility = params.visibility as AdminUniverseListParams["visibility"];
   const status = params.status as AdminUniverseListParams["status"];
   const reviewStatus =
@@ -188,7 +184,6 @@ const UniverseManager = () => {
       size: DEFAULT_PAGE_SIZE,
       keyword,
       order,
-      category,
       visibility,
       status,
       reviewStatus,
@@ -427,7 +422,6 @@ const UniverseManager = () => {
     { header: "소개", value: (row) => row.introduce },
     { header: "제작자", value: (row) => row.nickname },
     { header: "제작자 ID", value: (row) => row.creatorId },
-    { header: "장르", value: (row) => UNIVERSE_CATEGORY_LABEL[row.category] },
     { header: "성향", value: (row) => UNIVERSE_TENDENCY_LABEL[row.tendency] },
     { header: "공식", value: (row) => (row.isOfficial ? "Y" : "N") },
     { header: "운영 인수", value: (row) => (row.isAdopted ? "Y" : "N") },
@@ -508,13 +502,6 @@ const UniverseManager = () => {
           />
 
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <Select
-              options={UNIVERSE_CATEGORY_FILTER_OPTIONS}
-              value={category}
-              onChange={(event) => setParams({ category: event.target.value })}
-              selectBoxClassName="w-32"
-              aria-label="장르 필터"
-            />
             <Select
               options={TENDENCY_FILTER_OPTIONS}
               value={tendency}

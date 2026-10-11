@@ -10,8 +10,9 @@ import {
   DOCS_PAGE_STATUS_LABEL,
   type DocsLocale,
   type DocsPageStatus,
+  type DocsPageStatusTarget,
 } from "@/type/docs";
-import { Ban, ExternalLink, FileText, Megaphone, Trash, Upload } from "@/icons";
+import { Ban, ExternalLink, Megaphone, Trash, Upload } from "@/icons";
 import { showAppToast, showErrorToast } from "@/lib/toast";
 import { truncate } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
@@ -58,23 +59,24 @@ interface DocsPageEditorProps {
   onDirtyChange: (isDirty: boolean) => void;
 }
 
-/** 상태마다 옮겨 갈 수 있는 상태. 게시 중인 글을 곧바로 초안으로 돌리는 것도 허용한다. */
-const NEXT_STATUSES: Record<DocsPageStatus, DocsPageStatus[]> = {
+/**
+ * 상태마다 옮겨 갈 수 있는 상태. 초안 → 게시, 게시 ↔ 숨김뿐이다 — 내린 글은 숨김으로 두고
+ * 초안으로 되돌리지 않는다(서버도 막는다).
+ */
+const NEXT_STATUSES: Record<DocsPageStatus, DocsPageStatusTarget[]> = {
   DRAFT: ["PUBLISHED"],
-  PUBLISHED: ["HIDDEN", "DRAFT"],
-  HIDDEN: ["PUBLISHED", "DRAFT"],
+  PUBLISHED: ["HIDDEN"],
+  HIDDEN: ["PUBLISHED"],
 };
 
-const STATUS_ACTION_LABEL: Record<DocsPageStatus, string> = {
+const STATUS_ACTION_LABEL: Record<DocsPageStatusTarget, string> = {
   PUBLISHED: "게시",
   HIDDEN: "숨김",
-  DRAFT: "초안으로",
 };
 
-const STATUS_ACTION_ICON: Record<DocsPageStatus, ReactNode> = {
+const STATUS_ACTION_ICON: Record<DocsPageStatusTarget, ReactNode> = {
   PUBLISHED: <Megaphone size={14} />,
   HIDDEN: <Ban size={14} />,
-  DRAFT: <FileText size={14} />,
 };
 
 /**
@@ -180,7 +182,7 @@ const DocsPageEditor = ({
   /* 게시 상태                                                           */
   /* ---------------------------------------------------------------- */
 
-  const changeStatus = (status: DocsPageStatus) => {
+  const changeStatus = (status: DocsPageStatusTarget) => {
     if (!page) return;
 
     const title =
@@ -462,21 +464,6 @@ const DocsPageEditor = ({
                   {...register(`translations.${key}.summary`)}
                 />
               </FormField>
-
-              <FormField label="본문" error={errors.translations?.[key]?.content?.message}>
-                <Controller
-                  control={control}
-                  name={`translations.${key}.content`}
-                  render={({ field }) => (
-                    <DocsMarkdownEditor
-                      value={field.value}
-                      onChange={field.onChange}
-                      hasError={Boolean(errors.translations?.[key]?.content)}
-                      disabled={isReadOnly}
-                    />
-                  )}
-                />
-              </FormField>
             </div>
           ))}
 
@@ -518,6 +505,25 @@ const DocsPageEditor = ({
               {...register("slug", { onChange: () => setIsSlugTouched(true) })}
             />
           </FormField>
+
+          {codes.map((key) => (
+            <div key={key} hidden={key !== locale}>
+              <FormField label="본문" error={errors.translations?.[key]?.content?.message}>
+                <Controller
+                  control={control}
+                  name={`translations.${key}.content`}
+                  render={({ field }) => (
+                    <DocsMarkdownEditor
+                      value={field.value}
+                      onChange={field.onChange}
+                      hasError={Boolean(errors.translations?.[key]?.content)}
+                      disabled={isReadOnly}
+                    />
+                  )}
+                />
+              </FormField>
+            </div>
+          ))}
         </form>
       )}
     </Card>

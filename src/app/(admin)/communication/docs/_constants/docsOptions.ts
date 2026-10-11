@@ -32,8 +32,8 @@ export const DOCS_IMAGE_MIME_TYPES = [
   "image/webp",
 ];
 
-/** 업로드 최대 용량 (10MB). 다른 이미지 업로드와 같은 제한이다. */
-export const DOCS_IMAGE_MAX_SIZE = 10 * 1024 * 1024;
+/** 업로드 최대 용량 (5MB). 서버의 문서 이미지 제한과 같다. */
+export const DOCS_IMAGE_MAX_SIZE = 5 * 1024 * 1024;
 
 /**
  * 사용자 사이트(plat-fe) 오리진. 프로파일이 정한다(`src/config/appEnv.ts`).

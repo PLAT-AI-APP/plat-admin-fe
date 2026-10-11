@@ -12,7 +12,6 @@ import EntityImage from "@/components/ui/EntityImage";
 import Pagination from "@/components/ui/Pagination";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import {
-  UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
 } from "@/constants/universeOptions";
@@ -78,17 +77,6 @@ const UserUniversePanel = ({ userId, nickname }: UserUniversePanelProps) => {
             </p>
           </div>
         </div>
-      ),
-    },
-    {
-      key: "category",
-      header: "장르",
-      align: "center",
-      width: "90px",
-      render: (row) => (
-        <span className="body-5 text-font-2">
-          {UNIVERSE_CATEGORY_LABEL[row.category]}
-        </span>
       ),
     },
     {

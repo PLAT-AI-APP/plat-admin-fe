@@ -15,20 +15,7 @@ export interface UserListParams {
   size: number;
   keyword?: string;
   status?: UserStatus;
-  /** 인증 상태 필터. 판정은 서버가 조회 시각 기준으로 한다(만료 지난 것은 미인증). */
-  verification?: UserVerificationFilter;
 }
-
-/**
- * 유저 목록 인증 필터. 서버 `VerificationFilter` enum과 값이 같아야 한다.
- * - `IDENTITY_VERIFIED` 본인인증 유효
- * - `ADULT_VERIFIED` 성인인증 유효
- * - `UNVERIFIED` 본인인증이 없거나 만료
- */
-export type UserVerificationFilter =
-  | "IDENTITY_VERIFIED"
-  | "ADULT_VERIFIED"
-  | "UNVERIFIED";
 
 /**
  * 서버가 실제로 내려주는 유저 한 줄.
@@ -36,8 +23,7 @@ export type UserVerificationFilter =
  * 화면이 쓰는 {@link User}와 이름·널 표현이 달라 타입을 따로 둔다. 서버는 없는 값을
  * `null`로 주고 화면은 `undefined`로 다루며, 서버의 `birth`는 화면에서 `birthDate`로 읽는다.
  *
- * 본인 · 성인인증은 만료 시각만 온다. 유저 행의 컬럼이라 서버 조회 비용이 없다.
- * 비어 있거나 지났으면 미인증이다. 인증 시각과 이력은 상세(`UserDetailResponse`)에 있다.
+ * 본인 · 성인인증은 목록에 오지 않는다. 상세(`UserDetailResponse`)에서만 본다.
  */
 export interface UserSummaryResponse {
   userId: string;
@@ -58,9 +44,6 @@ export interface UserSummaryResponse {
   /** 서비스 역할. ADMIN 이면 서비스 관리자다(관리자 콘솔 계정과는 별개). */
   role: User["role"];
   createdAt: string;
-  identityVerifiedUntil: string | null;
-  adultVerifiedUntil: string | null;
-  adultContentEnabled: boolean;
 }
 
 /**
@@ -84,9 +67,6 @@ export const toUser = (user: UserSummaryResponse): User => ({
   lastLoginPlatform: user.lastLoginPlatform ?? undefined,
   role: user.role,
   createdAt: user.createdAt,
-  identityVerifiedUntil: user.identityVerifiedUntil ?? undefined,
-  adultVerifiedUntil: user.adultVerifiedUntil ?? undefined,
-  adultContentEnabled: user.adultContentEnabled,
 });
 
 /** 빈 필터는 아예 보내지 않는다. 빈 문자열을 보내면 서버가 "빈 값으로 검색"으로 받는다. */
@@ -94,7 +74,6 @@ const toRequestParams = (params: UserListParams) => ({
   ...toPageRequest(params),
   keyword: params.keyword?.trim() || undefined,
   status: params.status || undefined,
-  verification: params.verification || undefined,
 });
 
 /**

@@ -5,7 +5,6 @@ import type {
   ChatExportStatus,
   ScenarioLifecycle,
   ScenarioType,
-  UniverseCategory,
   UniverseReviewStatus,
   UniverseStatus,
   UniverseTendency,
@@ -108,17 +107,6 @@ export const UNIVERSE_REVIEW_FILTER_OPTIONS: SelectOption[] = [
   { label: UNIVERSE_REVIEW_LABEL.REJECTED, value: "REJECTED" },
 ];
 
-export const UNIVERSE_CATEGORY_LABEL: Record<UniverseCategory, string> = {
-  ROMANCE: "로맨스",
-  FANTASY: "판타지",
-  DRAMA: "드라마",
-  MARTIAL_ARTS: "무협",
-  GL: "GL",
-  BL: "BL",
-  HORROR: "호러",
-  MYSTERY: "미스터리",
-};
-
 export const UNIVERSE_TENDENCY_LABEL: Record<UniverseTendency, string> = {
   ALL: "전체",
   MALE_ORIENTED: "남성향",
@@ -140,18 +128,6 @@ export const UNIVERSE_TENDENCY_COLOR: Record<UniverseTendency, string> = {
 };
 
 /** 보드 필터/정렬 옵션. 서버 실목록(liveAxios)이 받는 값과 이름을 맞춘다. */
-export const UNIVERSE_CATEGORY_FILTER_OPTIONS: SelectOption[] = [
-  { label: "장르 전체", value: "" },
-  { label: UNIVERSE_CATEGORY_LABEL.ROMANCE, value: "ROMANCE" },
-  { label: UNIVERSE_CATEGORY_LABEL.FANTASY, value: "FANTASY" },
-  { label: UNIVERSE_CATEGORY_LABEL.DRAMA, value: "DRAMA" },
-  { label: UNIVERSE_CATEGORY_LABEL.MARTIAL_ARTS, value: "MARTIAL_ARTS" },
-  { label: UNIVERSE_CATEGORY_LABEL.GL, value: "GL" },
-  { label: UNIVERSE_CATEGORY_LABEL.BL, value: "BL" },
-  { label: UNIVERSE_CATEGORY_LABEL.HORROR, value: "HORROR" },
-  { label: UNIVERSE_CATEGORY_LABEL.MYSTERY, value: "MYSTERY" },
-];
-
 export const UNIVERSE_VISIBILITY_FILTER_OPTIONS: SelectOption[] = [
   { label: "공개 범위 전체", value: "" },
   { label: UNIVERSE_VISIBILITY_LABEL.PUBLIC, value: "PUBLIC" },

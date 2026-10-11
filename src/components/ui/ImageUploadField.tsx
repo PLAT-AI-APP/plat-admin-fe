@@ -19,6 +19,8 @@ interface ImageUploadFieldBaseProps {
   hasError?: boolean;
   disabled?: boolean;
   className?: string;
+  /** 업로드 최대 용량(MB). 서버 한도가 다른 용도만 지정한다. */
+  maxSizeMb?: number;
 }
 
 /** 공용 업로드: 파일 ID를 받아 들고, 미리보기 URL은 화면이 조립한다. */
@@ -33,7 +35,7 @@ interface FileIdUploadProps extends ImageUploadFieldBaseProps {
 }
 
 /**
- * 자료 전용 업로드: 업로드 응답이 **공개 URL** 인 자료(가이드 문서 등).
+ * 자료 전용 업로드: 업로드 응답이 **공개 URL** 인 자료(문서 등).
  * 값이 곧 URL 이라 미리보기도 그 값을 그대로 그린다.
  */
 interface UrlUploadProps extends ImageUploadFieldBaseProps {
@@ -52,8 +54,8 @@ type ImageUploadFieldProps = FileIdUploadProps | UrlUploadProps;
 /** 업로드 허용 확장자 */
 const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-/** 업로드 최대 용량 (10MB) */
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+/** 업로드 최대 용량 기본값(MB) */
+const DEFAULT_MAX_SIZE_MB = 10;
 
 /**
  * 이미지 업로드 필드.
@@ -74,6 +76,7 @@ const ImageUploadField = ({
   hasError = false,
   disabled = false,
   className,
+  maxSizeMb = DEFAULT_MAX_SIZE_MB,
 }: ImageUploadFieldProps) => {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -98,8 +101,8 @@ const ImageUploadField = ({
       return false;
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      showAppToast("warning", "10MB 이하 이미지만 업로드할 수 있습니다.");
+    if (file.size > maxSizeMb * 1024 * 1024) {
+      showAppToast("warning", `${maxSizeMb}MB 이하 이미지만 업로드할 수 있습니다.`);
       return false;
     }
 
@@ -229,7 +232,7 @@ const ImageUploadField = ({
                 클릭하거나 이미지를 끌어다 놓으세요
               </p>
               <p className="body-6 text-font-2">
-                {acceptLabel.replaceAll(", ", " · ")} / 10MB 이하
+                {acceptLabel.replaceAll(", ", " · ")} / {maxSizeMb}MB 이하
               </p>
             </>
           )}
