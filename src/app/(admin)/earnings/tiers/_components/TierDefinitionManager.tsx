@@ -23,7 +23,7 @@ import TierConditionModal from "./TierConditionModal";
 /** 표의 한 줄. 오리진은 사다리 밖의 계약 등급이라 갤럭시 아래에 보기만 한다. */
 type BoardRow =
   | (TierDefinition & { origin?: false })
-  | { origin: true; code: "ORIGIN"; memberCount: number };
+  | { origin: true; code: "ORIGIN"; memberCount: number; shareBps: number };
 
 const LOG_COLUMNS: TableColumn<TierDefinitionChange>[] = [
   {
@@ -65,9 +65,13 @@ const TierDefinitionManager = () => {
 
   const rows: BoardRow[] = [
     ...board.tiers,
-    { origin: true, code: "ORIGIN", memberCount: board.originMemberCount },
+    {
+      origin: true,
+      code: "ORIGIN",
+      memberCount: board.originMemberCount,
+      shareBps: board.originShareBps,
+    },
   ];
-  const contract = <span className="text-font-2">계약</span>;
   const dash = <span className="text-font-2">-</span>;
 
   const columns: TableColumn<BoardRow>[] = [
@@ -98,21 +102,22 @@ const TierDefinitionManager = () => {
       header: "수익률",
       align: "right",
       numeric: true,
-      render: (row) => (row.origin ? contract : percent(row.shareBps)),
+      render: (row) => percent(row.shareBps),
     },
     {
       key: "boost",
       header: "신작 부스트",
       align: "right",
       numeric: true,
-      render: (row) => (row.origin ? contract : `+${percent(row.boostBps)}`),
+      render: (row) => (row.origin ? dash : `+${percent(row.boostBps)}`),
     },
     {
       key: "hold",
       header: "보류",
       align: "right",
       numeric: true,
-      render: (row) => (row.origin ? contract : `${row.holdDays}일`),
+      render: (row) =>
+        `${row.origin ? board.tiers[board.tiers.length - 1].holdDays : row.holdDays}일`,
     },
     {
       key: "gift",

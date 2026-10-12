@@ -29,6 +29,8 @@ export interface TierDefinition {
 export interface CreatorTierBoard {
   tiers: TierDefinition[];
   originMemberCount: number;
+  /** 오리진 고정 수익률(bps). 신작 부스트 없음 */
+  originShareBps: number;
   /** 등급이 없을 때의 수익률(bps) */
   baseShareBps: number;
 }
