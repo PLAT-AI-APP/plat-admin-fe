@@ -148,7 +148,7 @@ const EarningPolicyManager = () => {
               onClick={() =>
                 openConfirm({
                   title: `${row.name}을(를) 삭제할까요?`,
-                  description: "제작자 화면에서 사라집니다. 이미 들어온 교환 신청과 이력은 그대로 남습니다.",
+                  description: "크리에이터 화면에서 사라집니다. 이미 들어온 교환 신청과 이력은 그대로 남습니다.",
                   confirmText: "삭제",
                   tone: "danger",
                   onConfirm: () => deleteMutation.mutateAsync(row.productId).then(() => undefined),
@@ -214,7 +214,7 @@ const EarningPolicyManager = () => {
 
       <Card
         title="상품권"
-        description="노트는 상품 없이 제작자가 원하는 만큼 전환합니다(노트 1개 = 노트 기준가 P)."
+        description="노트는 상품 없이 크리에이터가 원하는 만큼 전환합니다(노트 1개 = 노트 기준가 P)."
         noPadding
         action={
           canWriteProduct && (

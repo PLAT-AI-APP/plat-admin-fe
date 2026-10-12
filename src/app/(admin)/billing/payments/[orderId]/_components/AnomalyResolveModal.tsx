@@ -147,7 +147,7 @@ const AnomalyResolveModal = ({
               onChange={(event) => setMemo(event.target.value)}
               placeholder={
                 isException
-                  ? "예: 크레딧 수동 조정으로 1,000노트 지급 완료 (CS 티켓 #2481)"
+                  ? "예: 노트 수동 조정으로 1,000노트 지급 완료 (CS 티켓 #2481)"
                   : "예: 이미 반영된 건의 PG 재전송 통지"
               }
             />

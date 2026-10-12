@@ -98,7 +98,7 @@ const METRIC_SPECS: Pick<
   },
   { key: "chatCount", label: "총 대화 수", unit: "COUNT", countSuffix: "건" },
   { key: "paidAmount", label: "결제 금액", unit: "CURRENCY" },
-  { key: "creditUsed", label: "크레딧 사용량", unit: "CREDIT" },
+  { key: "creditUsed", label: "노트 사용량", unit: "CREDIT" },
 ];
 
 export const dashboardMetrics: DashboardMetric[] = METRIC_SPECS.map((spec) => ({

@@ -32,7 +32,7 @@ const PHASE_DESCRIPTION: Record<MaintenancePhase, string> = {
   DRAINING:
     "새 요청(채팅 시작 · 결제 시작 등)은 막고, 이미 시작한 결제 승인 · 채팅 답변은 끝까지 처리합니다. 아래 진행 중 수가 0 이 되면 닫아도 안전합니다.",
   CLOSED:
-    "헬스 체크 · 점검 상태 · PG 웹훅 말고 사용자 요청이 모두 막혀 있습니다. 배포 · DB 작업을 하고 끝내기를 누르세요.",
+    "헬스 체크 · 점검 상태 · PG 웹훅 말고 유저 요청이 모두 막혀 있습니다. 배포 · DB 작업을 하고 끝내기를 누르세요.",
 };
 
 const STATUS_LABEL: Record<MaintenanceWindow["status"], string> = {
@@ -68,7 +68,7 @@ const MaintenanceCard = () => {
       close: {
         title: "지금 점검을 시작할까요?",
         description:
-          "사용자 요청이 곧바로 모두 막힙니다. 이미 서버에 들어온 요청은 끝까지 처리됩니다.",
+          "유저 요청이 곧바로 모두 막힙니다. 이미 서버에 들어온 요청은 끝까지 처리됩니다.",
         warning:
           busyInstances.length > 0 || (data?.pendingCheckouts ?? 0) > 0
             ? `진행 중인 요청 · 답변 생성 또는 승인 전 결제 ${data?.pendingCheckouts ?? 0}건이 남아 있습니다. 결제 승인 전에 닫히면 그 사람은 결제를 다시 해야 합니다.`

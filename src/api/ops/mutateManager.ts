@@ -118,7 +118,7 @@ export const useManagerMutation = () => {
     mutationFn: ({ manager, values }) =>
       updateManager(manager, { name: values.name, roleIds: values.roleIds }),
     onSuccess: () => {
-      showAppToast("success", "관리자 정보를 수정했습니다.");
+      showAppToast("success", "운영자 정보를 수정했습니다.");
       invalidateManagerList();
     },
   });
@@ -141,7 +141,7 @@ export const useManagerMutation = () => {
   const deleteMutation = useMutation<void, AppError, Manager>({
     mutationFn: (manager) => deleteManager(manager.managerId),
     onSuccess: () => {
-      showAppToast("success", "관리자 계정을 삭제했습니다.");
+      showAppToast("success", "운영자 계정을 삭제했습니다.");
       invalidateManagerList();
     },
   });

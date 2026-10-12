@@ -96,7 +96,7 @@ const TierChangeModal = ({
 
         {tier === "ORIGIN" && current !== "ORIGIN" && (
           <Alert tone="info">
-            오리진은 독점 계약 제작자에게만 지정합니다. 제작자는 다음 접속 때
+            오리진은 독점 계약 크리에이터에게만 지정합니다. 크리에이터는 다음 접속 때
             오리진 승급 화면을 봅니다.
           </Alert>
         )}
@@ -109,7 +109,7 @@ const TierChangeModal = ({
         <Checkbox
           checked={locked}
           onChange={(event) => setLocked(event.target.checked)}
-          label="등급 고정 · 제작자가 승급을 신청하지 못하게 합니다"
+          label="등급 고정 · 크리에이터가 승급을 신청하지 못하게 합니다"
         />
 
         <FormField label="사유" required hint="등급 이력에 그대로 남습니다.">

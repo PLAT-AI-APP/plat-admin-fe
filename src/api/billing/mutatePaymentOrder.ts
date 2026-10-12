@@ -172,7 +172,7 @@ const announceApproval = ({ status }: RefundDecisionResponse) => {
   }
 
   if (status === "REJECTED") {
-    showAppToast("warning", "크레딧 사용으로 자동 거절되었습니다.", {
+    showAppToast("warning", "노트 사용으로 자동 거절되었습니다.", {
       description: "신청 뒤 유저가 노트를 사용했습니다. 유저에게 거절 사유가 안내됩니다.",
     });
     return;
@@ -290,7 +290,7 @@ export const usePaymentOrderMutation = () => {
       const latest = latestRefundOf(order);
       const lost = latest?.lostCredit ?? 0;
       const lossText =
-        lost > 0 ? `이미 쓴 ${lost.toLocaleString()} CR은 회수하지 못했습니다.` : "노트는 전부 회수했습니다.";
+        lost > 0 ? `이미 쓴 노트 ${lost.toLocaleString()}개는 회수하지 못했습니다.` : "노트는 전부 회수했습니다.";
 
       if (latest?.status === "COMPLETED") {
         showAppToast("success", "강제 환불했습니다. PG 취소까지 끝났습니다.", { description: lossText });

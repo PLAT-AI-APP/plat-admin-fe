@@ -158,7 +158,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
     },
     {
       key: "creditDelta",
-      header: "크레딧 증감",
+      header: "노트 증감",
       align: "right",
       numeric: true,
       width: "110px",
@@ -380,7 +380,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
 
       {canReadLedger && (
       <Card
-        title={`크레딧 원장 ${formatWithCommas(ledger?.totalCount ?? 0)}건`}
+        title={`노트 원장 ${formatWithCommas(ledger?.totalCount ?? 0)}건`}
         description="충전 · 사용 · 만료 · 환불 회수 · 수동 조정으로 잔액이 움직인 줄이 시간순으로 쌓입니다."
         noPadding
       >
@@ -390,7 +390,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
           getRowKey={(row) => String(row.ledgerId)}
           isLoading={isLedgerLoading}
           skeletonRows={4}
-          emptyTitle="결제 · 크레딧 내역이 없습니다."
+          emptyTitle="결제 · 노트 내역이 없습니다."
           emptyDescription="이 유저의 장부에 아직 기록이 없습니다."
         />
 
@@ -405,7 +405,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
 
       {canReadAdjustment && (
       <Card
-        title={`크레딧 수동 조정 ${formatWithCommas(adjustments?.totalCount ?? 0)}건`}
+        title={`노트 수동 조정 ${formatWithCommas(adjustments?.totalCount ?? 0)}건`}
         description="운영자가 직접 지급하거나 차감한 이력입니다."
         noPadding
       >
@@ -416,7 +416,7 @@ const UserBillingPanel = ({ userId }: UserBillingPanelProps) => {
           isLoading={isAdjustmentLoading}
           skeletonRows={3}
           emptyTitle="수동 조정 이력이 없습니다."
-          emptyDescription="운영자가 크레딧을 직접 조정한 적이 없습니다."
+          emptyDescription="운영자가 노트를 직접 조정한 적이 없습니다."
         />
 
         <Pagination

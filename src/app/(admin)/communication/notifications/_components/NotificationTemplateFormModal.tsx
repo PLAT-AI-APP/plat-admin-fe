@@ -123,7 +123,7 @@ const NotificationTemplateFormModal = ({
           <Textarea
             id="notification-body"
             rows={5}
-            placeholder="{nickname}님의 잔여 크레딧은 {credit}입니다."
+            placeholder="{nickname}님의 잔여 노트는 {credit}입니다."
             hasError={Boolean(errors.body)}
             {...register("body")}
           />

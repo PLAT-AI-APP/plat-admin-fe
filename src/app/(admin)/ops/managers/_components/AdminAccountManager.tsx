@@ -245,7 +245,7 @@ const AdminAccountManager = () => {
     }
 
     items.push({
-      label: "이 관리자의 활동 보기",
+      label: "이 운영자의 활동 보기",
       icon: <ListLines size={15} />,
       onSelect: () => router.push(`/ops/admin-activity?actorId=${manager.managerId}`),
     });
@@ -368,7 +368,7 @@ const AdminAccountManager = () => {
         <Link href="/ops/roles" className="font-medium underline">
           운영 &gt; 직책 · 권한
         </Link>
-        에서 직책 단위로 정합니다. 관리자를 추가하면 임시 비밀번호가 발급되고,
+        에서 직책 단위로 정합니다. 운영자를 추가하면 임시 비밀번호가 발급되고,
         본인이 비밀번호를 바꾼 뒤부터 콘솔을 사용할 수 있습니다. 계정을 삭제하면
         되돌릴 수 없고, 운영 로그에 남은 활동의 실행자를 이름으로 되짚을 수 없게
         됩니다. 잠시 막아 두려는 것이라면 삭제 대신 비활성화를 쓰세요.
@@ -419,7 +419,7 @@ const AdminAccountManager = () => {
                 leftIcon={<UserPlus size={15} />}
                 onClick={handleOpenCreate}
               >
-                관리자 초대
+                운영자 초대
               </Button>
             )}
           </div>
@@ -431,7 +431,7 @@ const AdminAccountManager = () => {
           getRowKey={(manager) => String(manager.managerId)}
           isLoading={isLoading}
           skeletonRows={5}
-          emptyTitle="조건에 맞는 관리자가 없습니다."
+          emptyTitle="조건에 맞는 운영자가 없습니다."
           emptyDescription="검색어나 필터를 지워 보세요."
         />
       </Card>

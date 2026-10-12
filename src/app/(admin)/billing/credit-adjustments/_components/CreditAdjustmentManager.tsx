@@ -49,7 +49,7 @@ const ADJUSTMENT_CSV_COLUMNS: CsvColumn<CreditAdjustment>[] = [
   { header: "유저 ID", value: (row) => row.userId },
   { header: "유형", value: (row) => ADJUSTMENT_TYPE_LABEL[row.type] },
   {
-    header: "조정 크레딧",
+    header: "조정 노트",
     value: (row) => `${ADJUSTMENT_TYPE_SIGN[row.type]}${row.amount}`,
   },
   { header: "사유", value: (row) => row.reason },
@@ -110,7 +110,7 @@ const CreditAdjustmentManager = () => {
     const typeLabel = ADJUSTMENT_TYPE_LABEL[request.type];
 
     openConfirm({
-      title: `크레딧을 ${typeLabel}할까요?`,
+      title: `노트를 ${typeLabel}할까요?`,
       description: `'${user.nickname}'(#${user.userId}) 님에게 ${formatCredit(request.amount)}를 ${typeLabel}합니다.`,
       warning:
         "실행 즉시 유저 잔액에 반영되며 되돌릴 수 없습니다. 사유는 감사 로그로 남습니다.",
@@ -148,7 +148,7 @@ const CreditAdjustmentManager = () => {
     },
     {
       key: "amount",
-      header: "조정 크레딧",
+      header: "조정 노트",
       width: "140px",
       align: "right",
       numeric: true,
@@ -212,7 +212,7 @@ const CreditAdjustmentManager = () => {
         action={
           <>
             <CsvExportButton
-              fileName="크레딧수동조정"
+              fileName="노트수동조정"
               rows={adjustments}
               columns={ADJUSTMENT_CSV_COLUMNS}
               disabled={isLoading}
@@ -236,7 +236,7 @@ const CreditAdjustmentManager = () => {
                 leftIcon={<Plus size={15} />}
                 onClick={() => setIsFormOpen(true)}
               >
-                크레딧 조정
+                노트 조정
               </Button>
             )}
           </>
@@ -270,7 +270,7 @@ const CreditAdjustmentManager = () => {
           emptyTitle="조정 이력이 없습니다."
           emptyDescription={
             canAdjust
-              ? "보상·회수가 필요하면 '크레딧 조정'으로 대상 유저를 선택해 처리하세요."
+              ? "보상·회수가 필요하면 '노트 조정'으로 대상 유저를 선택해 처리하세요."
               : "아직 실행된 수동 조정이 없습니다."
           }
           emptyAction={
@@ -281,7 +281,7 @@ const CreditAdjustmentManager = () => {
                 leftIcon={<Coin size={15} />}
                 onClick={() => setIsFormOpen(true)}
               >
-                크레딧 조정
+                노트 조정
               </Button>
             ) : undefined
           }

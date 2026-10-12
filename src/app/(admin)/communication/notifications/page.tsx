@@ -5,7 +5,7 @@ export default function NotificationsPage() {
   return (
     <>
       <PageHeader
-        title="알림 관리"
+        title="알림 템플릿"
         description="앱 내 알림 · 푸시 · 이메일 템플릿의 문구와 활성 여부를 관리합니다."
       />
 

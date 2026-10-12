@@ -48,12 +48,12 @@ const NOTICE_CSV_COLUMNS: CsvColumn<NoticeSummary>[] = [
   { header: "고정", value: (row) => (row.isPinned ? "Y" : "N") },
   { header: "조회 수", value: (row) => row.viewCount },
   {
-    header: "관리자",
+    header: "운영자",
     value: (row) => formatAdmin(row.createdBy, row.createdById),
   },
   { header: "등록일", value: (row) => formatDateTime(row.createdAt) },
   {
-    header: "최종 수정 관리자",
+    header: "최종 수정 운영자",
     value: (row) => (row.updatedBy ? formatAdmin(row.updatedBy, row.updatedById) : ""),
   },
   { header: "수정일", value: (row) => formatDateTime(row.updatedAt) },
@@ -249,7 +249,7 @@ const NoticeManager = () => {
     },
     {
       key: "createdBy",
-      header: "관리자",
+      header: "운영자",
       width: "140px",
       // 계정이 삭제돼도 남는 등록자 이름 스냅샷.
       render: (row) => (

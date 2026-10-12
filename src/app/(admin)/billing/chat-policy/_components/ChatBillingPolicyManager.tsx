@@ -26,7 +26,7 @@ const percentToBps = (value: string) => Math.round(Number(value) * 100);
 
 const POLICY_FIELDS = [
   { key: "noteBasePrice", label: "노트 기준가", unit: "원", toInput: (v: number) => String(v), fromInput: (v: string) => Number(v) },
-  { key: "creatorShareBps", label: "제작자 몫", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
+  { key: "creatorShareBps", label: "크리에이터 몫", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
   { key: "feeBps", label: "결제 수수료", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
   { key: "vatBps", label: "부가세", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
   { key: "opsBps", label: "운영비", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
@@ -39,7 +39,7 @@ type PolicyKey = (typeof POLICY_FIELDS)[number]["key"];
 const HISTORY_COLUMNS: TableColumn<ChatBillingPolicy>[] = [
   { key: "effectiveFrom", header: "적용 시작", width: "150px", numeric: true, render: (row) => <span className="text-font-2">{formatDateTime(row.effectiveFrom)}</span> },
   { key: "noteBasePrice", header: "기준가", align: "right", numeric: true, render: (row) => `${row.noteBasePrice}원` },
-  { key: "creatorShareBps", header: "제작자", align: "right", numeric: true, render: (row) => `${row.creatorShareBps / 100}%` },
+  { key: "creatorShareBps", header: "크리에이터", align: "right", numeric: true, render: (row) => `${row.creatorShareBps / 100}%` },
   { key: "feeBps", header: "수수료", align: "right", numeric: true, render: (row) => `${row.feeBps / 100}%` },
   { key: "vatBps", header: "부가세", align: "right", numeric: true, render: (row) => `${row.vatBps / 100}%` },
   { key: "opsBps", header: "운영비", align: "right", numeric: true, render: (row) => `${row.opsBps / 100}%` },
@@ -150,7 +150,7 @@ const ChatBillingPolicyManager = () => {
           title="과금 정책 변경"
           description={
             draftMultiplier === null
-              ? "제작자 몫·수수료·부가세·운영비·목표 이익률의 합은 100% 미만이어야 합니다."
+              ? "크리에이터 몫·수수료·부가세·운영비·목표 이익률의 합은 100% 미만이어야 합니다."
               : `저장하는 즉시 다음 대화부터 적용됩니다. 새 k = ${draftMultiplier.toFixed(4)}배`
           }
           isDirty={changedFields.length > 0}

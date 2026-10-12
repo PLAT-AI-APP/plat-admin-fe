@@ -243,7 +243,7 @@ const UniverseManager = () => {
   */
   const buildRowActions = (row: AdminUniverseListItem): DropdownItem[] => [
     {
-      label: "이 제작자의 세계관",
+      label: "이 크리에이터의 세계관",
       icon: <Users size={15} />,
       onSelect: () => setParams({ creatorId: row.creatorId }),
     },
@@ -319,7 +319,7 @@ const UniverseManager = () => {
     },
     {
       key: "creator",
-      header: "제작자",
+      header: "크리에이터",
       render: (row) => {
         const userId = row.userId;
 
@@ -420,8 +420,8 @@ const UniverseManager = () => {
     { header: "ID", value: (row) => row.universeId },
     { header: "제목", value: (row) => row.title },
     { header: "소개", value: (row) => row.introduce },
-    { header: "제작자", value: (row) => row.nickname },
-    { header: "제작자 ID", value: (row) => row.creatorId },
+    { header: "크리에이터", value: (row) => row.nickname },
+    { header: "크리에이터 ID", value: (row) => row.creatorId },
     { header: "성향", value: (row) => UNIVERSE_TENDENCY_LABEL[row.tendency] },
     { header: "공식", value: (row) => (row.isOfficial ? "Y" : "N") },
     { header: "운영 인수", value: (row) => (row.isAdopted ? "Y" : "N") },
@@ -458,7 +458,7 @@ const UniverseManager = () => {
             </Button>
           }
         >
-          {creatorId && <>제작자 #{creatorId}의 세계관</>}
+          {creatorId && <>크리에이터 #{creatorId}의 세계관</>}
           {creatorId && hashtagId && " · "}
           {hashtagId && <>해시태그 #{hashtagId}가 붙은 세계관</>}만 조회하는
           중입니다.

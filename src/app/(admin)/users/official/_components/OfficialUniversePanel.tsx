@@ -72,7 +72,7 @@ const OfficialUniversePanel = () => {
     },
     {
       key: "creator",
-      header: "제작자",
+      header: "크리에이터",
       render: (row) => (
         <span className="body-5 text-font-2">{row.nickname}</span>
       ),

@@ -85,7 +85,7 @@ const RedemptionManager = () => {
     },
     {
       key: "creator",
-      header: "제작자",
+      header: "크리에이터",
       render: (row) => (
         <TableCellStack
           primary={
@@ -258,7 +258,7 @@ const RedemptionManager = () => {
           description={
             pending.mode === "ISSUE"
               ? `${pending.row.nickname ?? pending.row.userId} · ${pending.row.productName}. 상품권을 보낸 뒤 처리하세요. 포인트(${formatPoint(pending.row.pointAmount)})는 신청 때 이미 차감됐습니다.`
-              : `${pending.row.nickname ?? pending.row.userId} · ${pending.row.productName}. 차감한 ${formatPoint(pending.row.pointAmount)}를 제작자에게 돌려줍니다. 사유는 제작자 내역에 그대로 보입니다.`
+              : `${pending.row.nickname ?? pending.row.userId} · ${pending.row.productName}. 차감한 ${formatPoint(pending.row.pointAmount)}를 크리에이터에게 돌려줍니다. 사유는 크리에이터 내역에 그대로 보입니다.`
           }
           footer={
             <>

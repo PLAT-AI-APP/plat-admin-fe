@@ -121,7 +121,7 @@ const CreditAdjustmentFormModal = ({
         isDirty={isDirty}
         isOpen={isOpen}
         onClose={onClose}
-        title="크레딧 수동 조정"
+        title="노트 수동 조정"
         description="지급·차감 내역은 장부에 그대로 기록되며 되돌릴 수 없습니다."
         size="md"
         // 실수로 닫히면 입력한 사유가 사라지므로 오버레이 클릭으로 닫지 않는다.
@@ -206,7 +206,7 @@ const CreditAdjustmentFormModal = ({
             </FormField>
 
             <FormField
-              label="조정 크레딧"
+              label="조정 노트"
               htmlFor="adjustment-amount"
               required
               error={errors.amount?.message}
@@ -244,7 +244,7 @@ const CreditAdjustmentFormModal = ({
           {/* 실행 전에 잔액이 어떻게 바뀌는지 숫자로 먼저 보여준다. */}
           <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 body-5">
             <div className="flex items-center gap-2">
-              <dt className="text-font-2">조정 크레딧</dt>
+              <dt className="text-font-2">조정 노트</dt>
               <dd
                 className={cn(
                   "font-semibold tabular-nums",
@@ -265,7 +265,7 @@ const CreditAdjustmentFormModal = ({
 
           {isOverDeduction && selectedUser && (
             <p className="mt-2 body-6 text-font-error">
-              차감할 수 있는 크레딧은 {formatCredit(selectedUser.availableBalance)}
+              차감할 수 있는 노트는 {formatCredit(selectedUser.availableBalance)}
               까지입니다.
               {lockedBalance > 0 &&
                 ` 예약으로 잠긴 ${formatCredit(lockedBalance)}은 회수할 수 없습니다.`}

@@ -40,7 +40,7 @@ const CSV_COLUMNS: CsvColumn<AccessLog>[] = [
   { header: "경로", value: (row) => formatTarget(row) },
   { header: "상태", value: (row) => String(row.status) },
   { header: "소요(ms)", value: (row) => String(row.durationMs) },
-  { header: "사용자 ID", value: (row) => row.userId ?? "" },
+  { header: "유저 ID", value: (row) => row.userId ?? "" },
   { header: "IP", value: (row) => row.remoteIp ?? "" },
   { header: "로그 ID", value: (row) => row.logId },
 ];
@@ -111,7 +111,7 @@ const AccessLogTable = ({ params, setParams }: AccessLogTableProps) => {
     },
     {
       key: "userId",
-      header: "사용자",
+      header: "유저",
       width: "180px",
       render: (row) =>
         row.userId ? (
@@ -149,7 +149,7 @@ const AccessLogTable = ({ params, setParams }: AccessLogTableProps) => {
       {userId && (
         <Alert
           tone="info"
-          title={`사용자 #${userId}의 요청만 보고 있습니다.`}
+          title={`유저 #${userId}의 요청만 보고 있습니다.`}
           action={
             <button
               type="button"

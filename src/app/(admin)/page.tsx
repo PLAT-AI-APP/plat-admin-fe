@@ -6,7 +6,7 @@ export default function DashboardPage() {
     <>
       <PageHeader
         title="대시보드"
-        description="서비스 상태, 유저, 세계관, 결제, 크레딧 현황을 한 화면에서 확인합니다. 날짜는 한국 시간 기준입니다."
+        description="서비스 상태, 유저, 세계관, 결제, 노트 현황을 한 화면에서 확인합니다. 날짜는 한국 시간 기준입니다."
       />
 
       <DashboardEntry />

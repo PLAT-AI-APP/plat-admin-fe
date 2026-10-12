@@ -11,7 +11,7 @@ import {
 import { Ban, CheckCircle, ListLines, Refresh } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
 import { resolveImageUrl } from "@/lib/imageUrl";
-import { formatCurrency, formatWithCommas } from "@/lib/utils";
+import { formatCredit, formatCurrency, formatWithCommas } from "@/lib/utils";
 import { useAdminStore, useHasPermission } from "@/store/useAdminStore";
 import { hasPermission } from "@/type/permission";
 import { openConfirm } from "@/store/useConfirmStore";
@@ -294,8 +294,8 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
 
             <div className="mt-5 grid grid-cols-4 gap-2">
               <StatBox
-                label="보유 크레딧"
-                value={`${formatWithCommas(user.creditBalance)} CR`}
+                label="보유 노트"
+                value={formatCredit(user.creditBalance)}
               />
               <StatBox
                 label="누적 결제금액"

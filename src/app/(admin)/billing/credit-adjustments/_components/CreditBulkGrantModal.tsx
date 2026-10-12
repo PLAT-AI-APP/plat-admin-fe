@@ -121,7 +121,7 @@ const CreditBulkGrantModal = ({ isOpen, onClose }: CreditBulkGrantModalProps) =>
       sentTerms !== null && sentTerms !== terms ? createBatchKey() : batchKey;
 
     openConfirm({
-      title: `${formatWithCommas(userIds.length)}명에게 크레딧을 지급할까요?`,
+      title: `${formatWithCommas(userIds.length)}명에게 노트를 지급할까요?`,
       description: `한 명당 ${formatCredit(values.amount)}, 합계 ${formatCredit(values.amount * userIds.length)}를 지급합니다.`,
       warning:
         "실행 즉시 유저 잔액에 반영되며 되돌릴 수 없습니다. 사유는 유저마다 조정 이력으로 남습니다.",
@@ -162,8 +162,8 @@ const CreditBulkGrantModal = ({ isOpen, onClose }: CreditBulkGrantModalProps) =>
       isDirty={isDirty && !result}
       isOpen={isOpen}
       onClose={onClose}
-      title="크레딧 일괄 지급"
-      description="여러 유저에게 같은 크레딧을 같은 사유로 지급합니다."
+      title="노트 일괄 지급"
+      description="여러 유저에게 같은 노트를 같은 사유로 지급합니다."
       size="md"
       closeOnOverlayClick={false}
       footer={
@@ -281,7 +281,7 @@ const CreditBulkGrantModal = ({ isOpen, onClose }: CreditBulkGrantModalProps) =>
           </div>
 
           <FormField
-            label="한 명당 지급 크레딧"
+            label="한 명당 지급 노트"
             htmlFor="bulk-amount"
             required
             error={errors.amount?.message}

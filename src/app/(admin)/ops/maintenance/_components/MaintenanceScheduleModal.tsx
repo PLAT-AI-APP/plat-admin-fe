@@ -101,7 +101,7 @@ const MaintenanceScheduleModal = ({
       <form onSubmit={submit} className="flex flex-col gap-4">
         <Alert tone="warning">
           소프트 종료 동안 새 요청(채팅 시작 · 결제 시작 등)은 막히고, 이미
-          시작한 결제 승인 · 채팅 답변은 끝까지 갑니다. 점검이 시작되면 사용자
+          시작한 결제 승인 · 채팅 답변은 끝까지 갑니다. 점검이 시작되면 유저
           요청이 모두 막힙니다. 결제창을 연 사람을 위해 소프트 종료는 10분
           이상을 권합니다.
         </Alert>
@@ -136,7 +136,7 @@ const MaintenanceScheduleModal = ({
           htmlFor="maintenance-drain-minutes"
           required
           error={errors.drainMinutes?.message}
-          hint="이 시간이 지나면 점검이 시작되어 사용자 요청이 모두 막힙니다."
+          hint="이 시간이 지나면 점검이 시작되어 유저 요청이 모두 막힙니다."
         >
           <Input
             id="maintenance-drain-minutes"

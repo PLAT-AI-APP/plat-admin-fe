@@ -7,7 +7,7 @@ export default function QnaPage() {
   return (
     <>
       <PageHeader
-        title="Q&A 관리"
+        title="Q&A"
         description="접수된 문의를 확인하고 답변합니다."
       />
 

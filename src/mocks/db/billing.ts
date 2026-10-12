@@ -57,15 +57,15 @@ export const billingProducts: BillingProduct[] = PRODUCT_SEEDS.map(
 const ADJUSTMENT_REASONS: Record<AdjustmentType, string[]> = {
   GRANT: [
     "결제 오류 보상 (CS 티켓 #2481)",
-    "이벤트 당첨 크레딧 지급",
+    "이벤트 당첨 노트 지급",
     "베타 테스터 보상 지급",
-    "고객 응대 사과 크레딧",
+    "고객 응대 사과 노트",
   ],
   DEDUCT: [
     "중복 결제 건 회수",
-    "어뷰징 의심 크레딧 회수",
-    "환불 처리에 따른 크레딧 회수",
-    "테스트 계정 크레딧 정리",
+    "어뷰징 의심 노트 회수",
+    "환불 처리에 따른 노트 회수",
+    "테스트 계정 노트 정리",
   ],
 };
 
@@ -114,7 +114,7 @@ const buildUserLedger = (user: UserDetail): DraftLedgerEntry[] => {
     type: "CHARGE",
     amount: 0,
     creditDelta: SIGN_UP_BONUS,
-    memo: "가입 축하 크레딧 지급",
+    memo: "가입 축하 노트 지급",
     createdAt: daysAgo(joinedDaysAgo, 10),
   });
 
@@ -143,7 +143,7 @@ const buildUserLedger = (user: UserDetail): DraftLedgerEntry[] => {
       amount: 0,
       creditDelta: credit,
       productName: product.name,
-      memo: "결제 완료 후 크레딧 지급",
+      memo: "결제 완료 후 노트 지급",
       createdAt: daysAgo(createdDaysAgo, 12 + paymentIndex),
     });
 

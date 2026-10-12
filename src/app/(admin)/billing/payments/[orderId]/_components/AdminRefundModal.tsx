@@ -60,7 +60,7 @@ const AdminRefundModal = ({
     <Modal
       isOpen={order !== null}
       onClose={onClose}
-      title="관리자 환불"
+      title="운영자 환불"
       description="승인 단계 없이 바로 PG 취소까지 진행합니다. 되돌릴 수 없습니다."
       closeOnOverlayClick={false}
       isDirty={draft !== null}
@@ -100,7 +100,7 @@ const AdminRefundModal = ({
             서버가 거절한다 — 그때는 확인 처리로 닫고 PG에서 직접 정리한다.
           */}
           <Alert tone="warning">
-            유저가 이 결제의 노트를 한 개라도 썼다면 서버가 “크레딧 사용”으로 환불을 거절합니다.
+            유저가 이 결제의 노트를 한 개라도 썼다면 서버가 “노트 사용”으로 환불을 거절합니다.
             결제 후 7일 기한은 보지 않습니다.
           </Alert>
 

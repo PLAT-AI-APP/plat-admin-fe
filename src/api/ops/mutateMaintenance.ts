@@ -15,7 +15,7 @@ export interface ScheduleMaintenancePayload {
 type MaintenanceAction = "close" | "cancel" | "finish";
 
 const ACTION_TOAST: Record<MaintenanceAction, string> = {
-  close: "점검을 시작했습니다. 사용자 요청이 모두 막힙니다.",
+  close: "점검을 시작했습니다. 유저 요청이 모두 막힙니다.",
   cancel: "점검 예약을 취소했습니다.",
   finish: "점검을 끝냈습니다. 몇 초 안에 서비스가 다시 열립니다.",
 };

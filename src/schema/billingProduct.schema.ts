@@ -32,13 +32,13 @@ export const billingProductSchema = z
       .int("결제 금액은 원 단위 정수로 입력해 주세요.")
       .min(100, "결제 금액은 100원 이상이어야 합니다."),
     credit: z
-      .number({ error: "지급 크레딧을 입력해 주세요." })
-      .int("크레딧은 정수로 입력해 주세요.")
-      .min(1, "지급 크레딧은 1 이상이어야 합니다."),
+      .number({ error: "지급 노트를 입력해 주세요." })
+      .int("노트는 정수로 입력해 주세요.")
+      .min(1, "지급 노트는 1 이상이어야 합니다."),
     bonusCredit: z
-      .number({ error: "보너스 크레딧을 입력해 주세요." })
-      .int("크레딧은 정수로 입력해 주세요.")
-      .min(0, "보너스 크레딧은 0 이상이어야 합니다."),
+      .number({ error: "보너스 노트를 입력해 주세요." })
+      .int("노트는 정수로 입력해 주세요.")
+      .min(0, "보너스 노트는 0 이상이어야 합니다."),
     status: z.enum(["ON_SALE", "HIDDEN", "ENDED"]),
     sortOrder: z
       .number({ error: "노출 순서를 입력해 주세요." })
@@ -57,7 +57,7 @@ export const billingProductSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["amountMinor"],
-        message: `크레딧당 단가는 ${MIN_UNIT_PRICE}원 ~ ${MAX_UNIT_PRICE}원이어야 합니다. (현재 ${unitPrice.toFixed(1)}원)`,
+        message: `노트당 단가는 ${MIN_UNIT_PRICE}원 ~ ${MAX_UNIT_PRICE}원이어야 합니다. (현재 ${unitPrice.toFixed(1)}원)`,
       });
     }
   });

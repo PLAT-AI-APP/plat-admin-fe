@@ -163,7 +163,7 @@ const AdminLogTable = ({ params, setParams }: AdminLogTableProps) => {
       {filteredActorName && (
         <Alert
           tone="info"
-          title={`'${filteredActorName}' 관리자의 활동만 보고 있습니다.`}
+          title={`'${filteredActorName}' 운영자의 활동만 보고 있습니다.`}
           action={
             <button
               type="button"
@@ -193,7 +193,7 @@ const AdminLogTable = ({ params, setParams }: AdminLogTableProps) => {
 
           <div className="flex items-center gap-2">
             <CsvExportButton
-              fileName="관리자활동로그"
+              fileName="운영자활동로그"
               rows={data?.content ?? []}
               columns={CSV_COLUMNS}
               disabled={isLoading}

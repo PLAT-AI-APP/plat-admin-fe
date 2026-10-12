@@ -45,7 +45,7 @@ const CredentialResultModal = ({
       isOpen={Boolean(result)}
       onClose={handleClose}
       closeOnOverlayClick={false}
-      title={mode === "INVITE" ? "관리자를 초대했습니다" : "비밀번호를 초기화했습니다"}
+      title={mode === "INVITE" ? "운영자를 초대했습니다" : "비밀번호를 초기화했습니다"}
       description={result?.email ?? ""}
       size="sm"
       footer={

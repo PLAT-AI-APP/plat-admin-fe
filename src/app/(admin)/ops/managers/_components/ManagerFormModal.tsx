@@ -79,7 +79,7 @@ const ManagerFormModal = ({
       isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
-      title={manager ? "관리자 수정" : "관리자 초대"}
+      title={manager ? "운영자 수정" : "운영자 초대"}
       description={
         manager
           ? "직책을 바꾸면 이 계정이 할 수 있는 일이 함께 바뀝니다."

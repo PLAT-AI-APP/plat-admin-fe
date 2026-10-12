@@ -7,7 +7,7 @@ export default function UserListPage() {
   return (
     <>
       <PageHeader
-        title="유저 관리"
+        title="유저"
         description="유저를 검색하고 계정 상태를 관리합니다."
       />
 

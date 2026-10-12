@@ -206,7 +206,7 @@ const RoleManager = () => {
   const handleDelete = (role: AdminRole) =>
     openConfirm({
       title: `'${role.name}' 직책을 삭제할까요?`,
-      description: "이 직책을 가진 관리자가 없어야 지울 수 있습니다. 먼저 관리자 관리에서 이 직책을 빼 주세요.",
+      description: "이 직책을 가진 운영자가 없어야 지울 수 있습니다. 먼저 운영자 관리에서 이 직책을 빼 주세요.",
       warning: "삭제한 직책은 되돌릴 수 없습니다.",
       confirmText: "삭제",
       tone: "danger",
@@ -387,7 +387,7 @@ const RoleManager = () => {
                   value={editing.description}
                   maxLength={DESCRIPTION_MAX}
                   disabled={!canWrite}
-                  placeholder="이 직책이 무슨 일을 하는지 적어 두면 관리자를 배정할 때 헷갈리지 않습니다."
+                  placeholder="이 직책이 무슨 일을 하는지 적어 두면 운영자를 배정할 때 헷갈리지 않습니다."
                   onChange={(event) =>
                     patch({ description: event.target.value })
                   }

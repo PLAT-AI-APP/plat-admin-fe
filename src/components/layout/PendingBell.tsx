@@ -38,7 +38,7 @@ const PENDING_ENTRIES: PendingEntry[] = [
     key: "handover",
     label: "인수 심사",
     href: "/universes/handovers",
-    hint: "탈퇴한 제작자가 남긴 캐릭터",
+    hint: "탈퇴한 크리에이터가 남긴 캐릭터",
   },
   {
     key: "redemption",

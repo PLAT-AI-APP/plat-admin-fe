@@ -96,7 +96,7 @@ const Summary = ({ total }: { total: AiCost }) => (
     <SummaryTile
       label="매출 (부가세 제외)"
       value={formatWon(total.netRevenueKrw)}
-      sub={`결제 크레딧 ${formatWithCommas(total.paidCredits)} / 전체 ${formatWithCommas(
+      sub={`결제 노트 ${formatWithCommas(total.paidCredits)} / 전체 ${formatWithCommas(
         total.credits,
       )}`}
     />
@@ -107,7 +107,7 @@ const Summary = ({ total }: { total: AiCost }) => (
       valueClassName={marginTone(total.marginRate)}
     />
     <SummaryTile
-      label="크레딧 1개당 원가"
+      label="노트 1개당 원가"
       value={
         total.costPerCredit === null ? "-" : formatWon(total.costPerCredit)
       }
@@ -225,7 +225,7 @@ const costColumns = <T extends { cost: AiCost }>(): TableColumn<T>[] => [
   },
   {
     key: "credits",
-    header: "쓴 크레딧 (결제)",
+    header: "쓴 노트 (결제)",
     align: "right",
     numeric: true,
     render: ({ cost }) =>

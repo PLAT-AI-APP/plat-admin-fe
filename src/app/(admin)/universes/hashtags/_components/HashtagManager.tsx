@@ -279,7 +279,7 @@ const HashtagManager = () => {
     <>
       <Alert
         tone="info"
-        title="사용자는 여기 등록된 태그만 사용할 수 있습니다."
+        title="유저는 여기 등록된 태그만 사용할 수 있습니다."
       >
         캐릭터·세계관에 붙는 해시태그는 자유 입력이 아니라 이 목록에서 선택하는
         방식입니다. 이미 사용 중인 태그는 삭제 대신 노출을 끄는 방식으로 관리해
@@ -288,7 +288,7 @@ const HashtagManager = () => {
 
       <Card
         title={`해시태그 ${formatWithCommas(data?.totalCount ?? 0)}건`}
-        description="분류별로 묶여 사용자 선택 화면에 노출됩니다."
+        description="분류별로 묶여 유저 선택 화면에 노출됩니다."
         action={
           <>
             <CsvExportButton
@@ -361,7 +361,7 @@ const HashtagManager = () => {
           isLoading={isLoading}
           onRowClick={setDetailHashtag}
           emptyTitle="등록된 해시태그가 없습니다."
-          emptyDescription="사용자가 고를 수 있도록 자주 쓰는 태그부터 등록해 주세요."
+          emptyDescription="유저가 고를 수 있도록 자주 쓰는 태그부터 등록해 주세요."
           emptyAction={
             canWrite && (
               <Button

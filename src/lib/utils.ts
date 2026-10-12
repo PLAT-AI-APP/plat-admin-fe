@@ -76,18 +76,18 @@ export const formatStatCount = (
 export const formatCurrency = (amount: number): string =>
   `${formatWithCommas(amount)}원`;
 
-/** 크레딧은 정수 단위로만 관리한다. */
+/** 노트는 정수 단위로만 관리한다. 화면 단위도 사용자 화면과 같은 '노트'로 쓴다. */
 export const formatCredit = (credit: number): string =>
-  `${formatWithCommas(Math.trunc(credit))} CR`;
+  `${formatWithCommas(Math.trunc(credit))} 노트`;
 
 /**
- * 크레딧 증감을 부호가 붙은 문자열로 변환한다. (ex: +1,000 CR · -500 CR · 0 CR)
+ * 노트 증감을 부호가 붙은 문자열로 변환한다. (ex: +1,000 노트 · -500 노트 · 0 노트)
  *
  * 지급과 차감이 한 열에 섞이는 표에서 `-`만 붙고 `+`가 빠지면 지급이 "잔액"처럼
  * 읽힌다. 그래서 양수에도 부호를 붙이고, 0에는 붙이지 않는다.
  *
  * 같은 표의 다른 열(조정 후 잔액 등)이 단위 없이 숫자만 적는 자리에서는
- * `withUnit: false`로 " CR"을 뗀다.
+ * `withUnit: false`로 " 노트"를 뗀다.
  */
 export const formatSignedCredit = (
   credit: number,

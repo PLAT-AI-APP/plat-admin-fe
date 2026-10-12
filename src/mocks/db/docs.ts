@@ -84,7 +84,7 @@ export const docsGroups: MockDocsGroup[] = [
     coverImageUrl: null,
     status: "VISIBLE",
     translations: [
-      { locale: "ko", name: "제작자 가이드", description: "캐릭터를 만드는 제작자를 위한 안내" },
+      { locale: "ko", name: "크리에이터 가이드", description: "캐릭터를 만드는 크리에이터를 위한 안내" },
     ],
     sortOrder: 1,
     createdAt: at(25),

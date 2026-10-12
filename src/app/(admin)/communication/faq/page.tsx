@@ -7,7 +7,7 @@ export default function FaqPage() {
   return (
     <>
       <PageHeader
-        title="FAQ 관리"
+        title="FAQ"
         description="고객센터의 자주 하는 질문을 등록하고 노출 여부를 관리합니다."
       />
 

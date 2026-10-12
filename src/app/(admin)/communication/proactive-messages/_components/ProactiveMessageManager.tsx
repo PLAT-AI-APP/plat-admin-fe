@@ -203,7 +203,7 @@ const ProactiveMessageManager = () => {
               선제 메시지 {messages.length}건
             </h2>
             <p className="mt-1 body-5 text-font-2">
-              트리거 조건이 충족되면 캐릭터가 이용자에게 먼저 말을 겁니다.
+              트리거 조건이 충족되면 캐릭터가 유저에게 먼저 말을 겁니다.
             </p>
           </div>
 
@@ -224,7 +224,7 @@ const ProactiveMessageManager = () => {
           isLoading={isLoading}
           skeletonRows={5}
           emptyTitle="등록된 선제 메시지가 없습니다."
-          emptyDescription="트리거와 문구를 등록하면 조건이 맞는 이용자에게 자동으로 발송됩니다."
+          emptyDescription="트리거와 문구를 등록하면 조건이 맞는 유저에게 자동으로 발송됩니다."
           emptyAction={
             <Button
               variant="primary"

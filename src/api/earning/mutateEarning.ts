@@ -87,7 +87,7 @@ export const useRedemptionMutation = () => {
       await liveAxios.post(`/earnings/redemptions/${redemptionId}/reject`, { reason });
     },
     onSuccess: () => {
-      showAppToast("success", "반려했습니다. 잠긴 포인트가 제작자에게 돌아갑니다.");
+      showAppToast("success", "반려했습니다. 잠긴 포인트가 크리에이터에게 돌아갑니다.");
       invalidate();
     },
     onError: (error) => showErrorToast(error),

@@ -17,7 +17,7 @@ const MessageSnapshotView = ({ snapshot }: SnapshotViewProps<"MESSAGE">) => (
       </Link>
       <span>·</span>
       <span>
-        제작자{" "}
+        크리에이터{" "}
         <Link
           href={`/users/${snapshot.creatorUserId}`}
           className="font-medium text-font-1 transition hover:text-brand"

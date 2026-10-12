@@ -44,7 +44,7 @@ const CreditPolicyManager = () => {
     const nextAmount = Number(amountDraft);
 
     if (!amountDraft.trim() || !Number.isInteger(nextAmount)) {
-      showAppToast("warning", "크레딧은 정수로 입력해 주세요.");
+      showAppToast("warning", "노트는 정수로 입력해 주세요.");
       return;
     }
 
@@ -59,7 +59,7 @@ const CreditPolicyManager = () => {
     }
 
     openConfirm({
-      title: "크레딧 정책을 변경할까요?",
+      title: "노트 정책을 변경할까요?",
       description: `'${policy.label}' 정책 금액을 ${formatSignedCredit(policy.amount)} → ${formatSignedCredit(nextAmount)}로 변경합니다.`,
       warning: "변경 즉시 모든 유저에게 새 금액이 적용됩니다.",
       confirmText: "변경",
@@ -79,7 +79,7 @@ const CreditPolicyManager = () => {
       title: isEnabled ? "정책을 활성화할까요?" : "정책을 비활성화할까요?",
       description: isEnabled
         ? `'${policy.label}' 정책이 다시 동작하며 ${formatSignedCredit(policy.amount)}가 적용됩니다.`
-        : `'${policy.label}' 정책이 즉시 중단되어 크레딧이 지급·차감되지 않습니다.`,
+        : `'${policy.label}' 정책이 즉시 중단되어 노트가 지급·차감되지 않습니다.`,
       confirmText: isEnabled ? "활성화" : "비활성화",
       tone: isEnabled ? "default" : "danger",
       onConfirm: () =>
@@ -221,13 +221,13 @@ const CreditPolicyManager = () => {
       </Alert>
 
       <Alert tone="warning" title="'미연동' 정책은 아직 지급되지 않습니다.">
-        지금 실제로 지급되는 정책은 <b>가입 축하 크레딧</b>뿐입니다. 나머지는
+        지금 실제로 지급되는 정책은 <b>가입 축하 노트</b>뿐입니다. 나머지는
         금액과 활성 여부만 저장되고 지급 기능이 붙지 않아, 켜 두어도 유저가 받지
         않습니다. 이벤트로 공지하기 전에 개발 연동을 먼저 확인해 주세요.
       </Alert>
 
       <Card
-        title={`크레딧 정책 ${policies.length}건`}
+        title={`노트 정책 ${policies.length}건`}
         description="정책 키별 지급 금액과 활성 여부를 관리합니다."
         noPadding
       >
