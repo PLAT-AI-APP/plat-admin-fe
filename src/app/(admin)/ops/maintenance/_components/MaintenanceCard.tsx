@@ -48,7 +48,7 @@ const STATUS_LABEL: Record<MaintenanceWindow["status"], string> = {
  * 승인 전 결제 수를 함께 보여 줘 "지금 닫아도 되나"를 한 화면에서 가른다.
  */
 const MaintenanceCard = () => {
-  const canWrite = useHasPermission("server:write");
+  const canWrite = useHasPermission("maintenance:write");
   const { data, isLoading, isError } = useMaintenanceQuery();
   const { scheduleMutation, actionMutation } = useMaintenanceMutation();
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
