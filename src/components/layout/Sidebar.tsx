@@ -218,7 +218,8 @@ const Sidebar = () => {
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-3 scrollbar-thin">
+      {/* 마지막 메뉴가 화면 모서리에 붙지 않게 아래를 넉넉히 비운다. 끝까지 내려도 편하게 누를 자리가 남는다. */}
+      <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-20 scrollbar-thin">
         {ADMIN_MENU_SECTIONS.map((section) => ({
           ...section,
           /* 볼 수 있는 그룹이 하나도 없는 구역은 제목째 숨긴다. 운영 직책에는 개발 구역이 아예 없다. */
