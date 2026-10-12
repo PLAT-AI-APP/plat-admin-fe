@@ -154,6 +154,7 @@ export const toEarningAccountDetail = (
   nickname: opt(row.nickname),
   status: row.status,
   available: row.available,
+  pending: row.pending,
   accrued30d: row.accrued30d,
   totalAccrued: row.totalAccrued,
   totalRedeemed: row.totalRedeemed,

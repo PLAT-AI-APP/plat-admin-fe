@@ -15,5 +15,8 @@ export const earningQueryKeys = {
   pendingRedemptionCount: () => ["earning", "redemptions", "pending-count"] as const,
   policies: () => ["earning", "policies"] as const,
   reconciliations: (days: number) => ["earning", "reconciliations", days] as const,
+  tierBoard: () => ["earning", "tiers"] as const,
+  tierChanges: (limit: number) => ["earning", "tiers", "changes", limit] as const,
+  userTier: (userId: string) => ["earning", "user", userId, "tier"] as const,
   rewardProducts: () => ["reward-products"] as const,
 };

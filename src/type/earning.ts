@@ -62,6 +62,8 @@ export interface EarningAccountDetail {
   nickname?: string;
   status: EarningAccountStatus;
   available: number;
+  /** 제작자 등급 보류 기간이 안 지난 적립분. 잔액에는 들어 있지만 교환할 수 없다. */
+  pending: number;
   accrued30d: number;
   totalAccrued: number;
   totalRedeemed: number;
