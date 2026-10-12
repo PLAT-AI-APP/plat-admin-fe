@@ -9,15 +9,31 @@ import { formatDateTime } from "@/lib/dayjs";
 import { showAppToast } from "@/lib/toast";
 import { cn, formatAdmin, formatSignedCredit } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
-import type { CreditPolicy, CreditPolicyKey } from "@/type/billing";
+import type {
+  CreditExpiryUnit,
+  CreditPolicy,
+  CreditPolicyKey,
+} from "@/type/billing";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
 import Input from "@/components/ui/Input";
+import Select, { type SelectOption } from "@/components/ui/Select";
 import Switch from "@/components/ui/Switch";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
+
+const EXPIRY_UNIT_OPTIONS: SelectOption<CreditExpiryUnit>[] = [
+  { label: "일", value: "DAY" },
+  { label: "년", value: "YEAR" },
+];
+
+/** 서버 상한과 같다(10년). 0을 하나 더 붙인 실수를 저장 전에 막는다. */
+const EXPIRY_MAX: Record<CreditExpiryUnit, number> = { DAY: 3650, YEAR: 10 };
+
+const formatExpiry = (value: number, unit: CreditExpiryUnit) =>
+  `${value.toLocaleString()}${unit === "YEAR" ? "년" : "일"}`;
 
 const CreditPolicyManager = () => {
   const { data, isLoading } = useCreditPolicyListQuery();
@@ -27,21 +43,28 @@ const CreditPolicyManager = () => {
   // 인라인 수정 중인 정책만 draft를 들고, 나머지는 서버 값을 그대로 쓴다.
   const [editingKey, setEditingKey] = useState<CreditPolicyKey | null>(null);
   const [amountDraft, setAmountDraft] = useState("");
+  const [expiryValueDraft, setExpiryValueDraft] = useState("");
+  const [expiryUnitDraft, setExpiryUnitDraft] =
+    useState<CreditExpiryUnit>("DAY");
 
   const policies = data ?? [];
 
   const handleStartEdit = (policy: CreditPolicy) => {
     setEditingKey(policy.policyKey);
     setAmountDraft(String(policy.amount));
+    setExpiryValueDraft(String(policy.expiryValue));
+    setExpiryUnitDraft(policy.expiryUnit);
   };
 
   const handleCancelEdit = () => {
     setEditingKey(null);
     setAmountDraft("");
+    setExpiryValueDraft("");
   };
 
-  const handleSaveAmount = (policy: CreditPolicy) => {
+  const handleSavePolicy = (policy: CreditPolicy) => {
     const nextAmount = Number(amountDraft);
+    const nextExpiryValue = Number(expiryValueDraft);
 
     if (!amountDraft.trim() || !Number.isInteger(nextAmount)) {
       showAppToast("warning", "노트는 정수로 입력해 주세요.");
@@ -53,20 +76,53 @@ const CreditPolicyManager = () => {
       return;
     }
 
-    if (nextAmount === policy.amount) {
+    const expiryMax = EXPIRY_MAX[expiryUnitDraft];
+    if (
+      !expiryValueDraft.trim() ||
+      !Number.isInteger(nextExpiryValue) ||
+      nextExpiryValue < 1 ||
+      nextExpiryValue > expiryMax
+    ) {
+      showAppToast(
+        "warning",
+        `만료 기간은 1~${expiryMax.toLocaleString()}${expiryUnitDraft === "YEAR" ? "년" : "일"} 사이 정수로 입력해 주세요.`,
+      );
+      return;
+    }
+
+    const amountChanged = nextAmount !== policy.amount;
+    const expiryChanged =
+      nextExpiryValue !== policy.expiryValue ||
+      expiryUnitDraft !== policy.expiryUnit;
+
+    if (!amountChanged && !expiryChanged) {
       handleCancelEdit();
       return;
     }
 
+    const changes = [
+      amountChanged &&
+        `금액을 ${formatSignedCredit(policy.amount)} → ${formatSignedCredit(nextAmount)}`,
+      expiryChanged &&
+        `만료 기간을 ${formatExpiry(policy.expiryValue, policy.expiryUnit)} → ${formatExpiry(nextExpiryValue, expiryUnitDraft)}`,
+    ].filter(Boolean);
+
     openConfirm({
       title: "노트 정책을 변경할까요?",
-      description: `'${policy.label}' 정책 금액을 ${formatSignedCredit(policy.amount)} → ${formatSignedCredit(nextAmount)}로 변경합니다.`,
-      warning: "변경 즉시 모든 유저에게 새 금액이 적용됩니다.",
+      description: `'${policy.label}' 정책 ${changes.join(", ")}로 변경합니다.`,
+      warning: expiryChanged
+        ? "변경 즉시 모든 유저에게 적용됩니다. 만료 기간은 이후 지급분부터 적용되고, 이미 지급한 노트의 만료일은 바뀌지 않습니다."
+        : "변경 즉시 모든 유저에게 새 금액이 적용됩니다.",
       confirmText: "변경",
       onConfirm: async () => {
         await updateMutation.mutateAsync({
           policyKey: policy.policyKey,
-          values: { amount: nextAmount, isEnabled: policy.isEnabled },
+          values: {
+            amount: nextAmount,
+            isEnabled: policy.isEnabled,
+            expiryValue: nextExpiryValue,
+            expiryUnit: expiryUnitDraft,
+          },
         });
 
         handleCancelEdit();
@@ -143,6 +199,42 @@ const CreditPolicyManager = () => {
         ),
     },
     {
+      key: "expiry",
+      header: "만료 기간",
+      width: "170px",
+      align: "right",
+      numeric: true,
+      render: (policy) =>
+        editingKey === policy.policyKey ? (
+          <div className="flex items-center justify-end gap-1">
+            <Input
+              value={expiryValueDraft}
+              onChange={(event) => setExpiryValueDraft(event.target.value)}
+              type="number"
+              min={1}
+              max={EXPIRY_MAX[expiryUnitDraft]}
+              step={1}
+              aria-label={`${policy.label} 만료 기간`}
+              className="text-right tabular-nums"
+              inputBoxClassName="h-9 w-20"
+            />
+            <Select
+              value={expiryUnitDraft}
+              onChange={(event) =>
+                setExpiryUnitDraft(event.target.value as CreditExpiryUnit)
+              }
+              options={EXPIRY_UNIT_OPTIONS}
+              aria-label={`${policy.label} 만료 기간 단위`}
+              selectBoxClassName="h-9 w-20 shrink-0"
+            />
+          </div>
+        ) : (
+          <span className="text-font-2">
+            {formatExpiry(policy.expiryValue, policy.expiryUnit)}
+          </span>
+        ),
+    },
+    {
       key: "isEnabled",
       header: "활성",
       width: "100px",
@@ -188,7 +280,7 @@ const CreditPolicyManager = () => {
             <IconButton
               label="저장"
               icon={<Check size={16} />}
-              onClick={() => handleSaveAmount(policy)}
+              onClick={() => handleSavePolicy(policy)}
             />
             <IconButton
               label="취소"
@@ -200,7 +292,7 @@ const CreditPolicyManager = () => {
           canWrite && (
           <div className="flex items-center justify-end">
             <IconButton
-              label="금액 수정"
+              label="정책 수정"
               icon={<Edit size={16} />}
               onClick={() => handleStartEdit(policy)}
             />
@@ -228,7 +320,7 @@ const CreditPolicyManager = () => {
 
       <Card
         title={`노트 정책 ${policies.length}건`}
-        description="정책 키별 지급 금액과 활성 여부를 관리합니다."
+        description="정책 키별 지급 금액·만료 기간과 활성 여부를 관리합니다."
         noPadding
       >
         <Table
