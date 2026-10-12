@@ -247,7 +247,7 @@ const AdminAccountManager = () => {
     items.push({
       label: "이 관리자의 활동 보기",
       icon: <ListLines size={15} />,
-      onSelect: () => router.push(`/ops/logs?actorId=${manager.managerId}`),
+      onSelect: () => router.push(`/ops/admin-activity?actorId=${manager.managerId}`),
     });
 
     if (canDelete && canHandleSuper(manager)) {

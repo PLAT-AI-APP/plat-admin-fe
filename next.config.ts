@@ -115,6 +115,13 @@ const nextConfig: NextConfig = {
       { source: "/ai/keys", destination: "/ops/secrets?tab=ai-keys", permanent: false },
       { source: "/billing/chat-policy", destination: "/billing/pricing?tab=chat", permanent: false },
       { source: "/billing/credit-policies", destination: "/billing/pricing?tab=fixed", permanent: false },
+      /* 운영자 활동은 시스템 로그에서 떼어 관리 구역으로 옮겼다. 쿼리(actorId 등)는 그대로 넘어간다. */
+      {
+        source: "/ops/logs",
+        has: [{ type: "query", key: "tab", value: "admin" }],
+        destination: "/ops/admin-activity",
+        permanent: false,
+      },
     ];
   },
 

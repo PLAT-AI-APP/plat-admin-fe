@@ -77,7 +77,8 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
   const [isSuspendOpen, setIsSuspendOpen] = useState(false);
   const [isProfileResetOpen, setIsProfileResetOpen] = useState(false);
   const router = useRouter();
-  const canReadLog = useHasPermission("log:read");
+  /* 요청 로그는 시스템 로그(접근 로그 탭)라 systemLog 권한으로 연다. */
+  const canReadLog = useHasPermission("systemLog:read");
   const canWrite = useCan("user:write");
   const admin = useAdminStore((state) => state.admin);
 
