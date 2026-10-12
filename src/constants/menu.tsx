@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import type { PermissionKey } from "@/type/permission";
 import { IS_MOCKING } from "@/api/baseUri";
 import {
+  Activity,
   Bell,
   Calendar,
   Coin,
@@ -15,13 +16,13 @@ import {
   Globe,
   Hash,
   Key,
-  ImageIcon,
   Layers,
   ListLines,
   Megaphone,
   MessageSquare,
   Package,
   QuestionCircle,
+  Receipt,
   Robot,
   Scale,
   Server,
@@ -32,6 +33,7 @@ import {
   Star,
   UserPlus,
   Users,
+  Warning,
 } from "@/icons";
 import type { PendingCounts } from "@/type/ops";
 
@@ -69,6 +71,8 @@ export interface AdminMenuItem {
 export interface AdminMenuGroup {
   /** 메뉴 펼침 상태를 저장할 키 */
   key: string;
+  /** 사이드바 구역. 쓰는 사람 기준(운영 · 개발 · 관리)이다. */
+  section: AdminMenuSectionKey;
   label: string;
   icon: ReactNode;
   /** 하위가 없는 단독 메뉴는 href를 갖는다. */
@@ -84,37 +88,68 @@ const ICON_SIZE = 19;
 const SUB_ICON_SIZE = 17;
 
 /**
+ * 사이드바 구역.
+ *
+ * **구역은 화면을 쓰는 사람으로 나눈다.** 기능을 누가 만들었는지가 아니라 누가 매일 여는지가 기준이다
+ * (서비스 점검은 개발이 만들었지만 운영이 건다). 구역 안의 그룹이 하나도 보이지 않으면 구역 제목도 숨겨,
+ * 운영 직책에는 개발 구역이 통째로 사라진다.
+ */
+export const ADMIN_MENU_SECTIONS = [
+  { key: "operate", label: "운영" },
+  { key: "develop", label: "개발" },
+  { key: "manage", label: "관리" },
+] as const;
+
+export type AdminMenuSectionKey = (typeof ADMIN_MENU_SECTIONS)[number]["key"];
+
+/**
  * 좌측 네비게이션 정의.
  *
  * 분류 기준
- * 1) 1뎁스는 운영 대상 도메인 단위로 묶는다. (화면 수 기준이 아니다)
- * 2) 2뎁스는 도메인 내부의 업무 단위(목록/관리 · 정책 · 이력)다.
- * 3) 하위가 1개뿐인 도메인은 2뎁스를 만들지 않고 단독 메뉴로 둔다.
+ * 1) 구역(`section`)은 쓰는 사람 기준이다 — 운영 · 개발 · 관리.
+ * 2) 1뎁스는 운영 대상 도메인 단위로 묶는다. (화면 수 기준이 아니다)
+ * 3) 2뎁스는 도메인 내부의 업무 단위(목록/관리 · 정책 · 이력)다. 같은 대상을 다루는 화면은 탭으로 합친다.
+ * 4) 하위가 1개뿐인 도메인은 2뎁스를 만들지 않고 단독 메뉴로 둔다.
  *
+ * 배열은 구역 순서대로 평평하게 둔다. 경로 판정 · ⌘K · 브레드크럼은 그룹만 보고, 구역은 사이드바만 쓴다.
  * 자세한 근거는 docs/ADMIN_PLAN.md 2장 참고.
  */
 export const ADMIN_MENU: AdminMenuGroup[] = [
+  /* ───────────── 운영 ───────────── */
   {
     key: "dashboard",
+    section: "operate",
     label: "대시보드",
     icon: <Dashboard size={ICON_SIZE} />,
     href: "/",
     permission: "dashboard:read",
   },
   {
-    key: "main-exposure",
-    label: "메인 노출 관리",
-    icon: <Star size={ICON_SIZE} />,
+    /*
+      1뎁스는 "콘텐츠"다. 세계관이 콘텐츠의 단위이고, 캐릭터는 그 안에 존재한다.
+      홈 편성도 세계관을 고르는 일이라 같은 그룹에 둔다.
+    */
+    key: "content",
+    section: "operate",
+    label: "콘텐츠",
+    icon: <Globe size={ICON_SIZE} />,
     children: [
       {
-        label: "배너 관리",
-        href: "/main-exposure/banners",
-        permission: "mainExposure:read",
-        icon: <ImageIcon size={SUB_ICON_SIZE} />,
+        label: "세계관",
+        href: "/universes",
+        permission: "universe:read",
+        icon: <Globe size={SUB_ICON_SIZE} />,
       },
       {
-        label: "오늘의 PICK",
-        href: "/main-exposure/today-pick",
+        label: "해시태그",
+        href: "/universes/hashtags",
+        permission: "hashtag:read",
+        icon: <Hash size={SUB_ICON_SIZE} />,
+      },
+      {
+        /* 배너와 오늘의 PICK 을 탭으로 합쳤다. 감춘 두 편성(공식 캐릭터 맛보기 · 에셋 추천)은 섹션이 돌아오면 탭으로 붙인다. */
+        label: "홈 편성",
+        href: "/main-exposure",
         permission: "mainExposure:read",
         icon: <Star size={SUB_ICON_SIZE} />,
       },
@@ -137,32 +172,6 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Layers size={SUB_ICON_SIZE} />,
         hidden: true,
       },
-    ],
-  },
-  {
-    /*
-      1뎁스는 "세계관"이다. 세계관이 콘텐츠의 단위이고, 캐릭터는 그 안에 존재한다.
-      캐릭터를 1뎁스로 두면 실제 구조와 반대라, 운영자가 캐릭터에서 세계관을
-      찾으려 하게 된다.
-    */
-    key: "universes",
-    label: "세계관",
-    icon: <Globe size={ICON_SIZE} />,
-    children: [
-      {
-        label: "세계관",
-        href: "/universes",
-        permission: "universe:read",
-        icon: <Globe size={SUB_ICON_SIZE} />,
-      },
-      {
-        /* 탈퇴한 제작자가 남긴 캐릭터. 승인하면 공식 계정이 인수하고, 반려하면 삭제된다. */
-        label: "인수 심사",
-        href: "/universes/handovers",
-        pendingKey: "handover",
-        permission: "universeHandover:read",
-        icon: <UserPlus size={SUB_ICON_SIZE} />,
-      },
       {
         label: "캐릭터",
         href: "/universes/characters",
@@ -170,17 +179,42 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Robot size={SUB_ICON_SIZE} />,
         isMock: true,
       },
+    ],
+  },
+  {
+    /* 밀린 일이 쌓이는 검수 큐를 한곳에 모은다. 운영자가 아침에 여는 그룹이다. */
+    key: "moderation",
+    section: "operate",
+    label: "검수·신고",
+    icon: <Flag size={ICON_SIZE} />,
+    children: [
       {
-        label: "해시태그 관리",
-        href: "/universes/hashtags",
-        permission: "hashtag:read",
-        icon: <Hash size={SUB_ICON_SIZE} />,
+        label: "신고",
+        href: "/community/reports",
+        pendingKey: "report",
+        permission: "report:read",
+        icon: <Flag size={SUB_ICON_SIZE} />,
       },
       {
-        label: "금지어 관리",
+        label: "댓글",
+        href: "/community/comments",
+        pendingKey: "comment",
+        permission: "comment:read",
+        icon: <MessageSquare size={SUB_ICON_SIZE} />,
+      },
+      {
+        label: "금지어",
         href: "/universes/banned-words",
         permission: "bannedWord:read",
         icon: <ShieldAlert size={SUB_ICON_SIZE} />,
+      },
+      {
+        /* 탈퇴한 크리에이터가 남긴 캐릭터. 승인하면 공식 계정이 인수하고, 반려하면 삭제된다. */
+        label: "인수 심사",
+        href: "/universes/handovers",
+        pendingKey: "handover",
+        permission: "universeHandover:read",
+        icon: <UserPlus size={SUB_ICON_SIZE} />,
       },
       {
         label: "채팅 내보내기",
@@ -192,33 +226,13 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     ],
   },
   {
-    key: "community",
-    label: "커뮤니티",
-    icon: <MessageSquare size={ICON_SIZE} />,
-    children: [
-      {
-        label: "댓글 관리",
-        href: "/community/comments",
-        pendingKey: "comment",
-        permission: "comment:read",
-        icon: <MessageSquare size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "신고 관리",
-        href: "/community/reports",
-        pendingKey: "report",
-        permission: "report:read",
-        icon: <Flag size={SUB_ICON_SIZE} />,
-      },
-    ],
-  },
-  {
     key: "users",
-    label: "유저/크리에이터",
+    section: "operate",
+    label: "유저",
     icon: <Users size={ICON_SIZE} />,
     children: [
       {
-        label: "유저 관리",
+        label: "유저",
         href: "/users",
         permission: "user:read",
         icon: <Users size={SUB_ICON_SIZE} />,
@@ -233,117 +247,144 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         permission: "officialAccount:read",
         icon: <Crown size={SUB_ICON_SIZE} />,
       },
+    ],
+  },
+  {
+    key: "support",
+    section: "operate",
+    label: "고객센터",
+    icon: <QuestionCircle size={ICON_SIZE} />,
+    children: [
       {
-        /*
-          관리자 콘솔 계정이 아니라 **서비스 계정**에 주는 관리자 역할이다.
-          운영자가 서비스 화면에서 관리자 기능을 쓸 계정을 여기서 정한다.
-        */
-        label: "서비스 관리자",
-        href: "/users/service-admins",
-        permission: "serviceAdmin:read",
-        icon: <ShieldCheck size={SUB_ICON_SIZE} />,
+        label: "Q&A",
+        href: "/communication/qna",
+        pendingKey: "qna",
+        permission: "qna:read",
+        icon: <QuestionCircle size={SUB_ICON_SIZE} />,
+      },
+      {
+        label: "공지사항",
+        href: "/communication/notices",
+        permission: "notice:read",
+        icon: <FileText size={SUB_ICON_SIZE} />,
+      },
+      {
+        label: "FAQ",
+        href: "/communication/faq",
+        permission: "faq:read",
+        icon: <ListLines size={SUB_ICON_SIZE} />,
+      },
+      {
+        label: "문서 관리",
+        href: "/communication/docs",
+        permission: "docs:read",
+        icon: <Layers size={SUB_ICON_SIZE} />,
+      },
+      {
+        /* 약관 버전은 여기서 관리한다. 본문 원문은 아직 Notion 에 두고 버전·시행일·동의 대상을 서버가 판정한다. */
+        label: "약관",
+        href: "/legal",
+        permission: "legal:read",
+        icon: <Scale size={SUB_ICON_SIZE} />,
       },
     ],
   },
   {
-    key: "ai",
-    label: "AI 운영",
-    icon: <Cpu size={ICON_SIZE} />,
+    /* 유저에게 먼저 보내는 것들. 지금은 모두 다른 도구(Discord)로 운영해 실서버에서는 그룹째 숨는다. */
+    key: "messaging",
+    section: "operate",
+    label: "메시지 발송",
+    icon: <Megaphone size={ICON_SIZE} />,
     children: [
       {
-        label: "모델 카탈로그",
-        href: "/ai/catalog",
-        permission: "aiModel:read",
-        icon: <Cpu size={SUB_ICON_SIZE} />,
+        label: "알림 템플릿",
+        href: "/communication/notifications",
+        permission: "notification:read",
+        icon: <Bell size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
       {
-        label: "AI 모델 관리",
-        href: "/ai/models",
-        permission: "aiModel:read",
-        icon: <Sliders size={SUB_ICON_SIZE} />,
+        label: "푸시",
+        href: "/communication/push",
+        permission: "push:read",
+        icon: <Megaphone size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
       {
-        label: "응답 형식",
-        href: "/ai/response-formats",
-        permission: "aiModel:read",
+        label: "선제 메시지",
+        href: "/communication/proactive-messages",
+        permission: "notification:read",
         icon: <MessageSquare size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "AI 원가",
-        href: "/ai/costs",
-        permission: "aiCost:read",
-        icon: <Coin size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "시스템 프롬프트",
-        href: "/ai/prompts",
-        permission: "systemPrompt:read",
-        icon: <FileText size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "API 키",
-        href: "/ai/keys",
-        permission: "server:read",
-        icon: <Key size={SUB_ICON_SIZE} />,
+        isMock: true,
       },
     ],
   },
   {
     key: "billing",
-    label: "결제/크레딧",
+    section: "operate",
+    label: "결제·노트",
     icon: <CreditCard size={ICON_SIZE} />,
     children: [
-      {
-        label: "상품/결제금액 관리",
-        href: "/billing/products",
-        permission: "billingProduct:read",
-        icon: <Package size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "크레딧 정책 관리",
-        href: "/billing/credit-policies",
-        permission: "creditPolicy:read",
-        icon: <Sliders size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "채팅 요금 정책",
-        href: "/billing/chat-policy",
-        permission: "creditPolicy:read",
-        icon: <Coin size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "크레딧 수동 조정",
-        href: "/billing/credit-adjustments",
-        permission: "creditAdjustment:read",
-        icon: <Coin size={SUB_ICON_SIZE} />,
-      },
       {
         /*
           결제 장부 · 환불 관리 · 결제 보존 원장을 결제 한 건 기준으로 합쳤다.
           환불 승인 · 이상 조치 · 5년 보존 열람이 모두 여기서 끝난다. 결제와 무관한
-          크레딧 흐름(사용 · 만료 · 조정)은 유저 상세의 크레딧 원장에서 본다.
+          노트 흐름(사용 · 만료 · 조정)은 유저 상세의 노트 원장에서 본다.
         */
         label: "결제 내역",
         href: "/billing/payments",
         permission: "payment:read",
         icon: <CreditCard size={SUB_ICON_SIZE} />,
       },
+      {
+        label: "상품·가격",
+        href: "/billing/products",
+        permission: "billingProduct:read",
+        icon: <Package size={SUB_ICON_SIZE} />,
+      },
+      {
+        /* 채팅 요금 · 모델별 요금 · 고정 지급·차감을 탭으로 합쳤다. 노트 가격을 정하는 일은 여기서 끝난다. */
+        label: "노트 요금",
+        href: "/billing/pricing",
+        permission: "creditPolicy:read",
+        icon: <Coin size={SUB_ICON_SIZE} />,
+      },
+      {
+        /* 형식이 곧 그 턴의 가격대라 요금 옆에 둔다. 경로는 예전 그대로다. */
+        label: "응답 형식",
+        href: "/ai/response-formats",
+        permission: "creditPolicy:read",
+        icon: <MessageSquare size={SUB_ICON_SIZE} />,
+      },
+      {
+        label: "노트 수동 조정",
+        href: "/billing/credit-adjustments",
+        permission: "creditAdjustment:read",
+        icon: <Sliders size={SUB_ICON_SIZE} />,
+      },
+      {
+        label: "AI 원가·매출",
+        href: "/ai/costs",
+        permission: "aiCost:read",
+        icon: <Receipt size={SUB_ICON_SIZE} />,
+      },
     ],
   },
   {
-    /* 제작자 수익(plat-earning). 대화 수익 포인트와 상품권 · 노트 교환을 관리한다. */
+    /* 크리에이터 수익(plat-earning). 대화 수익 포인트와 상품권 · 노트 교환을 관리한다. */
     key: "earnings",
-    label: "제작자 수익",
+    section: "operate",
+    label: "크리에이터 수익",
     icon: <Crown size={ICON_SIZE} />,
     children: [
       {
-        label: "제작자 수익",
+        label: "크리에이터 수익",
         href: "/earnings/creators",
         icon: <Users size={SUB_ICON_SIZE} />,
         permission: "earning:read",
       },
       {
-        label: "제작자 등급",
+        label: "크리에이터 등급",
         href: "/earnings/tiers",
         icon: <Star size={SUB_ICON_SIZE} />,
         permission: "earning:read",
@@ -356,105 +397,66 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         pendingKey: "redemption",
       },
       {
-        label: "수익 정책 · 교환 상품",
+        label: "수익 정책·교환 상품",
         href: "/earnings/policy",
         icon: <Sliders size={SUB_ICON_SIZE} />,
         permission: "earning:read",
       },
-      {
-        label: "대사 결과",
-        href: "/earnings/reconciliation",
-        icon: <Scale size={SUB_ICON_SIZE} />,
-        permission: "earning:read",
-      },
     ],
   },
   {
-    key: "communication",
-    label: "커뮤니케이션",
-    icon: <Megaphone size={ICON_SIZE} />,
+    /* 기능은 개발이 만들었지만 거는 사람은 운영이다. 유저 화면에 바로 보이는 중단 · 업데이트 안내를 모은다. */
+    key: "service",
+    section: "operate",
+    label: "점검·업데이트",
+    icon: <Warning size={ICON_SIZE} />,
     children: [
       {
-        label: "공지사항 관리",
-        href: "/communication/notices",
-        permission: "notice:read",
-        icon: <FileText size={SUB_ICON_SIZE} />,
+        label: "서비스 점검",
+        href: "/ops/maintenance",
+        permission: "maintenance:read",
+        icon: <Warning size={SUB_ICON_SIZE} />,
       },
       {
-        label: "Q&A 관리",
-        href: "/communication/qna",
-        pendingKey: "qna",
-        permission: "qna:read",
-        icon: <QuestionCircle size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "FAQ 관리",
-        href: "/communication/faq",
-        permission: "faq:read",
-        icon: <ListLines size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "문서 관리",
-        href: "/communication/docs",
-        permission: "docs:read",
-        icon: <Layers size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "알림 관리",
-        href: "/communication/notifications",
-        permission: "notification:read",
-        icon: <Bell size={SUB_ICON_SIZE} />,
-        isMock: true,
-      },
-      {
-        label: "선제 메시지",
-        href: "/communication/proactive-messages",
-        permission: "notification:read",
-        icon: <MessageSquare size={SUB_ICON_SIZE} />,
-        isMock: true,
-      },
-      {
-        label: "푸시 발송",
-        href: "/communication/push",
-        permission: "push:read",
-        icon: <Megaphone size={SUB_ICON_SIZE} />,
-        isMock: true,
-      },
-    ],
-  },
-  {
-    key: "legal",
-    label: "법적 고지",
-    icon: <Scale size={ICON_SIZE} />,
-    href: "/legal",
-    permission: "legal:read",
-    /* 약관 버전은 여기서 관리한다. 본문 원문은 아직 Notion 에 두고 버전·시행일·동의 대상을 서버가 판정한다. */
-  },
-  {
-    key: "ops",
-    label: "운영",
-    icon: <ShieldCheck size={ICON_SIZE} />,
-    children: [
-      {
-        label: "직책 · 권한",
-        href: "/ops/roles",
-        permission: "role:read",
-        icon: <ShieldCheck size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "관리자 관리",
-        href: "/ops/managers",
-        permission: "manager:read",
-        icon: <UserPlus size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "앱 버전 관리",
+        label: "앱 버전",
         href: "/ops/app-versions",
         permission: "appVersion:read",
         icon: <Smartphone size={SUB_ICON_SIZE} />,
         /* 강제 업데이트 정책을 아직 앱이 읽지 않는다. 화면은 붙일 때를 위해 남겨 둔다. */
         isMock: true,
       },
+    ],
+  },
+
+  /* ───────────── 개발 ───────────── */
+  {
+    key: "ai",
+    section: "develop",
+    label: "AI 엔진",
+    icon: <Cpu size={ICON_SIZE} />,
+    children: [
+      {
+        /* 운영 설정과 카탈로그(테스트 호출)를 탭으로 합쳤다. 요금은 결제·노트 > 노트 요금에서 고친다. */
+        label: "모델",
+        href: "/ai/models",
+        permission: "aiModel:read",
+        icon: <Cpu size={SUB_ICON_SIZE} />,
+      },
+      {
+        /* 캐릭터마다 다른 내용이 아니라 모든 대화에 공통으로 붙는 규칙(대화 기본 · 안전 · 추천)이라 개발 구역에 둔다. */
+        label: "시스템 프롬프트",
+        href: "/ai/prompts",
+        permission: "systemPrompt:read",
+        icon: <FileText size={SUB_ICON_SIZE} />,
+      },
+    ],
+  },
+  {
+    key: "infra",
+    section: "develop",
+    label: "인프라",
+    icon: <Server size={ICON_SIZE} />,
+    children: [
       {
         label: "서버 상태",
         href: "/ops/server",
@@ -462,27 +464,71 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Server size={SUB_ICON_SIZE} />,
       },
       {
-        label: "시크릿",
-        href: "/ops/secrets",
-        permission: "server:read",
-        icon: <Key size={SUB_ICON_SIZE} />,
-      },
-      {
-        label: "배치 관리",
+        label: "배치",
         href: "/ops/batch",
         permission: "batch:read",
         icon: <Calendar size={SUB_ICON_SIZE} />,
       },
       {
-        label: "로그",
+        /* 어긋나도 운영이 화면에서 할 조치가 없고 개발이 원인을 본다. 배치 결과와 같은 권한이다. */
+        label: "대사 결과",
+        href: "/earnings/reconciliation",
+        permission: "batch:read",
+        icon: <Scale size={SUB_ICON_SIZE} />,
+      },
+      {
+        label: "시스템 로그",
         href: "/ops/logs",
-        /*
-          탭마다 권한이 다르다(관리자 활동 `log:read` · 시스템 이벤트 `systemLog:read`).
-          메뉴는 키를 하나만 걸 수 있어 **넓은 쪽**을 두고, 감사 탭은 화면 안에서
-          따로 막는다. 좁은 쪽을 걸면 장애를 보려는 사람이 메뉴 자체를 못 본다.
-        */
         permission: "systemLog:read",
         icon: <ListLines size={SUB_ICON_SIZE} />,
+      },
+    ],
+  },
+  {
+    /* 서버 시크릿과 AI 제공사 키를 탭으로 합쳤다. 둘 다 server:write 로 바꾼다. */
+    key: "keys",
+    section: "develop",
+    label: "키·시크릿",
+    icon: <Key size={ICON_SIZE} />,
+    href: "/ops/secrets",
+    permission: "server:read",
+  },
+
+  /* ───────────── 관리 ───────────── */
+  {
+    key: "operators",
+    section: "manage",
+    label: "운영자",
+    icon: <ShieldCheck size={ICON_SIZE} />,
+    children: [
+      {
+        label: "운영자 계정",
+        href: "/ops/managers",
+        permission: "manager:read",
+        icon: <UserPlus size={SUB_ICON_SIZE} />,
+      },
+      {
+        label: "직책·권한",
+        href: "/ops/roles",
+        permission: "role:read",
+        icon: <ShieldCheck size={SUB_ICON_SIZE} />,
+      },
+      {
+        /*
+          운영자 콘솔 계정이 아니라 **서비스 계정**에 주는 관리자 역할이다.
+          누구에게 무슨 힘을 주는 일이라 유저 관리가 아니라 권한 관리 쪽에 둔다.
+        */
+        label: "서비스 관리자",
+        href: "/users/service-admins",
+        permission: "serviceAdmin:read",
+        icon: <ShieldCheck size={SUB_ICON_SIZE} />,
+      },
+      {
+        /* 누가 무엇을 바꿨는지 되짚는 감사 기록. 장애를 보는 시스템 로그와 볼 사람이 달라 떼어 냈다. */
+        label: "운영자 활동 기록",
+        href: "/ops/admin-activity",
+        permission: "log:read",
+        icon: <Activity size={SUB_ICON_SIZE} />,
       },
     ],
   },

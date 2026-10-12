@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import {
   ADMIN_MENU,
+  ADMIN_MENU_SECTIONS,
   AdminMenuGroup,
   findActiveGroupKey,
   isMenuItemActive,
@@ -218,7 +219,31 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-3 scrollbar-thin">
-        <ul className="flex flex-col gap-0.5">{ADMIN_MENU.map(renderGroup)}</ul>
+        {ADMIN_MENU_SECTIONS.map((section) => ({
+          ...section,
+          /* 볼 수 있는 그룹이 하나도 없는 구역은 제목째 숨긴다. 운영 직책에는 개발 구역이 아예 없다. */
+          groups: ADMIN_MENU.filter((group) => group.section === section.key)
+            .map(renderGroup)
+            .filter(Boolean),
+        }))
+          .filter((section) => section.groups.length > 0)
+          .map((section, index) => (
+            <section
+              key={section.key}
+              aria-label={section.label}
+              className={cn(index > 0 && "mt-4")}
+            >
+              {/* 접힌 상태에선 글자가 들어갈 자리가 없어 구분선으로 대신한다. 첫 구역은 위에 나눌 것이 없다. */}
+              {isCollapsed ? (
+                index > 0 && <hr className="mx-2 mb-4 border-border-main" />
+              ) : (
+                <p className="mb-1 px-3 body-6 font-semibold text-font-2">
+                  {section.label}
+                </p>
+              )}
+              <ul className="flex flex-col gap-0.5">{section.groups}</ul>
+            </section>
+          ))}
       </nav>
     </aside>
   );
