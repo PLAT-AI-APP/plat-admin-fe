@@ -40,7 +40,10 @@ export interface ResponseFormat {
   recentMessageCount: number;
   /** 원하는 분량(글자 수). 비우면 분량을 말하지 않는다. */
   targetChars: number | null;
+  /** 형식 프롬프트 — 문체·호흡·블록 구성. 시스템 프롬프트 맨 끝에 붙는다. */
   styleDirective: string;
+  /** 매 사용자 턴 끝에 붙는 짧은 리마인더. 없으면 분량만 말한다. */
+  turnReminder: string | null;
   /** 화면의 "약 N노트" 계산용 기준 입력·출력 토큰 */
   refInputTokens: number;
   refOutputTokens: number;

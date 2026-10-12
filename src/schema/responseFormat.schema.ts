@@ -25,8 +25,10 @@ export const responseFormatSchema = z.object({
   styleDirective: z
     .string()
     .trim()
-    .min(1, "문체 지시를 입력해 주세요.")
-    .max(2_000, "문체 지시는 2,000자 이내로 입력해 주세요."),
+    .min(1, "형식 프롬프트를 입력해 주세요.")
+    .max(4_000, "형식 프롬프트는 4,000자 이내로 입력해 주세요."),
+  /** 비우면 매 턴 분량만 말한다. */
+  turnReminder: z.string().trim().max(500, "턴 리마인더는 500자 이내로 입력해 주세요."),
   refInputTokens: intRange("기준 입력 토큰", 0, 1_000_000),
   refOutputTokens: intRange("기준 출력 토큰", 0, 100_000),
   enabled: z.boolean(),

@@ -57,6 +57,7 @@ const ResponseFormatFormModal = ({
             recentMessageCount: format.recentMessageCount,
             targetChars: format.targetChars,
             styleDirective: format.styleDirective,
+            turnReminder: format.turnReminder ?? "",
             refInputTokens: format.refInputTokens,
             refOutputTokens: format.refOutputTokens,
             enabled: format.enabled,
@@ -70,6 +71,7 @@ const ResponseFormatFormModal = ({
             recentMessageCount: 20,
             targetChars: null,
             styleDirective: "",
+            turnReminder: "",
             refInputTokens: 20_000,
             refOutputTokens: 600,
             enabled: true,
@@ -169,17 +171,31 @@ const ResponseFormatFormModal = ({
         </div>
 
         <FormField
-          label="문체 지시"
+          label="형식 프롬프트"
           htmlFor="response-format-style"
           required
           error={errors.styleDirective?.message}
-          hint="시스템 프롬프트의 응답 분량 구간에 그대로 들어갑니다."
+          hint="시스템 프롬프트 맨 끝에 붙습니다. 문체·블록 구성·분량을 적습니다."
         >
           <Textarea
             id="response-format-style"
-            rows={4}
+            rows={6}
             hasError={Boolean(errors.styleDirective)}
             {...register("styleDirective")}
+          />
+        </FormField>
+
+        <FormField
+          label="턴 리마인더"
+          htmlFor="response-format-reminder"
+          error={errors.turnReminder?.message}
+          hint="매 사용자 메시지 끝에 붙습니다. 비우면 분량만 말합니다."
+        >
+          <Textarea
+            id="response-format-reminder"
+            rows={2}
+            hasError={Boolean(errors.turnReminder)}
+            {...register("turnReminder")}
           />
         </FormField>
 
