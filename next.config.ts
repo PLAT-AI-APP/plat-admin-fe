@@ -84,6 +84,8 @@ const nextConfig: NextConfig = {
   },
 
   /**
+   * 합친 화면의 옛 주소.
+   *
    * 결제 장부 · 환불 관리 · 결제 보존 원장은 결제 내역으로 합쳤다.
    *
    * 옛 주소를 404로 끊지 않고 결제 내역의 같은 자리로 보낸다. 알림 · 북마크 · 공유된
@@ -103,6 +105,16 @@ const nextConfig: NextConfig = {
         destination: "/billing/payments?tab=WITHDRAWN",
         permanent: false,
       },
+      /*
+        메뉴 개편(운영 · 개발 · 관리)으로 같은 대상을 다루던 화면을 탭으로 합쳤다.
+        옛 주소는 합친 화면의 같은 탭으로 보낸다.
+      */
+      { source: "/main-exposure/banners", destination: "/main-exposure?tab=banners", permanent: false },
+      { source: "/main-exposure/today-pick", destination: "/main-exposure?tab=today-pick", permanent: false },
+      { source: "/ai/catalog", destination: "/ai/models?tab=catalog", permanent: false },
+      { source: "/ai/keys", destination: "/ops/secrets?tab=ai-keys", permanent: false },
+      { source: "/billing/chat-policy", destination: "/billing/pricing?tab=chat", permanent: false },
+      { source: "/billing/credit-policies", destination: "/billing/pricing?tab=fixed", permanent: false },
     ];
   },
 

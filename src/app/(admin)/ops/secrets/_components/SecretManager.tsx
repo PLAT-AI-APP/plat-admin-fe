@@ -267,10 +267,10 @@ const SecretManager = () => {
             <p className="body-6 text-font-2">
               {data?.path ?? "AWS Parameter Store"} · 값은 보이지 않습니다. AI
               제공사 키는{" "}
-              <Link href="/ai/keys" className="underline">
-                AI 운영 › API 키
-              </Link>
-              에서 관리합니다.
+              <Link href="/ops/secrets?tab=ai-keys" className="underline">
+                AI 제공사 키
+              </Link>{" "}
+              탭에서 관리합니다.
             </p>
           </div>
         </div>
