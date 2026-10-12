@@ -161,8 +161,8 @@ export const CLAWBACK_STATUS_LABEL: Record<ClawbackStatus, string> = {
 };
 
 export const REFUND_REJECT_REASON_LABEL: Record<RefundRejectReasonCode, string> = {
-  CREDIT_USED: "크레딧 사용",
-  ADMIN: "관리자 거절",
+  CREDIT_USED: "노트 사용",
+  ADMIN: "운영자 거절",
 };
 
 /**
@@ -170,14 +170,14 @@ export const REFUND_REJECT_REASON_LABEL: Record<RefundRejectReasonCode, string> 
  * 서버 메시지가 원본이고, 이 값은 서버가 사유 원문을 비워 보낸 경우의 대체 표기다.
  */
 export const REFUND_CREDIT_USED_MESSAGE =
-  "크레딧을 사용하여 환불이 거절되었습니다.";
+  "노트를 사용하여 환불이 거절되었습니다.";
 
 /** 채팅이 크레딧을 예약 중이라 승인할 수 없을 때 서버가 409와 함께 주는 코드 */
 export const REFUND_CHAT_IN_PROGRESS_CODE = "PAYMENT_REFUND_CHAT_IN_PROGRESS";
 
 /** 채팅이 크레딧을 예약 중일 때. 서버 409 문구와 같은 뜻으로 맞춘다. */
 export const REFUND_CHAT_IN_PROGRESS_MESSAGE =
-  "유저에게 완료되지 않은 채팅이 있어 크레딧이 예약 중입니다. 채팅이 끝난 뒤 다시 승인해 주세요.";
+  "유저에게 완료되지 않은 채팅이 있어 노트가 예약 중입니다. 채팅이 끝난 뒤 다시 승인해 주세요.";
 
 /** 거절 사유 입력 최대 길이. 서버 `reject_reason VARCHAR(255)`에 맞춘다. */
 export const REFUND_REJECT_REASON_MAX_LENGTH = 255;
@@ -269,7 +269,7 @@ export const PAYMENT_ANOMALY_LABEL: Record<PaymentAnomalyType, string> = {
  */
 export const PAYMENT_ANOMALY_GUIDE: Record<PaymentAnomalyType, string> = {
   NOT_GRANTED:
-    "돈은 들어왔는데 노트가 나가지 않았습니다. '지급 재시도'로 이 주문의 지급을 다시 돌려 주세요. 크레딧 수동 조정으로 주면 나중에 배치가 성공했을 때 두 번 지급됩니다.",
+    "돈은 들어왔는데 노트가 나가지 않았습니다. '지급 재시도'로 이 주문의 지급을 다시 돌려 주세요. 노트 수동 조정으로 주면 나중에 배치가 성공했을 때 두 번 지급됩니다.",
   IN_DOUBT:
     "PG 승인 응답이 끊겨 돈이 빠졌는지 모릅니다. 'PG 결과 조회'로 다시 물어 보세요. PG 관리자 화면에서 따로 취소하면 이중 처리될 수 있습니다.",
   PG_MISMATCH:
@@ -296,7 +296,7 @@ export const PAYMENT_EVENT_ACTOR_LABEL: Record<PaymentEventActor, string> = {
   USER: "유저",
   PG: "PG",
   SYSTEM: "시스템",
-  ADMIN: "관리자",
+  ADMIN: "운영자",
 };
 
 /**

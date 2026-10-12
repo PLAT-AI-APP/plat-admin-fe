@@ -163,7 +163,7 @@ const ReportCaseDetailView = ({ caseId }: ReportCaseDetailViewProps) => {
           // 다른 관리자가 먼저 닫았다. 입력을 붙들고 있을 이유가 없으니 닫고 최신 결과를 다시 읽는다.
           setIsResolveOpen(false);
           invalidateReports();
-          showAppToast("warning", "다른 관리자가 먼저 처리한 케이스입니다.", {
+          showAppToast("warning", "다른 운영자가 먼저 처리한 케이스입니다.", {
             description: "최신 처리 결과를 다시 불러왔습니다.",
           });
         }

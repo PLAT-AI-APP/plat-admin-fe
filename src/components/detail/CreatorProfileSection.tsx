@@ -40,7 +40,7 @@ const CreatorProfileSection = ({
   fallbackId,
   chips,
 }: CreatorProfileSectionProps) => (
-  <DetailSection id={id} title="제작자">
+  <DetailSection id={id} title="크리에이터">
     {userId ? (
       <CreatorProfile
         userId={userId}
@@ -162,7 +162,7 @@ const CreatorIdentity = ({
 }) => (
   <div className="flex items-center gap-4">
     <EntityImage
-      alt={nickname ?? "제작자"}
+      alt={nickname ?? "크리에이터"}
       ratio="square"
       shape="chip"
       className="w-26 shrink-0"

@@ -46,7 +46,7 @@ export const useCreditAdjustmentMutation = () => {
   >({
     mutationFn: createCreditAdjustment,
     onSuccess: () => {
-      showAppToast("success", "크레딧을 조정했습니다.");
+      showAppToast("success", "노트를 조정했습니다.");
       queryClient.invalidateQueries({ queryKey: ["get-credit-adjustment-list"] });
       queryClient.invalidateQueries({ queryKey: ["get-adjustable-user-list"] });
       queryClient.invalidateQueries({ queryKey: ["get-ledger-list"] });

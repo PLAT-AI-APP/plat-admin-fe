@@ -187,7 +187,7 @@ export const EARNING_REASON_LABEL: Record<string, string> = {
   POLICY_VIOLATION: "운영 정책 위반",
   OPERATION_FIX: "운영 정정",
   USER_REQUEST: "본인 요청",
-  WITHDRAWAL: "회원 탈퇴",
+  WITHDRAWAL: "유저 탈퇴",
   SYSTEM: "시스템",
 };
 
@@ -201,8 +201,8 @@ export const EARNING_LEDGER_LABEL: Record<EarningLedgerType, string> = {
   REDEEM_CANCEL: "반려 환불",
   EXPIRE: "만료",
   WITHDRAW_FORFEIT: "탈퇴 소멸",
-  ADMIN_DEDUCT: "관리자 차감",
-  ADMIN_GRANT: "관리자 지급",
+  ADMIN_DEDUCT: "운영자 차감",
+  ADMIN_GRANT: "운영자 지급",
 };
 
 export const EARNING_RECONCILIATION_LABEL: Record<EarningReconciliationCheck, string> = {

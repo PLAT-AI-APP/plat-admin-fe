@@ -105,7 +105,7 @@ const AccessLogDetailModal = ({
               }
             />
             <Row
-              label={log.app === "admin" ? "관리자 ID" : "사용자 ID"}
+              label={log.app === "admin" ? "운영자 ID" : "유저 ID"}
               value={
                 log.userId ? (
                   <span className="inline-flex items-center gap-3">
@@ -115,7 +115,7 @@ const AccessLogDetailModal = ({
                       onClick={() => onFilterUser(log.userId as string)}
                       className="body-6 font-medium text-brand underline"
                     >
-                      이 {isServiceUser ? "사용자" : "관리자"} 요청만 보기
+                      이 {isServiceUser ? "유저" : "운영자"} 요청만 보기
                     </button>
                     {isServiceUser && (
                       <Link

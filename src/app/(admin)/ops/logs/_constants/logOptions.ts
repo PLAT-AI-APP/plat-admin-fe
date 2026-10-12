@@ -22,10 +22,10 @@ import type { SelectOption } from "@/components/ui/Select";
  * ---------------------------------------------------------------------- */
 
 export const LOG_DOMAIN_LABEL: Record<LogDomain, string> = {
-  USER: "회원",
+  USER: "유저",
   UNIVERSE: "세계관",
   COMMUNITY: "커뮤니티",
-  BILLING: "결제 · 크레딧",
+  BILLING: "결제 · 노트",
   AI: "AI",
   MAIN_EXPOSURE: "메인 노출",
   OPS: "운영",

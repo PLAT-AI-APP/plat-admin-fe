@@ -29,7 +29,7 @@ export const HEALTH_STATUS_DESCRIPTION: Record<HealthStatus, string> = {
  * 라벨에 배치를 함께 적는다. 다시 나뉘면 `admin` 은 "관리자 API" 로 돌리고, `batch` 가 따로 올라온다.
  */
 export const SERVICE_LABEL: Record<string, string> = {
-  api: "사용자 API",
+  api: "유저 API",
   ai: "AI 채팅",
   admin: "관리자 API · 배치",
   batch: "배치",

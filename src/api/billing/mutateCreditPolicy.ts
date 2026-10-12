@@ -33,7 +33,7 @@ export const useCreditPolicyMutation = () => {
   >({
     mutationFn: ({ policyKey, values }) => updateCreditPolicy(policyKey, values),
     onSuccess: () => {
-      showAppToast("success", "크레딧 정책을 변경했습니다.");
+      showAppToast("success", "노트 정책을 변경했습니다.");
       queryClient.invalidateQueries({ queryKey: ["get-credit-policy-list"] });
     },
   });

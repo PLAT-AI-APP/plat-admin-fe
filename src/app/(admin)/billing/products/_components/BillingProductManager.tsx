@@ -100,7 +100,7 @@ const BillingProductManager = () => {
     openConfirm({
       title: "상품 판매를 종료할까요?",
       description: `'${product.name}' 상품이 결제 화면에서 즉시 사라집니다.`,
-      warning: "이미 결제한 유저의 크레딧에는 영향을 주지 않습니다.",
+      warning: "이미 결제한 유저의 노트에는 영향을 주지 않습니다.",
       confirmText: "판매 종료",
       tone: "danger",
       onConfirm: () =>
@@ -152,14 +152,14 @@ const BillingProductManager = () => {
     },
     {
       key: "credit",
-      header: "지급 크레딧",
+      header: "지급 노트",
       align: "right",
       numeric: true,
       render: (product) => formatCredit(product.credit),
     },
     {
       key: "bonusCredit",
-      header: "보너스 크레딧",
+      header: "보너스 노트",
       align: "right",
       numeric: true,
       render: (product) =>
@@ -173,7 +173,7 @@ const BillingProductManager = () => {
     },
     {
       key: "totalCredit",
-      header: "총 크레딧",
+      header: "총 노트",
       align: "right",
       numeric: true,
       render: (product) => (
@@ -243,7 +243,7 @@ const BillingProductManager = () => {
     <>
       <Card
         title={`상품 ${visibleProducts.length}건`}
-        description="결제 금액과 지급 크레딧 구성을 관리합니다. 금액은 원 단위 정수입니다."
+        description="결제 금액과 지급 노트 구성을 관리합니다. 금액은 원 단위 정수입니다."
         action={
           canWrite && (
             <Button
@@ -276,7 +276,7 @@ const BillingProductManager = () => {
               ? "등록된 상품이 없습니다."
               : `${PRODUCT_PLATFORM_LABEL[platformTab]} 상품이 없습니다.`
           }
-          emptyDescription="첫 크레딧 상품을 추가해 결제 화면을 구성해 보세요."
+          emptyDescription="첫 노트 상품을 추가해 결제 화면을 구성해 보세요."
           emptyAction={
             canWrite && (
               <Button
@@ -296,7 +296,7 @@ const BillingProductManager = () => {
         <div className="flex items-start gap-2.5 body-5 text-font-2">
           <Package size={18} className="mt-px shrink-0 text-font-disabled" />
           <p>
-            총 크레딧은 지급 크레딧과 보너스 크레딧의 합입니다. 스토어 심사 정책상
+            총 노트는 지급 노트와 보너스 노트의 합입니다. 스토어 심사 정책상
             iOS·Android는 결제 금액을 스토어 등록 금액과 반드시 일치시켜야 합니다.
           </p>
         </div>

@@ -29,20 +29,20 @@ const NOTIFICATION_SEEDS: NotificationSeed[] = [
     label: "가입 환영",
     channel: "IN_APP",
     title: "{nickname}님, PLAT에 오신 것을 환영해요",
-    body: "첫 캐릭터를 만나 보세요. 지금 가입 축하 크레딧 {credit}이 지급되었습니다.",
+    body: "첫 캐릭터를 만나 보세요. 지금 가입 축하 노트 {credit}이 지급되었습니다.",
   },
   {
     templateKey: "CREDIT_LOW",
-    label: "크레딧 부족 안내",
+    label: "노트 부족 안내",
     channel: "PUSH",
-    title: "크레딧이 얼마 남지 않았어요",
-    body: "{nickname}님의 잔여 크레딧은 {credit}입니다. 대화를 이어가려면 충전이 필요해요.",
+    title: "노트가 얼마 남지 않았어요",
+    body: "{nickname}님의 잔여 노트는 {credit}입니다. 대화를 이어가려면 충전이 필요해요.",
   },
   {
     templateKey: "CREDIT_CHARGED",
-    label: "크레딧 충전 완료",
+    label: "노트 충전 완료",
     channel: "IN_APP",
-    title: "크레딧 충전이 완료되었습니다",
+    title: "노트 충전이 완료되었습니다",
     body: "{credit}이 정상 지급되었습니다. 이용해 주셔서 감사합니다.",
   },
   {
@@ -50,7 +50,7 @@ const NOTIFICATION_SEEDS: NotificationSeed[] = [
     label: "캐릭터 공개 승인",
     channel: "IN_APP",
     title: "'{characterName}' 캐릭터가 공개되었습니다",
-    body: "이제 다른 이용자들이 {characterName}과(와) 대화할 수 있어요.",
+    body: "이제 다른 유저들이 {characterName}과(와) 대화할 수 있어요.",
   },
   {
     templateKey: "CHARACTER_REJECTED",
@@ -157,10 +157,10 @@ const PUSH_STATUSES: readonly PushStatus[] = [
 ];
 
 const PUSH_TITLES = [
-  "주말 한정 크레딧 2배 이벤트",
+  "주말 한정 노트 2배 이벤트",
   "새로운 공식 캐릭터가 도착했어요",
   "오늘의 PICK 세계관 업데이트",
-  "휴면 회원 복귀 쿠폰 안내",
+  "휴면 유저 복귀 쿠폰 안내",
   "앱 정기 점검 사전 공지",
   "여름 시즌 세계관 오픈",
   "친구 초대 리워드 개편 안내",
@@ -170,13 +170,13 @@ const PUSH_TITLES = [
 ];
 
 const PUSH_BODIES = [
-  "이번 주말 동안 모든 크레딧 상품을 2배로 드립니다. 지금 확인해 보세요.",
+  "이번 주말 동안 모든 노트 상품을 2배로 드립니다. 지금 확인해 보세요.",
   "공식 캐릭터가 새로 합류했어요. 첫 대화는 무료로 즐길 수 있습니다.",
   "오늘의 PICK이 새로 바뀌었습니다. 어떤 세계관이 올라왔는지 확인해 보세요.",
-  "오랜만이에요. 돌아온 분들께 크레딧 쿠폰을 드립니다.",
+  "오랜만이에요. 돌아온 분들께 노트 쿠폰을 드립니다.",
   "안정적인 서비스를 위해 새벽 시간 점검이 예정되어 있습니다.",
   "여름 한정 세계관이 열렸습니다. 기간이 지나면 사라져요.",
-  "친구를 초대하면 두 분 모두 크레딧을 받습니다.",
+  "친구를 초대하면 두 분 모두 노트를 받습니다.",
   "이용약관이 일부 개정됩니다. 자세한 내용을 확인해 주세요.",
   "이번 달 인기 크리에이터의 제작 노트를 공개합니다.",
   "첫 결제 할인 혜택이 곧 종료됩니다.",

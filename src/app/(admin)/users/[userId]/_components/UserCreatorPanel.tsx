@@ -26,7 +26,7 @@ const KIND_BADGE: Record<
   { label: string; tone: "neutral" | "brand" | "info" }
 > = {
   SELF: { label: "직접 승급", tone: "neutral" },
-  ADMIN: { label: "관리자 변경", tone: "info" },
+  ADMIN: { label: "운영자 변경", tone: "info" },
   ORIGIN: { label: "오리진 지정", tone: "brand" },
 };
 

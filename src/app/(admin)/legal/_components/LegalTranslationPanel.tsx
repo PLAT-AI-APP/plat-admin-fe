@@ -95,7 +95,7 @@ const LegalTranslationPanel = ({
   const handleDelete = (language: LegalTranslationLanguage, label: string) =>
     openConfirm({
       title: `${label} 번역본을 내릴까요?`,
-      description: "내리면 이 언어 사용자에게는 한국어 원문이 보입니다.",
+      description: "내리면 이 언어 유저에게는 한국어 원문이 보입니다.",
       confirmText: "내리기",
       tone: "danger",
       onConfirm: () => deleteMutation.mutateAsync({ documentId, language }),
@@ -157,7 +157,7 @@ const LegalTranslationPanel = ({
       return (
         <EmptyState
           title={`${label} 번역본이 없습니다.`}
-          description="지금은 이 언어 사용자에게 한국어 원문이 보입니다."
+          description="지금은 이 언어 유저에게 한국어 원문이 보입니다."
           action={
             canWrite && (
               <Button variant="primary" onClick={() => startEditing(language)}>

@@ -40,7 +40,7 @@ const LogDetailModal = ({ log, onClose }: LogDetailModalProps) => {
     <Modal
       isOpen={Boolean(log)}
       onClose={onClose}
-      title="관리자 활동 상세"
+      title="운영자 활동 상세"
       description={log ? formatDateTimeSecond(log.createdAt) : undefined}
       size="md"
     >

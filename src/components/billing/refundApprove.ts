@@ -38,7 +38,7 @@ export const buildRefundApproveMessage = (target: RefundApproveTarget) => {
 
   const usage =
     target.creditUsedSinceRequest === true
-      ? "신청 뒤 유저가 노트를 사용했습니다. 승인하면 크레딧 사용으로 자동 거절됩니다."
+      ? "신청 뒤 유저가 노트를 사용했습니다. 승인하면 노트 사용으로 자동 거절됩니다."
       : target.creditUsedSinceRequest === false
         ? "승인하면 PG로 돈이 나가며 되돌릴 수 없습니다."
         : "승인하면 PG로 돈이 나가며 되돌릴 수 없습니다. 신청 뒤 노트를 썼다면 자동 거절되니, 결제 상세에서 사용 여부를 먼저 확인해 주세요.";

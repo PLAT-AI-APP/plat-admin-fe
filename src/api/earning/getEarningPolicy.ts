@@ -31,9 +31,9 @@ export const useRewardProductListQuery = () =>
       ),
   });
 
-/** 최근 며칠의 대사 결과 */
+/** 최근 며칠의 대사 결과. 배치 결과라 서버가 batch 권한으로 연다. */
 export const useEarningReconciliationsQuery = (days = 7) =>
-  usePermittedQuery<EarningReconciliation[]>("earning:read", {
+  usePermittedQuery<EarningReconciliation[]>("batch:read", {
     queryKey: earningQueryKeys.reconciliations(days),
     queryFn: async () =>
       (

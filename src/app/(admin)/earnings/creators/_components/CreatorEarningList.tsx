@@ -22,7 +22,7 @@ import Tabs, { type TabItem } from "@/components/ui/Tabs";
 const COLUMNS: TableColumn<EarningAccountRow>[] = [
   {
     key: "creator",
-    header: "제작자",
+    header: "크리에이터",
     width: "200px",
     render: (row) => (
       <TableCellStack
@@ -52,7 +52,7 @@ const COLUMNS: TableColumn<EarningAccountRow>[] = [
   },
   {
     key: "chatters",
-    header: "유료 대화 사용자 (30일)",
+    header: "유료 대화 유저 (30일)",
     align: "right",
     numeric: true,
     render: (row) => `${formatWithCommas(row.paidChatters30d)}명`,
@@ -123,7 +123,7 @@ const CreatorEarningList = () => {
           isLoading={isLoading}
           getRowKey={(row) => row.accountId}
           getRowHref={(row) => `/earnings/creators/${row.accountId}`}
-          emptyTitle="조건에 맞는 제작자가 없습니다."
+          emptyTitle="조건에 맞는 크리에이터가 없습니다."
         />
         <Pagination
           page={page}

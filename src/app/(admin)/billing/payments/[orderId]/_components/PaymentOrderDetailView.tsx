@@ -491,7 +491,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
                   size="sm"
                   onClick={() => openAdminRefund()}
                 >
-                  관리자 환불
+                  운영자 환불
                 </Button>
               )}
               {canAct && pendingRefund && (
@@ -596,7 +596,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
 
           {pendingRefund?.creditUsedSinceRequest && (
             <Alert tone="danger" title="환불 신청 뒤 유저가 노트를 사용했습니다.">
-              승인하면 서버가 크레딧 사용으로 자동 거절하고, 거절 사유는 &lsquo;
+              승인하면 서버가 노트 사용으로 자동 거절하고, 거절 사유는 &lsquo;
               {REFUND_CREDIT_USED_MESSAGE}&rsquo;로 남습니다.
             </Alert>
           )}
@@ -775,7 +775,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
           {/* 3. 진행 기록 */}
           <Card
             title="진행 기록"
-            description="주문 · PG 호출 · 노트 지급 · 환불 · 관리자 조치를 시간순으로 합쳤습니다."
+            description="주문 · PG 호출 · 노트 지급 · 환불 · 운영자 조치를 시간순으로 합쳤습니다."
           >
             <ol className="relative flex flex-col gap-6 border-l border-border-main pl-6">
               {order.timeline.map((item, index) => (
@@ -941,7 +941,7 @@ const PaymentOrderDetailView = ({ orderId }: PaymentOrderDetailViewProps) => {
           </Card>
 
           <Card
-            title="크레딧 원장"
+            title="노트 원장"
             description="이 결제로 받은 노트의 지급 · 사용 · 만료 · 회수입니다. 사용 줄의 증감은 원장 금액이 아니라 이 결제의 노트가 낸 몫입니다."
             action={
               /* 줄을 다 더하면 이 결제로 받은 노트 중 지금 남은 양이다. 환불 판단 전에 한눈에 보인다. */

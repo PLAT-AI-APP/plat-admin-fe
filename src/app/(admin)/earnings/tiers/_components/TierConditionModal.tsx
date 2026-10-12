@@ -90,7 +90,7 @@ const TierConditionModal = ({
       size="md"
       onClose={onClose}
       title={`${TIER_NAME[tier.code]} 수정`}
-      description="세 조건을 모두 채우면 제작자가 승급을 신청할 수 있습니다. 이미 오른 제작자의 등급은 그대로 유지됩니다."
+      description="세 조건을 모두 채우면 크리에이터가 승급을 신청할 수 있습니다. 이미 오른 크리에이터의 등급은 그대로 유지됩니다."
       isDirty={changed || memo.length > 0}
       footer={
         <>
@@ -102,7 +102,7 @@ const TierConditionModal = ({
             onClick={() =>
               openConfirm({
                 title: `${TIER_NAME[tier.code]} 등급을 저장할까요?`,
-                description: "제작자 등급 화면에 바로 반영됩니다.",
+                description: "크리에이터 등급 화면에 바로 반영됩니다.",
                 confirmText: "저장",
                 onConfirm: () =>
                   onSubmit({
@@ -148,7 +148,7 @@ const TierConditionModal = ({
             <div className="flex flex-col">
               <h3 className="body-4 font-semibold">그 밖의 혜택</h3>
               <p className="body-6 text-font-2">
-                제작자 등급 화면에 이 순서대로 보입니다.
+                크리에이터 등급 화면에 이 순서대로 보입니다.
               </p>
             </div>
             <Button

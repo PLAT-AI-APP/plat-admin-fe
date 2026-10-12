@@ -105,7 +105,7 @@ const BillingProductFormModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title={product ? "상품 수정" : "상품 추가"}
-      description="결제 금액은 원 단위 정수, 크레딧은 정수로만 입력합니다."
+      description="결제 금액은 원 단위 정수, 노트는 정수로만 입력합니다."
       size="md"
       footer={
         <>
@@ -204,7 +204,7 @@ const BillingProductFormModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <FormField
-            label="지급 크레딧"
+            label="지급 노트"
             htmlFor="product-credit"
             required
             error={errors.credit?.message}
@@ -222,7 +222,7 @@ const BillingProductFormModal = ({
           </FormField>
 
           <FormField
-            label="보너스 크레딧"
+            label="보너스 노트"
             htmlFor="product-bonus-credit"
             required
             error={errors.bonusCredit?.message}
@@ -277,7 +277,7 @@ const BillingProductFormModal = ({
         {/* 저장 전에 최종 지급 구성을 한 번 더 확인할 수 있게 요약을 둔다. */}
         <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 body-5">
           <div className="flex items-center gap-2">
-            <dt className="text-font-2">총 지급 크레딧</dt>
+            <dt className="text-font-2">총 지급 노트</dt>
             <dd className="font-semibold text-font-1 tabular-nums">
               {formatCredit(totalCredit)}
             </dd>
@@ -285,7 +285,7 @@ const BillingProductFormModal = ({
 
           <div className="flex items-center gap-2">
             <dt className="text-font-2">
-              크레딧당 단가
+              노트당 단가
               <span className="ml-1 text-font-disabled">
                 ({MIN_UNIT_PRICE}~{MAX_UNIT_PRICE}원)
               </span>

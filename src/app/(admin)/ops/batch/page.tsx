@@ -7,7 +7,7 @@ export default function BatchPage() {
   return (
     <>
       <PageHeader
-        title="배치 관리"
+        title="배치"
         description="예약 실행 잡이 제대로 돌았는지 확인하고, 실패한 잡을 다시 실행합니다."
       />
 

@@ -232,7 +232,7 @@ const CharacterDetailView = ({ characterId }: CharacterDetailViewProps) => {
           <DetailSectionTabs
             items={[
               { label: "캐릭터", value: SECTION.character },
-              { label: "제작자", value: SECTION.creator },
+              { label: "크리에이터", value: SECTION.creator },
               {
                 label: "에셋",
                 value: SECTION.assets,

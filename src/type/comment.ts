@@ -22,7 +22,7 @@ export const COMMENT_TARGET_TYPE_LABEL: Record<CommentTargetType, string> = {
   UNIVERSE: "세계관",
   CHARACTER: "캐릭터",
   POST: "게시글",
-  CREATOR: "제작자",
+  CREATOR: "크리에이터",
 };
 
 /**

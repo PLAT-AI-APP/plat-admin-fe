@@ -28,10 +28,10 @@ export const creditBulkGrantSchema = z.object({
     }
   }),
   amount: z
-    .number({ error: "지급 크레딧을 입력해 주세요." })
-    .int("크레딧은 정수로 입력해 주세요.")
-    .min(1, "지급 크레딧은 1 이상이어야 합니다.")
-    .max(BULK_GRANT_MAX_AMOUNT, "한 명당 100,000 크레딧까지 지급할 수 있습니다."),
+    .number({ error: "지급 노트를 입력해 주세요." })
+    .int("노트는 정수로 입력해 주세요.")
+    .min(1, "지급 노트는 1 이상이어야 합니다.")
+    .max(BULK_GRANT_MAX_AMOUNT, "한 명당 100,000 노트까지 지급할 수 있습니다."),
   reason: z
     .string()
     .trim()

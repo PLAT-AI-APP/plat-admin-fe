@@ -20,7 +20,7 @@ const UniverseSnapshotView = ({ snapshot }: SnapshotViewProps<"UNIVERSE">) => (
       <div className="flex min-w-0 flex-col gap-1.5">
         <p className="body-3 font-semibold text-font-1">{snapshot.title || "(제목 없음)"}</p>
         <p className="body-5 text-font-2">
-          제작자{" "}
+          크리에이터{" "}
           <Link
             href={`/users/${snapshot.creatorUserId}`}
             className="font-medium text-font-1 transition hover:text-brand"

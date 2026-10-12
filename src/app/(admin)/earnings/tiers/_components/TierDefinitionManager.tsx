@@ -92,7 +92,7 @@ const TierDefinitionManager = () => {
       numeric: true,
       render: (row) =>
         row.origin ? (
-          <span className="text-font-2">관리자 지정</span>
+          <span className="text-font-2">운영자 지정</span>
         ) : (
           `${formatWithCommas(row.minPublicUniverses)}개 · ${formatWithCommas(row.minPaidTurns)}회 · ${formatWithCommas(row.minFollowers)}명`
         ),
@@ -170,7 +170,7 @@ const TierDefinitionManager = () => {
     <div className="flex flex-col gap-5">
       <Card
         title="등급"
-        description={`등급이 없는 제작자의 수익률은 ${percent(board.baseShareBps)}입니다. 등급은 고정이고 승급 조건과 그 밖의 혜택만 바꿀 수 있습니다.`}
+        description={`등급이 없는 크리에이터의 수익률은 ${percent(board.baseShareBps)}입니다. 등급은 고정이고 승급 조건과 그 밖의 혜택만 바꿀 수 있습니다.`}
         noPadding
       >
         <Table

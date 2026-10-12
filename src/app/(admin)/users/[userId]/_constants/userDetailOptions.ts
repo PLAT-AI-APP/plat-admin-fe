@@ -24,9 +24,9 @@ export const USER_DETAIL_TABS: TabItem<UserDetailTab>[] = [
   // 캐릭터 목록 API 가 아직 없어 목업 환경에서만 탭을 보인다.
   ...(IS_MOCKING ? [{ label: "캐릭터", value: "CHARACTER" as const }] : []),
   { label: "작성 댓글", value: "COMMENT" },
-  { label: "결제 · 크레딧", value: "BILLING" },
+  { label: "결제 · 노트", value: "BILLING" },
   { label: "크리에이터", value: "CREATOR" },
-  { label: "제작자 수익", value: "EARNING" },
+  { label: "크리에이터 수익", value: "EARNING" },
   { label: "신고 이력", value: "REPORT" },
   { label: "Q&A", value: "QNA" },
 ];

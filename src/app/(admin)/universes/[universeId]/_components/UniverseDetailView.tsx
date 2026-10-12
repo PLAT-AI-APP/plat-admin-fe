@@ -347,7 +347,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
             )}
 
             {data.status === "ORPHANED" && (
-              <Alert tone="warning" title="탈퇴한 제작자가 남긴 캐릭터입니다.">
+              <Alert tone="warning" title="탈퇴한 크리에이터가 남긴 캐릭터입니다.">
                 인수 심사를 기다립니다. 기존 채팅방 대화만 이어집니다.{" "}
                 <Link href={handoverListHref} className="underline">
                   인수 심사로 이동
@@ -357,7 +357,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
 
             {data.adoptedAt && (
               <p className="body-5 text-font-2">
-                탈퇴한 제작자에게서 공식 계정이 인수해 운영 중입니다 · 인수{" "}
+                탈퇴한 크리에이터에게서 공식 계정이 인수해 운영 중입니다 · 인수{" "}
                 {formatDateTime(data.adoptedAt)} ·{" "}
                 <Link href={handoverListHref} className="underline">
                   인수 기록
@@ -367,7 +367,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
 
             {data.rightsAgreedAt && (
               <p className="body-5 text-font-2">
-                제작자 권리 책임 동의 · {formatDateTime(data.rightsAgreedAt)}
+                크리에이터 권리 책임 동의 · {formatDateTime(data.rightsAgreedAt)}
               </p>
             )}
 
@@ -382,7 +382,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
           <DetailSectionTabs
             items={[
               { label: "번역언어", value: SECTION.translation },
-              { label: "제작자", value: SECTION.creator },
+              { label: "크리에이터", value: SECTION.creator },
               {
                 label: "에셋",
                 value: SECTION.assets,

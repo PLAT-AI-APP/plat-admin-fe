@@ -191,7 +191,7 @@ const HashtagSuggestManager = () => {
   return (
     <>
       <Alert tone="info" title="제안은 처리하는 자료가 아닙니다.">
-        사용자가 캐릭터·세계관을 만들다가 &lsquo;없는 태그&rsquo;를 적어 보낸
+        유저가 캐릭터·세계관을 만들다가 &lsquo;없는 태그&rsquo;를 적어 보낸
         기록입니다. 승인·반려 절차가 없으니 어떤 태그를 얼마나 원하는지만 읽고,
         필요하면 <b>해시태그 관리</b> 탭에서 직접 등록해 주세요. 표기가 달라도
         (<code>#판타지</code> · <code>판타지</code>) 같은 태그로 묶어 셉니다.
@@ -243,7 +243,7 @@ const HashtagSuggestManager = () => {
           isLoading={isLoading}
           onRowClick={(row) => setDetailKey(row.key)}
           emptyTitle="들어온 제안이 없습니다."
-          emptyDescription="사용자가 캐릭터를 만들다 태그를 제안하면 여기에 쌓입니다."
+          emptyDescription="유저가 캐릭터를 만들다 태그를 제안하면 여기에 쌓입니다."
         />
 
         <Pagination

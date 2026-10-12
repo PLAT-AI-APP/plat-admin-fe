@@ -115,7 +115,7 @@ export type BatchJobCategory =
  */
 export const BATCH_JOB_CATEGORY_LABEL: Record<BatchJobCategory, string> = {
   payment: "결제 · 환불",
-  credit: "크레딧",
+  credit: "노트",
   content: "유저 · 콘텐츠",
   cleanup: "기록 정리",
   etc: "기타",

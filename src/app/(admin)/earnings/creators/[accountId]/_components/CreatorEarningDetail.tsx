@@ -112,7 +112,7 @@ const ACCRUAL_COLUMNS: TableColumn<EarningAccrualRow>[] = [
   },
   {
     key: "chatter",
-    header: "대화한 사용자",
+    header: "대화한 유저",
     render: (row) => (
       <TableCellStack
         primary={row.chatterNickname ?? "-"}
@@ -187,8 +187,8 @@ const CreatorEarningDetail = ({ accountId }: { accountId: string }) => {
   if (isError || !account) {
     return (
       <>
-        <BackLink href="/earnings/creators" label="제작자 수익" />
-        <EmptyState title="제작자를 찾을 수 없습니다." />
+        <BackLink href="/earnings/creators" label="크리에이터 수익" />
+        <EmptyState title="크리에이터를 찾을 수 없습니다." />
       </>
     );
   }
@@ -259,7 +259,7 @@ const CreatorEarningDetail = ({ accountId }: { accountId: string }) => {
 
   return (
     <>
-      <BackLink href="/earnings/creators" label="제작자 수익" />
+      <BackLink href="/earnings/creators" label="크리에이터 수익" />
       <PageHeader
         title={account.nickname ?? account.userId}
         description={`유저 ID ${account.userId} · 수익 계정 ${account.accountId}`}
@@ -312,13 +312,13 @@ const CreatorEarningDetail = ({ accountId }: { accountId: string }) => {
           ]}
         />
 
-        <Card title="대화한 사용자별 기여" description="최근 30일 · 유료 노트 기준" noPadding>
+        <Card title="대화한 유저별 기여" description="최근 30일 · 유료 노트 기준" noPadding>
           <Table
             minRows={0}
             columns={[
               {
                 key: "user",
-                header: "사용자",
+                header: "유저",
                 render: (row) => (
                   <TableCellStack
                     primary={row.nickname ?? row.userId}

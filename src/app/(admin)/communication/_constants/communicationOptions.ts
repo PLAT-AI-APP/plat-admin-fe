@@ -177,9 +177,9 @@ export const PUSH_STATUS_TONE: Record<PushStatus, BadgeTone> = {
 };
 
 export const PUSH_TARGET_LABEL: Record<PushTarget, string> = {
-  ALL: "전체 이용자",
-  ACTIVE_USERS: "활성 이용자",
-  DORMANT_USERS: "휴면 이용자",
+  ALL: "전체 유저",
+  ACTIVE_USERS: "활성 유저",
+  DORMANT_USERS: "휴면 유저",
   SEGMENT: "지정 세그먼트",
 };
 
