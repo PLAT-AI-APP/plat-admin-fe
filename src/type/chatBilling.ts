@@ -1,14 +1,19 @@
 /**
  * 채팅 요금(노트) 과금 정책 한 버전. 고치지 않고 새 버전을 쌓는다.
  *
- * 노트 = max(1, ceil(청구원가 × k ÷ 노트 기준가)), k = 1 ÷ (1 − 제작자몫 − 수수료·세금 − 목표이익률).
+ * 노트 = max(1, ceil(청구원가 × k ÷ 노트 기준가)), k = 1 ÷ (1 − 제작자몫 − 수수료 − 부가세 − 운영비 − 목표이익률).
  */
 export interface ChatBillingPolicy {
   policyId: string;
   /** 노트 기준가(원, 기본 상품 단가) */
   noteBasePrice: number;
   creatorShareBps: number;
+  /** 결제 수수료(만분율) */
   feeBps: number;
+  /** 부가세(만분율). 판매가가 부가세 포함이라 매출의 1/11 */
+  vatBps: number;
+  /** 대화량에 비례하는 운영비(만분율). 월 고정비는 목표 이익에서 충당 */
+  opsBps: number;
   targetMarginBps: number;
   /** 잠금용 입력 토큰 추정 안전계수(만분율, 13000 = 1.3배) */
   inputSafetyBps: number;
@@ -23,7 +28,7 @@ export interface ChatBillingPolicy {
 
 export type ChatBillingPolicyValues = Pick<
   ChatBillingPolicy,
-  "noteBasePrice" | "creatorShareBps" | "feeBps" | "targetMarginBps" | "inputSafetyBps"
+  "noteBasePrice" | "creatorShareBps" | "feeBps" | "vatBps" | "opsBps" | "targetMarginBps" | "inputSafetyBps"
 >;
 
 /**

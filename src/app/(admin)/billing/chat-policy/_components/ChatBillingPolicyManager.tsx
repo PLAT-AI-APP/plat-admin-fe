@@ -27,7 +27,9 @@ const percentToBps = (value: string) => Math.round(Number(value) * 100);
 const POLICY_FIELDS = [
   { key: "noteBasePrice", label: "노트 기준가", unit: "원", toInput: (v: number) => String(v), fromInput: (v: string) => Number(v) },
   { key: "creatorShareBps", label: "제작자 몫", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
-  { key: "feeBps", label: "수수료·세금", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
+  { key: "feeBps", label: "결제 수수료", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
+  { key: "vatBps", label: "부가세", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
+  { key: "opsBps", label: "운영비", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
   { key: "targetMarginBps", label: "목표 이익률", unit: "%", toInput: bpsToPercent, fromInput: percentToBps },
   { key: "inputSafetyBps", label: "입력 안전계수", unit: "배", toInput: (v: number) => String(v / 10_000), fromInput: (v: string) => Math.round(Number(v) * 10_000) },
 ] as const;
@@ -38,15 +40,18 @@ const HISTORY_COLUMNS: TableColumn<ChatBillingPolicy>[] = [
   { key: "effectiveFrom", header: "적용 시작", width: "150px", numeric: true, render: (row) => <span className="text-font-2">{formatDateTime(row.effectiveFrom)}</span> },
   { key: "noteBasePrice", header: "기준가", align: "right", numeric: true, render: (row) => `${row.noteBasePrice}원` },
   { key: "creatorShareBps", header: "제작자", align: "right", numeric: true, render: (row) => `${row.creatorShareBps / 100}%` },
-  { key: "feeBps", header: "수수료·세금", align: "right", numeric: true, render: (row) => `${row.feeBps / 100}%` },
+  { key: "feeBps", header: "수수료", align: "right", numeric: true, render: (row) => `${row.feeBps / 100}%` },
+  { key: "vatBps", header: "부가세", align: "right", numeric: true, render: (row) => `${row.vatBps / 100}%` },
+  { key: "opsBps", header: "운영비", align: "right", numeric: true, render: (row) => `${row.opsBps / 100}%` },
   { key: "targetMarginBps", header: "목표 이익", align: "right", numeric: true, render: (row) => `${row.targetMarginBps / 100}%` },
   { key: "priceMultiplier", header: "k", align: "right", numeric: true, render: (row) => row.priceMultiplier.toFixed(4) },
   { key: "memo", header: "사유", render: (row) => <TableCellStack primary={row.memo ?? "-"} secondary={row.changedByName ?? undefined} /> },
 ];
 
-/** k = 1 ÷ (1 − 제작자몫 − 수수료·세금 − 목표이익률). 서버와 같은 식으로 미리 보여 준다. */
+/** k = 1 ÷ (1 − 제작자몫 − 수수료 − 부가세 − 운영비 − 목표이익률). 서버와 같은 식으로 미리 보여 준다. */
 const multiplierOf = (values: ChatBillingPolicyValues) => {
-  const remain = 10_000 - values.creatorShareBps - values.feeBps - values.targetMarginBps;
+  const remain =
+    10_000 - values.creatorShareBps - values.feeBps - values.vatBps - values.opsBps - values.targetMarginBps;
   return remain > 0 ? 10_000 / remain : null;
 };
 
@@ -145,7 +150,7 @@ const ChatBillingPolicyManager = () => {
           title="과금 정책 변경"
           description={
             draftMultiplier === null
-              ? "제작자 몫·수수료·목표 이익률의 합은 100% 미만이어야 합니다."
+              ? "제작자 몫·수수료·부가세·운영비·목표 이익률의 합은 100% 미만이어야 합니다."
               : `저장하는 즉시 다음 대화부터 적용됩니다. 새 k = ${draftMultiplier.toFixed(4)}배`
           }
           isDirty={changedFields.length > 0}
