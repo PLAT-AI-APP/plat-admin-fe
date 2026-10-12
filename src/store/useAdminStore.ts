@@ -66,10 +66,18 @@ const readStoredSession = (): StoredSession | null => {
   }
 };
 
+/**
+ * 세션을 브라우저에 남긴다.
+ *
+ * **임시 비밀번호로 들어온 세션은 남기지 않는다.** 비밀번호를 바꾸기 전까지는 로그인이
+ * 끝난 것이 아니라, 새로고침하거나 나갔다 오면 로그인 화면부터 다시 시작해야 한다.
+ * 남겨 두면 "비밀번호를 변경해 주세요" 화면이 계속 되살아나 로그인된 것처럼 보인다.
+ * 바꾸고 나면 `resolvePasswordChange` 가 그때 처음 저장한다.
+ */
 const writeStoredSession = (session: StoredSession | null) => {
   if (typeof window === "undefined") return;
 
-  if (session) {
+  if (session && !session.mustChangePassword) {
     window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
     return;
   }
@@ -113,6 +121,14 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       화면으로 튕긴다 — 죽은 토큰을 들고 왕복을 한 번 더 도는 셈이다.
       여기서 끊으면 요청 한 번 없이 곧장 로그인 화면으로 간다.
     */
+    /* 예전에 남은 임시 비밀번호 세션도 버린다. 비밀번호를 바꾸기 전엔 로그인이 끝나지 않았다. */
+    if (stored?.mustChangePassword) {
+      writeStoredSession(null);
+      set({ isHydrated: true, isSessionExpired: false });
+
+      return;
+    }
+
     if (stored && isJwtExpired(stored.refreshToken)) {
       writeStoredSession(null);
 
