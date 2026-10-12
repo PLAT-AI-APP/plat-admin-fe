@@ -55,6 +55,8 @@ export interface ResponseFormat {
   /** 최저 기준 턴(입력·출력 토큰). 이 턴을 모델 단가로 매긴 노트가 그 모델의 최저 노트다. */
   minInputTokens: number;
   minOutputTokens: number;
+  /** 이 형식의 목표 이익률(만분율). 없으면 과금 정책 값 */
+  targetMarginBps: number | null;
   enabled: boolean;
   sortOrder: number;
 }

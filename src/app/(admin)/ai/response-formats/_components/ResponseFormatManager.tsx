@@ -82,6 +82,13 @@ const ResponseFormatManager = () => {
       ),
     },
     {
+      key: "targetMargin",
+      header: "목표 이익률",
+      align: "right",
+      numeric: true,
+      render: (format) => (format.targetMarginBps === null ? "정책 값" : `${format.targetMarginBps / 100}%`),
+    },
+    {
       key: "minTokens",
       header: "최저 노트 기준",
       align: "right",

@@ -33,6 +33,12 @@ export const responseFormatSchema = z.object({
   refOutputTokens: intRange("기준 출력 토큰", 0, 100_000),
   minInputTokens: intRange("최저 입력 토큰", 0, 1_000_000),
   minOutputTokens: intRange("최저 출력 토큰", 0, 100_000),
+  /** % 로 받는다. 비우면(null) 과금 정책 값을 쓴다. */
+  targetMarginPercent: z
+    .number()
+    .min(0, "목표 이익률은 0% 이상이어야 합니다.")
+    .max(50, "목표 이익률은 50% 이하여야 합니다.")
+    .nullable(),
   enabled: z.boolean(),
   sortOrder: intRange("노출 순서", 0, 10_000),
 });

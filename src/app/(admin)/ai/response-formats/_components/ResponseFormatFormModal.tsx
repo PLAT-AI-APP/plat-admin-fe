@@ -62,6 +62,7 @@ const ResponseFormatFormModal = ({
             refOutputTokens: format.refOutputTokens,
             minInputTokens: format.minInputTokens,
             minOutputTokens: format.minOutputTokens,
+            targetMarginPercent: format.targetMarginBps === null ? null : format.targetMarginBps / 100,
             enabled: format.enabled,
             sortOrder: format.sortOrder,
           }
@@ -78,13 +79,20 @@ const ResponseFormatFormModal = ({
             refOutputTokens: 600,
             minInputTokens: 4_000,
             minOutputTokens: 300,
+            targetMarginPercent: null,
             enabled: true,
             sortOrder: defaultSortOrder,
           },
     );
   }, [isOpen, format, defaultSortOrder, reset]);
 
-  const submit = handleSubmit((values) => onSubmit(values));
+  // 목표 이익률은 % 로 받아 만분율로 보낸다. 비우면 과금 정책 값을 쓴다.
+  const submit = handleSubmit(({ targetMarginPercent, ...values }) =>
+    onSubmit({
+      ...values,
+      targetMarginBps: targetMarginPercent === null ? null : Math.round(targetMarginPercent * 100),
+    }),
+  );
 
   return (
     <Modal
@@ -269,6 +277,20 @@ const ResponseFormatFormModal = ({
               type="number"
               hasError={Boolean(errors.minOutputTokens)}
               {...register("minOutputTokens", { valueAsNumber: true })}
+            />
+          </FormField>
+          <FormField
+            label="목표 이익률 (%)"
+            htmlFor="response-format-margin"
+            error={errors.targetMarginPercent?.message}
+            hint="비우면 정책 값"
+          >
+            <Input
+              id="response-format-margin"
+              type="number"
+              step={0.1}
+              hasError={Boolean(errors.targetMarginPercent)}
+              {...register("targetMarginPercent", { setValueAs: blankToNull })}
             />
           </FormField>
         </div>
