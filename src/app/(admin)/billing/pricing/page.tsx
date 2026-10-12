@@ -3,6 +3,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import TabWorkspace from "@/components/layout/TabWorkspace";
 import ChatBillingPolicyManager from "../chat-policy/_components/ChatBillingPolicyManager";
 import CreditPolicyManager from "../credit-policies/_components/CreditPolicyManager";
+import ModelPricingManager from "./_components/ModelPricingManager";
 
 /**
  * 노트 요금. 노트 가격을 정하는 화면을 한곳에 모았다.
@@ -20,6 +21,13 @@ export default function NotePricingPage() {
             description:
               "채팅은 쓴 토큰만큼 노트를 받습니다. 기준값을 바꾸면 다음 대화부터 적용되고, 이미 노트를 잡은 대화는 잡을 때의 값으로 매깁니다.",
             content: <ChatBillingPolicyManager />,
+          },
+          {
+            label: "모델별 요금",
+            value: "models",
+            description:
+              "모델마다 단가 · 평균 캐시 비율 · 판매 배수를 정합니다. 응답 형식별 예상 노트로 그 턴의 가격대를 확인합니다.",
+            content: <ModelPricingManager />,
           },
           {
             label: "고정 지급·차감",

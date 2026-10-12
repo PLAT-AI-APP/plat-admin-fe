@@ -4,12 +4,16 @@ import type { AiModel, AiModelRole } from "@/type/ai";
 import type { AppError } from "@/type/api";
 import { showAppToast, showErrorToast } from "@/lib/toast";
 
-/** 운영 설정만 변경한다. 모델명·제공사는 카탈로그가 소유하므로 바꾸지 않는다. */
+/** 튜닝만 변경한다. 모델명·제공사는 카탈로그가, 요금은 `updateAiModelPricing` 이 맡는다. */
 export interface UpdateAiModelRequest {
   isEnabled?: boolean;
   maxOutputTokens?: number;
   temperature?: number;
   memo?: string;
+}
+
+/** 모델별 노트 요금. 운영이 고쳐 권한도 `creditPolicy:write` 로 따로 둔다. */
+export interface UpdateAiModelPricingRequest {
   /** 1M 토큰당 원 */
   inputPricePerMillion?: number;
   outputPricePerMillion?: number;
@@ -30,6 +34,13 @@ export const updateAiModel = async (
   await liveAxios.patch(`/ai/models/${modelId}`, body);
 };
 
+export const updateAiModelPricing = async (
+  modelId: number,
+  body: UpdateAiModelPricingRequest,
+) => {
+  await liveAxios.patch(`/ai/models/${modelId}/pricing`, body);
+};
+
 /**
  * 역할을 이 모델에 건다.
  *
@@ -46,7 +57,7 @@ export const assignAiModelRole = async (modelId: number, role: AiModelRole) => {
 };
 
 /**
- * 모델 운영 설정 변경과 역할 지정.
+ * 모델 튜닝 · 요금 변경과 역할 지정.
  * 역할 지정은 서버에서 이전 모델의 역할을 해제하므로 목록 전체를 다시 조회합니다.
  */
 export const useAiModelMutation = () => {
@@ -65,6 +76,19 @@ export const useAiModelMutation = () => {
       showAppToast("success", successMessage ?? "모델 설정을 저장했습니다.");
       invalidateAiModelList();
     },
+    onError: (error) => showErrorToast(error),
+  });
+
+  const pricingMutation = useMutation<
+    void,
+    AppError,
+    { modelId: number; body: UpdateAiModelPricingRequest }
+  >({
+    mutationFn: ({ modelId, body }) => updateAiModelPricing(modelId, body),
+    onSuccess: () => {
+      showAppToast("success", "모델 요금을 저장했습니다.");
+      invalidateAiModelList();
+    },
     // 판매 배수가 손익분기 미만이면 서버가 거절한다. 사유를 보여 줘야 모달에서 고칠 수 있다.
     onError: (error) => showErrorToast(error),
   });
@@ -81,5 +105,5 @@ export const useAiModelMutation = () => {
     },
   });
 
-  return { updateMutation, assignRoleMutation };
+  return { updateMutation, pricingMutation, assignRoleMutation };
 };
