@@ -10,6 +10,7 @@ import type {
   ScenarioLifecycle,
   ScenarioType,
 } from "@/type/character";
+import type { CreatorTierCode } from "@/type/creatorTier";
 import type { HashtagCategory } from "@/type/hashtag";
 import type { ServiceLanguage } from "@/type/language";
 
@@ -24,7 +25,7 @@ interface CreatorSummaryResponse {
   creatorId: string;
   userId: string | null;
   nickname: string | null;
-  grade: string;
+  tier: CreatorTierCode;
   status: string;
 }
 
@@ -118,7 +119,7 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
     creatorId: response.creator.creatorId,
     userId: response.creator.userId,
     nickname: response.creator.nickname,
-    grade: response.creator.grade,
+    tier: response.creator.tier,
     status: response.creator.status,
   },
   tendency: response.tendency,

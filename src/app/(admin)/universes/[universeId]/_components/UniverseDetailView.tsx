@@ -23,6 +23,7 @@ import {
 import BackLink from "@/components/layout/BackLink";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
+import { TIER_NAME } from "@/components/creatorTier/tierMeta";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Dropdown from "@/components/ui/Dropdown";
@@ -47,7 +48,6 @@ import UniverseSettingsFormModal, {
 import UniverseTranslationPanel from "./UniverseTranslationPanel";
 import { buildUniverseActions } from "./universeActions";
 import {
-  creatorGradeLabel,
   creatorStatusLabel,
   creatorStatusTone,
   isRiskyCreatorStatus,
@@ -413,9 +413,9 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
             fallbackId={data.creator.creatorId}
             chips={
               <>
-                <Badge tone="neutral">
-                  {creatorGradeLabel(data.creator.grade)}
-                </Badge>
+                {data.creator.tier !== "NONE" && (
+                  <Badge tone="neutral">{TIER_NAME[data.creator.tier]}</Badge>
+                )}
                 <Badge tone={creatorStatusTone(data.creator.status)}>
                   {creatorStatusLabel(data.creator.status)}
                 </Badge>

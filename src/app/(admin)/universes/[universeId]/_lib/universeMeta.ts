@@ -24,19 +24,9 @@ import {
 /* ------------------------------------------------------------------ */
 
 /**
- * 크리에이터 등급. 서버 `CreatorGrade`와 같다.
- *
- * 상세 응답의 `grade`·`status`는 서버가 문자열로 준다(타입이 열려 있다).
+ * 상세 응답의 크리에이터 `status`는 서버가 문자열로 준다(타입이 열려 있다).
  * 모르는 값이 와도 화면이 비지 않도록 라벨은 조회 실패 시 원문을 그대로 쓴다.
  */
-const CREATOR_GRADE_LABEL: Record<string, string> = {
-  NEW: "신규",
-  BRONZE: "브론즈",
-  SILVER: "실버",
-  GOLD: "골드",
-  PLATINUM: "플래티넘",
-};
-
 const CREATOR_STATUS_LABEL: Record<string, string> = {
   PENDING: "승인 대기",
   APPROVED: "승인",
@@ -50,9 +40,6 @@ const CREATOR_STATUS_TONE: Record<string, BadgeTone> = {
   SUSPENDED: "danger",
   REVOKED: "danger",
 };
-
-export const creatorGradeLabel = (grade: string) =>
-  CREATOR_GRADE_LABEL[grade] ?? grade;
 
 export const creatorStatusLabel = (status: string) =>
   CREATOR_STATUS_LABEL[status] ?? status;

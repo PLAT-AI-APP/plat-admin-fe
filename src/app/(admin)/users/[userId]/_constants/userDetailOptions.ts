@@ -13,6 +13,7 @@ export type UserDetailTab =
   | "CHARACTER"
   | "COMMENT"
   | "BILLING"
+  | "CREATOR"
   | "EARNING"
   | "REPORT"
   | "QNA";
@@ -24,6 +25,7 @@ export const USER_DETAIL_TABS: TabItem<UserDetailTab>[] = [
   ...(IS_MOCKING ? [{ label: "캐릭터", value: "CHARACTER" as const }] : []),
   { label: "작성 댓글", value: "COMMENT" },
   { label: "결제 · 크레딧", value: "BILLING" },
+  { label: "크리에이터", value: "CREATOR" },
   { label: "제작자 수익", value: "EARNING" },
   { label: "신고 이력", value: "REPORT" },
   { label: "Q&A", value: "QNA" },
@@ -41,4 +43,5 @@ export const USER_DETAIL_TAB_PERMISSIONS: Partial<
   UNIVERSE: ["universe:read"],
   COMMENT: ["comment:read"],
   BILLING: ["payment:read", "ledger:read", "creditAdjustment:read"],
+  CREATOR: ["earning:read"],
 };

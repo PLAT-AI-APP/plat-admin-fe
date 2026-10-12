@@ -1,3 +1,4 @@
+import type { CreatorTierCode } from "./creatorTier";
 import type { HashtagCategory } from "./hashtag";
 import type { ServiceLanguage } from "./language";
 
@@ -308,7 +309,8 @@ export interface UniverseCreatorSummary {
   creatorId: string;
   userId: string | null;
   nickname: string | null;
-  grade: string;
+  /** 제작자 등급. 등급이 없으면 NONE. */
+  tier: CreatorTierCode;
   status: string;
 }
 

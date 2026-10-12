@@ -343,6 +343,12 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         permission: "earning:read",
       },
       {
+        label: "제작자 등급",
+        href: "/earnings/tiers",
+        icon: <Star size={SUB_ICON_SIZE} />,
+        permission: "earning:read",
+      },
+      {
         label: "교환 요청",
         href: "/earnings/redemptions",
         icon: <Package size={SUB_ICON_SIZE} />,

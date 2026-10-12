@@ -34,6 +34,7 @@ import UserAccountPanel from "./UserAccountPanel";
 import UserBillingPanel from "./UserBillingPanel";
 import UserCharacterPanel from "./UserCharacterPanel";
 import UserCommentPanel from "./UserCommentPanel";
+import UserCreatorPanel from "./UserCreatorPanel";
 import UserEarningPanel from "./UserEarningPanel";
 import UserQnaPanel from "./UserQnaPanel";
 import UserProfileResetModal from "./UserProfileResetModal";
@@ -356,6 +357,9 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
             <UserCommentPanel userId={userId} nickname={user.nickname} />
           )}
           {tab === "BILLING" && <UserBillingPanel userId={userId} />}
+          {tab === "CREATOR" && (
+            <UserCreatorPanel userId={userId} nickname={user.nickname} />
+          )}
           {tab === "EARNING" && <UserEarningPanel userId={userId} />}
           {tab === "REPORT" && <UserReportPanel userId={userId} />}
           {tab === "QNA" && (

@@ -72,7 +72,11 @@ const UserEarningPanel = ({ userId }: { userId: string }) => {
       >
         <SummaryTiles
           tiles={[
-            { label: "교환 가능", value: formatPoint(account.available) },
+            {
+              label: "교환 가능",
+              value: formatPoint(account.available),
+              hint: account.pending > 0 ? `보류 중 ${formatPoint(account.pending)}` : undefined,
+            },
             { label: "최근 30일 적립", value: formatPoint(account.accrued30d) },
             {
               label: "누적 적립 / 교환",
