@@ -165,7 +165,11 @@ const AiModelFormModal = ({
               label="판매 배수 (k)"
               htmlFor="ai-model-price-multiplier"
               error={errors.priceMultiplier?.message}
-              hint={`비우면 과금 정책 값 · 지금 ${model.effectivePriceMultiplier.toFixed(4)}배`}
+              hint={
+                model.priceMultiplierBps === null
+                  ? `정책 값 ${model.effectivePriceMultiplier.toFixed(4)} 적용 중`
+                  : "비우면 정책 값으로 되돌림"
+              }
             >
               <Input
                 id="ai-model-price-multiplier"
@@ -181,7 +185,7 @@ const AiModelFormModal = ({
               htmlFor="ai-model-cache-ratio"
               required
               error={errors.cacheRatioPercent?.message}
-              hint="입력 중 캐시 읽기로 매기는 비율"
+              hint="청구용 평균값"
             >
               <Input
                 id="ai-model-cache-ratio"

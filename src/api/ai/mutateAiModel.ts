@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AiModel, AiModelRole } from "@/type/ai";
 import type { AppError } from "@/type/api";
-import { showAppToast } from "@/lib/toast";
+import { showAppToast, showErrorToast } from "@/lib/toast";
 
 /** 운영 설정만 변경한다. 모델명·제공사는 카탈로그가 소유하므로 바꾸지 않는다. */
 export interface UpdateAiModelRequest {
@@ -65,6 +65,8 @@ export const useAiModelMutation = () => {
       showAppToast("success", successMessage ?? "모델 설정을 저장했습니다.");
       invalidateAiModelList();
     },
+    // 판매 배수가 손익분기 미만이면 서버가 거절한다. 사유를 보여 줘야 모달에서 고칠 수 있다.
+    onError: (error) => showErrorToast(error),
   });
 
   const assignRoleMutation = useMutation<

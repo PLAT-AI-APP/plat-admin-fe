@@ -130,7 +130,7 @@ const ResponseFormatFormModal = ({
             htmlFor="response-format-max-output"
             required
             error={errors.maxOutputTokens?.message}
-            hint="생각 몫·모델 상한은 서버가 더하고 자릅니다."
+            hint="생각 몫 제외"
           >
             <Input
               id="response-format-max-output"
@@ -144,7 +144,7 @@ const ResponseFormatFormModal = ({
             htmlFor="response-format-recent"
             required
             error={errors.recentMessageCount?.message}
-            hint="입력 토큰이 곧 요금입니다."
+            hint="많을수록 비쌈"
           >
             <Input
               id="response-format-recent"
@@ -157,7 +157,7 @@ const ResponseFormatFormModal = ({
             label="목표 분량 (자)"
             htmlFor="response-format-target"
             error={errors.targetChars?.message}
-            hint="비우면 분량을 말하지 않습니다."
+            hint="비우면 미지정"
           >
             <Input
               id="response-format-target"
@@ -189,7 +189,7 @@ const ResponseFormatFormModal = ({
             htmlFor="response-format-ref-input"
             required
             error={errors.refInputTokens?.message}
-            hint={'"약 N노트" 계산용'}
+            hint="예상 노트용"
           >
             <Input
               id="response-format-ref-input"
@@ -203,7 +203,7 @@ const ResponseFormatFormModal = ({
             htmlFor="response-format-ref-output"
             required
             error={errors.refOutputTokens?.message}
-            hint="생각 토큰 포함"
+            hint="생각 포함"
           >
             <Input
               id="response-format-ref-output"
