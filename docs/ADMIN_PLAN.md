@@ -42,67 +42,96 @@
 
 좌측 메뉴는 화면 개수만큼 늘리지 않는다. 아래 기준을 고정한다.
 
-1. **1뎁스 = 운영 대상 도메인.** 운영자가 "무엇을 다루는가"로 묶는다. 화면 단위나
+1. **구역 = 쓰는 사람.** 사이드바를 `운영` · `개발` · `관리` 세 구역으로 나눈다. 기능을 누가
+   만들었는지가 아니라 **누가 매일 여는지**가 기준이다. 서비스 점검은 개발이 만들었지만 거는
+   사람은 운영이라 운영 구역에 둔다. 볼 수 있는 그룹이 하나도 없는 구역은 제목째 숨어, 운영
+   직책에는 개발 구역이 아예 보이지 않는다.
+2. **1뎁스 = 운영 대상 도메인.** 운영자가 "무엇을 다루는가"로 묶는다. 화면 단위나
    API 단위가 아니라, 데이터를 소유한 도메인 단위다.
-2. **2뎁스 = 도메인 내부의 업무 단위.** `목록/관리`, `정책`, `이력` 세 성격 중 하나에
-   대응시킨다.
-3. **하위가 1개뿐인 도메인은 2뎁스를 만들지 않고 1뎁스 단독 메뉴로 둔다.**
-   (대시보드, 법적 고지)
-4. **아직 실서버에 붙지 않은 기능도 메뉴에 노출하되 `MOCK` 배지를 단다.** 화면은
+3. **2뎁스 = 도메인 내부의 업무 단위.** `목록/관리`, `정책`, `이력` 세 성격 중 하나에
+   대응시킨다. **같은 대상을 다루는 화면은 2뎁스를 늘리지 않고 탭으로 합친다**
+   (`TabWorkspace` — 홈 편성 · 모델 · 키·시크릿 · 노트 요금).
+4. **화면 하나에 두 사람의 일이 섞이면 화면을 쪼갠다.** 메뉴 위치만 옮겨서는 풀리지 않는다
+   (AI 모델의 요금 → 노트 요금, 서버 상태의 점검 → 서비스 점검, 로그의 운영자 활동 → 운영자 활동 기록).
+5. **하위가 1개뿐인 도메인은 2뎁스를 만들지 않고 1뎁스 단독 메뉴로 둔다.**
+   (대시보드, 키·시크릿)
+6. **아직 실서버에 붙지 않은 기능도 메뉴에 노출하되 `MOCK` 배지를 단다.** 화면은
    목업으로 동작하지만 여기서 한 일이 앱에 반영되지 않는다는 것을 UI에서 명확히 한다.
    메뉴에서 지우면 나중에 왜 없는지 아무도 모르고, 배지 없이 두면 저장한 값이 실제로
    반영되는 줄 안다.
-5. **권한이 다른 기능은 같은 도메인이어도 2뎁스로 분리한다.**
-   (결제/크레딧, 관리자 관리)
+7. **권한이 다르면 메뉴가 아니라 탭에서 막는다.** 경로 권한은 메뉴 항목 하나의 권한만 보므로
+   메뉴에는 넓은 쪽을 걸고, 좁은 탭은 `TabWorkspace`의 `permission`으로 감춘다.
+   (예전의 "권한이 다르면 2뎁스로 분리한다"는 폐기했다 — 메뉴가 권한 수만큼 늘었다.)
+
+### 용어
+
+화면 · 문서 · 서버 메시지는 아래 용어로 통일한다. 코드 식별자와 API 필드(`credit`, `creator` 등)는 그대로 둔다.
+
+| 쓰지 않는 말 | 쓰는 말 | 예외 |
+|---|---|---|
+| 제작자 · 창작자 | 크리에이터 | — |
+| 크레딧 · CR | 노트 | AI 제공사 계정의 크레딧(외부 잔액) |
+| 사용자 · 회원 · 이용자 | 유저 | 회원가입 · 회원탈퇴 · 회원님 · 탈퇴 회원, LLM 의 "사용자 메시지", 앱을 가리키는 "사용자 화면 · 사이트" |
+| 관리자(콘솔 계정) | 운영자 | 최고관리자, 서비스 관리자(서비스 계정의 `ADMIN` 역할), 콘솔 이름 "PLAT 관리자", PG 관리자 화면 |
 
 ---
 
 ## 3. 메뉴 트리 & 라우트
 
-기준 목록은 `src/constants/menu.tsx`의 `ADMIN_MENU`다. 이 표와 어긋나면 코드가 맞다.
+기준 목록은 `src/constants/menu.tsx`의 `ADMIN_MENU`(구역은 `ADMIN_MENU_SECTIONS`)다. 이 표와 어긋나면 코드가 맞다.
+합친 화면의 옛 주소는 `next.config.ts`의 `redirects()`가 같은 탭으로 보낸다.
 
-| # | 1뎁스 | 2뎁스 | 라우트 | 비고 |
+| 구역 | 1뎁스 | 2뎁스 | 라우트 | 비고 |
 |---|---|---|---|---|
-| 1 | 대시보드 | — | `/` | 단독 메뉴 · 권한(`dashboard:read`) 없으면 볼 수 있는 첫 메뉴로 보낸다 |
-| 2 | 메인 노출 관리 | 배너 관리 | `/main-exposure/banners` | 언어별 캐러셀 |
-| | | 오늘의 PICK | `/main-exposure/today-pick` | 언어별 최대 10개 |
+| 운영 | 대시보드 | — | `/` | 단독 메뉴 · 권한(`dashboard:read`) 없으면 볼 수 있는 첫 메뉴로 보낸다 |
+| | 콘텐츠 | 세계관 | `/universes` | 상세 `/universes/[universeId]` |
+| | | 해시태그 | `/universes/hashtags` | 유저는 여기 등록된 태그만 사용 · 유저 제안 처리 |
+| | | 홈 편성 | `/main-exposure` | 탭 — 배너 · 오늘의 PICK(언어별 최대 10개) |
 | | | 공식 캐릭터 맛보기 | `/main-exposure/official-pick` | **감춤**(`hidden`) · 언어별 최대 3개 |
 | | | 에셋 추천 | `/main-exposure/asset-pick` | **감춤**(`hidden`) · 언어별 최대 3개 |
-| 3 | 세계관 | 세계관 | `/universes` | 상세 `/universes/[universeId]` |
 | | | 캐릭터 | `/universes/characters` | **MOCK** · 상세 `/universes/characters/[characterId]` |
-| | | 해시태그 관리 | `/universes/hashtags` | 사용자는 여기 등록된 태그만 사용 · 유저 제안 처리 |
-| | | 금지어 관리 | `/universes/banned-words` | |
+| | 검수·신고 | 신고 | `/community/reports` | 대상별 케이스 · 상세 `/community/reports/[caseId]` |
+| | | 댓글 | `/community/comments` | 전 영역 댓글 통합 |
+| | | 금지어 | `/universes/banned-words` | |
+| | | 인수 심사 | `/universes/handovers` | 탈퇴 크리에이터가 남긴 캐릭터 · 처리 대기 뱃지 |
 | | | 채팅 내보내기 | `/universes/chat-exports` | **MOCK** |
-| 4 | 커뮤니티 | 댓글 관리 | `/community/comments` | 전 영역 댓글 통합 |
-| | | 신고 관리 | `/community/reports` | 대상별 케이스 · 상세 `/community/reports/[caseId]` |
-| 5 | 유저/크리에이터 | 유저 관리 | `/users` | 상세 `/users/[userId]` |
+| | 유저 | 유저 | `/users` | 상세 `/users/[userId]` |
 | | | 공식 계정 | `/users/official` | 공식으로 취급할 **유저 ID** 등록 |
-| | | 서비스 관리자 | `/users/service-admins` | 서비스 계정에 `ADMIN` 역할 부여·회수(`serviceAdmin:*`) · 사유·이력 |
-| 6 | AI 운영 | 모델 카탈로그 | `/ai/catalog` | |
-| | | AI 모델 관리 | `/ai/models` | |
-| | | 시스템 프롬프트 | `/ai/prompts` | |
-| | | API 키 | `/ai/keys` | 제공사별 메인·서브 키 교체·확인·메인 복귀(`server:read`·`server:write`) |
-| 7 | 결제/크레딧 | 상품/결제금액 관리 | `/billing/products` | |
-| | | 크레딧 정책 관리 | `/billing/credit-policies` | 고정 금액 정책 9개의 금액·on/off |
-| | | 크레딧 수동 조정 | `/billing/credit-adjustments` | 단건 조정(상한 100,000) · 일괄 지급(멱등키) |
-| | | 결제 내역 | `/billing/payments` | 결제 장부 · 환불 관리 · 보존 열람을 결제 한 건 기준으로 합친 화면 · 상세 `/billing/payments/[orderId]` |
-| 7-1 | 제작자 수익 | 제작자 수익 | `/earnings/creators` | 상세 `/earnings/creators/[accountId]` · 동결 · 차감 |
-| | | 교환 요청 | `/earnings/redemptions` | 상품권 수동 발송 · 반려 · 처리 대기 뱃지 |
-| | | 수익 정책 · 교환 상품 | `/earnings/policy` | 정책은 이력으로 쌓인다 · 상품 이미지 업로드 |
-| | | 대사 결과 | `/earnings/reconciliation` | 매일 00:40 대사 · 불일치는 Slack |
-| 8 | 커뮤니케이션 | 공지사항 관리 | `/communication/notices` | 마크다운 |
-| | | Q&A 관리 | `/communication/qna` | 답변은 관리자가 직접 · 환불 문의는 결제 내역으로 |
-| | | FAQ 관리 | `/communication/faq` | |
-| | | 알림 관리 | `/communication/notifications` | **MOCK** |
+| | 고객센터 | Q&A | `/communication/qna` | 답변은 운영자가 직접 · 환불 문의는 결제 내역으로 |
+| | | 공지사항 | `/communication/notices` | 마크다운 |
+| | | FAQ | `/communication/faq` | |
+| | | 문서 관리 | `/communication/docs` | 사용자 사이트 문서(/docs) |
+| | | 약관 | `/legal` | 약관 버전 · 게시(`legal:publish`) · 번역 삭제(`legal:delete`) |
+| | 메시지 발송 | 알림 템플릿 | `/communication/notifications` | **MOCK** |
+| | | 푸시 | `/communication/push` | **MOCK** |
 | | | 선제 메시지 | `/communication/proactive-messages` | **MOCK** |
-| | | 푸시 발송 | `/communication/push` | **MOCK** |
-| 9 | 법적 고지 | — | `/legal` | 단독 메뉴 · 약관 버전 · 게시(`legal:publish`) · 번역 삭제(`legal:delete`) |
-| 10 | 운영 | 직책 · 권한 | `/ops/roles` | 권한은 직책이 갖는다 |
-| | | 관리자 관리 | `/ops/managers` | 계정에 직책만 배정(여러 개 가능 · 권한은 합집합) |
-| | | 앱 버전 관리 | `/ops/app-versions` | **MOCK** |
-| | | 서버 상태 | `/ops/server` | |
-| | | 배치 관리 | `/ops/batch` | 잡 정의 + 실행 이력 · 수동 재실행 |
-| | | 로그 | `/ops/logs` | 탭 — 관리자 활동 · 접근 로그 · 시스템 이벤트 |
+| | 결제·노트 | 결제 내역 | `/billing/payments` | 결제 장부 · 환불 관리 · 보존 열람을 결제 한 건 기준으로 합친 화면 · 상세 `/billing/payments/[orderId]` |
+| | | 상품·가격 | `/billing/products` | |
+| | | 노트 요금 | `/billing/pricing` | 탭 — 채팅 요금 · 모델별 요금(단가 · 캐시 비율 · 판매 배수) · 고정 지급·차감(정책 9개) |
+| | | 응답 형식 | `/ai/response-formats` | 형식이 곧 그 턴의 가격대 · `creditPolicy:*` |
+| | | 노트 수동 조정 | `/billing/credit-adjustments` | 단건 조정(상한 100,000) · 일괄 지급(멱등키) |
+| | | AI 원가·매출 | `/ai/costs` | 제공사 원가와 노트 매출 |
+| | 크리에이터 수익 | 크리에이터 수익 | `/earnings/creators` | 상세 `/earnings/creators/[accountId]` · 동결 · 차감 |
+| | | 크리에이터 등급 | `/earnings/tiers` | 등급별 승급 조건 · 혜택 |
+| | | 교환 요청 | `/earnings/redemptions` | 상품권 수동 발송 · 반려 · 처리 대기 뱃지 |
+| | | 수익 정책·교환 상품 | `/earnings/policy` | 정책은 이력으로 쌓인다 · 상품 이미지 업로드 |
+| | 점검·업데이트 | 서비스 점검 | `/ops/maintenance` | 예고 → 소프트 종료 → 점검 → 끝내기 · `maintenance:*` |
+| | | 앱 버전 | `/ops/app-versions` | **MOCK** |
+| 개발 | AI 엔진 | 모델 | `/ai/models` | 탭 — 설정(사용 여부 · 역할 · 토큰 · temperature) · 카탈로그(테스트 호출) |
+| | | 시스템 프롬프트 | `/ai/prompts` | 모든 대화에 붙는 공통 규칙(대화 기본 · 안전 · 추천) |
+| | 인프라 | 서버 상태 | `/ops/server` | 서비스 상태 · 재시작 |
+| | | 배치 | `/ops/batch` | 잡 정의 + 실행 이력 · 수동 재실행 |
+| | | 대사 결과 | `/earnings/reconciliation` | 매일 00:40 대사 · 불일치는 Slack · `batch:read` |
+| | | 시스템 로그 | `/ops/logs` | 탭 — 접근 로그 · 시스템 이벤트 · `systemLog:read` |
+| | 키·시크릿 | — | `/ops/secrets` | 단독 메뉴 · 탭 — 서버 시크릿 · AI 제공사 키(`server:*`) |
+| 관리 | 운영자 | 운영자 계정 | `/ops/managers` | 계정에 직책만 배정(여러 개 가능 · 권한은 합집합) |
+| | | 직책·권한 | `/ops/roles` | 권한은 직책이 갖는다 · 갈래는 메뉴 그룹과 같은 순서 |
+| | | 서비스 관리자 | `/users/service-admins` | 서비스 계정에 `ADMIN` 역할 부여·회수(`serviceAdmin:*`) · 사유·이력 |
+| | | 운영자 활동 기록 | `/ops/admin-activity` | 누가 무엇을 바꿨나 · `log:read` |
+
+합친 화면의 옛 주소: `/main-exposure/banners` · `/main-exposure/today-pick` → `/main-exposure?tab=…`,
+`/ai/catalog` → `/ai/models?tab=catalog`, `/ai/keys` → `/ops/secrets?tab=ai-keys`,
+`/billing/chat-policy` · `/billing/credit-policies` → `/billing/pricing?tab=…`, `/ops/logs?tab=admin` → `/ops/admin-activity`.
 
 메뉴 밖의 화면: `/login`(로그인), `/ops/my-account`(헤더 프로필 → 내 계정).
 
@@ -123,15 +152,17 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. 2
 | 배지가 붙은 이유 | 화면 |
 |---|---|
 | 아직 실서버에 연결되지 않음 | 캐릭터 · 채팅 내보내기 |
-| 현재 다른 도구(Discord)로 운영 | 알림 관리 · 선제 메시지 · 푸시 발송 |
-| 앱이 아직 이 정책을 읽어 가지 않음 | 앱 버전 관리 |
+| 현재 다른 도구(Discord)로 운영 | 알림 템플릿 · 선제 메시지 · 푸시 |
+| 앱이 아직 이 정책을 읽어 가지 않음 | 앱 버전 |
 
-대시보드 · 크레딧 정책 · Q&A · FAQ · 법적 고지 · 결제 내역 · 서비스 관리자 · API 키는 실서버에 붙었다.
+대시보드 · 노트 요금 · Q&A · FAQ · 약관 · 결제 내역 · 서비스 관리자 · 키·시크릿 · 서비스 점검은 실서버에 붙었다.
 직책 편집 화면은 서버에 자원 키는 있으나 쓰는 API 가 없는 권한(`character`·`notification`·`push`·`appVersion`)에 "서버 미연결"을 표시한다.
 
-### 3.1 커뮤니티 도메인을 따로 둔 이유
+### 3.1 검수·신고 그룹을 따로 둔 이유
 
 댓글과 신고는 모두 **유저가 만든 것을 검수·차단하는(UGC 모더레이션)** 업무다.
+메뉴 개편 때 이 그룹(옛 `커뮤니티`)에 금지어 · 인수 심사 · 채팅 내보내기를 더해 **처리 대기가 쌓이는
+검수 큐를 한곳에** 모았다. 운영자가 아침에 여는 그룹이다.
 
 - `세계관 > 댓글`에 넣으면 다른 영역에 댓글이 생기는 순간 위치가 틀어진다.
 - `커뮤니케이션`은 **운영자 → 유저** 방향(알림·푸시·공지·Q&A)이고,
@@ -162,7 +193,9 @@ MVP 범위여도 아직 목업이면 배지가 붙고, 실연동되면 뗀다. 2
 **배치는 로그가 아니라 관리 화면으로 뗐다.** 이력만 보는 것이 아니라 *수동 재실행*
 이라는 행위가 붙기 때문이다. 조회만 있는 `log` 권한에 묶으면 되돌릴 수 없는 처리를
 `read` 권한으로 실행할 수 있게 된다. 관리자 활동과 시스템 이벤트는 둘 다 조회
-전용이라 한 화면의 탭으로 둔다.
+전용이라 한 화면의 탭으로 두었다가, 메뉴 개편 때 **볼 사람이 달라** 다시 뗐다 — 운영자 활동은
+감사라 관리 구역의 `운영자 활동 기록`(`log:read`)으로, 접근 로그 · 시스템 이벤트는 장애 대응이라 개발
+구역의 `시스템 로그`(`systemLog:read`)로 갔다.
 
 **시스템 이벤트는 원본 로그가 아니다.** 애플리케이션 로그 전체를 어드민으로
 끌어오면 볼륨 · 검색 성능 · 보존 비용이 곧바로 어드민의 문제가 되고, 정작 봐야 할
