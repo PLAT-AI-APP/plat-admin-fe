@@ -31,6 +31,8 @@ export const responseFormatSchema = z.object({
   turnReminder: z.string().trim().max(500, "턴 리마인더는 500자 이내로 입력해 주세요."),
   refInputTokens: intRange("기준 입력 토큰", 0, 1_000_000),
   refOutputTokens: intRange("기준 출력 토큰", 0, 100_000),
+  minInputTokens: intRange("최저 입력 토큰", 0, 1_000_000),
+  minOutputTokens: intRange("최저 출력 토큰", 0, 100_000),
   enabled: z.boolean(),
   sortOrder: intRange("노출 순서", 0, 10_000),
 });

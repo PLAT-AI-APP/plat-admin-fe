@@ -47,6 +47,9 @@ export interface ResponseFormat {
   /** 화면의 "약 N노트" 계산용 기준 입력·출력 토큰 */
   refInputTokens: number;
   refOutputTokens: number;
+  /** 최저 기준 턴(입력·출력 토큰). 이 턴을 모델 단가로 매긴 노트가 그 모델의 최저 노트다. */
+  minInputTokens: number;
+  minOutputTokens: number;
   enabled: boolean;
   sortOrder: number;
 }

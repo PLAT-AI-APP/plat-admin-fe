@@ -82,6 +82,18 @@ const ResponseFormatManager = () => {
       ),
     },
     {
+      key: "minTokens",
+      header: "최저 노트 기준",
+      align: "right",
+      numeric: true,
+      render: (format) => (
+        <TableCellStack
+          primary={`입력 ${formatWithCommas(format.minInputTokens)}`}
+          secondary={`출력 ${formatWithCommas(format.minOutputTokens)}`}
+        />
+      ),
+    },
+    {
       key: "enabled",
       header: "사용",
       width: "80px",

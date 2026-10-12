@@ -60,6 +60,8 @@ const ResponseFormatFormModal = ({
             turnReminder: format.turnReminder ?? "",
             refInputTokens: format.refInputTokens,
             refOutputTokens: format.refOutputTokens,
+            minInputTokens: format.minInputTokens,
+            minOutputTokens: format.minOutputTokens,
             enabled: format.enabled,
             sortOrder: format.sortOrder,
           }
@@ -74,6 +76,8 @@ const ResponseFormatFormModal = ({
             turnReminder: "",
             refInputTokens: 20_000,
             refOutputTokens: 600,
+            minInputTokens: 4_000,
+            minOutputTokens: 300,
             enabled: true,
             sortOrder: defaultSortOrder,
           },
@@ -234,6 +238,37 @@ const ResponseFormatFormModal = ({
               type="number"
               hasError={Boolean(errors.sortOrder)}
               {...register("sortOrder", { valueAsNumber: true })}
+            />
+          </FormField>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <FormField
+            label="최저 입력 토큰"
+            htmlFor="response-format-min-input"
+            required
+            error={errors.minInputTokens?.message}
+            hint="최저 노트용"
+          >
+            <Input
+              id="response-format-min-input"
+              type="number"
+              hasError={Boolean(errors.minInputTokens)}
+              {...register("minInputTokens", { valueAsNumber: true })}
+            />
+          </FormField>
+          <FormField
+            label="최저 출력 토큰"
+            htmlFor="response-format-min-output"
+            required
+            error={errors.minOutputTokens?.message}
+            hint="모델 단가로 매김"
+          >
+            <Input
+              id="response-format-min-output"
+              type="number"
+              hasError={Boolean(errors.minOutputTokens)}
+              {...register("minOutputTokens", { valueAsNumber: true })}
             />
           </FormField>
         </div>
