@@ -2,12 +2,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AiModel, AiModelRole } from "@/type/ai";
 import type { AppError } from "@/type/api";
-import { showAppToast } from "@/lib/toast";
+import { showAppToast, showErrorToast } from "@/lib/toast";
 
 /** 운영 설정만 변경한다. 모델명·제공사는 카탈로그가 소유하므로 바꾸지 않는다. */
 export interface UpdateAiModelRequest {
   isEnabled?: boolean;
-  creditCost?: number;
   maxOutputTokens?: number;
   temperature?: number;
   memo?: string;
@@ -16,6 +15,12 @@ export interface UpdateAiModelRequest {
   outputPricePerMillion?: number;
   cacheReadPricePerMillion?: number;
   cacheWritePricePerMillion?: number;
+  /** 청구용 평균 캐시 비율(만분율) */
+  cacheRatioBps?: number;
+  /** 판매 배수 k 덮어쓰기(만분율). 손익분기 배수보다 낮으면 400 */
+  priceMultiplierBps?: number;
+  /** true 면 덮어쓰기를 비워 과금 정책의 k 로 되돌린다 */
+  useDefaultPriceMultiplier?: boolean;
 }
 
 export const updateAiModel = async (
@@ -60,6 +65,8 @@ export const useAiModelMutation = () => {
       showAppToast("success", successMessage ?? "모델 설정을 저장했습니다.");
       invalidateAiModelList();
     },
+    // 판매 배수가 손익분기 미만이면 서버가 거절한다. 사유를 보여 줘야 모달에서 고칠 수 있다.
+    onError: (error) => showErrorToast(error),
   });
 
   const assignRoleMutation = useMutation<

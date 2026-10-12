@@ -59,11 +59,27 @@ const AiModelManager = () => {
     });
   };
 
+  /** 폼은 사람이 읽는 단위(%·배)로 받고, 서버에는 만분율로 보낸다. 판매 배수를 비우면 과금 정책 값으로 되돌린다. */
   const handleSubmit = (values: AiModelSchema) => {
     if (!editingModel) return;
 
+    const { cacheRatioPercent, priceMultiplier, ...rest } = values;
+    const multiplier = priceMultiplier.trim();
+
     updateMutation.mutate(
-      { modelId: editingModel.modelId, body: values },
+      {
+        modelId: editingModel.modelId,
+        body: {
+          ...rest,
+          cacheRatioBps: Math.round(cacheRatioPercent * 100),
+          ...(multiplier === ""
+            ? {
+                useDefaultPriceMultiplier:
+                  editingModel.priceMultiplierBps !== null,
+              }
+            : { priceMultiplierBps: Math.round(Number(multiplier) * 10_000) }),
+        },
+      },
       { onSuccess: () => setEditingModel(null) },
     );
   };
@@ -124,11 +140,23 @@ const AiModelManager = () => {
       },
     },
     {
-      key: "creditCost",
-      header: "차감 크레딧",
-      align: "right",
-      numeric: true,
-      render: (model) => formatWithCommas(model.creditCost),
+      key: "formatNoteEstimates",
+      header: "예상 노트",
+      // 응답 형식별 기준 대화 한 턴. 실제 차감은 쓴 토큰만큼이라 대화 길이에 따라 다르다.
+      render: (model) =>
+        model.formatNoteEstimates.length === 0 ? (
+          <span className="body-5 text-font-2">-</span>
+        ) : (
+          <TableCellStack
+            primary={model.formatNoteEstimates
+              .map(
+                (estimate) =>
+                  `${estimate.responseFormatName} ${formatWithCommas(estimate.estimatedNotes)}`,
+              )
+              .join(" · ")}
+            secondary={`k ${model.effectivePriceMultiplier.toFixed(4)}${model.priceMultiplierBps === null ? "" : " (덮어씀)"} · 캐시 ${model.cacheRatioBps / 100}%`}
+          />
+        ),
     },
     {
       key: "maxOutputTokens",

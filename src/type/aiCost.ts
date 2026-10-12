@@ -33,6 +33,12 @@ export interface AiCost {
   marginRate: number | null;
   /** 크레딧 1개를 쓰는 데 든 채팅 원가. 쓴 크레딧이 없으면 null */
   costPerCredit: number | null;
+  /** 확정된 채팅 턴의 청구 원가(평균 캐시 비율로 매긴 원가). 노트는 이 값으로 매긴다 */
+  billedCostKrw: number;
+  /** 같은 턴들의 실제 원가. 청구 원가보다 크면 평균 캐시 비율을 낮춰야 한다 */
+  settledCostKrw: number;
+  /** 제공사 사용량이 없어 글자 수로 어림해 청구한 턴 */
+  estimatedTurns: number;
 }
 
 /** CHAT 은 채팅 답변, 나머지는 채팅 밖 호출 */
@@ -52,6 +58,8 @@ export interface AiCostReport {
   purposes: { purpose: AiCostPurpose; cost: AiCost }[];
   /** model 이 null 이면 모델을 기록하기 전 정산 */
   models: { model: string | null; cost: AiCost }[];
+  /** 채팅 응답 형식별(채팅 턴만). responseFormat 이 null 이면 형식을 기록하기 전 정산 */
+  formats: { responseFormat: string | null; cost: AiCost }[];
   /** 원가가 큰 순 20명. 닉네임·상태는 지금 값 */
   topUsers: {
     userId: string;

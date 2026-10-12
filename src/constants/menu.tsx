@@ -263,6 +263,12 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <Sliders size={SUB_ICON_SIZE} />,
       },
       {
+        label: "응답 형식",
+        href: "/ai/response-formats",
+        permission: "aiModel:read",
+        icon: <MessageSquare size={SUB_ICON_SIZE} />,
+      },
+      {
         label: "AI 원가",
         href: "/ai/costs",
         permission: "aiCost:read",
@@ -298,6 +304,12 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/billing/credit-policies",
         permission: "creditPolicy:read",
         icon: <Sliders size={SUB_ICON_SIZE} />,
+      },
+      {
+        label: "채팅 요금 정책",
+        href: "/billing/chat-policy",
+        permission: "creditPolicy:read",
+        icon: <Coin size={SUB_ICON_SIZE} />,
       },
       {
         label: "크레딧 수동 조정",

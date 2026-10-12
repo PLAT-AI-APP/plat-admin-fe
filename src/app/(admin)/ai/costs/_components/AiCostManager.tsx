@@ -205,6 +205,7 @@ const PURPOSE_LABEL: Record<AiCostPurpose, string> = {
 
 type PurposeRow = AiCostReport["purposes"][number];
 type ModelRow = AiCostReport["models"][number];
+type FormatRow = AiCostReport["formats"][number];
 type UserRow = AiCostReport["topUsers"][number];
 
 const costColumns = <T extends { cost: AiCost }>(): TableColumn<T>[] => [
@@ -281,6 +282,42 @@ const MODEL_COLUMNS: TableColumn<ModelRow>[] = [
   },
   tokenColumn<ModelRow>(),
   ...costColumns<ModelRow>(),
+];
+
+/**
+ * 응답 형식별. 노트는 평균 캐시 비율로 매긴 청구 원가로 받으므로, 실제 원가와 나란히 두어 캐시 손익을 본다.
+ * 실제 원가가 청구 원가보다 크면 그 모델들의 평균 캐시 비율을 낮춰야 한다.
+ */
+const FORMAT_COLUMNS: TableColumn<FormatRow>[] = [
+  {
+    key: "responseFormat",
+    header: "응답 형식",
+    render: ({ responseFormat, cost }) => (
+      <div className="flex items-center gap-2">
+        <span className="body-5 text-font-0">{responseFormat ?? "(기록 없음)"}</span>
+        {cost.estimatedTurns > 0 && (
+          <Badge tone="warning">사용량 어림 {cost.estimatedTurns}회</Badge>
+        )}
+      </div>
+    ),
+  },
+  {
+    key: "billedVsSettled",
+    header: "청구 원가 / 실제 원가",
+    align: "right",
+    numeric: true,
+    render: ({ cost }) => (
+      <span
+        className={
+          cost.settledCostKrw > cost.billedCostKrw ? "text-danger" : undefined
+        }
+      >
+        {formatWon(cost.billedCostKrw)} / {formatWon(cost.settledCostKrw)}
+      </span>
+    ),
+  },
+  tokenColumn<FormatRow>(),
+  ...costColumns<FormatRow>(),
 ];
 
 const PURPOSE_COLUMNS: TableColumn<PurposeRow>[] = [
@@ -416,6 +453,20 @@ const AiCostManager = () => {
                 columns={MODEL_COLUMNS}
                 rows={data.models}
                 getRowKey={(row) => row.model ?? "unknown"}
+                minRows={0}
+                emptyTitle="기간 안에 대화가 없습니다."
+              />
+            </Card>
+
+            <Card
+              title="응답 형식별"
+              description="채팅 턴만 셉니다. 청구 원가는 평균 캐시 비율로 매긴 원가(노트의 근거), 실제 원가는 캐시 적중을 반영한 원가입니다."
+              bodyClassName="p-0"
+            >
+              <Table
+                columns={FORMAT_COLUMNS}
+                rows={data.formats}
+                getRowKey={(row) => row.responseFormat ?? "unknown"}
                 minRows={0}
                 emptyTitle="기간 안에 대화가 없습니다."
               />
