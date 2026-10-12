@@ -61,6 +61,9 @@ export type CreditPolicyKey =
   | "INVITEE_BONUS"
   | "FIRST_PURCHASE_BONUS";
 
+/** 정책 지급 노트의 만료 기간 단위. YEAR 는 UTC 달력 기준 n년 뒤다. */
+export type CreditExpiryUnit = "DAY" | "YEAR";
+
 export interface CreditPolicy {
   policyKey: CreditPolicyKey;
   label: string;
@@ -72,6 +75,9 @@ export interface CreditPolicy {
   /** 지급은 양수, 차감은 음수로 관리한다. */
   amount: number;
   isEnabled: boolean;
+  /** 이 정책으로 지급한 노트의 만료 기간. 서버 상한은 3650일 · 10년이다. */
+  expiryValue: number;
+  expiryUnit: CreditExpiryUnit;
   updatedAt: string;
   updatedBy: string;
   /** 수정 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
