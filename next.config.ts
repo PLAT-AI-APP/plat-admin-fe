@@ -65,8 +65,29 @@ console.log(
     }`,
 );
 
+/**
+ * 모든 화면 응답에 붙이는 보안 헤더.
+ * - X-Frame-Options · frame-ancestors: 다른 사이트가 콘솔을 iframe 에 넣어 승인·삭제 버튼을 누르게 하지 못한다.
+ * - X-Content-Type-Options: 응답 형식을 추측해 스크립트로 실행하지 않는다.
+ * - Referrer-Policy: 밖으로 나갈 때 콘솔 주소의 경로·쿼리를 넘기지 않는다.
+ * - CSP 는 스크립트 출처까지 묶지 않고, 깨질 일 없는 지시어(플러그인·base 태그·프레임 삽입 차단)만 둔다.
+ */
+const SECURITY_HEADERS = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Content-Security-Policy",
+    value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+  },
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
+
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
 
   /**
    * 프로파일에서 나온 값을 번들에 심는다.
