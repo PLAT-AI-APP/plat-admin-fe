@@ -26,13 +26,6 @@ export interface AdminProfile {
 
 export interface LoginResponse {
   accessToken: string;
-  /**
-   * 재발급용 토큰.
-   *
-   * accessToken은 15분이라 이것 없이는 15분마다 로그인 화면으로 튕긴다.
-   * 쿠키가 아니라 본문으로 오는 이유는 콘솔이 API와 다른 오리진이기 때문이다.
-   */
-  refreshToken: string;
   admin: AdminProfile;
   /**
    * 임시 비밀번호로 들어왔는지.
@@ -43,8 +36,10 @@ export interface LoginResponse {
   mustChangePassword: boolean;
 }
 
-/** 재발급 결과. 두 토큰이 함께 바뀌므로 세션도 함께 갈아 끼운다. */
+/**
+ * 재발급 결과. 재발급 토큰은 HttpOnly 쿠키(`adminRefreshToken`)로만 오가서 본문에는 access 토큰만 쓴다.
+ * 본문에 실어 localStorage 에 두면 XSS 한 번에 12시간 세션이 빠져나간다.
+ */
 export interface TokenResponse {
   accessToken: string;
-  refreshToken: string;
 }

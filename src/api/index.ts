@@ -9,7 +9,7 @@ import { isJwtExpired } from "@/lib/jwt";
 import {
   clearSession,
   getAccessToken,
-  getRefreshToken,
+  isRefreshExpired,
   setTokens,
 } from "@/store/useAdminStore";
 import type {
@@ -140,17 +140,13 @@ let refreshPromise: Promise<string> | null = null;
 const refreshAxios = axios.create({
   baseURL: LIVE_BASE_URI,
   headers: { "Content-Type": "application/json" },
+  /* 재발급 토큰은 HttpOnly 쿠키로만 오간다. 쿠키를 실어 보내고 새 쿠키를 받으려면 자격증명이 필요하다. */
+  withCredentials: true,
 });
 
 /** 새 accessToken을 돌려준다. 실패하면 세션이 끝난 것이다. */
 const refreshAccessToken = async (): Promise<string> => {
-  const refreshToken = getRefreshToken();
-
-  if (!refreshToken) throw new Error("no refresh token");
-
-  const response = await refreshAxios.post<TokenResponse>(REFRESH_PATH, {
-    refreshToken,
-  });
+  const response = await refreshAxios.post<TokenResponse>(REFRESH_PATH);
 
   const tokens = unwrapApiData(response.data);
 
@@ -187,6 +183,8 @@ const createAdminAxios = ({
   const instance = axios.create({
     baseURL,
     headers: { "Content-Type": "application/json" },
+    /* 로그인·비밀번호 변경 응답이 심는 재발급 쿠키를 받고, 로그아웃에 실어 보내려면 자격증명이 필요하다. */
+    withCredentials: true,
   });
 
   /** 요청 인터셉터. 세션 토큰을 실어 보냅니다. */
@@ -204,7 +202,7 @@ const createAdminAxios = ({
       exp 를 읽을 수 없으면 아무것도 하지 않고 서버 판정에 맡긴다.
     */
     if (expiresSessionOn401 && !isPublicPath(config.url)) {
-      if (isJwtExpired(getRefreshToken())) {
+      if (isRefreshExpired()) {
         /* 재발급 토큰까지 죽었으면 살려 낼 방법이 없다. 요청을 만들지 않는다. */
         handleUnauthorized();
 

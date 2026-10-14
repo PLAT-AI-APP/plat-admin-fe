@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { LoginSchema } from "@/schema/auth.schema";
-import { useAdminStore } from "@/store/useAdminStore";
+import { nextRefreshExpiresAt, useAdminStore } from "@/store/useAdminStore";
 import type { AppError } from "@/type/api";
 import type { LoginResponse } from "@/type/auth";
 
@@ -32,7 +32,8 @@ export const useLoginMutation = () => {
 
   return useMutation<LoginResponse, AppError, LoginSchema>({
     mutationFn: login,
-    onSuccess: ({ accessToken, refreshToken, admin, mustChangePassword }) =>
-      setSession({ accessToken, refreshToken, admin, mustChangePassword }),
+    /* 재발급 토큰은 서버가 HttpOnly 쿠키로 심는다. 화면은 끊기는 시각만 기억한다. */
+    onSuccess: ({ accessToken, admin, mustChangePassword }) =>
+      setSession({ accessToken, refreshExpiresAt: nextRefreshExpiresAt(), admin, mustChangePassword }),
   });
 };

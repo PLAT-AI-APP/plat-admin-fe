@@ -4,7 +4,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { handleUnauthorized, LOGIN_PATH } from "@/api";
 import { useSyncMyProfile } from "@/api/auth/getMe";
-import { readJwtExpiresAt } from "@/lib/jwt";
 import { useAdminStore } from "@/store/useAdminStore";
 import Spinner from "@/components/ui/Spinner";
 import PasswordChangeModal from "./PasswordChangeModal";
@@ -23,7 +22,7 @@ const AuthGuard = ({ children }: { children: ReactNode }) => {
   const admin = useAdminStore((state) => state.admin);
   const isHydrated = useAdminStore((state) => state.isHydrated);
   const mustChangePassword = useAdminStore((state) => state.mustChangePassword);
-  const refreshToken = useAdminStore((state) => state.refreshToken);
+  const refreshExpiresAt = useAdminStore((state) => state.refreshExpiresAt);
   const isSessionExpired = useAdminStore((state) => state.isSessionExpired);
   const hydrate = useAdminStore((state) => state.hydrate);
 
@@ -49,7 +48,7 @@ const AuthGuard = ({ children }: { children: ReactNode }) => {
     동안 타이머는 제때 깨어나지 않는다.
   */
   useEffect(() => {
-    const expiresAt = readJwtExpiresAt(refreshToken);
+    const expiresAt = refreshExpiresAt;
 
     if (expiresAt === null) return;
 
@@ -67,7 +66,7 @@ const AuthGuard = ({ children }: { children: ReactNode }) => {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", expire);
     };
-  }, [refreshToken]);
+  }, [refreshExpiresAt]);
 
   useEffect(() => {
     if (!isHydrated || admin) return;
