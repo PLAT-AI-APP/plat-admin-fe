@@ -111,7 +111,7 @@ const COMMENT_FILTER_OPTIONS: SelectOption[] = [
 /** 심사 대기 숫자의 신선도. 방금 처리한 건이 탭에 남아 있으면 안 된다. */
 const PENDING_COUNT_STALE_TIME = 1000 * 60;
 
-type BoardTab = "ALL" | "PENDING" | "REJECTED" | "INACTIVE";
+type BoardTab = "ALL" | "PENDING" | "REJECTED";
 
 /** 탭 프리셋 어디에도 없는 조합. 탭 목록에 없으므로 아무 탭도 켜지지 않는다. */
 type BoardTabValue = BoardTab | "CUSTOM";
@@ -123,15 +123,13 @@ type BoardTabValue = BoardTab | "CUSTOM";
  * 전체 탭과 거의 같은 화면이 되고, 이제는 상태 뱃지가 한 칸에서 같은 말을 한다.
  * 탭은 **조치가 필요한 쪽**만 남긴다.
  *
- * 반려 탭과 비활성 탭은 겹칠 수 있다(반려된 채 내려둔 세계관). 두 축이 서로
- * 독립이라 생기는 일이고, 어느 쪽으로 찾아도 나오는 편이 운영에 낫다.
+ * 비활성 탭은 없다. 운영 비활성화를 없애고 공개된 세계관도 반려(사유 필수)로 내린다.
  */
 const TAB_FILTERS: Record<BoardTab, { status: string; reviewStatus: string }> =
   {
     ALL: { status: "", reviewStatus: "" },
     PENDING: { status: "", reviewStatus: "PENDING" },
     REJECTED: { status: "", reviewStatus: "REJECTED" },
-    INACTIVE: { status: "INACTIVE", reviewStatus: "" },
   };
 
 /**
@@ -141,7 +139,7 @@ const TAB_FILTERS: Record<BoardTab, { status: string; reviewStatus: string }> =
  * 주소가 조건의 원본이어야 하기 때문이다. 탭 파라미터를 따로 두면 상세에서
  * 넘어온 주소나 필터 Select로 만든 조합과 탭이 어긋난다.
  *
- * 어느 탭에도 해당하지 않는 조합(예: 심사 승인 + 비활성)이면 `CUSTOM`이다.
+ * 어느 탭에도 해당하지 않는 조합(예: 심사 승인 + 삭제 대기)이면 `CUSTOM`이다.
  * 이때는 **아무 탭도 켜지지 않는다** — 없는 탭을 켜 두는 것보다 정직하다.
  */
 const resolveTab = (status: string, reviewStatus: string): BoardTabValue => {
@@ -198,7 +196,7 @@ const UniverseManager = () => {
     탭 숫자. 화면 필터와 무관한 전체 건수이고, 목록보다 오래 묵혀 쓴다.
 
     심사 대기만 짧게 잡는다. 운영자가 상세에서 승인 · 반려하고 돌아오면 곧바로
-    줄어야 하는 숫자다. 반려 · 비활성은 쌓여 있는 값이라 오래 묵혀도 된다.
+    줄어야 하는 숫자다. 반려는 쌓여 있는 값이라 오래 묵혀도 된다.
   */
   const { data: pendingCount } = useAdminUniverseCountQuery(
     { reviewStatus: "PENDING" },
@@ -206,9 +204,6 @@ const UniverseManager = () => {
   );
   const { data: rejectedCount } = useAdminUniverseCountQuery({
     reviewStatus: "REJECTED",
-  });
-  const { data: inactiveCount } = useAdminUniverseCountQuery({
-    status: "INACTIVE",
   });
 
   const rows = data?.content ?? [];
@@ -222,7 +217,6 @@ const UniverseManager = () => {
     { label: "전체", value: "ALL" },
     { label: "심사 대기", value: "PENDING", count: pendingCount },
     { label: "반려", value: "REJECTED", count: rejectedCount },
-    { label: "비활성", value: "INACTIVE", count: inactiveCount },
   ];
 
   const clearDrilldown = () => setParams({ creatorId: "", hashtagId: "" });
@@ -480,7 +474,7 @@ const UniverseManager = () => {
       >
         {/*
           업무 흐름 탭. 탭이 정하는 것은 상태 · 심사뿐이고, 어느 탭에도 없는
-          조합(예: 심사 승인 + 비활성)을 필터로 만들면 아무 탭도 켜지지 않는다.
+          조합(예: 심사 승인 + 삭제 대기)을 필터로 만들면 아무 탭도 켜지지 않는다.
         */}
         <Tabs
           items={tabs}
