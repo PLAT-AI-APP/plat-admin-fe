@@ -162,16 +162,6 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
           }),
         onActivate: () =>
           runPatch({ status: "ACTIVE" }, "세계관을 활성화했습니다."),
-        onDeactivate: () =>
-          openConfirm({
-            title: "세계관을 비활성화할까요?",
-            description:
-              "앱에서 즉시 내려갑니다. 콘텐츠는 지워지지 않고 언제든 다시 활성화할 수 있습니다.",
-            confirmText: "비활성화",
-            tone: "danger",
-            onConfirm: () =>
-              runPatch({ status: "INACTIVE" }, "세계관을 비활성화했습니다."),
-          }),
         onChangeVisibility: () => setSettingsMode("visibility"),
         onChangeClassification: () => setSettingsMode("classification"),
         onChangeAdult: () => setSettingsMode("adult"),

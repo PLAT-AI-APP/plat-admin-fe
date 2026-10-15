@@ -1,20 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { liveAxios } from "..";
-import { getRefreshToken, useAdminStore } from "@/store/useAdminStore";
+import { useAdminStore } from "@/store/useAdminStore";
 import type { AppError } from "@/type/api";
 
 /**
  * 로그아웃.
  *
- * refreshToken을 함께 보낸다. **서버가 이걸 받아야 폐기할 수 있다.** 안 보내면
- * 화면에서만 나간 상태가 되고, 토큰은 남은 수명(12시간) 동안 그대로 살아 있다.
+ * 재발급 토큰은 HttpOnly 쿠키라 브라우저가 실어 보낸다. **서버가 이걸 받아야 폐기할 수 있다.**
+ * 안 실리면 화면에서만 나간 상태가 되고, 토큰은 남은 수명(12시간) 동안 그대로 살아 있다.
  *
  * accessToken은 서버가 폐기하지 못한다 — 만료를 15분으로 짧게 둔 이유가 이것이다.
  */
 export const logout = async () => {
-  await liveAxios.post("/auth/logout", {
-    refreshToken: getRefreshToken(),
-  });
+  await liveAxios.post("/auth/logout");
 };
 
 /**

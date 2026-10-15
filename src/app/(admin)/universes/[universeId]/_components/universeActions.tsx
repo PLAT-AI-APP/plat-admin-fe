@@ -1,5 +1,4 @@
 import {
-  Ban,
   CheckCircle,
   Eye,
   Layers,
@@ -9,7 +8,7 @@ import {
   ShieldCheck,
 } from "@/icons";
 import type { DropdownItem } from "@/components/ui/Dropdown";
-import { isOperableUniverseStatus, type UniverseDetail } from "@/type/character";
+import type { UniverseDetail } from "@/type/character";
 
 interface BuildUniverseActionsParams {
   universe: Pick<UniverseDetail, "status" | "reviewStatus" | "commentEnabled">;
@@ -25,7 +24,6 @@ interface BuildUniverseActionsParams {
   onRejectReview: () => void;
   onRequestReview: () => void;
   onActivate: () => void;
-  onDeactivate: () => void;
   onChangeVisibility: () => void;
   onChangeClassification: () => void;
   /** 성인(19) 재분류. 넘기지 않으면 메뉴에 두지 않는다. */
@@ -41,7 +39,7 @@ interface BuildUniverseActionsParams {
  * 조치 전송 중에는 항목을 비활성화한다.
  *
  * 삭제는 이 메뉴에 없다. 삭제 · 파기는 제작자 삭제와 파기 배치가, 인수 대기는 탈퇴가 정한다.
- * 그 상태(`ORPHANED` · `DELETED` · `PURGED`)에서는 활성화 · 비활성화도 서버가 막으므로 잠근다.
+ * 비활성화는 없다. 공개된 세계관을 내릴 때는 사유를 남기는 심사 반려로 한다.
  */
 export const buildUniverseActions = ({
   universe,
@@ -50,7 +48,6 @@ export const buildUniverseActions = ({
   onRejectReview,
   onRequestReview,
   onActivate,
-  onDeactivate,
   onChangeVisibility,
   onChangeClassification,
   onChangeAdult,
@@ -80,21 +77,18 @@ export const buildUniverseActions = ({
     },
   ];
 
-  const statusActions: DropdownItem[] = [
-    {
-      label: "활성화",
-      icon: <CheckCircle size={15} />,
-      disabled: universe.status === "ACTIVE" || !isOperableUniverseStatus(universe.status),
-      onSelect: onActivate,
-    },
-    {
-      label: "비활성화(앱에서 내림)",
-      icon: <Ban size={15} />,
-      tone: "danger" as const,
-      disabled: universe.status === "INACTIVE" || !isOperableUniverseStatus(universe.status),
-      onSelect: onDeactivate,
-    },
-  ];
+  // 비활성화는 없앴다 — 공개된 세계관을 내릴 때는 사유가 남는 "심사 반려"로 한다.
+  // 예전에 비활성으로 내려 둔 세계관만 다시 열 수 있게 활성화를 남긴다.
+  const statusActions: DropdownItem[] =
+    universe.status === "INACTIVE"
+      ? [
+          {
+            label: "활성화",
+            icon: <CheckCircle size={15} />,
+            onSelect: onActivate,
+          },
+        ]
+      : [];
 
   const settingActions: DropdownItem[] = [
     {
