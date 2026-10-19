@@ -44,6 +44,11 @@ export const usePendingCountsQuery = () => {
     report: opsQuery.data?.report ?? 0,
     // 서버가 아직 필드를 주지 않는 환경(구버전)에서도 0으로 둔다.
     handover: opsQuery.data?.handover ?? 0,
+    refund: opsQuery.data?.refund ?? 0,
+    paymentIssue: opsQuery.data?.paymentIssue ?? 0,
+    qnaOverdue: opsQuery.data?.qnaOverdue ?? 0,
+    reportOverdue: opsQuery.data?.reportOverdue ?? 0,
+    refundOverdue: opsQuery.data?.refundOverdue ?? 0,
     redemption: redemptionQuery.data ?? 0,
   };
 

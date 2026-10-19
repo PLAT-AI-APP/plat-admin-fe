@@ -559,6 +559,16 @@ export interface PendingCounts {
   redemption: number;
   /** 심사를 기다리는 탈퇴 캐릭터 인수 건. */
   handover: number;
+  /** 승인 대기 환불이 있는 결제. */
+  refund: number;
+  /** 확인이 필요한(이상) 결제. */
+  paymentIssue: number;
+  /** 답변 기한(접수 + 3영업일)을 넘긴 문의. `qna` 에 포함된 수다. */
+  qnaOverdue: number;
+  /** 처리 기한(첫 신고 + 3영업일)을 넘긴 신고 케이스. `report` 에 포함된 수다. */
+  reportOverdue: number;
+  /** 처리 기한(신청 + 3영업일)을 넘긴 환불. `refund` 에 포함된 수다. */
+  refundOverdue: number;
 }
 
 /**
@@ -604,4 +614,28 @@ export interface MaintenanceOverview {
   /** 결제창을 연 뒤 아직 승인되지 않은 주문 수. */
   pendingCheckouts: number;
   latestCheckoutExpiresAt: string | null;
+}
+
+/**
+ * 사이트 설정. 사용자 사이트 푸터의 사업자 정보와 고객센터다.
+ *
+ * 모든 문자열은 빈 문자열을 허용하고 null 은 없다. 빈 칸은 푸터에서 감춘다.
+ * 통신판매업 신고번호는 신고 전이면 비워 둔다(PG 심사 전에는 채워야 한다).
+ */
+export interface SiteSettingsRequest {
+  companyName: string;
+  representative: string;
+  businessNumber: string;
+  mailOrderNumber: string;
+  address: string;
+  phone: string;
+  email: string;
+  supportHours: string;
+  privacyOfficer: string;
+  privacyOfficerContact: string;
+}
+
+export interface SiteSettings extends SiteSettingsRequest {
+  updatedByName: string | null;
+  updatedAt: string | null;
 }

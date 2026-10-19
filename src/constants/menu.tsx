@@ -335,6 +335,7 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/billing/payments",
         permission: "payment:read",
         icon: <CreditCard size={SUB_ICON_SIZE} />,
+        pendingKey: "refund",
       },
       {
         label: "상품·가격",
@@ -416,6 +417,13 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         href: "/ops/maintenance",
         permission: "maintenance:read",
         icon: <Warning size={SUB_ICON_SIZE} />,
+      },
+      {
+        /* 푸터 사업자 정보 · 베타 배너. 유저 화면 전체에 바로 보여 점검과 함께 둔다. */
+        label: "사이트 설정",
+        href: "/ops/site-settings",
+        permission: "siteSetting:read",
+        icon: <Globe size={SUB_ICON_SIZE} />,
       },
       {
         label: "앱 버전",

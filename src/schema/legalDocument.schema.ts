@@ -5,6 +5,7 @@ export const legalDocumentSchema = z.object({
   documentType: z.enum([
     "TERMS_OF_SERVICE",
     "PRIVACY_POLICY",
+    "REFUND_POLICY",
     "YOUTH_PROTECTION",
     "UNIVERSE_HANDOVER_CONSENT",
   ]),

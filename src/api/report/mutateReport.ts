@@ -22,6 +22,7 @@ export const resolveReportCase = async ({
   actions,
   ownerSanction,
   note,
+  universeRejectReason,
 }: ResolveReportCaseParams) => {
   await liveAxios.post(`/reports/${caseId}/resolve`, {
     outcome,
@@ -35,6 +36,9 @@ export const resolveReportCase = async ({
         }
       : undefined,
     note,
+    universeRejectReason: actions.includes("UNIVERSE_REJECT")
+      ? universeRejectReason
+      : undefined,
   });
 };
 
@@ -59,6 +63,7 @@ export const useReportMutation = () => {
     queryClient.invalidateQueries({ queryKey: ["get-universe-detail"] });
     queryClient.invalidateQueries({ queryKey: ["get-user-list"] });
     queryClient.invalidateQueries({ queryKey: ["get-user-detail"] });
+    queryClient.invalidateQueries({ queryKey: ["get-user-status-histories"] });
   };
 
   const resolveMutation = useMutation<void, AppError, ResolveReportCaseParams>({

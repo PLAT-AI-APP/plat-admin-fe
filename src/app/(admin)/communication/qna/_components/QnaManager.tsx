@@ -8,7 +8,9 @@ import { formatDateTime } from "@/lib/dayjs";
 import { formatAdmin, formatCurrency, truncate } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { QnaCategory, QnaItem, QnaStatus } from "@/type/communication";
+import DueBadge from "@/components/domain/DueBadge";
 import Badge from "@/components/ui/Badge";
+import Checkbox from "@/components/ui/Checkbox";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
@@ -33,6 +35,8 @@ const DEFAULT_PARAMS = {
   keyword: "",
   status: "",
   category: "",
+  /** "true"면 답변 기한을 넘긴 대기 문의만 */
+  overdue: "",
 };
 
 const QnaManager = () => {
@@ -40,6 +44,8 @@ const QnaManager = () => {
   const { page, keyword } = params;
   const status = params.status as QnaStatus | "";
   const category = params.category as QnaCategory | "";
+  /* 기한은 답변 대기 문의에만 있다. 대기 탭이 아니면 걸지 않는다. */
+  const isOverdueOnly = params.overdue === "true" && status === "OPEN";
   const [selectedQnaId, setSelectedQnaId] = useState<string | null>(null);
 
   const { data, isLoading } = useQnaListQuery({
@@ -48,6 +54,7 @@ const QnaManager = () => {
     keyword,
     status,
     category,
+    overdue: isOverdueOnly,
   });
 
   /* 필터가 바뀌면 `useListParams`가 페이지를 1로 되돌린다. */
@@ -119,6 +126,13 @@ const QnaManager = () => {
       ),
     },
     {
+      /* 접수 + 3영업일. 답변 대기 문의에만 있다. */
+      key: "dueAt",
+      header: "기한",
+      width: "100px",
+      render: (row) => <DueBadge dueAt={row.dueAt} />,
+    },
+    {
       key: "createdAt",
       header: "작성일",
       width: "150px",
@@ -166,14 +180,27 @@ const QnaManager = () => {
             placeholder="제목 · 내용 · 작성자 · ID로 검색"
           />
 
-          <Select
-            options={QNA_CATEGORY_OPTIONS}
-            value={category}
-            onChange={(event) =>
-              handleChangeCategory(event.target.value as QnaCategory | "")
-            }
-            selectBoxClassName="w-44"
-          />
+          <div className="flex items-center gap-2">
+            {status === "OPEN" && (
+              <Checkbox
+                label="기한 초과만"
+                checked={isOverdueOnly}
+                onChange={(event) =>
+                  setParams({ overdue: event.target.checked ? "true" : "" })
+                }
+                boxClassName="mr-1 shrink-0"
+              />
+            )}
+
+            <Select
+              options={QNA_CATEGORY_OPTIONS}
+              value={category}
+              onChange={(event) =>
+                handleChangeCategory(event.target.value as QnaCategory | "")
+              }
+              selectBoxClassName="w-44"
+            />
+          </div>
         </div>
 
         <Table

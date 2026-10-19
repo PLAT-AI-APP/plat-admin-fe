@@ -2,13 +2,18 @@
 
 import { ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getAdjustableUserList } from "@/api/billing/getAdjustableUserList";
+import {
+  useCreditAdjustmentMutation,
+  type CreditAdjustmentRequest,
+} from "@/api/billing/mutateCreditAdjustment";
 import { useUserDetailQuery } from "@/api/user/getUserDetail";
 import { useUserMutation } from "@/api/user/mutateUser";
 import {
   useUserProfileResetMutation,
   type ProfileResetRequest,
 } from "@/api/user/profileReset";
-import { Ban, CheckCircle, ListLines, Refresh } from "@/icons";
+import { Ban, CheckCircle, Coin, ListLines, Logout, Refresh } from "@/icons";
 import { formatDate, formatDateTime } from "@/lib/dayjs";
 import { resolveImageUrl } from "@/lib/imageUrl";
 import { formatCredit, formatCurrency, formatWithCommas } from "@/lib/utils";
@@ -16,8 +21,14 @@ import { useAdminStore, useHasPermission } from "@/store/useAdminStore";
 import { hasPermission } from "@/type/permission";
 import { openConfirm } from "@/store/useConfirmStore";
 import { useCan } from "@/hooks/useCan";
+import { showAppToast, showErrorToast } from "@/lib/toast";
+import { ADJUSTMENT_TYPE_LABEL } from "@/constants/billingOptions";
 import { useListParams } from "@/hooks/useListParams";
-import { detailVerificationStateOf, type UserDetail } from "@/type/user";
+import {
+  detailVerificationStateOf,
+  type AdjustableUser,
+  type UserDetail,
+} from "@/type/user";
 import BackLink from "@/components/layout/BackLink";
 import PageHeader from "@/components/layout/PageHeader";
 import Alert from "@/components/ui/Alert";
@@ -30,15 +41,18 @@ import Skeleton from "@/components/ui/Skeleton";
 import Tabs from "@/components/ui/Tabs";
 import { USER_STATUS_LABEL, USER_STATUS_TONE } from "@/constants/userOptions";
 import UserSuspendModal from "@/app/(admin)/users/_components/UserSuspendModal";
+import CreditAdjustmentFormModal from "@/app/(admin)/billing/credit-adjustments/_components/CreditAdjustmentFormModal";
 import UserAccountPanel from "./UserAccountPanel";
 import UserBillingPanel from "./UserBillingPanel";
 import UserCharacterPanel from "./UserCharacterPanel";
 import UserCommentPanel from "./UserCommentPanel";
 import UserCreatorPanel from "./UserCreatorPanel";
 import UserEarningPanel from "./UserEarningPanel";
+import UserMemoPanel from "./UserMemoPanel";
 import UserQnaPanel from "./UserQnaPanel";
 import UserProfileResetModal from "./UserProfileResetModal";
 import UserReportPanel from "./UserReportPanel";
+import UserStatusHistoryPanel from "./UserStatusHistoryPanel";
 import UserUniversePanel from "./UserUniversePanel";
 import {
   USER_DETAIL_TAB_PERMISSIONS,
@@ -80,6 +94,9 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
   /* 요청 로그는 시스템 로그(접근 로그 탭)라 systemLog 권한으로 연다. */
   const canReadLog = useHasPermission("systemLog:read");
   const canWrite = useCan("user:write");
+  /* 노트 조정은 서버에서 `creditAdjustment:adjust` 다. 유저 쓰기 권한과 따로 본다. */
+  const canAdjustCredit = useCan("creditAdjustment:adjust");
+  const [isCreditOpen, setIsCreditOpen] = useState(false);
   const admin = useAdminStore((state) => state.admin);
 
   /* 볼 권한이 없는 탭은 감춘다. 빈 표가 "기록 없음"으로 읽히지 않게 한다. */
@@ -99,7 +116,69 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
     visibleTabs.find((item) => item.value === params.tab)?.value ?? "ACCOUNT";
 
   const { data: user, isLoading, isError, error } = useUserDetailQuery(userId);
-  const { statusMutation } = useUserMutation();
+  const { statusMutation, revokeSessionsMutation } = useUserMutation();
+  const { createMutation: creditMutation } = useCreditAdjustmentMutation();
+
+  /*
+    조정 모달은 잔액 · 차감 가능 노트로 초과 차감을 막는다. 유저 상세 응답에는 차감 가능 노트가 없어,
+    노트 조정 대상 검색(유저 ID 정확 일치)으로 같은 값을 받아 미리 채운다. 탈퇴 유저는 나오지 않는다.
+  */
+  const [adjustableUser, setAdjustableUser] = useState<AdjustableUser | undefined>();
+  const [isLoadingAdjustable, setIsLoadingAdjustable] = useState(false);
+
+  const handleOpenCredit = async () => {
+    setIsLoadingAdjustable(true);
+
+    try {
+      const page = await getAdjustableUserList({ page: 1, size: 1, keyword: userId });
+      const found = page.content.find((item) => item.userId === userId);
+
+      if (!found) {
+        showAppToast("warning", "노트를 조정할 수 있는 계정을 찾지 못했습니다.", {
+          description: "탈퇴했거나 지갑이 없는 계정일 수 있습니다.",
+        });
+        return;
+      }
+
+      setAdjustableUser(found);
+      setIsCreditOpen(true);
+    } catch (caught) {
+      showErrorToast(caught);
+    } finally {
+      setIsLoadingAdjustable(false);
+    }
+  };
+
+  const handleCreditSubmit = (request: CreditAdjustmentRequest) => {
+    const typeLabel = ADJUSTMENT_TYPE_LABEL[request.type];
+
+    openConfirm({
+      title: `노트를 ${typeLabel}할까요?`,
+      description: `'${user?.nickname ?? ""}'(#${userId}) 님에게 ${formatCredit(request.amount)}를 ${typeLabel}합니다.`,
+      warning:
+        "실행 즉시 유저 잔액에 반영되며 되돌릴 수 없습니다. 사유는 감사 로그로 남습니다.",
+      confirmText: `${typeLabel} 실행`,
+      tone: "danger",
+      onConfirm: async () => {
+        await creditMutation.mutateAsync(request);
+
+        setIsCreditOpen(false);
+      },
+    });
+  };
+
+  const handleRevokeSessions = (target: UserDetail) => {
+    openConfirm({
+      title: "강제 로그아웃할까요?",
+      description: `'${target.nickname}' 계정의 모든 기기 로그인을 끊습니다. 다시 쓰려면 새로 로그인해야 합니다.`,
+      warning:
+        "이미 받은 접속 토큰은 최대 15분까지 남습니다. 정지 · 차단하면 따로 하지 않아도 함께 끊깁니다.",
+      confirmText: "강제 로그아웃",
+      tone: "danger",
+      onConfirm: () =>
+        revokeSessionsMutation.mutateAsync({ userId: target.userId }),
+    });
+  };
   const profileResetMutation = useUserProfileResetMutation();
   /* 성인 인증은 만료를 반영해 읽는다. 지난 인증을 "인증"으로 그리면 CS 판단이 틀어진다. */
   const adultState = user
@@ -160,8 +239,27 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
       });
     }
 
+    /* 노트 조정은 유저 쓰기 권한과 별개다. 탈퇴 계정은 지갑이 없어 조정할 수 없다. */
+    if (canAdjustCredit && target.status !== "WITHDRAWN") {
+      items.push({
+        label: "노트 조정",
+        icon: <Coin size={15} />,
+        disabled: isLoadingAdjustable,
+        onSelect: () => void handleOpenCredit(),
+      });
+    }
+
     /* 정지 · 해제는 서버에서 `user:write` 다. */
     if (!canWrite) return items;
+
+    if (target.status !== "WITHDRAWN") {
+      items.push({
+        label: "강제 로그아웃",
+        icon: <Logout size={15} />,
+        tone: "danger",
+        onSelect: () => handleRevokeSessions(target),
+      });
+    }
 
     if (target.status === "ACTIVE") {
       items.push({
@@ -366,12 +464,24 @@ const UserDetailView = ({ userId }: UserDetailViewProps) => {
           {tab === "QNA" && (
             <UserQnaPanel userId={userId} nickname={user.nickname} />
           )}
+          {tab === "STATUS_HISTORY" && (
+            <UserStatusHistoryPanel userId={userId} />
+          )}
+          {tab === "MEMO" && <UserMemoPanel userId={userId} />}
 
           <UserSuspendModal
             user={isSuspendOpen ? user : null}
             onClose={() => setIsSuspendOpen(false)}
             onSubmit={handleSuspend}
             isSubmitting={statusMutation.isPending}
+          />
+
+          <CreditAdjustmentFormModal
+            isOpen={isCreditOpen && Boolean(adjustableUser)}
+            onClose={() => setIsCreditOpen(false)}
+            onSubmit={handleCreditSubmit}
+            isSubmitting={creditMutation.isPending}
+            initialUser={adjustableUser}
           />
 
           <UserProfileResetModal

@@ -37,6 +37,7 @@ export const useUserMutation = () => {
   const invalidateUser = () => {
     queryClient.invalidateQueries({ queryKey: ["get-user-list"] });
     queryClient.invalidateQueries({ queryKey: ["get-user-detail"] });
+    queryClient.invalidateQueries({ queryKey: ["get-user-status-histories"] });
   };
 
   const statusMutation = useMutation<
@@ -56,5 +57,21 @@ export const useUserMutation = () => {
     },
   });
 
-  return { statusMutation };
+  /*
+    로그인 세션(재발급 토큰)을 모두 끊는다. 이미 받은 액세스 토큰은 만료(최대 15분)까지 남는다.
+    정지 · 차단은 서버가 알아서 함께 끊으므로 따로 부르지 않는다.
+  */
+  const revokeSessionsMutation = useMutation<void, AppError, { userId: string }>({
+    mutationFn: async ({ userId }) => {
+      await liveAxios.post(`/users/${userId}/sessions/revoke`);
+    },
+    onSuccess: () => {
+      showAppToast(
+        "success",
+        "로그인 세션을 모두 끊었습니다. 이미 받은 접속은 최대 15분 뒤 끝납니다.",
+      );
+    },
+  });
+
+  return { statusMutation, revokeSessionsMutation };
 };

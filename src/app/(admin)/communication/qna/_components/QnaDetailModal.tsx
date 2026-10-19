@@ -144,7 +144,7 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
         isOpen={qnaId !== null}
         onClose={onClose}
         title="문의 상세"
-        description="답변을 저장하면 문의가 답변 완료로 바뀌고, 이후에는 답변을 수정할 수 없습니다."
+        description="답변을 저장하면 문의가 답변 완료로 바뀌고 유저에게 답변 알림 메일이 갑니다. 이후에는 답변을 수정할 수 없습니다."
         size="lg"
         // 스켈레톤 → 본문으로 바뀔 때 높이가 튀지 않게 한다.
         minHeight="md"
@@ -210,7 +210,7 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
                     : isCancelled
                       ? `유저가 ${qna.cancelledAt ? formatDateTime(qna.cancelledAt) : ""}에 취소한 문의입니다. 취소된 문의에는 답변할 수 없습니다.`
                         : canAnswer
-                        ? "아직 답변이 등록되지 않았습니다."
+                        ? "저장하면 유저에게 답변 알림 메일이 갑니다. 답변은 저장 후 수정할 수 없습니다."
                         : "답변 발송 권한(qna:send)이 없어 조회만 가능합니다."
                 }
               >

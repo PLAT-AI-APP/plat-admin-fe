@@ -3,8 +3,16 @@
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useDashboardSummaryQuery } from "@/api/dashboard/getDashboardSummary";
+import { usePendingCountsQuery } from "@/api/ops/getPendingCounts";
 import { useAdminUniverseCountQuery } from "@/api/universe/getAdminUniverseList";
-import { Globe, QuestionCircle, Server } from "@/icons";
+import {
+  Calendar,
+  CreditCard,
+  Globe,
+  QuestionCircle,
+  Server,
+  Warning,
+} from "@/icons";
 import { formatWithCommas } from "@/lib/utils";
 import type { DashboardMetricKey } from "@/type/dashboard";
 import type { HealthStatus } from "@/type/ops";
@@ -48,7 +56,7 @@ const CREDIT_WINDOW_DAYS = 30;
  */
 const PENDING_REVIEW_STALE_TIME = 1000 * 60;
 
-/** 대기 건수 카드 (심사 · 문의 공용) */
+/** 대기 건수 카드 (심사 · 문의 · 환불 · 결제 · 기한 초과 공용) */
 const PendingCard = ({
   title,
   description,
@@ -101,6 +109,9 @@ const DashboardOverview = () => {
     { reviewStatus: "PENDING" },
     PENDING_REVIEW_STALE_TIME,
   );
+
+  /* 환불 · 결제 · 기한 초과는 사이드바 · 벨과 같은 처리 대기 건수를 쓴다. 볼 권한이 없으면 서버가 0 을 준다. */
+  const { data: pendingCounts } = usePendingCountsQuery();
 
   /** 카드에서 고른 지표. 아래 추이 차트가 이 계열을 그린다. */
   const [metricKey, setMetricKey] = useState<DashboardMetricKey>("activeUsers");
@@ -219,6 +230,61 @@ const DashboardOverview = () => {
           linkLabel="답변하러 가기"
           icon={<QuestionCircle size={22} />}
         />
+
+        <Can permission="payment:read">
+          <PendingCard
+            title="환불 요청"
+            description="승인을 기다리는 환불이 있는 결제입니다."
+            count={pendingCounts.refund}
+            href="/billing/payments?tab=REFUND_REQUESTED"
+            linkLabel="환불 처리하러 가기"
+            icon={<CreditCard size={22} />}
+          />
+        </Can>
+
+        <Can permission="payment:read">
+          <PendingCard
+            title="결제 확인 필요"
+            description="노트 미지급 · 결과 모름 · PG 불일치처럼 사람이 봐야 하는 결제입니다."
+            count={pendingCounts.paymentIssue}
+            href="/billing/payments?tab=ISSUE"
+            linkLabel="확인하러 가기"
+            icon={<Warning size={22} />}
+          />
+        </Can>
+
+        <Can permission="qna:read">
+          <PendingCard
+            title="문의 답변 기한 초과"
+            description="접수 후 3영업일 안에 답변하지 못한 문의입니다."
+            count={pendingCounts.qnaOverdue}
+            href="/communication/qna?status=OPEN&overdue=true"
+            linkLabel="기한 초과 문의 보기"
+            icon={<Calendar size={22} />}
+          />
+        </Can>
+
+        <Can permission="report:read">
+          <PendingCard
+            title="신고 처리 기한 초과"
+            description="첫 신고 후 3영업일 안에 처리하지 못한 신고 케이스입니다."
+            count={pendingCounts.reportOverdue}
+            href="/community/reports?status=PENDING&overdue=true"
+            linkLabel="기한 초과 신고 보기"
+            icon={<Calendar size={22} />}
+          />
+        </Can>
+
+        <Can permission="payment:read">
+          <PendingCard
+            title="환불 처리 기한 초과"
+            description="신청 후 3영업일 안에 처리하지 못한 환불입니다."
+            count={pendingCounts.refundOverdue}
+            href="/billing/payments?tab=REFUND_OVERDUE"
+            linkLabel="기한 초과 환불 보기"
+            icon={<Calendar size={22} />}
+          />
+        </Can>
       </div>
     </>
   );

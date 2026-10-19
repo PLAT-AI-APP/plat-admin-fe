@@ -21,7 +21,9 @@ import {
   type ReportReason,
   type ReportTargetType,
 } from "@/type/report";
+import DueBadge from "@/components/domain/DueBadge";
 import Badge from "@/components/ui/Badge";
+import Checkbox from "@/components/ui/Checkbox";
 import Card from "@/components/ui/Card";
 import CsvExportButton from "@/components/ui/CsvExportButton";
 import EmptyState from "@/components/ui/EmptyState";
@@ -58,6 +60,7 @@ const REPORT_CSV_COLUMNS: CsvColumn<ReportCaseItem>[] = [
   { header: "상태", value: (row) => REPORT_CASE_STATUS_LABEL[row.status] },
   { header: "처리자", value: (row) => row.handlerName ?? "" },
   { header: "처리일", value: (row) => formatDateTime(row.handledAt) },
+  { header: "처리 기한", value: (row) => (row.dueAt ? formatDateTime(row.dueAt) : "") },
 ];
 
 const COLUMNS: TableColumn<ReportCaseItem>[] = [
@@ -147,6 +150,13 @@ const COLUMNS: TableColumn<ReportCaseItem>[] = [
     ),
   },
   {
+    /* 첫 신고 + 3영업일. 처리 대기 케이스에만 있다. */
+    key: "dueAt",
+    header: "기한",
+    width: "100px",
+    render: (row) => <DueBadge dueAt={row.dueAt} />,
+  },
+  {
     key: "handler",
     header: "처리자",
     width: "140px",
@@ -170,6 +180,8 @@ const DEFAULT_PARAMS = {
   targetType: "",
   reason: "",
   sort: "REPORT_COUNT_DESC",
+  /** "true"면 처리 기한을 넘긴 대기 케이스만 */
+  overdue: "",
 };
 
 /**
@@ -185,6 +197,8 @@ const ReportManager = () => {
   const targetType = params.targetType as ReportTargetType | "";
   const reason = params.reason as ReportReason | "";
   const sort = params.sort as ReportCaseSort;
+  /* 기한 초과는 처리 대기에만 있다. 다른 탭에서는 걸지 않는다. */
+  const isOverdueOnly = params.overdue === "true" && statusTab === "PENDING";
 
   const filters = { keyword, targetType, reason };
 
@@ -194,6 +208,7 @@ const ReportManager = () => {
     size: DEFAULT_PAGE_SIZE,
     status: statusTab === REPORT_STATUS_ALL ? "" : statusTab,
     sort,
+    overdue: isOverdueOnly,
   });
   const { data: counts } = useReportCaseStatusCountsQuery(filters);
 
@@ -217,7 +232,7 @@ const ReportManager = () => {
   return (
     <Card
       title={`신고 케이스 ${formatWithCommas(data?.totalCount ?? 0)}건`}
-      description="대상 하나에 접수된 신고를 한 케이스로 묶었습니다. 행을 누르면 상세에서 판정 · 조치합니다."
+      description="대상 하나에 접수된 신고를 한 케이스로 묶었습니다. 신고만으로 내려가는 것은 없고, 행을 누르면 상세에서 운영자가 판정 · 조치를 고릅니다."
       action={
         <CsvExportButton
           fileName="신고 케이스"
@@ -243,6 +258,17 @@ const ReportManager = () => {
         />
 
         <div className="flex items-center gap-2">
+          {statusTab === "PENDING" && (
+            <Checkbox
+              label="기한 초과만"
+              checked={isOverdueOnly}
+              onChange={(event) =>
+                setParams({ overdue: event.target.checked ? "true" : "" })
+              }
+              boxClassName="mr-1 shrink-0"
+            />
+          )}
+
           <Select
             aria-label="대상 필터"
             options={REPORT_TARGET_TYPE_FILTER_OPTIONS}

@@ -12,6 +12,8 @@ interface PendingEntry {
   label: string;
   href: string;
   hint: string;
+  /** 이 항목 중 처리 기한을 넘긴 건수. 있으면 설명 앞에 붙인다. */
+  overdueKey?: keyof PendingCounts;
 }
 
 /** 뱃지에 실을 항목. 사이드바의 `pendingKey`와 같은 값을 본다. */
@@ -19,8 +21,9 @@ const PENDING_ENTRIES: PendingEntry[] = [
   {
     key: "qna",
     label: "답변 대기 문의",
-    href: "/communication/qna",
+    href: "/communication/qna?status=OPEN",
     hint: "아직 답변하지 않은 Q&A",
+    overdueKey: "qnaOverdue",
   },
   {
     key: "comment",
@@ -33,12 +36,26 @@ const PENDING_ENTRIES: PendingEntry[] = [
     label: "검토 대기 신고",
     href: "/community/reports",
     hint: "아직 처리하지 않은 신고 건",
+    overdueKey: "reportOverdue",
   },
   {
     key: "handover",
     label: "인수 심사",
     href: "/universes/handovers",
     hint: "탈퇴한 크리에이터가 남긴 캐릭터",
+  },
+  {
+    key: "refund",
+    label: "환불 요청",
+    href: "/billing/payments?tab=REFUND_REQUESTED",
+    hint: "승인을 기다리는 환불",
+    overdueKey: "refundOverdue",
+  },
+  {
+    key: "paymentIssue",
+    label: "결제 확인 필요",
+    href: "/billing/payments?tab=ISSUE",
+    hint: "노트 미지급 · 결과 모름 · PG 불일치 등",
   },
   {
     key: "redemption",
@@ -73,8 +90,15 @@ const PendingBell = () => {
     return () => document.removeEventListener("mousedown", handleClickAway);
   }, [isOpen]);
 
+  /* 기한 초과 건수는 문의 · 신고 · 환불 건수에 이미 들어 있어 합계에 다시 더하지 않는다. */
   const total =
-    data.qna + data.comment + data.report + data.handover + data.redemption;
+    data.qna +
+    data.comment +
+    data.report +
+    data.handover +
+    data.redemption +
+    data.refund +
+    data.paymentIssue;
 
   return (
     <div ref={containerRef} className="relative">
@@ -115,7 +139,9 @@ const PendingBell = () => {
                         {entry.label}
                       </span>
                       <span className="block truncate body-6 text-font-2">
-                        {entry.hint}
+                        {entry.overdueKey && (data[entry.overdueKey] ?? 0) > 0
+                          ? `기한 초과 ${data[entry.overdueKey]}건 · ${entry.hint}`
+                          : entry.hint}
                       </span>
                     </span>
 

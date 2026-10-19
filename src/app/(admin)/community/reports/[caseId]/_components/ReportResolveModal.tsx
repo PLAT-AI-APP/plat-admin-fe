@@ -6,12 +6,14 @@ import { cn } from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import { permissionLabel } from "@/type/permission";
 import {
+  REPORT_ACTION_CONFLICTS,
   REPORT_ACTION_LABEL,
   REPORT_ACTION_PERMISSION,
   REPORT_ACTIONS_BY_TARGET,
   REPORT_OUTCOME_LABEL,
   REPORT_SANCTION_PERMISSION,
   REPORT_TARGET_TYPE_LABEL,
+  UNIVERSE_REJECT_REASON_MAX,
   type ReportAction,
   type ReportCaseDetail,
   type ReportOutcome,
@@ -47,6 +49,8 @@ interface ResolveDraft {
   /** 기간 정지 일수 */
   period: string;
   note: string;
+  /** 검수 반려로 내릴 때 제작자에게 보일 사유 */
+  rejectReason: string;
 }
 
 const OUTCOME_OPTIONS: { value: ReportOutcome; description: string }[] = [
@@ -67,6 +71,7 @@ const initialDraft = (key: string): ResolveDraft => ({
   sanction: "NONE",
   period: "7",
   note: "",
+  rejectReason: "",
 });
 
 /** 조치가 목표로 하는 상태가 이미 달성돼 있는가. 서버는 이 경우도 성공으로 본다. */
@@ -74,6 +79,8 @@ const isAlreadyApplied = (detail: ReportCaseDetail, action: ReportAction) => {
   const { status } = detail.targetState;
 
   if (action === "HIDE_COMMENT") return status === "HIDDEN";
+  /* 반려는 지금 상태와 상관없이 새 반려 사유를 남기는 조치라 '이미 적용됨'이 없다. */
+  if (action === "UNIVERSE_REJECT") return false;
 
   return status === "DELETED" || status === "PURGED";
 };
@@ -136,12 +143,30 @@ const ReportResolveModal = ({
     isActioned && !sanctionBlockReason ? current.sanction : "NONE";
   const hasMeasure = selectedActions.length > 0 || sanction !== "NONE";
   const note = current.note.trim();
+  const isRejecting = selectedActions.includes("UNIVERSE_REJECT");
+  const rejectReason = current.rejectReason.trim();
+  /* 지우는 것과 반려는 반대 결정이라 함께 보낼 수 없다(서버 400). 화면에서 먼저 막는다. */
+  const hasConflict = selectedActions.some((action) =>
+    (REPORT_ACTION_CONFLICTS[action] ?? []).some((other) =>
+      selectedActions.includes(other),
+    ),
+  );
 
   const canSubmit =
     current.outcome !== null &&
     note.length > 0 &&
     note.length <= REPORT_NOTE_MAX_LENGTH &&
+    !hasConflict &&
+    (!isRejecting ||
+      (rejectReason.length > 0 &&
+        rejectReason.length <= UNIVERSE_REJECT_REASON_MAX)) &&
     (current.outcome === "DISMISSED" || hasMeasure);
+
+  /** 이미 고른 조치와 함께 고를 수 없으면 그 조치 이름. */
+  const conflictWith = (action: ReportAction): ReportAction | undefined =>
+    (REPORT_ACTION_CONFLICTS[action] ?? []).find((other) =>
+      current.actions.includes(other),
+    );
 
   const suspendedUntil = dayjs().add(Number(current.period), "day");
 
@@ -167,6 +192,7 @@ const ReportResolveModal = ({
                 sanction === "SUSPENDED" ? suspendedUntil.toISOString() : null,
             },
       note,
+      universeRejectReason: isRejecting ? rejectReason : undefined,
     });
   };
 
@@ -248,21 +274,53 @@ const ReportResolveModal = ({
               {allowedActions.map((action) => {
                 const blockReason = actionBlockReason(action);
                 const isApplied = isAlreadyApplied(detail, action);
+                const isChecked =
+                  isActioned && !blockReason && current.actions.includes(action);
+                /* 반대 조치를 이미 골랐으면 잠근다. 고른 쪽을 풀면 다시 열린다. */
+                const conflict = isChecked ? undefined : conflictWith(action);
 
                 return (
                   <div key={action} className="flex flex-col gap-0.5">
                     <Checkbox
-                      checked={isActioned && !blockReason && current.actions.includes(action)}
-                      disabled={!isActioned || Boolean(blockReason)}
+                      checked={isChecked}
+                      disabled={!isActioned || Boolean(blockReason) || Boolean(conflict)}
                       onChange={(event) => toggleAction(action, event.target.checked)}
                       label={`${REPORT_ACTION_LABEL[action]}${isApplied ? " (이미 적용됨)" : ""}`}
                     />
-                    {blockReason && (
+                    {blockReason ? (
                       <p className="pl-6 caption-2 text-font-2">{blockReason}</p>
-                    )}
+                    ) : conflict ? (
+                      <p className="pl-6 caption-2 text-font-2">
+                        &apos;{REPORT_ACTION_LABEL[conflict]}&apos;과 함께 고를 수 없습니다.
+                      </p>
+                    ) : action === "UNIVERSE_REJECT" ? (
+                      <p className="pl-6 caption-2 text-font-2">
+                        삭제하지 않고 비공개로 내린 뒤 검수 반려로 돌립니다. 제작자는 사유를 보고 고쳐 다시
+                        검수를 받을 수 있습니다.
+                      </p>
+                    ) : null}
                   </div>
                 );
               })}
+
+              {isRejecting && (
+                <FormField
+                  label="제작자에게 보일 반려 사유"
+                  htmlFor="report-reject-reason"
+                  required
+                  hint={`제작자 화면에 그대로 보입니다. (${current.rejectReason.length}/${UNIVERSE_REJECT_REASON_MAX})`}
+                  className="mt-1"
+                >
+                  <Textarea
+                    id="report-reject-reason"
+                    rows={3}
+                    maxLength={UNIVERSE_REJECT_REASON_MAX}
+                    value={current.rejectReason}
+                    onChange={(event) => update({ rejectReason: event.target.value })}
+                    placeholder="예: 캐릭터 소개에 실존 인물을 특정하는 표현이 있어 수정이 필요합니다."
+                  />
+                </FormField>
+              )}
             </div>
           </FormField>
 
@@ -324,7 +382,7 @@ const ReportResolveModal = ({
             label="처리 메모"
             htmlFor="report-resolve-note"
             required
-            hint={`운영 내부 기록입니다. 신고자에게 보이지 않습니다. (${current.note.length}/${REPORT_NOTE_MAX_LENGTH})`}
+            hint={`운영 내부 기록입니다. 신고자 · 제작자에게 보이지 않습니다. (${current.note.length}/${REPORT_NOTE_MAX_LENGTH})`}
           >
             <Textarea
               id="report-resolve-note"

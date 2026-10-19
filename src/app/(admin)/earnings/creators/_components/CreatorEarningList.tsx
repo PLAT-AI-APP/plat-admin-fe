@@ -5,7 +5,7 @@ import {
   useEarningAccountTotalsQuery,
 } from "@/api/earning/getEarningAccountList";
 import { useListParams } from "@/hooks/useListParams";
-import { formatDateTime } from "@/lib/dayjs";
+import { formatDateTime, todayKst } from "@/lib/dayjs";
 import { formatWithCommas } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { EarningAccountRow, EarningAccountStatus } from "@/type/earning";
@@ -15,6 +15,7 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
+import ServerCsvExportButton from "@/components/ui/ServerCsvExportButton";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
@@ -110,12 +111,20 @@ const CreatorEarningList = () => {
       <Card noPadding>
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
           <Tabs items={TABS} value={status} onChange={(next) => setParams({ status: next })} />
-          <SearchInput
-            value={keyword}
-            onSearch={(next) => setParams({ keyword: next })}
-            placeholder="닉네임 · 유저 ID"
-            boxClassName="w-64"
-          />
+          <div className="flex items-center gap-2">
+            <SearchInput
+              value={keyword}
+              onSearch={(next) => setParams({ keyword: next })}
+              placeholder="닉네임 · 유저 ID"
+              boxClassName="w-64"
+            />
+            {/* 화면은 20명씩 끊어 보이지만 정산 · 대사에는 지금 조건의 전원이 필요하다. */}
+            <ServerCsvExportButton
+              path="/earnings/accounts/export"
+              params={{ keyword: keyword.trim() || undefined, status: status || undefined }}
+              fileName={`creator_earnings_${todayKst()}.csv`}
+            />
+          </div>
         </div>
         <Table
           columns={COLUMNS}

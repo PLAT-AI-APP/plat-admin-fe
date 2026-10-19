@@ -1,3 +1,5 @@
+import type { ServiceLanguage } from "./language";
+
 export type ProductStatus = "ON_SALE" | "HIDDEN" | "ENDED";
 export type ProductPlatform = "IOS" | "AOS" | "WEB";
 export type ProductCurrency = "KRW" | "JPY" | "USD" | "THB";
@@ -371,7 +373,13 @@ export interface PaymentAnomaly {
 }
 
 /** 목록 탭. 페이지를 나누는 대신 같은 결제 목록을 좁혀 보는 방법이다. */
-export type PaymentOrderTab = "ALL" | "ISSUE" | "REFUND_REQUESTED" | "WITHDRAWN";
+export type PaymentOrderTab =
+  | "ALL"
+  | "ISSUE"
+  | "REFUND_REQUESTED"
+  /** 승인 대기 환불 중 처리 기한(신청 + 3영업일)을 넘긴 것 */
+  | "REFUND_OVERDUE"
+  | "WITHDRAWN";
 
 /** 결제 주문 목록 한 줄 */
 export interface PaymentOrderListItem {
@@ -415,6 +423,8 @@ export interface PaymentOrderListItem {
   refundCreditUsedSinceRequest?: number;
   /** 승인 대기 중인 환불에 채팅이 크레딧을 예약하고 있다. 끝나기 전에는 승인이 막힌다. */
   refundChatInProgress?: boolean;
+  /** 승인 대기 환불의 처리 기한(신청 + 3영업일). 대기 환불이 없으면 비어 있다. */
+  refundDueAt?: string;
   /** 보존 만료일 (결제일 + 5년). 이 날이 지나면 주문도 파기 대상이다. */
   retentionUntil: string;
   requestedAt: string;
@@ -562,3 +572,10 @@ export interface PaymentOrderSummary {
  * 기한(결제 후 7일)도 보지 않는다. 우리 잘못을 바로잡는 일이라 유저 기한에 묶이면 안 된다.
  */
 export type AdminRefundReasonCode = "ADMIN" | "COMPENSATION";
+
+/** 상품 번역 한 줄. 한국어는 상품 원문(상품 수정에서 고친다)이라 읽기만 한다. */
+export interface BillingProductTranslation {
+  language: ServiceLanguage;
+  name: string;
+  description: string;
+}

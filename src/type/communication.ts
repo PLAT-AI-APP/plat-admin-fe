@@ -72,6 +72,8 @@ export interface QnaItem {
   createdAt: string;
   /** `REFUND` 문의에만 있다. */
   refund: QnaRefundLink | null;
+  /** 답변 기한(접수 + 3영업일). 답변 대기(`OPEN`) 문의에만 있다. 구버전 서버는 주지 않는다. */
+  dueAt?: string | null;
 }
 
 /** 자주 하는 질문 */
