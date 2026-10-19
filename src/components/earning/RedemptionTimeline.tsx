@@ -10,7 +10,7 @@ interface RedemptionDetailLine {
 
 /**
  * 행을 펼쳤을 때 보일 것. 행이 이미 보여 주는 신청 시각 · 크리에이터 · 받는 번호 · 상태는 반복하지 않는다.
- * 상태는 한 번만 바뀌므로(발송 대기 → 발송 / 반려, 지급 중 → 완료) 이력 대신 처리 결과의 메모 · 사유만 남는다.
+ * 상태는 한 번만 바뀌므로(발송 대기 → 발송 / 반려, 노트는 신청과 함께 지급 완료) 이력 대신 처리 결과의 메모 · 사유만 남는다.
  *
  * @param withProcessor 행에 처리자 · 처리 시각이 없을 때(유저 상세) 함께 보인다.
  */
@@ -24,9 +24,6 @@ export const redemptionDetailLines = (row: Redemption, withProcessor: boolean): 
   }
   if (row.status === "ISSUED" && row.memo) {
     lines.push({ label: "발송 메모", value: row.memo });
-  }
-  if (row.status === "GRANTING") {
-    lines.push({ label: "노트 지급", value: "재시도 대기 중 (5분 간격)" });
   }
   return lines;
 };
