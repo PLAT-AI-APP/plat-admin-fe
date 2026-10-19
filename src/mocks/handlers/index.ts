@@ -1,7 +1,6 @@
 import { characterHandlers } from "./character";
 import { communicationHandlers } from "./communication";
 import { dashboardHandlers } from "./dashboard";
-import { docsHandlers } from "./docs";
 import { opsHandlers } from "./ops";
 import { searchHandlers } from "./search";
 
@@ -34,6 +33,4 @@ export const handlers = [
   ...characterHandlers,
   ...communicationHandlers,
   ...opsHandlers,
-  /* 문서는 실서버 경로를 가로챈다. 이유는 `./docs.ts` 머리 주석에. */
-  ...docsHandlers,
 ];

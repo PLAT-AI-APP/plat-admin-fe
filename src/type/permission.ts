@@ -41,7 +41,6 @@ export type PermissionResource =
   | "notice"
   | "qna"
   | "faq"
-  | "docs"
   | "notification"
   | "push"
   | "mailTemplate"
@@ -297,11 +296,6 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     description: "고객센터의 자주 하는 질문. 노출하면 유저 화면에 바로 보인다.",
     actions: ["read", "write", "delete"],
   },
-  docs: {
-    label: "문서",
-    description: "사용자 사이트 문서(/docs)의 그룹 · 페이지 작성과 게시",
-    actions: ["read", "write", "delete", "publish"],
-  },
   notification: {
     label: "알림 템플릿",
     description: "서비스 알림 문구",
@@ -493,8 +487,8 @@ export const PERMISSION_CATEGORIES = [
   {
     id: "support",
     label: "고객센터",
-    description: "문의 답변과 공지 · FAQ · 문서 · 약관. 게시하면 유저가 바로 봅니다.",
-    resources: ["qna", "notice", "faq", "docs", "legal"],
+    description: "문의 답변과 공지 · FAQ · 약관. 게시하면 유저가 바로 봅니다.",
+    resources: ["qna", "notice", "faq", "legal"],
   },
   {
     id: "messaging",

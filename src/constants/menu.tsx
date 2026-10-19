@@ -276,12 +276,6 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
         icon: <ListLines size={SUB_ICON_SIZE} />,
       },
       {
-        label: "문서 관리",
-        href: "/communication/docs",
-        permission: "docs:read",
-        icon: <Layers size={SUB_ICON_SIZE} />,
-      },
-      {
         /* 약관 버전은 여기서 관리한다. 본문 원문은 아직 Notion 에 두고 버전·시행일·동의 대상을 서버가 판정한다. */
         label: "약관",
         href: "/legal",
