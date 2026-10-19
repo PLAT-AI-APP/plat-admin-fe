@@ -13,7 +13,7 @@ export const getSiteSettings = async () => {
   return response.data;
 };
 
-/** 사이트 설정(푸터 사업자 정보 · 베타 배너). */
+/** 사이트 설정(푸터 사업자 정보 · 고객센터). */
 export const useSiteSettingsQuery = () =>
   usePermittedQuery<SiteSettings>("siteSetting:read", {
     queryKey: SITE_SETTINGS_KEY,

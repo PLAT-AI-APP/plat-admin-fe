@@ -1,4 +1,3 @@
-import type { ServiceLanguage } from "./language";
 import type { PermissionKey } from "./permission";
 
 /**
@@ -617,11 +616,8 @@ export interface MaintenanceOverview {
   latestCheckoutExpiresAt: string | null;
 }
 
-/** 베타 배너 언어별 문구. 비운 언어는 사용자 화면이 기본 문구를 쓴다. */
-export type BetaBannerMessages = Partial<Record<ServiceLanguage, string>>;
-
 /**
- * 사이트 설정. 사용자 사이트 푸터의 사업자 정보와 베타 배너다.
+ * 사이트 설정. 사용자 사이트 푸터의 사업자 정보와 고객센터다.
  *
  * 모든 문자열은 빈 문자열을 허용하고 null 은 없다. 빈 칸은 푸터에서 감춘다.
  * 통신판매업 신고번호는 신고 전이면 비워 둔다(PG 심사 전에는 채워야 한다).
@@ -637,8 +633,6 @@ export interface SiteSettingsRequest {
   supportHours: string;
   privacyOfficer: string;
   privacyOfficerContact: string;
-  betaBannerEnabled: boolean;
-  betaBannerMessages: BetaBannerMessages;
 }
 
 export interface SiteSettings extends SiteSettingsRequest {

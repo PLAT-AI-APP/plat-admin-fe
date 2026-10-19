@@ -2,19 +2,17 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, type ReactNode } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import {
   useSiteSettingsMutation,
   useSiteSettingsQuery,
 } from "@/api/ops/siteSettings";
 import { formatDateTime } from "@/lib/dayjs";
 import {
-  BETA_BANNER_MESSAGE_MAX,
   siteSettingsSchema,
   type SiteSettingsSchema,
 } from "@/schema/siteSettings.schema";
 import { useHasPermission } from "@/store/useAdminStore";
-import { SERVICE_LANGUAGES, SERVICE_LANGUAGE_LABEL } from "@/type/language";
 import type { SiteSettings } from "@/type/ops";
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
@@ -23,12 +21,8 @@ import EmptyState from "@/components/ui/EmptyState";
 import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
 import Skeleton from "@/components/ui/Skeleton";
-import Switch from "@/components/ui/Switch";
 
-type TextFieldName = Exclude<
-  keyof SiteSettingsSchema,
-  "betaBannerEnabled" | "betaBannerMessages"
->;
+type TextFieldName = keyof SiteSettingsSchema;
 
 interface TextFieldDef {
   name: TextFieldName;
@@ -124,10 +118,6 @@ const SECTIONS: {
   },
 ];
 
-const EMPTY_MESSAGES = Object.fromEntries(
-  SERVICE_LANGUAGES.map((language) => [language, ""]),
-) as SiteSettingsSchema["betaBannerMessages"];
-
 const EMPTY_VALUES: SiteSettingsSchema = {
   companyName: "",
   representative: "",
@@ -139,8 +129,6 @@ const EMPTY_VALUES: SiteSettingsSchema = {
   supportHours: "",
   privacyOfficer: "",
   privacyOfficerContact: "",
-  betaBannerEnabled: false,
-  betaBannerMessages: EMPTY_MESSAGES,
 };
 
 const toFormValues = (settings: SiteSettings): SiteSettingsSchema => ({
@@ -154,16 +142,6 @@ const toFormValues = (settings: SiteSettings): SiteSettingsSchema => ({
   supportHours: settings.supportHours ?? "",
   privacyOfficer: settings.privacyOfficer ?? "",
   privacyOfficerContact: settings.privacyOfficerContact ?? "",
-  betaBannerEnabled: settings.betaBannerEnabled,
-  betaBannerMessages: {
-    ...EMPTY_MESSAGES,
-    ...Object.fromEntries(
-      Object.entries(settings.betaBannerMessages ?? {}).map(([key, value]) => [
-        key,
-        value ?? "",
-      ]),
-    ),
-  },
 });
 
 /** 카드 머리. 배치 · 유저 상세와 같은 모양이다. */
@@ -188,7 +166,7 @@ const SectionHeader = ({
 /**
  * 사이트 설정.
  *
- * 사용자 사이트 푸터의 사업자 정보와 베타 배너를 한 번에 저장한다. 비운 칸은 푸터에서 감춘다.
+ * 사용자 사이트 푸터의 사업자 정보와 고객센터를 한 번에 저장한다. 비운 칸은 푸터에서 감춘다.
  * 저장 권한(`siteSetting:write`)이 없으면 읽기만 한다.
  */
 const SiteSettingsForm = () => {
@@ -215,15 +193,7 @@ const SiteSettingsForm = () => {
   const values = useWatch({ control });
 
   const submit = handleSubmit((formValues) => {
-    saveMutation.mutate({
-      ...formValues,
-      /* 비운 언어는 보내지 않는다. 사용자 화면이 기본 문구를 쓴다. */
-      betaBannerMessages: Object.fromEntries(
-        Object.entries(formValues.betaBannerMessages).filter(
-          ([, message]) => message.trim() !== "",
-        ),
-      ),
-    });
+    saveMutation.mutate(formValues);
   });
 
   if (isLoading) {
@@ -318,52 +288,6 @@ const SiteSettingsForm = () => {
           </div>
         </Card>
       ))}
-
-      <Card noPadding>
-        <SectionHeader
-          title="베타 배너"
-          description={
-            values.betaBannerEnabled
-              ? "사용자 사이트 상단에 베타 안내가 뜹니다. 비운 언어는 기본 문구를 씁니다."
-              : "꺼져 있습니다. 켜면 사용자 사이트 상단에 베타 안내가 뜹니다. 비운 언어는 기본 문구를 씁니다."
-          }
-          action={
-            <Controller
-              control={control}
-              name="betaBannerEnabled"
-              render={({ field }) => (
-                <Switch
-                  label="베타 배너 켜기"
-                  checked={field.value}
-                  onChange={field.onChange}
-                  disabled={!canWrite}
-                />
-              )}
-            />
-          }
-        />
-        <div className="grid grid-cols-2 gap-x-4 px-5 pt-4 pb-1">
-          {SERVICE_LANGUAGES.map((language) => (
-            <FormField
-              key={language}
-              label={`${SERVICE_LANGUAGE_LABEL[language]} (${language})`}
-              htmlFor={`site-banner-${language}`}
-              hint={`${values.betaBannerMessages?.[language]?.length ?? 0}/${BETA_BANNER_MESSAGE_MAX}`}
-              error={errors.betaBannerMessages?.[language]?.message}
-            >
-              <Input
-                id={`site-banner-${language}`}
-                placeholder="비우면 기본 문구"
-                maxLength={BETA_BANNER_MESSAGE_MAX}
-                readOnly={!canWrite}
-                disabled={!canWrite}
-                hasError={Boolean(errors.betaBannerMessages?.[language])}
-                {...register(`betaBannerMessages.${language}`)}
-              />
-            </FormField>
-          ))}
-        </div>
-      </Card>
 
       <Card noPadding>
         <SectionHeader
