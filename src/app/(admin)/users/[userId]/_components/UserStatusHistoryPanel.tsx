@@ -41,8 +41,9 @@ const COLUMNS: TableColumn<UserStatusHistory>[] = [
   {
     key: "reason",
     header: "사유",
+    // 사유 없이 바꾼 상태(정지 해제 등)는 서버가 상태 이름을 사유 칸에 대신 적는다. 사유가 없는 것으로 보인다.
     render: (row) =>
-      row.reason ? (
+      row.reason && row.reason !== row.status ? (
         <span className="body-5 whitespace-pre-wrap">{row.reason}</span>
       ) : (
         <span className="text-font-disabled">-</span>
