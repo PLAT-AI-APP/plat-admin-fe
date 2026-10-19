@@ -33,7 +33,6 @@ export const siteSettingsSchema = z.object({
   supportHours: text(100, "운영 시간"),
   privacyOfficer: text(50, "개인정보보호책임자"),
   privacyOfficerContact: text(100, "책임자 연락처"),
-  hostingProvider: text(100, "호스팅 서비스 제공자"),
   betaBannerEnabled: z.boolean(),
   betaBannerMessages: z.object(bannerMessageShape),
 });

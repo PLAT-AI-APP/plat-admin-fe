@@ -637,7 +637,6 @@ export interface SiteSettingsRequest {
   supportHours: string;
   privacyOfficer: string;
   privacyOfficerContact: string;
-  hostingProvider: string;
   betaBannerEnabled: boolean;
   betaBannerMessages: BetaBannerMessages;
 }

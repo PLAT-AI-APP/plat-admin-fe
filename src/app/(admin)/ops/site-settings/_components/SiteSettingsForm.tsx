@@ -105,7 +105,7 @@ const SECTIONS: {
     ],
   },
   {
-    title: "개인정보보호책임자 · 호스팅",
+    title: "개인정보보호책임자",
     description: "개인정보처리방침과 같은 값이어야 합니다.",
     fields: [
       {
@@ -118,12 +118,6 @@ const SECTIONS: {
         name: "privacyOfficerContact",
         label: "책임자 연락처",
         placeholder: "privacy@example.com",
-        maxLength: 100,
-      },
-      {
-        name: "hostingProvider",
-        label: "호스팅 서비스 제공자",
-        placeholder: "Amazon Web Services",
         maxLength: 100,
       },
     ],
@@ -145,7 +139,6 @@ const EMPTY_VALUES: SiteSettingsSchema = {
   supportHours: "",
   privacyOfficer: "",
   privacyOfficerContact: "",
-  hostingProvider: "",
   betaBannerEnabled: false,
   betaBannerMessages: EMPTY_MESSAGES,
 };
@@ -161,7 +154,6 @@ const toFormValues = (settings: SiteSettings): SiteSettingsSchema => ({
   supportHours: settings.supportHours ?? "",
   privacyOfficer: settings.privacyOfficer ?? "",
   privacyOfficerContact: settings.privacyOfficerContact ?? "",
-  hostingProvider: settings.hostingProvider ?? "",
   betaBannerEnabled: settings.betaBannerEnabled,
   betaBannerMessages: {
     ...EMPTY_MESSAGES,
@@ -271,7 +263,6 @@ const SiteSettingsForm = () => {
     [
       values.privacyOfficer &&
         `개인정보보호책임자 ${values.privacyOfficer}${values.privacyOfficerContact ? ` (${values.privacyOfficerContact})` : ""}`,
-      values.hostingProvider && `호스팅 ${values.hostingProvider}`,
     ],
   ]
     .map((line) =>
