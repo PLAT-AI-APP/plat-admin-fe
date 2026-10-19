@@ -18,6 +18,8 @@ export interface QnaListParams {
   category?: QnaCategory | "";
   /** 유저 상세의 Q&A 탭에서 그 유저의 문의만 볼 때 쓴다. */
   userId?: string;
+  /** 답변 기한을 넘긴 답변 대기 문의만 */
+  overdue?: boolean;
 }
 
 /** 화면은 1부터, 서버는 0부터 페이지를 센다. 빈 필터는 서버에 보내지 않는다. */
@@ -27,6 +29,7 @@ const toRequestParams = (params: QnaListParams) => ({
   status: params.status || undefined,
   category: params.category || undefined,
   userId: params.userId || undefined,
+  overdue: params.overdue ? true : undefined,
 });
 
 export const getQnaList = async (

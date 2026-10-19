@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useBillingProductListQuery } from "@/api/billing/getBillingProductList";
 import { useBillingProductMutation } from "@/api/billing/mutateBillingProduct";
 import { useCan } from "@/hooks/useCan";
-import { Edit, Package, Plus } from "@/icons";
+import { Edit, Globe, Package, Plus } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { formatCredit, formatCurrency } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
@@ -23,6 +23,7 @@ import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import BillingProductFormModal from "./BillingProductFormModal";
+import BillingProductTranslationModal from "./BillingProductTranslationModal";
 import {
   PRODUCT_PLATFORM_LABEL,
   PRODUCT_PLATFORM_TONE,
@@ -47,6 +48,7 @@ const BillingProductManager = () => {
   const [editingProduct, setEditingProduct] = useState<BillingProduct | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [platformTab, setPlatformTab] = useState<PlatformTab>("ALL");
+  const [translatingProduct, setTranslatingProduct] = useState<BillingProduct | null>(null);
 
   const products = data ?? [];
 
@@ -214,28 +216,38 @@ const BillingProductManager = () => {
     {
       key: "actions",
       header: "",
-      width: "88px",
+      width: "120px",
       align: "right",
-      render: (product) =>
-        canWrite && (
+      render: (product) => (
         <div className="flex items-center justify-end gap-1">
+          {/* 번역은 조회 권한으로도 연다. 저장 · 삭제는 모달 안에서 권한별로 막는다. */}
           <IconButton
-            label="수정"
-            icon={<Edit size={16} />}
-            onClick={() => handleOpenEdit(product)}
+            label="번역"
+            icon={<Globe size={16} />}
+            onClick={() => setTranslatingProduct(product)}
           />
 
-          <Dropdown
-            items={STATUS_ORDER.filter((status) => status !== product.status).map(
-              (status) => ({
-                label: `${PRODUCT_STATUS_LABEL[status]}로 변경`,
-                tone: status === "ENDED" ? "danger" : "default",
-                onSelect: () => handleChangeStatus(product, status),
-              }),
-            )}
-          />
+          {canWrite && (
+            <>
+              <IconButton
+                label="수정"
+                icon={<Edit size={16} />}
+                onClick={() => handleOpenEdit(product)}
+              />
+
+              <Dropdown
+                items={STATUS_ORDER.filter((status) => status !== product.status).map(
+                  (status) => ({
+                    label: `${PRODUCT_STATUS_LABEL[status]}로 변경`,
+                    tone: status === "ENDED" ? "danger" : "default",
+                    onSelect: () => handleChangeStatus(product, status),
+                  }),
+                )}
+              />
+            </>
+          )}
         </div>
-        ),
+      ),
     },
   ];
 
@@ -310,6 +322,11 @@ const BillingProductManager = () => {
         defaultPlatform={platformTab === "ALL" ? "IOS" : platformTab}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <BillingProductTranslationModal
+        product={translatingProduct}
+        onClose={() => setTranslatingProduct(null)}
       />
     </>
   );

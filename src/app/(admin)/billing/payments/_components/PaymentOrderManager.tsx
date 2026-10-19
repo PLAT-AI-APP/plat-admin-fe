@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePaymentOrderListQuery } from "@/api/billing/getPaymentOrderList";
 import { usePaymentOrderSummaryQuery } from "@/api/billing/getPaymentOrderSummary";
+import { usePendingCountsQuery } from "@/api/ops/getPendingCounts";
 import { useListParams } from "@/hooks/useListParams";
 import { Refresh, Warning } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
-import { formatDate, formatDateTime } from "@/lib/dayjs";
+import dayjs, { formatDate, formatDateTime } from "@/lib/dayjs";
 import {
   cn,
   formatCredit,
@@ -26,7 +27,9 @@ import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import DueBadge from "@/components/domain/DueBadge";
 import CsvExportButton from "@/components/ui/CsvExportButton";
+import ServerCsvExportButton from "@/components/ui/ServerCsvExportButton";
 import DateRangeFilter from "@/components/ui/DateRangeFilter";
 import EmptyState from "@/components/ui/EmptyState";
 import Pagination from "@/components/ui/Pagination";
@@ -91,7 +94,14 @@ const CSV_COLUMNS: CsvColumn<PaymentOrderListItem>[] = [
   */
   { header: "보존 만료일", value: (row) => formatDate(row.retentionUntil) },
   { header: "보존 근거", value: () => RETENTION_BASIS },
+  {
+    header: "환불 처리 기한",
+    value: (row) => (row.refundDueAt ? formatDateTime(row.refundDueAt) : ""),
+  },
 ];
+
+/** 서버 전체 내보내기가 받는 최대 기간(일). 서버 검증과 같다. */
+const SERVER_EXPORT_MAX_DAYS = 366;
 
 /**
  * 주소에 실리는 목록 조건.
@@ -122,6 +132,10 @@ const TAB_COPY: Record<PaymentOrderTab, { title: string; empty: string }> = {
     title: "환불 승인 대기",
     empty: "승인을 기다리는 환불이 없습니다.",
   },
+  REFUND_OVERDUE: {
+    title: "처리 기한을 넘긴 환불",
+    empty: "처리 기한을 넘긴 환불이 없습니다.",
+  },
   WITHDRAWN: { title: "탈퇴 회원 결제", empty: "탈퇴 회원의 결제가 없습니다." },
 };
 
@@ -150,6 +164,8 @@ const PaymentOrderManager = () => {
       endDate,
     });
   const { data: summary } = usePaymentOrderSummaryQuery();
+  /* 기한 초과 건수는 결제 요약이 아니라 처리 대기 건수가 준다(사이드바 · 벨과 같은 값). */
+  const { data: pendingCounts } = usePendingCountsQuery();
 
   const rows = data?.content ?? [];
   const totalCount = data?.totalCount ?? 0;
@@ -158,7 +174,20 @@ const PaymentOrderManager = () => {
   const retentionExpiringCount = summary?.retentionExpiringCount ?? 0;
   /* 보존 만료일은 보존을 보려고 들어왔을 때만 칸을 낸다. 평소 목록에서는 자리만 차지한다. */
   const showsRetention = tab === "WITHDRAWN" || retention === "EXPIRING";
+  /* 환불 처리 기한은 승인 대기 환불에만 있다. 환불 탭에서만 칸을 낸다. */
+  const showsRefundDue = tab === "REFUND_REQUESTED" || tab === "REFUND_OVERDUE";
 
+  /*
+    서버 전체 내보내기는 기간이 있어야 한다(최대 366일, 5만 줄). 기간 없이 누르면 400이라
+    버튼을 먼저 잠그고 이유를 적는다.
+  */
+  const exportRangeDays =
+    startDate && endDate ? dayjs(endDate).diff(dayjs(startDate), "day") + 1 : 0;
+  const exportBlockReason = !startDate || !endDate
+    ? "주문일 기간을 먼저 고르면 전체를 내보낼 수 있습니다(최대 366일)."
+    : exportRangeDays > SERVER_EXPORT_MAX_DAYS
+      ? `기간은 최대 ${SERVER_EXPORT_MAX_DAYS}일까지 내보낼 수 있습니다.`
+      : null;
   const tabs: TabItem<PaymentOrderTab>[] = [
     { label: "전체", value: "ALL" },
     { label: "확인 필요", value: "ISSUE", count: summary?.issueCount },
@@ -166,6 +195,11 @@ const PaymentOrderManager = () => {
       label: "환불 요청",
       value: "REFUND_REQUESTED",
       count: summary?.refundRequestedCount,
+    },
+    {
+      label: "환불 기한 초과",
+      value: "REFUND_OVERDUE",
+      count: pendingCounts.refundOverdue,
     },
     { label: "탈퇴 회원", value: "WITHDRAWN", count: summary?.withdrawnCount },
   ];
@@ -313,6 +347,16 @@ const PaymentOrderManager = () => {
           },
         ]
       : []),
+    ...(showsRefundDue
+      ? [
+          {
+            key: "refundDueAt",
+            header: "기한",
+            width: "100px",
+            render: (row: PaymentOrderListItem) => <DueBadge dueAt={row.refundDueAt} />,
+          },
+        ]
+      : []),
     {
       key: "status",
       header: "상태",
@@ -414,12 +458,34 @@ const PaymentOrderManager = () => {
         title={`${copy.title} ${formatWithCommas(totalCount)}건`}
         description="행을 클릭하면 이 결제에 일어난 일을 처음부터 끝까지 봅니다. 환불 승인 · 이상 확인도 상세에서 합니다."
         action={
-          <CsvExportButton
-            fileName="결제내역"
-            rows={rows}
-            columns={CSV_COLUMNS}
-            disabled={isLoading || isError}
-          />
+          <>
+            <CsvExportButton
+              fileName="결제내역"
+              rows={rows}
+              columns={CSV_COLUMNS}
+              disabled={isLoading || isError}
+            />
+            <ServerCsvExportButton
+              path="/payment-orders/export"
+              params={{
+                tab: tab === "ALL" ? undefined : tab,
+                keyword: keyword.trim() || undefined,
+                pgProvider: pgProvider || undefined,
+                paymentStatus: paymentStatus || undefined,
+                anomalyType: tab === "ISSUE" ? anomalyType || undefined : undefined,
+                userId: userId || undefined,
+                retention: retention || undefined,
+                startDate: startDate || undefined,
+                endDate: endDate || undefined,
+              }}
+              fileName={`payments_${startDate}_${endDate}.csv`}
+              disabled={Boolean(exportBlockReason)}
+              title={
+                exportBlockReason ??
+                "지금 조건에 맞는 결제 전체를 서버에서 CSV로 받습니다(최대 50,000줄)."
+              }
+            />
+          </>
         }
         noPadding
       >
@@ -512,6 +578,11 @@ const PaymentOrderManager = () => {
               value={{ startDate, endDate }}
               onChange={(range) => setParams(range)}
             />
+            {exportBlockReason && (
+              <span className="body-6 text-font-2">
+                전체 내보내기: {exportBlockReason}
+              </span>
+            )}
           </div>
         </div>
 

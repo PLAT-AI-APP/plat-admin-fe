@@ -41,6 +41,7 @@ export interface ReportCaseItemResponse {
   lastReportedAt: string;
   handledAt?: string | null;
   handlerName?: string | null;
+  dueAt?: string | null;
 }
 
 interface SnapshotCharacterResponse {
@@ -175,6 +176,7 @@ export const toReportCaseItem = (item: ReportCaseItemResponse): ReportCaseItem =
   lastReportedAt: item.lastReportedAt,
   handledAt: item.handledAt ?? null,
   handlerName: item.handlerName ?? null,
+  dueAt: item.dueAt ?? null,
 });
 
 export const toReportCaseDetail = (

@@ -50,6 +50,7 @@ export type PermissionResource =
   | "appVersion"
   | "server"
   | "maintenance"
+  | "siteSetting"
   | "log"
   | "systemLog"
   | "batch";
@@ -353,6 +354,12 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     description: "점검 예고 · 소프트 종료 · 점검 시작과 끝내기. 걸면 유저 화면이 막힌다.",
     actions: ["read", "write"],
   },
+  siteSetting: {
+    /* 사업자 정보는 푸터에 그대로 나가 PG 심사·법적 표시와 닿는다. 점검처럼 운영이 고친다. */
+    label: "사이트 설정",
+    description: "푸터 사업자 정보 · 고객센터 · 개인정보보호책임자와 베타 배너. 저장하면 유저 화면에 바로 보인다.",
+    actions: ["read", "write"],
+  },
   log: {
     /*
       변경된 값이 payload에 그대로 남는다. 즉 이 권한은 "다른 운영자가 무엇을
@@ -395,7 +402,6 @@ export const UNWIRED_PERMISSIONS: ReadonlySet<PermissionKey> = new Set<Permissio
   "character:write",
   "character:delete",
   "chatExport:write",
-  "billingProduct:delete",
   "qna:write",
   "notification:read",
   "notification:write",
@@ -513,8 +519,8 @@ export const PERMISSION_CATEGORIES = [
   {
     id: "service",
     label: "점검·업데이트",
-    description: "서비스 점검과 앱 버전. 걸면 유저 화면에 바로 보입니다.",
-    resources: ["maintenance", "appVersion"],
+    description: "서비스 점검과 앱 버전, 사이트 설정. 걸면 유저 화면에 바로 보입니다.",
+    resources: ["maintenance", "appVersion", "siteSetting"],
   },
   /* ── 개발 ── */
   {

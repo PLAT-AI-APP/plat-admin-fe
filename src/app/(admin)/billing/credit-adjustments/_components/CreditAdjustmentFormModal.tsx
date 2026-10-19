@@ -28,6 +28,11 @@ interface CreditAdjustmentFormModalProps {
   /** 확인 다이얼로그 문구에 닉네임이 필요해 대상 유저를 함께 넘긴다. */
   onSubmit: (request: CreditAdjustmentRequest, user: AdjustableUser) => void;
   isSubmitting: boolean;
+  /**
+   * 대상 유저를 미리 정해 연다(유저 상세에서 열 때). 있으면 유저 검색 단계를 건너뛰고 바꿀 수도 없다.
+   * 잔액 · 차감 가능 노트로 초과 차감을 막으므로 조정 대상 검색이 준 값을 그대로 넘긴다.
+   */
+  initialUser?: AdjustableUser;
 }
 
 const EMPTY_VALUES: CreditAdjustmentSchema = {
@@ -42,6 +47,7 @@ const CreditAdjustmentFormModal = ({
   onClose,
   onSubmit,
   isSubmitting,
+  initialUser,
 }: CreditAdjustmentFormModalProps) => {
   const [selectedUser, setSelectedUser] = useState<AdjustableUser | undefined>();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -60,7 +66,7 @@ const CreditAdjustmentFormModal = ({
   if (isOpen !== wasOpen) {
     setWasOpen(isOpen);
     if (isOpen) {
-      setSelectedUser(undefined);
+      setSelectedUser(initialUser);
       setIdempotencyKey(createIdempotencyKey());
     }
   }
@@ -81,8 +87,8 @@ const CreditAdjustmentFormModal = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    reset(EMPTY_VALUES);
-  }, [isOpen, reset]);
+    reset({ ...EMPTY_VALUES, userId: initialUser?.userId ?? "" });
+  }, [isOpen, reset, initialUser?.userId]);
 
   const [type, watchedAmount] = useWatch({ control, name: ["type", "amount"] });
   const amount = Number.isFinite(watchedAmount) ? watchedAmount : 0;
@@ -170,13 +176,15 @@ const CreditAdjustmentFormModal = ({
                   </p>
                 </div>
 
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setIsPickerOpen(true)}
-                >
-                  변경
-                </Button>
+                {!initialUser && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsPickerOpen(true)}
+                  >
+                    변경
+                  </Button>
+                )}
               </div>
             ) : (
               <Button

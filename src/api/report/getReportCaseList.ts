@@ -28,6 +28,8 @@ export interface ReportCaseListParams {
   /** 이 유저가 피신고자인 케이스만 (유저 상세에서 사용) */
   ownerUserId?: string;
   sort?: ReportCaseSort;
+  /** 처리 기한을 넘긴 처리 대기 케이스만 */
+  overdue?: boolean;
 }
 
 /** 빈 필터는 서버에 보내지 않는다(enum 파싱 실패 방지). */
@@ -39,6 +41,7 @@ const toRequestParams = (params: ReportCaseListParams) => {
   if (params.reason) clean.reason = params.reason;
   if (params.ownerUserId) clean.ownerUserId = params.ownerUserId;
   if (params.sort) clean.sort = params.sort;
+  if (params.overdue) clean.overdue = "true";
 
   return clean;
 };
@@ -75,7 +78,7 @@ const STATUSES: ReportCaseStatus[] = ["PENDING", "ACTIONED", "DISMISSED"];
  * 눌렀을 때 나오는 목록과 맞으므로, 상태를 뺀 나머지 조건은 목록과 같게 보낸다.
  */
 export const getReportCaseStatusCounts = async (
-  filters: Omit<ReportCaseListParams, "page" | "size" | "status" | "sort">,
+  filters: Omit<ReportCaseListParams, "page" | "size" | "status" | "sort" | "overdue">,
 ): Promise<ReportCaseStatusCounts> => {
   const totals = await Promise.all(
     STATUSES.map((status) =>
@@ -92,7 +95,7 @@ export const getReportCaseStatusCounts = async (
 
 /** 신고 관리 상태 탭 옆에 건수를 붙일 때 씁니다. */
 export const useReportCaseStatusCountsQuery = (
-  filters: Omit<ReportCaseListParams, "page" | "size" | "status" | "sort">,
+  filters: Omit<ReportCaseListParams, "page" | "size" | "status" | "sort" | "overdue">,
 ) => {
   return usePermittedQuery<ReportCaseStatusCounts>("report:read", {
     queryKey: ["get-report-case-status-counts", filters],

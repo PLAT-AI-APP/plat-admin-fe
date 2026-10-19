@@ -16,7 +16,9 @@ export type UserDetailTab =
   | "CREATOR"
   | "EARNING"
   | "REPORT"
-  | "QNA";
+  | "QNA"
+  | "STATUS_HISTORY"
+  | "MEMO";
 
 export const USER_DETAIL_TABS: TabItem<UserDetailTab>[] = [
   { label: "계정 정보", value: "ACCOUNT" },
@@ -29,6 +31,8 @@ export const USER_DETAIL_TABS: TabItem<UserDetailTab>[] = [
   { label: "크리에이터 수익", value: "EARNING" },
   { label: "신고 이력", value: "REPORT" },
   { label: "Q&A", value: "QNA" },
+  { label: "제재 이력", value: "STATUS_HISTORY" },
+  { label: "운영 메모", value: "MEMO" },
 ];
 
 /**
@@ -44,4 +48,7 @@ export const USER_DETAIL_TAB_PERMISSIONS: Partial<
   COMMENT: ["comment:read"],
   BILLING: ["payment:read", "ledger:read", "creditAdjustment:read"],
   CREATOR: ["earning:read"],
+  /* 신고 탭은 패널 안에서 report:read 로 막는다. 제재 이력 · 운영 메모는 유저 조회 권한으로 본다. */
+  STATUS_HISTORY: ["user:read"],
+  MEMO: ["user:read"],
 };

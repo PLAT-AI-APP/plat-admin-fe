@@ -64,17 +64,27 @@ export const REPORT_OUTCOME_LABEL: Record<ReportOutcome, string> = {
 };
 
 /** 대상에 거는 조치. 피신고자 제재는 대상과 무관해 따로 둔다(`ReportSanction`). */
-export type ReportAction = "HIDE_COMMENT" | "UNIVERSE_DELETE";
+export type ReportAction = "HIDE_COMMENT" | "UNIVERSE_DELETE" | "UNIVERSE_REJECT";
 
 export const REPORT_ACTION_LABEL: Record<ReportAction, string> = {
   HIDE_COMMENT: "댓글 숨김",
   UNIVERSE_DELETE: "세계관 삭제",
+  UNIVERSE_REJECT: "검수 반려로 내리기",
 };
+
+/** 함께 고를 수 없는 조치 쌍. 지우는 것과 반려해 고치게 하는 것은 서로 반대 결정이다(서버 400). */
+export const REPORT_ACTION_CONFLICTS: Partial<Record<ReportAction, ReportAction[]>> = {
+  UNIVERSE_DELETE: ["UNIVERSE_REJECT"],
+  UNIVERSE_REJECT: ["UNIVERSE_DELETE"],
+};
+
+/** 제작자에게 보이는 반려 사유 최대 길이(서버 검증과 같다). */
+export const UNIVERSE_REJECT_REASON_MAX = 1000;
 
 /** 대상별로 허용된 조치. 맞지 않는 조치를 보내면 서버가 400으로 거절한다. */
 export const REPORT_ACTIONS_BY_TARGET: Record<ReportTargetType, ReportAction[]> = {
   COMMENT: ["HIDE_COMMENT"],
-  UNIVERSE: ["UNIVERSE_DELETE"],
+  UNIVERSE: ["UNIVERSE_DELETE", "UNIVERSE_REJECT"],
   // AI 답변은 지울 원본이 신고자 대화다. 조치는 제작자 제재뿐이고, 프롬프트 · 모델 조정은 콘솔 밖 작업이다.
   MESSAGE: [],
 };
@@ -86,6 +96,7 @@ export const REPORT_ACTIONS_BY_TARGET: Record<ReportTargetType, ReportAction[]> 
 export const REPORT_ACTION_PERMISSION: Record<ReportAction, PermissionKey> = {
   HIDE_COMMENT: "comment:write",
   UNIVERSE_DELETE: "universe:write",
+  UNIVERSE_REJECT: "universe:write",
 };
 
 /** 피신고자 제재에 필요한 권한 */
@@ -196,6 +207,8 @@ export interface ReportCaseItem {
   lastReportedAt: string;
   handledAt: string | null;
   handlerName: string | null;
+  /** 처리 기한(첫 신고 + 3영업일). 처리 대기 케이스에만 있다. */
+  dueAt: string | null;
 }
 
 export interface ReportTargetState {
@@ -266,6 +279,8 @@ export interface ResolveReportValues {
   actions: ReportAction[];
   ownerSanction: ReportSanction | null;
   note: string;
+  /** 검수 반려로 내릴 때만. 제작자에게 그대로 보이는 사유다(`note` 는 내부용). */
+  universeRejectReason?: string;
 }
 
 /**

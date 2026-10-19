@@ -148,7 +148,9 @@ const ReportCaseDetailView = ({ caseId }: ReportCaseDetailViewProps) => {
       description: summarizeResolution(values),
       warning: values.actions.includes("UNIVERSE_DELETE")
         ? "세계관과 캐릭터 · 에셋 · 댓글이 삭제되고 되돌릴 수 없습니다. 이미지는 정리 배치가 파기합니다."
-        : values.outcome === "ACTIONED"
+        : values.actions.includes("UNIVERSE_REJECT")
+          ? "세계관이 비공개로 내려가고 검수 반려 상태가 됩니다. 반려 사유는 제작자에게 그대로 보입니다."
+          : values.outcome === "ACTIONED"
           ? "조치와 제재는 바로 반영되고 케이스는 다시 열 수 없습니다."
           : "닫힌 케이스는 다시 열 수 없습니다. 같은 대상이 다시 신고되면 새 케이스가 됩니다.",
       confirmText: "처리",

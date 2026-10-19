@@ -43,6 +43,7 @@ const SEARCH_TYPE_LABEL: Record<GlobalSearchType, string> = {
   USER: "유저",
   CHARACTER: "캐릭터",
   UNIVERSE: "세계관",
+  PAYMENT_ORDER: "결제",
   HASHTAG: "해시태그",
 };
 
@@ -83,7 +84,7 @@ const COMMAND_ITEMS = buildCommandItems();
  *
  * 메뉴 이동과 데이터 검색을 한 곳에서 처리한다.
  * - 메뉴: 입력 즉시 클라이언트에서 필터링한다.
- * - 데이터(유저·캐릭터·세계관·해시태그): 두 글자 이상일 때 서버에 조회한다.
+ * - 데이터(유저·세계관·결제): 두 글자 이상일 때 서버에 조회한다.
  *   선택하면 해당 목록 화면으로 검색어를 넣은 채 이동한다.
  */
 const CommandPalette = () => {
@@ -126,7 +127,7 @@ const CommandPalette = () => {
         label: item.title,
         groupLabel: SEARCH_TYPE_LABEL[item.type],
         isMock: false,
-        description: item.description,
+        description: item.description ?? undefined,
         keywords: "",
       })),
     [searchData],

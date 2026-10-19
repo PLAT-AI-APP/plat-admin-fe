@@ -1,6 +1,8 @@
 export type LegalDocumentType =
   | "TERMS_OF_SERVICE"
   | "PRIVACY_POLICY"
+  /** 환불정책. 결제 화면 · 푸터에서 링크한다. 게시만 하고 재동의 대상이 아니다. */
+  | "REFUND_POLICY"
   | "YOUTH_PROTECTION"
   /** 탈퇴 때 남기기로 고른 캐릭터의 이용허락 동의서. 탈퇴 화면에서만 보이고 재동의 대상이 아니다. */
   | "UNIVERSE_HANDOVER_CONSENT";
@@ -50,6 +52,7 @@ export interface LegalDocumentFormValues {
 export const LEGAL_DOCUMENT_LABEL: Record<LegalDocumentType, string> = {
   TERMS_OF_SERVICE: "이용약관",
   PRIVACY_POLICY: "개인정보처리방침",
+  REFUND_POLICY: "환불정책",
   YOUTH_PROTECTION: "청소년 보호 정책",
   UNIVERSE_HANDOVER_CONSENT: "캐릭터 이용허락 동의서",
 };

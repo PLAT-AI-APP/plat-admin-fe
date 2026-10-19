@@ -255,3 +255,42 @@ export const formatPhoneNumber = (phoneNumber?: string): string => {
 
   return phoneNumber.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
 };
+
+/**
+ * 상태를 바꾼 주체.
+ * - ADMIN: 유저 관리 화면에서 운영자가 바꿨다.
+ * - REPORT: 신고 처리에서 운영자가 고른 조치로 바뀌었다(케이스가 붙는다).
+ * - SYSTEM: 정지 기간이 끝나 자동으로 풀렸다.
+ * - USER: 본인이 탈퇴했다.
+ */
+export type UserStatusSource = "ADMIN" | "REPORT" | "SYSTEM" | "USER";
+
+export const USER_STATUS_SOURCE_LABEL: Record<UserStatusSource, string> = {
+  ADMIN: "유저 관리",
+  REPORT: "신고 처리",
+  SYSTEM: "정지 만료 자동 해제",
+  USER: "본인 탈퇴",
+};
+
+/** 상태가 바뀐 기록 한 줄. 제재 · 해제 · 탈퇴가 모두 여기 남는다. */
+export interface UserStatusHistory {
+  historyId: string;
+  status: UserStatus;
+  reason: string | null;
+  /** 정지 만료 시각. 영구 정지 · 해제면 비어 있다. */
+  endedAt: string | null;
+  source: UserStatusSource;
+  /** 운영자가 바꾼 경우의 이름. 시스템 · 본인이면 비어 있다. */
+  adminName: string | null;
+  /** 신고 처리로 바뀐 경우의 케이스. */
+  reportCaseId: string | null;
+  createdAt: string;
+}
+
+/** 운영 메모. 유저에게 보이지 않는 운영자끼리의 기록이다. */
+export interface UserMemo {
+  memoId: string;
+  content: string;
+  adminName: string;
+  createdAt: string;
+}

@@ -29,6 +29,7 @@ import LegalStatusBadge from "./LegalStatusBadge";
 const LEGAL_TABS: TabItem<LegalDocumentType>[] = [
   { label: LEGAL_DOCUMENT_LABEL.TERMS_OF_SERVICE, value: "TERMS_OF_SERVICE" },
   { label: LEGAL_DOCUMENT_LABEL.PRIVACY_POLICY, value: "PRIVACY_POLICY" },
+  { label: LEGAL_DOCUMENT_LABEL.REFUND_POLICY, value: "REFUND_POLICY" },
   { label: LEGAL_DOCUMENT_LABEL.YOUTH_PROTECTION, value: "YOUTH_PROTECTION" },
   {
     label: LEGAL_DOCUMENT_LABEL.UNIVERSE_HANDOVER_CONSENT,

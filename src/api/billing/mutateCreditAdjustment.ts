@@ -51,6 +51,8 @@ export const useCreditAdjustmentMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["get-adjustable-user-list"] });
       queryClient.invalidateQueries({ queryKey: ["get-ledger-list"] });
       queryClient.invalidateQueries({ queryKey: ["get-ledger-summary"] });
+      // 유저 상세에서 조정하면 보유 노트 칸이 곧바로 바뀌어야 한다.
+      queryClient.invalidateQueries({ queryKey: ["get-user-detail"] });
     },
   });
 
