@@ -15,6 +15,7 @@ import type {
   Redemption,
   RewardProduct,
   RewardRedemptionStatus,
+  RewardDeliveryChannel,
   RewardType,
 } from "@/type/earning";
 
@@ -102,7 +103,8 @@ export interface RedemptionAdminResponse {
   pointAmount: number;
   noteAmount: number | null;
   status: RewardRedemptionStatus;
-  recipientPhone: string | null;
+  deliveryChannel: RewardDeliveryChannel | null;
+  recipient: string | null;
   requestedAt: string;
   processedAt: string | null;
   processedByName: string | null;
@@ -194,7 +196,8 @@ export const toRedemption = (row: RedemptionAdminResponse): Redemption => ({
   ...row,
   nickname: opt(row.nickname),
   noteAmount: opt(row.noteAmount),
-  recipientPhone: opt(row.recipientPhone),
+  deliveryChannel: opt(row.deliveryChannel),
+  recipient: opt(row.recipient),
   processedAt: opt(row.processedAt),
   processedByName: opt(row.processedByName),
   rejectReason: opt(row.rejectReason),

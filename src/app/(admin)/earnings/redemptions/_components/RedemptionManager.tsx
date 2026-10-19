@@ -15,7 +15,12 @@ import { useHasPermission } from "@/store/useAdminStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { Redemption, RewardRedemptionStatus } from "@/type/earning";
 import RedemptionTimeline, { redemptionDetailLines } from "@/components/earning/RedemptionTimeline";
-import { REDEMPTION_STATUS, formatPoint, maskPhone } from "@/components/earning/earningFormat";
+import {
+  DELIVERY_CHANNEL_LABEL,
+  REDEMPTION_STATUS,
+  formatPoint,
+  maskRecipient,
+} from "@/components/earning/earningFormat";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
@@ -128,15 +133,20 @@ const RedemptionManager = () => {
       render: (row) => formatPoint(row.pointAmount),
     },
     {
-      key: "phone",
-      header: "받는 번호",
-      width: "170px",
+      key: "recipient",
+      header: "받는 곳",
+      width: "220px",
       render: (row) =>
-        !row.recipientPhone ? (
+        !row.recipient ? (
           <span className="text-font-disabled">-</span>
         ) : (
           <span className="flex items-center gap-2 font-mono">
-            {revealed.includes(row.redemptionId) ? row.recipientPhone : maskPhone(row.recipientPhone)}
+            {row.deliveryChannel && (
+              <span className="font-sans text-font-2">{DELIVERY_CHANNEL_LABEL[row.deliveryChannel]}</span>
+            )}
+            {revealed.includes(row.redemptionId)
+              ? row.recipient
+              : maskRecipient(row.recipient, row.deliveryChannel)}
             {!revealed.includes(row.redemptionId) && row.status === "REQUESTED" && (
               <button
                 type="button"

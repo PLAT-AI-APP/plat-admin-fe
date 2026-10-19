@@ -5,7 +5,11 @@ export type LegalDocumentType =
   | "REFUND_POLICY"
   | "YOUTH_PROTECTION"
   /** 탈퇴 때 남기기로 고른 캐릭터의 이용허락 동의서. 탈퇴 화면에서만 보이고 재동의 대상이 아니다. */
-  | "UNIVERSE_HANDOVER_CONSENT";
+  | "UNIVERSE_HANDOVER_CONSENT"
+  /** 상품권 발송을 위한 개인정보 수집·이용 동의서. 상품권 교환 화면에서만 보이고 재동의 대상이 아니다. */
+  | "GIFT_CARD_PRIVACY_CONSENT"
+  /** 본인인증(성인인증 포함) 정보 수집·이용 동의서. 본인인증 창 앞에서만 보이고 재동의 대상이 아니다. */
+  | "IDENTITY_VERIFICATION_CONSENT";
 
 /** 새 버전이 시행되면 유저에게 다시 동의를 받는 문서. 청소년 보호 정책은 게시만 한다. */
 export const RECONSENT_DOCUMENT_TYPES: readonly LegalDocumentType[] = [
@@ -55,11 +59,19 @@ export const LEGAL_DOCUMENT_LABEL: Record<LegalDocumentType, string> = {
   REFUND_POLICY: "환불정책",
   YOUTH_PROTECTION: "청소년 보호 정책",
   UNIVERSE_HANDOVER_CONSENT: "캐릭터 이용허락 동의서",
+  GIFT_CARD_PRIVACY_CONSENT: "상품권 발송 개인정보 동의서",
+  IDENTITY_VERIFICATION_CONSENT: "본인인증 정보 동의서",
 };
 
 /** 시행된 버전이 유저에게 보이는 자리. 게시 안내 문구에 쓴다. */
 export const legalDocumentPlaceOf = (type: LegalDocumentType): string =>
-  type === "UNIVERSE_HANDOVER_CONSENT" ? "탈퇴 화면" : "약관 페이지";
+  type === "UNIVERSE_HANDOVER_CONSENT"
+    ? "탈퇴 화면"
+    : type === "GIFT_CARD_PRIVACY_CONSENT"
+      ? "상품권 교환 화면"
+      : type === "IDENTITY_VERIFICATION_CONSENT"
+        ? "본인인증 화면"
+        : "약관 페이지";
 
 export const LEGAL_STATUS_LABEL: Record<LegalDocumentStatus, string> = {
   DRAFT: "초안",
