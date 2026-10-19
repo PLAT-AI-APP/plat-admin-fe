@@ -44,6 +44,7 @@ export type PermissionResource =
   | "docs"
   | "notification"
   | "push"
+  | "mailTemplate"
   | "legal"
   | "role"
   | "manager"
@@ -306,6 +307,12 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     description: "서비스 알림 문구",
     actions: ["read", "write"],
   },
+  mailTemplate: {
+    /* 템플릿은 코드에 있다. 여기서는 보기만 해서 고칠 권한이 없다. */
+    label: "메일 템플릿",
+    description: "서비스가 보내는 메일과 발송 시점, 미리보기",
+    actions: ["read"],
+  },
   push: {
     label: "푸시 발송",
     description: "푸시 작성과 발송. 나가면 되돌릴 수 없다.",
@@ -492,8 +499,8 @@ export const PERMISSION_CATEGORIES = [
   {
     id: "messaging",
     label: "메시지 발송",
-    description: "알림 문구와 푸시. 발송하면 되돌릴 수 없습니다.",
-    resources: ["notification", "push"],
+    description: "메일 템플릿과 알림 문구 · 푸시. 발송하면 되돌릴 수 없습니다.",
+    resources: ["mailTemplate", "notification", "push"],
   },
   {
     id: "billing",

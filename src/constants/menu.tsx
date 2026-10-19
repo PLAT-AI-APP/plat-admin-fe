@@ -18,6 +18,7 @@ import {
   Key,
   Layers,
   ListLines,
+  Mail,
   Megaphone,
   MessageSquare,
   Package,
@@ -290,12 +291,19 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     ],
   },
   {
-    /* 유저에게 먼저 보내는 것들. 지금은 모두 다른 도구(Discord)로 운영해 실서버에서는 그룹째 숨는다. */
+    /* 유저에게 먼저 보내는 것들. 메일 템플릿 말고는 다른 도구(Discord)로 운영해 실서버에서는 숨는다. */
     key: "messaging",
     section: "operate",
     label: "메시지 발송",
     icon: <Megaphone size={ICON_SIZE} />,
     children: [
+      {
+        /* 서비스가 자동으로 보내는 메일. 템플릿은 코드에 있어 보기만 한다. */
+        label: "메일 템플릿",
+        href: "/communication/mail-templates",
+        permission: "mailTemplate:read",
+        icon: <Mail size={SUB_ICON_SIZE} />,
+      },
       {
         label: "알림 템플릿",
         href: "/communication/notifications",
