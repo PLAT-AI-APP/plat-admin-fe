@@ -21,6 +21,7 @@ import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
 import Table from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 
 const RECENT_LIMIT = 5;
 
@@ -140,7 +141,12 @@ const UserEarningPanel = ({ userId }: { userId: string }) => {
               header: "신청",
               width: "150px",
               numeric: true,
-              render: (row) => <span className="text-font-2">{formatDateTime(row.requestedAt)}</span>,
+              render: (row) => (
+                <TableCellStack
+                  primary={<span className="text-font-2">{formatDateTime(row.requestedAt)}</span>}
+                  secondary={<span className="font-mono">{row.redemptionNo}</span>}
+                />
+              ),
             },
             { key: "product", header: "상품", render: (row) => row.productName },
             {

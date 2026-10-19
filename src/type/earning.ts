@@ -122,6 +122,8 @@ export interface EarningHistory {
 
 export interface Redemption {
   redemptionId: string;
+  /** 교환 번호. 유저가 1:1 문의에 붙여 오는 값이고, 교환 요청 검색에 그대로 넣으면 찾는다. */
+  redemptionNo: string;
   accountId: string;
   userId: string;
   nickname?: string;

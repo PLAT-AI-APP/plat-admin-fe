@@ -14,7 +14,17 @@ export type QnaCategory =
   | "PAYMENT"
   | "CHARACTER"
   | "BUG"
+  | "EARNING"
   | "ETC";
+
+/**
+ * 수익 · 교환 문의에 유저가 붙인 교환 건(문의 시점 스냅샷). 진행 상태는 교환 요청 화면에서 번호로 찾아 본다.
+ * 유저에게도 번호 · 상품만 보이고, 결과는 관리자가 답변으로 알린다.
+ */
+export interface QnaRedemptionLink {
+  redemptionNo: string;
+  productName: string;
+}
 
 /**
  * 환불 문의에 묶인 환불 요청.
@@ -72,6 +82,8 @@ export interface QnaItem {
   createdAt: string;
   /** `REFUND` 문의에만 있다. */
   refund: QnaRefundLink | null;
+  /** 교환 건을 붙인 `EARNING` 문의에만 있다. 구버전 서버는 주지 않는다. */
+  redemption?: QnaRedemptionLink | null;
   /** 답변 기한(접수 + 3영업일). 답변 대기(`OPEN`) 문의에만 있다. 구버전 서버는 주지 않는다. */
   dueAt?: string | null;
 }

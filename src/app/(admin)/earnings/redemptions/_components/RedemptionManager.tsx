@@ -79,9 +79,14 @@ const RedemptionManager = () => {
     {
       key: "requestedAt",
       header: "신청",
-      width: "150px",
+      width: "170px",
       numeric: true,
-      render: (row) => <span className="text-font-2">{formatDateTime(row.requestedAt)}</span>,
+      render: (row) => (
+        <TableCellStack
+          primary={<span className="text-font-2">{formatDateTime(row.requestedAt)}</span>}
+          secondary={<span className="font-mono">{row.redemptionNo}</span>}
+        />
+      ),
     },
     {
       key: "creator",
@@ -223,7 +228,7 @@ const RedemptionManager = () => {
           <SearchInput
             value={keyword}
             onSearch={(next) => setParams({ keyword: next })}
-            placeholder="닉네임 · 유저 ID · 상품명"
+            placeholder="교환 번호 · 닉네임 · 유저 ID · 상품명"
             boxClassName="w-64"
           />
         </div>

@@ -26,6 +26,7 @@ import {
   QNA_STATUS_TONE,
 } from "@/app/(admin)/communication/_constants/communicationOptions";
 import QnaRefundPanel from "./QnaRefundPanel";
+import QnaRedemptionPanel from "./QnaRedemptionPanel";
 
 interface QnaDetailModalProps {
   /** null이면 모달이 닫힌 상태이며 상세도 조회하지 않는다. */
@@ -184,6 +185,8 @@ const QnaDetailModal = ({ qnaId, onClose }: QnaDetailModalProps) => {
                 isApproving={approveMutation.isPending}
               />
             )}
+
+            {qna.redemption && <QnaRedemptionPanel redemption={qna.redemption} />}
 
             <div className="flex flex-col gap-1.5">
               {refund && <p className="body-6 text-font-2">유저가 남긴 환불 사유</p>}

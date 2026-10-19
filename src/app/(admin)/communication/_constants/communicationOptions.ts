@@ -37,6 +37,7 @@ export const QNA_CATEGORY_LABEL: Record<QnaCategory, string> = {
   PAYMENT: "결제",
   CHARACTER: "캐릭터",
   BUG: "오류 신고",
+  EARNING: "수익·교환",
   ETC: "기타",
 };
 
@@ -53,6 +54,8 @@ export const QNA_CATEGORY_TONE: Record<QnaCategory, BadgeTone> = {
   PAYMENT: "warning",
   CHARACTER: "brand",
   BUG: "danger",
+  /* 수익 교환은 포인트가 얽혀 있어 결제처럼 눈에 띄되 결제와는 구분한다. */
+  EARNING: "success",
   ETC: "neutral",
 };
 
