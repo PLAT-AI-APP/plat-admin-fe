@@ -14,7 +14,7 @@ import { cn, formatWithCommas } from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { Redemption, RewardRedemptionStatus } from "@/type/earning";
-import RedemptionTimeline from "@/components/earning/RedemptionTimeline";
+import RedemptionTimeline, { redemptionDetailLines } from "@/components/earning/RedemptionTimeline";
 import { REDEMPTION_STATUS, formatPoint, maskPhone } from "@/components/earning/earningFormat";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -63,7 +63,6 @@ const RedemptionManager = () => {
 
   const tabs: TabItem<RewardRedemptionStatus | "">[] = [
     { label: "발송 대기", value: "REQUESTED", count: pendingCount },
-    { label: "노트 지급 중", value: "GRANTING" },
     { label: "완료", value: "ISSUED" },
     { label: "반려", value: "REJECTED" },
     { label: "전체", value: "" },
@@ -79,9 +78,14 @@ const RedemptionManager = () => {
     {
       key: "requestedAt",
       header: "신청",
-      width: "150px",
+      width: "170px",
       numeric: true,
-      render: (row) => <span className="text-font-2">{formatDateTime(row.requestedAt)}</span>,
+      render: (row) => (
+        <TableCellStack
+          primary={<span className="text-font-2">{formatDateTime(row.requestedAt)}</span>}
+          secondary={<span className="font-mono">{row.redemptionNo}</span>}
+        />
+      ),
     },
     {
       key: "creator",
@@ -190,15 +194,16 @@ const RedemptionManager = () => {
       header: "",
       width: "48px",
       align: "right",
-      render: (row) => (
-        <ChevronDown
-          size={16}
-          className={cn(
-            "text-font-2 transition-transform",
-            expandedKeys.includes(row.redemptionId) && "rotate-180",
-          )}
-        />
-      ),
+      render: (row) =>
+        redemptionDetailLines(row, false).length > 0 && (
+          <ChevronDown
+            size={16}
+            className={cn(
+              "text-font-2 transition-transform",
+              expandedKeys.includes(row.redemptionId) && "rotate-180",
+            )}
+          />
+        ),
     },
   ];
 
@@ -223,7 +228,7 @@ const RedemptionManager = () => {
           <SearchInput
             value={keyword}
             onSearch={(next) => setParams({ keyword: next })}
-            placeholder="닉네임 · 유저 ID · 상품명"
+            placeholder="교환 번호 · 닉네임 · 유저 ID · 상품명"
             boxClassName="w-64"
           />
         </div>
@@ -233,11 +238,14 @@ const RedemptionManager = () => {
           isLoading={isLoading}
           getRowKey={(row) => row.redemptionId}
           expandedKeys={expandedKeys}
-          onToggleExpand={(key) =>
+          onToggleExpand={(key) => {
+            // 처리 메모 · 반려 사유처럼 행에 없는 것이 있을 때만 펼친다.
+            const target = (data?.content ?? []).find((row) => row.redemptionId === key);
+            if (!target || redemptionDetailLines(target, false).length === 0) return;
             setExpandedKeys((prev) =>
               prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key],
-            )
-          }
+            );
+          }}
           renderExpanded={(row) => <RedemptionTimeline row={row} />}
           emptyTitle={status === "REQUESTED" ? "처리할 교환 신청이 없습니다." : "교환 신청이 없습니다."}
         />

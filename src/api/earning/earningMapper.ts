@@ -92,6 +92,7 @@ export interface EarningHistoryResponse {
 
 export interface RedemptionAdminResponse {
   redemptionId: string;
+  redemptionNo: string;
   accountId: string;
   userId: string;
   nickname: string | null;

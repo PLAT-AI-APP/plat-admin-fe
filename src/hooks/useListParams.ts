@@ -78,7 +78,8 @@ export const useListParams = <T extends Record<string, ParamValue>>(
 
       Object.entries(next).forEach(([key, value]) => {
         // 기본값은 주소에 쓰지 않는다. 안 그러면 첫 화면부터 주소가 지저분해진다.
-        if (value === "" || value === defaults[key]) return;
+        // 빈 값이라도 기본값이 아니면(기본 탭이 "발송 대기"인데 "전체"를 고름) `key=` 로 남겨야 다시 읽을 때 기본값으로 돌아가지 않는다.
+        if (value === defaults[key]) return;
 
         query.set(key, String(value));
       });

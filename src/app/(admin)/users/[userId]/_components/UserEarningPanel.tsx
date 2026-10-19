@@ -12,7 +12,7 @@ import { ChevronDown } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import { EARNING_LEDGER_LABEL } from "@/type/earning";
-import RedemptionTimeline from "@/components/earning/RedemptionTimeline";
+import RedemptionTimeline, { redemptionDetailLines } from "@/components/earning/RedemptionTimeline";
 import SummaryTiles from "@/components/earning/SummaryTiles";
 import { REDEMPTION_STATUS, formatPoint, ledgerTone } from "@/components/earning/earningFormat";
 import Badge from "@/components/ui/Badge";
@@ -21,6 +21,7 @@ import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import Skeleton from "@/components/ui/Skeleton";
 import Table from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 
 const RECENT_LIMIT = 5;
 
@@ -131,7 +132,7 @@ const UserEarningPanel = ({ userId }: { userId: string }) => {
         />
       </Card>
 
-      <Card title="최근 교환 신청" description="행을 펼치면 처리 내역이 보입니다." noPadding>
+      <Card title="최근 교환 신청" description="처리된 신청은 행을 펼치면 처리자와 메모 · 반려 사유가 보입니다." noPadding>
         <Table
           minRows={0}
           columns={[
@@ -140,7 +141,12 @@ const UserEarningPanel = ({ userId }: { userId: string }) => {
               header: "신청",
               width: "150px",
               numeric: true,
-              render: (row) => <span className="text-font-2">{formatDateTime(row.requestedAt)}</span>,
+              render: (row) => (
+                <TableCellStack
+                  primary={<span className="text-font-2">{formatDateTime(row.requestedAt)}</span>}
+                  secondary={<span className="font-mono">{row.redemptionNo}</span>}
+                />
+              ),
             },
             { key: "product", header: "상품", render: (row) => row.productName },
             {
@@ -163,26 +169,30 @@ const UserEarningPanel = ({ userId }: { userId: string }) => {
               header: "",
               width: "48px",
               align: "right",
-              render: (row) => (
-                <ChevronDown
-                  size={16}
-                  className={cn(
-                    "text-font-2 transition-transform",
-                    expandedKeys.includes(row.redemptionId) && "rotate-180",
-                  )}
-                />
-              ),
+              render: (row) =>
+                redemptionDetailLines(row, true).length > 0 && (
+                  <ChevronDown
+                    size={16}
+                    className={cn(
+                      "text-font-2 transition-transform",
+                      expandedKeys.includes(row.redemptionId) && "rotate-180",
+                    )}
+                  />
+                ),
             },
           ]}
           rows={recentRedemptions}
           getRowKey={(row) => row.redemptionId}
           expandedKeys={expandedKeys}
-          onToggleExpand={(key) =>
+          onToggleExpand={(key) => {
+            // 처리 메모 · 반려 사유처럼 행에 없는 것이 있을 때만 펼친다.
+            const target = (recentRedemptions).find((row) => row.redemptionId === key);
+            if (!target || redemptionDetailLines(target, true).length === 0) return;
             setExpandedKeys((prev) =>
               prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key],
-            )
-          }
-          renderExpanded={(row) => <RedemptionTimeline row={row} />}
+            );
+          }}
+          renderExpanded={(row) => <RedemptionTimeline row={row} withProcessor />}
           emptyTitle="교환 신청이 없습니다."
         />
       </Card>
