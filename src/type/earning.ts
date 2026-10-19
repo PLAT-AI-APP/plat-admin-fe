@@ -15,6 +15,9 @@ export type EarningLedgerType =
   | "ADMIN_DEDUCT"
   | "ADMIN_GRANT";
 export type RewardType = "GIFT_CARD" | "NOTE";
+
+/** 상품권 받는 방법. 유저가 교환 신청 때 고른다. */
+export type RewardDeliveryChannel = "SMS" | "EMAIL" | "KAKAO_ALIMTALK";
 /**
  * 상품권·노트 모두 신청 때 포인트가 빠진다. REQUESTED 는 상품권 발송 대기, GRANTING 은 노트 전환에서 노트 지급만
  * 남은 상태다(재시도 배치가 채운다). 반려하면 빠진 포인트를 돌려준다.
@@ -133,7 +136,9 @@ export interface Redemption {
   pointAmount: number;
   noteAmount?: number;
   status: RewardRedemptionStatus;
-  recipientPhone?: string;
+  deliveryChannel?: RewardDeliveryChannel;
+  /** 받는 곳(휴대폰 번호·이메일) 원문. 가리는 것은 화면이 한다. */
+  recipient?: string;
   requestedAt: string;
   processedAt?: string;
   processedByName?: string;
