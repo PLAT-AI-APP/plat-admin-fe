@@ -168,3 +168,20 @@ export interface PushCampaign {
   createdById?: number;
   createdAt: string;
 }
+
+/** 서비스가 자동으로 보내는 메일 하나. 템플릿 원본은 서버 코드에 있다. */
+export interface MailTemplate {
+  /** 템플릿 키(예: PAYMENT_RECEIPT) */
+  key: string;
+  label: string;
+  /** 언제 누구에게 나가는가 */
+  trigger: string;
+}
+
+/** 예시 값으로 채운 메일. 실제 발송과 같은 문구 · 모양이다. */
+export interface MailTemplatePreview {
+  key: string;
+  subject: string;
+  /** 메일 본문 HTML 전체 */
+  html: string;
+}
