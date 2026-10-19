@@ -63,7 +63,6 @@ const RedemptionManager = () => {
 
   const tabs: TabItem<RewardRedemptionStatus | "">[] = [
     { label: "발송 대기", value: "REQUESTED", count: pendingCount },
-    { label: "노트 지급 중", value: "GRANTING" },
     { label: "완료", value: "ISSUED" },
     { label: "반려", value: "REJECTED" },
     { label: "전체", value: "" },
