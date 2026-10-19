@@ -1,55 +1,46 @@
 "use client";
 
-import { useRedemptionHistoriesQuery } from "@/api/earning/getRedemptionList";
 import { formatDateTime } from "@/lib/dayjs";
 import type { Redemption } from "@/type/earning";
-import { maskPhone } from "./earningFormat";
 
-const STEP_TITLE: Record<string, string> = {
-  REQUESTED: "신청",
-  GRANTING: "포인트 차감",
-  ISSUED: "발송",
-  REJECTED: "반려",
+interface RedemptionDetailLine {
+  label: string;
+  value: string;
+}
+
+/**
+ * 행을 펼쳤을 때 보일 것. 행이 이미 보여 주는 신청 시각 · 크리에이터 · 받는 번호 · 상태는 반복하지 않는다.
+ * 상태는 한 번만 바뀌므로(발송 대기 → 발송 / 반려, 지급 중 → 완료) 이력 대신 처리 결과의 메모 · 사유만 남는다.
+ *
+ * @param withProcessor 행에 처리자 · 처리 시각이 없을 때(유저 상세) 함께 보인다.
+ */
+export const redemptionDetailLines = (row: Redemption, withProcessor: boolean): RedemptionDetailLine[] => {
+  const lines: RedemptionDetailLine[] = [];
+  if (withProcessor && row.processedAt) {
+    lines.push({ label: "처리", value: `${row.processedByName ?? "시스템"} · ${formatDateTime(row.processedAt)}` });
+  }
+  if (row.status === "REJECTED" && row.rejectReason) {
+    lines.push({ label: "반려 사유", value: row.rejectReason });
+  }
+  if (row.status === "ISSUED" && row.memo) {
+    lines.push({ label: "발송 메모", value: row.memo });
+  }
+  if (row.status === "GRANTING") {
+    lines.push({ label: "노트 지급", value: "재시도 대기 중 (5분 간격)" });
+  }
+  return lines;
 };
 
-/** 교환 신청 한 건에 대해 누가 언제 무엇을 했는지. 행을 펼칠 때만 이력을 부른다. */
-const RedemptionTimeline = ({ row }: { row: Redemption }) => {
-  const { data: histories = [], isLoading } = useRedemptionHistoriesQuery(row.redemptionId);
-
-  const steps = [
-    {
-      key: "requested",
-      at: row.requestedAt,
-      title: "신청",
-      actor: row.nickname ?? row.userId,
-      memo: row.recipientPhone ? `받는 번호 ${maskPhone(row.recipientPhone)}` : "",
-    },
-    ...histories
-      .filter((item) => item.toStatus !== "REQUESTED")
-      .map((item) => ({
-        key: item.historyId,
-        at: item.createdAt,
-        title: STEP_TITLE[item.toStatus] ?? item.toStatus,
-        actor: item.actorName ?? (item.actorType === "SYSTEM" ? "시스템" : "-"),
-        memo: item.memo ?? "",
-      })),
-  ];
-
-  return (
-    <ol className="flex flex-col gap-2 bg-subtle px-5 py-3 body-5">
-      {steps.map((step) => (
-        <li key={step.key} className="grid grid-cols-[150px_80px_120px_1fr] gap-3">
-          <span className="text-font-2">{formatDateTime(step.at)}</span>
-          <span className="font-semibold">{step.title}</span>
-          <span className="text-font-2">{step.actor}</span>
-          <span className="text-font-2">{step.memo}</span>
-        </li>
-      ))}
-      {isLoading && <li className="text-font-2">처리 내역을 불러오는 중</li>}
-      {row.status === "REQUESTED" && <li className="text-font-2">발송 대기 중</li>}
-      {row.status === "GRANTING" && <li className="text-font-2">노트 지급 재시도 대기 중 (5분 간격)</li>}
-    </ol>
-  );
-};
+/** 펼친 행. 보일 것이 없는 행은 펼치지 않으므로 여기에 오면 한 줄 이상 있다. */
+const RedemptionTimeline = ({ row, withProcessor = false }: { row: Redemption; withProcessor?: boolean }) => (
+  <dl className="flex flex-col gap-1.5 bg-subtle px-5 py-3 body-5">
+    {redemptionDetailLines(row, withProcessor).map((line) => (
+      <div key={line.label} className="grid grid-cols-[88px_minmax(0,1fr)] gap-3">
+        <dt className="text-font-2">{line.label}</dt>
+        <dd className="whitespace-pre-wrap break-words text-font-1">{line.value}</dd>
+      </div>
+    ))}
+  </dl>
+);
 
 export default RedemptionTimeline;
