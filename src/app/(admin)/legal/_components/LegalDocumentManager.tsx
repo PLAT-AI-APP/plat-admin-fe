@@ -35,6 +35,10 @@ const LEGAL_TABS: TabItem<LegalDocumentType>[] = [
     label: LEGAL_DOCUMENT_LABEL.UNIVERSE_HANDOVER_CONSENT,
     value: "UNIVERSE_HANDOVER_CONSENT",
   },
+  {
+    label: LEGAL_DOCUMENT_LABEL.GIFT_CARD_PRIVACY_CONSENT,
+    value: "GIFT_CARD_PRIVACY_CONSENT",
+  },
 ];
 
 /** 표에서 본문을 가늠할 수 있게 마크다운 기호를 걷어낸 앞 2줄만 남긴다. */

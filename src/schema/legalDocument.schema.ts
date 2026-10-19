@@ -8,6 +8,7 @@ export const legalDocumentSchema = z.object({
     "REFUND_POLICY",
     "YOUTH_PROTECTION",
     "UNIVERSE_HANDOVER_CONSENT",
+    "GIFT_CARD_PRIVACY_CONSENT",
   ]),
   version: z
     .string()
