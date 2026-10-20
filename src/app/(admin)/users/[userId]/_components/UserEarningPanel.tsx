@@ -8,9 +8,14 @@ import {
   useEarningAccountByUserQuery,
   useEarningLedgersQuery,
 } from "@/api/earning/getEarningAccountDetail";
+import { useEarningUserGrantMutation } from "@/api/earning/mutateEarning";
+import AccountActionModal, {
+  type AccountActionInput,
+} from "@/app/(admin)/earnings/creators/[accountId]/_components/AccountActionModal";
 import { ChevronDown } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
+import { useHasPermission } from "@/store/useAdminStore";
 import { EARNING_LEDGER_LABEL } from "@/type/earning";
 import RedemptionTimeline, { redemptionDetailLines } from "@/components/earning/RedemptionTimeline";
 import SummaryTiles from "@/components/earning/SummaryTiles";
@@ -27,11 +32,14 @@ const RECENT_LIMIT = 5;
 
 /**
  * 이 유저의 제작자 수익 요약. 조치(동결·차감)는 제작자 수익 상세에서 한다.
- * 대화 수익이 한 번도 없던 유저는 수익 계정이 없다.
+ * 대화 수익이 한 번도 없던 유저는 수익 계정이 없다 — 이때는 여기서 바로 지급하고, 지급하면 계정이 열린다.
  */
 const UserEarningPanel = ({ userId }: { userId: string }) => {
   const router = useRouter();
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+  const [isGrantOpen, setGrantOpen] = useState(false);
+  const canAdjust = useHasPermission("earning:adjust");
+  const grantMutation = useEarningUserGrantMutation();
 
   const { data: account, isLoading, error } = useEarningAccountByUserQuery(userId);
   const accountId = account?.accountId ?? "";
@@ -41,15 +49,43 @@ const UserEarningPanel = ({ userId }: { userId: string }) => {
   if (isLoading) return <Skeleton className="h-48 w-full rounded-card" />;
 
   if (!account) {
+    const noAccount = error?.code === EARNING_ACCOUNT_NOT_FOUND;
+
+    const handleGrant = async (input: AccountActionInput) => {
+      await grantMutation.mutateAsync({
+        userId,
+        reasonCode: input.reasonCode,
+        memo: input.memo,
+        amount: input.amount,
+        idempotencyKey: input.idempotencyKey,
+      });
+      setGrantOpen(false);
+    };
+
     return (
-      <EmptyState
-        title={error?.code === EARNING_ACCOUNT_NOT_FOUND ? "수익 계정이 없습니다." : "수익 정보를 불러오지 못했습니다."}
-        description={
-          error?.code === EARNING_ACCOUNT_NOT_FOUND
-            ? "이 유저의 세계관에서 유료 대화 적립이 아직 없습니다."
-            : undefined
-        }
-      />
+      <>
+        <EmptyState
+          title={noAccount ? "수익 계정이 없습니다." : "수익 정보를 불러오지 못했습니다."}
+          description={noAccount ? "이 유저의 세계관에서 유료 대화 적립이 아직 없습니다." : undefined}
+          action={
+            noAccount &&
+            canAdjust && (
+              <Button size="sm" variant="secondary" onClick={() => setGrantOpen(true)}>
+                포인트 지급
+              </Button>
+            )
+          }
+        />
+        {isGrantOpen && (
+          <AccountActionModal
+            action="GRANT"
+            available={0}
+            isSubmitting={grantMutation.isPending}
+            onClose={() => setGrantOpen(false)}
+            onSubmit={handleGrant}
+          />
+        )}
+      </>
     );
   }
 
