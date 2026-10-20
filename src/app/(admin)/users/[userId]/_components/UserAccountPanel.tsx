@@ -25,7 +25,6 @@ import {
 import { USER_STATUS_LABEL, USER_STATUS_TONE } from "@/constants/userOptions";
 import {
   useUserAgreementsQuery,
-  type AgreementChannel,
   type AgreementType,
 } from "@/api/user/getUserAgreements";
 import { useUserProfileResetsQuery } from "@/api/user/profileReset";
@@ -35,13 +34,6 @@ const AGREEMENT_TYPE_LABEL: Record<AgreementType, string> = {
   PRIVACY_POLICY: "개인정보 처리방침",
   AGE_OVER_14: "만 14세 이상",
   MARKETING: "마케팅 수신",
-};
-
-const AGREEMENT_CHANNEL_LABEL: Record<AgreementChannel, string> = {
-  EMAIL_SIGNUP: "이메일 가입",
-  SOCIAL_ONBOARDING: "소셜 첫 로그인",
-  RECONSENT: "약관 개정 재동의",
-  SETTINGS: "설정 화면",
 };
 
 /**
@@ -66,8 +58,7 @@ const AgreementHistoryCard = ({ userId }: { userId: string }) => {
         </p>
       ) : !data || data.length === 0 ? (
         <p className="px-5 py-4 body-5 text-font-2">
-          동의 기록이 없습니다. 소셜 가입 뒤 동의 화면을 아직 거치지 않은
-          계정입니다.
+          동의 기록이 없습니다. 동의 화면을 아직 거치지 않은 계정입니다.
         </p>
       ) : (
         <table className="w-full body-5">
@@ -76,7 +67,6 @@ const AgreementHistoryCard = ({ userId }: { userId: string }) => {
               <th className="px-5 py-2.5 font-medium">항목</th>
               <th className="px-5 py-2.5 font-medium">결과</th>
               <th className="px-5 py-2.5 font-medium">약관 버전</th>
-              <th className="px-5 py-2.5 font-medium">경로</th>
               <th className="px-5 py-2.5 text-right font-medium">일시</th>
             </tr>
           </thead>
@@ -100,9 +90,6 @@ const AgreementHistoryCard = ({ userId }: { userId: string }) => {
                 </td>
                 <td className="px-5 py-2.5 text-font-2 tabular-nums">
                   {item.version ? `v${item.version}` : "-"}
-                </td>
-                <td className="px-5 py-2.5 text-font-2">
-                  {AGREEMENT_CHANNEL_LABEL[item.channel]}
                 </td>
                 <td className="px-5 py-2.5 text-right text-font-2 tabular-nums">
                   {formatDateTime(item.agreedAt)}

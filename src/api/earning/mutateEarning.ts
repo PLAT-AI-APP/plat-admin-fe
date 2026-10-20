@@ -65,6 +65,34 @@ export const useEarningAccountActionMutation = () => {
   });
 };
 
+/**
+ * 유저에게 포인트 지급. 대화 수익이 없어 수익 계정이 없는 유저도 받는다 — 서버가 이때 계정을 연다.
+ * 멱등키는 계정 지급과 같이 모달을 연 순간 하나를 쥔다.
+ */
+export const useEarningUserGrantMutation = () => {
+  const invalidate = useInvalidateEarning();
+
+  return useMutation<
+    void,
+    AppError,
+    EarningActionInput & { userId: string; amount: number; idempotencyKey: string }
+  >({
+    mutationFn: async ({ userId, reasonCode, memo, amount, idempotencyKey }) => {
+      await liveAxios.post(`/earnings/users/${userId}/grants`, {
+        reasonCode,
+        memo,
+        amount,
+        idempotencyKey,
+      });
+    },
+    onSuccess: () => {
+      showAppToast("success", ACCOUNT_ACTION_DONE.GRANT);
+      invalidate();
+    },
+    onError: (error) => showErrorToast(error),
+  });
+};
+
 /** 상품권 발송 완료 · 반려 */
 export const useRedemptionMutation = () => {
   const invalidate = useInvalidateEarning();
