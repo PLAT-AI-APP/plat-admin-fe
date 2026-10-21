@@ -1,0 +1,25 @@
+# Firebase App Hosting 기본 설정(관리자 콘솔 plat-admin-fe). 환경 이름과 상관없이 항상 읽는다.
+# 문서: https://firebase.google.com/docs/app-hosting/configure
+#
+# 이 저장소는 어느 서버를 볼지 `.env` 가 아니라 프로파일(local · develop · main)로 정한다(src/config/appEnv.ts).
+# 배포 환경에는 git 브랜치가 없어서 프로파일을 알 수 없고, 못 정하면 개발 서버(develop)로 뜬다.
+#
+# App Hosting 에 올리는 이 백엔드는 운영 관리자 콘솔(admin.plat.so)이다. 백엔드 설정의 환경 이름을
+# `prod` 로 지정하지 않아도 운영 서버(admin-api.plat.so)를 보도록 APP_ENV 를 여기에 고정한다.
+# 환경 이름이 `prod` 이면 apphosting.prod.yaml 이 이 파일 위에 덮어쓴다(값은 같다).
+#
+# 개발 서버를 보는 관리자 콘솔은 이 파일이 아니라 Vercel 배포가 따로 맡는다(Vercel 은 이 파일을 읽지 않는다).
+
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+
+# NEXT_PUBLIC_* 값은 빌드 때 번들에 박히므로 BUILD 가용성이 있어야 한다.
+env:
+  # 운영 프로파일. 이 값이 없으면 개발 서버(admin-api-dev.plat.so)를 보는 콘솔로 빌드된다.
+  - variable: APP_ENV
+    value: main
+    availability: [BUILD, RUNTIME]
