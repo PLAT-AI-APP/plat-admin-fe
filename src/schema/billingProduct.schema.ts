@@ -44,6 +44,7 @@ export const billingProductSchema = z
       .number({ error: "노출 순서를 입력해 주세요." })
       .int("노출 순서는 정수로 입력해 주세요.")
       .min(0, "노출 순서는 0 이상이어야 합니다."),
+    firstPurchaseOnly: z.boolean(),
   })
   // 서버가 400으로 돌려보내기 전에 폼에서 먼저 잡는다. 저장 버튼을 눌러야 알게 되면 늦다.
   .superRefine((values, ctx) => {
