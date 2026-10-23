@@ -30,6 +30,8 @@ export interface BillingProduct {
   bonusCredit: number;
   status: ProductStatus;
   sortOrder: number;
+  /** 결제 이력이 없는 유저에게만 보이고 살 수 있는 첫 충전 상품인지. */
+  firstPurchaseOnly: boolean;
   updatedAt: string;
 }
 
@@ -43,6 +45,7 @@ export interface BillingProductFormValues {
   bonusCredit: number;
   status: ProductStatus;
   sortOrder: number;
+  firstPurchaseOnly: boolean;
 }
 
 /**
@@ -60,8 +63,7 @@ export type CreditPolicyKey =
   | "ATTENDANCE_STREAK_7DAYS"
   | "DORMANT_RETURN_BONUS"
   | "REFERRAL_BONUS"
-  | "INVITEE_BONUS"
-  | "FIRST_PURCHASE_BONUS";
+  | "INVITEE_BONUS";
 
 /** 정책 지급 노트의 만료 기간 단위. YEAR 는 UTC 달력 기준 n년 뒤다. */
 export type CreditExpiryUnit = "DAY" | "YEAR";

@@ -117,7 +117,12 @@ const BillingProductManager = () => {
       width: "220px",
       render: (product) => (
         <TableCellStack
-          primary={product.name}
+          primary={
+            <span className="flex items-center gap-1.5">
+              {product.name}
+              {product.firstPurchaseOnly && <Badge tone="brand">첫 구매</Badge>}
+            </span>
+          }
           secondary={`#${product.productId} · ${product.code}`}
         />
       ),
