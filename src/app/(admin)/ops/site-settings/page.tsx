@@ -1,4 +1,5 @@
 import PageHeader from "@/components/layout/PageHeader";
+import SignupPauseCard from "./_components/SignupPauseCard";
 import SiteSettingsForm from "./_components/SiteSettingsForm";
 
 /**
@@ -13,7 +14,10 @@ export default function SiteSettingsPage() {
         description="사용자 사이트 푸터의 사업자 정보 · 고객센터 · 개인정보보호책임자를 관리합니다. 저장하면 1분 안에 유저 화면에 반영됩니다."
       />
 
-      <SiteSettingsForm />
+      <div className="flex flex-col gap-4">
+        <SignupPauseCard />
+        <SiteSettingsForm />
+      </div>
     </>
   );
 }
