@@ -639,3 +639,8 @@ export interface SiteSettings extends SiteSettingsRequest {
   updatedByName: string | null;
   updatedAt: string | null;
 }
+
+/** 신규 가입 일시 중단. 조회·변경이 같은 모양이다. */
+export interface SignupPause {
+  paused: boolean;
+}

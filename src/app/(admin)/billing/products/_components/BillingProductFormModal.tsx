@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { formatCredit } from "@/lib/utils";
 import {
   billingProductSchema,
@@ -20,6 +20,7 @@ import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
+import Switch from "@/components/ui/Switch";
 import Textarea from "@/components/ui/Textarea";
 import {
   PRODUCT_PLATFORM_OPTIONS,
@@ -74,6 +75,7 @@ const BillingProductFormModal = ({
             bonusCredit: product.bonusCredit,
             status: product.status,
             sortOrder: product.sortOrder,
+            firstPurchaseOnly: product.firstPurchaseOnly,
           }
         : {
             code: "",
@@ -85,6 +87,7 @@ const BillingProductFormModal = ({
             bonusCredit: 0,
             status: "ON_SALE",
             sortOrder: defaultSortOrder,
+            firstPurchaseOnly: false,
           },
     );
   }, [isOpen, product, defaultSortOrder, defaultPlatform, reset]);
@@ -273,6 +276,29 @@ const BillingProductFormModal = ({
             />
           </FormField>
         </div>
+
+        <FormField
+          label="첫 구매 전용"
+          hint="결제 이력이 없는 유저에게만 보이고 살 수 있어요"
+          error={errors.firstPurchaseOnly?.message}
+        >
+          <Controller
+            control={control}
+            name="firstPurchaseOnly"
+            render={({ field }) => (
+              <div className="flex items-center gap-2">
+                <Switch
+                  label="첫 구매 전용 여부"
+                  checked={field.value}
+                  onChange={field.onChange}
+                />
+                <span className="body-5 text-font-2">
+                  {field.value ? "첫 구매 전용" : "일반 상품"}
+                </span>
+              </div>
+            )}
+          />
+        </FormField>
 
         {/* 저장 전에 최종 지급 구성을 한 번 더 확인할 수 있게 요약을 둔다. */}
         <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 body-5">
