@@ -115,7 +115,6 @@ export interface RedemptionAdminResponse {
 export interface EarningPolicyResponse {
   policyId: string;
   shareBps: number;
-  noteUnitPrice: number;
   minRedeemAmount: number;
   validYears: number;
   effectiveFrom: string;

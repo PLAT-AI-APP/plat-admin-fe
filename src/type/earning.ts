@@ -149,7 +149,6 @@ export interface Redemption {
 export interface EarningPolicy {
   policyId: string;
   shareBps: number;
-  noteUnitPrice: number;
   minRedeemAmount: number;
   validYears: number;
   effectiveFrom: string;
@@ -159,7 +158,7 @@ export interface EarningPolicy {
 
 export type EarningPolicyValues = Pick<
   EarningPolicy,
-  "shareBps" | "noteUnitPrice" | "minRedeemAmount" | "validYears"
+  "shareBps" | "minRedeemAmount" | "validYears"
 >;
 
 /** 교환 상품(상품권). 노트는 상품 없이 제작자가 원하는 만큼 전환한다. */
