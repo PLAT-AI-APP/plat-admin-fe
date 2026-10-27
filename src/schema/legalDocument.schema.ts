@@ -2,7 +2,15 @@ import { z } from "zod";
 
 /** 법적 문서 새 버전 등록 폼 */
 export const legalDocumentSchema = z.object({
-  documentType: z.enum(["TERMS_OF_SERVICE", "PRIVACY_POLICY"]),
+  documentType: z.enum([
+    "TERMS_OF_SERVICE",
+    "PRIVACY_POLICY",
+    "REFUND_POLICY",
+    "YOUTH_PROTECTION",
+    "UNIVERSE_HANDOVER_CONSENT",
+    "GIFT_CARD_PRIVACY_CONSENT",
+    "IDENTITY_VERIFICATION_CONSENT",
+  ]),
   version: z
     .string()
     .min(1, "버전을 입력해 주세요.")

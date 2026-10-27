@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useListParams } from "@/hooks/useListParams";
 import {
@@ -32,16 +31,16 @@ import {
   VISIBILITY_FILTER_OPTIONS,
   VISIBILITY_LABEL,
   VISIBILITY_TONE,
-} from "../../_constants/character";
+} from "@/constants/universeOptions";
 import {
   CHARACTER_SORT_OPTIONS,
   CHARACTER_STATUS_FILTER_OPTIONS,
   CHARACTER_STATUS_LABEL,
   CHARACTER_STATUS_TONE,
   DEFAULT_CHARACTER_SORT,
-} from "../_constants/characterOptions";
+} from "@/app/(admin)/universes/characters/_constants/characterOptions";
 import CharacterBlockModal from "./CharacterBlockModal";
-import CharacterCell from "./CharacterCell";
+import CharacterCell from "@/components/universe/CharacterCell";
 import { buildCharacterActions } from "./characterActions";
 
 /**
@@ -80,7 +79,6 @@ const DEFAULT_PARAMS = {
 };
 
 const CharacterManager = () => {
-  const router = useRouter();
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
   const { page, keyword, isOfficial, creatorId } = params;
   const visibility = params.visibility as CharacterVisibility | "";
@@ -287,7 +285,7 @@ const CharacterManager = () => {
         없고(`CharacterController`는 빈 껍데기), 캐릭터는 세계관에 매핑된 하위
         엔티티로 운영된다. 이걸 모르면 여기서 한 조치가 앱에 반영된 줄 안다.
       */}
-      <Alert tone="info" title="아직 서버와 연동되지 않은 화면입니다.">
+      <Alert tone="warning" title="MOCK 화면 · 아직 서버와 연동되지 않았습니다">
         캐릭터는 서버에서 독립 도메인이 아니라 세계관에 매핑된 하위 정보입니다.
         이 화면의 조회 · 조치는 모두 목업이며 앱에 반영되지 않습니다. 실제
         운영은 세계관 화면에서 하세요.
@@ -382,11 +380,9 @@ const CharacterManager = () => {
         <Table
           columns={columns}
           rows={rows}
-          getRowKey={(row) => String(row.characterId)}
+          getRowKey={(row) => row.characterId}
           isLoading={isLoading}
-          onRowClick={(row) =>
-            router.push(`/universes/characters/${row.characterId}`)
-          }
+          getRowHref={(row) => `/universes/characters/${row.characterId}`}
           emptyTitle={
             isError
               ? "목록을 불러오지 못했습니다."

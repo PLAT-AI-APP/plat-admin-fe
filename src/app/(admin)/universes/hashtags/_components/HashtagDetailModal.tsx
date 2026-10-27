@@ -15,13 +15,14 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
-import { HASHTAG_CATEGORY_TONE } from "./hashtagOptions";
+import { HASHTAG_CATEGORY_TONE } from "@/app/(admin)/universes/hashtags/_constants/hashtagOptions";
 
 interface HashtagDetailModalProps {
   /** 목록에서 누른 행. null이면 모달이 닫힌 상태다. */
   hashtag: Hashtag | null;
   onClose: () => void;
-  onEdit: (hashtagId: number) => void;
+  /** 비우면 수정 버튼을 그리지 않는다(수정 권한이 없을 때). */
+  onEdit?: (hashtagId: number) => void;
 }
 
 /** 라벨 + 값 한 줄 */
@@ -64,7 +65,7 @@ const HashtagDetailModal = ({
           <Button variant="ghost" onClick={onClose}>
             닫기
           </Button>
-          {hashtag && (
+          {hashtag && onEdit && (
             <Button
               variant="primary"
               leftIcon={<Edit size={15} />}

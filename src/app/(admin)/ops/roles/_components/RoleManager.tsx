@@ -7,7 +7,7 @@ import { Plus, ShieldCheck, Trash, Users } from "@/icons";
 import { showErrorToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
-import { useHasPermission } from "@/store/useAdminStore";
+import { useAdminStore, useHasPermission } from "@/store/useAdminStore";
 import type { AdminRole } from "@/type/ops";
 import {
   ALL_PERMISSIONS,
@@ -20,6 +20,7 @@ import {
   permissionKey,
   type PermissionAction,
   type PermissionResource,
+  UNWIRED_PERMISSIONS,
 } from "@/type/permission";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
@@ -30,7 +31,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import Skeleton from "@/components/ui/Skeleton";
 import Textarea from "@/components/ui/Textarea";
-import { PermissionDenied } from "@/components/domain/PermissionGate";
+import PermissionDenied from "@/components/domain/PermissionDenied";
 
 /** 자료 한 줄에 걸린 권한 수를 센다. 갈래 머리에 "3/7"로 붙인다. */
 const countGranted = (
@@ -73,16 +74,6 @@ const ACTION_COLUMN_COUNT = Math.max(
 
 const GRID_TEMPLATE = `minmax(200px,1fr) repeat(${ACTION_COLUMN_COUNT}, 84px)`;
 
-/**
- * 직책 · 권한 설정.
- *
- * **권한은 사람이 아니라 직책이 갖는다.** 관리자는 직책에 들어갈 뿐이다.
- * 사람마다 권한을 주면 관리자가 열 명일 때 설정도 열 번, 점검도 열 번이고,
- * 규칙이 바뀌면 열 곳을 고쳐야 한다. 한 곳만 빠뜨리면 그 사람만 조용히 다른 권한을 갖는다.
- *
- * "크레딧을 지급할 수 있는 사람이 누구인가"를 물었을 때
- * 직책이면 하나만 열어 보면 되고, 사람마다면 전원을 훑어야 한다.
- */
 /** 만들자마자 채워 두는 설명. 서버가 빈 설명을 받지 않으므로 자리라도 있어야 한다. */
 const NEW_ROLE_DESCRIPTION = "새로 만든 직책입니다. 무슨 일을 하는지 적어 주세요.";
 
@@ -100,10 +91,26 @@ const findFormError = (role: AdminRole): string | null => {
   return null;
 };
 
+/**
+ * 직책 · 권한 설정.
+ *
+ * **권한은 사람이 아니라 직책이 갖는다.** 관리자는 직책을 (여러 개) 가질 뿐이다.
+ * 사람마다 권한을 주면 관리자가 열 명일 때 설정도 열 번, 점검도 열 번이고,
+ * 규칙이 바뀌면 열 곳을 고쳐야 한다. 한 곳만 빠뜨리면 그 사람만 조용히 다른 권한을 갖는다.
+ *
+ * "크레딧을 지급할 수 있는 사람이 누구인가"를 물었을 때
+ * 직책이면 하나만 열어 보면 되고, 사람마다면 전원을 훑어야 한다.
+ */
 const RoleManager = () => {
   const canRead = useHasPermission("role:read");
-  const canWrite = useHasPermission("role:write");
-  const canDelete = useHasPermission("role:delete");
+  /*
+    직책을 만들고 · 고치고 · 지우는 일은 **최고관리자만** 한다(서버도 그 외엔 403).
+    직책 권한만 가진 운영자가 자기 직책에 권한을 더 붙이면 스스로 권한을 올릴 수 있기 때문이다.
+    `role:write` · `role:delete` 는 그대로 보되 최고관리자 여부를 함께 본다.
+  */
+  const isSuperAdmin = useAdminStore((state) => Boolean(state.admin?.isSuperAdmin));
+  const canWrite = useHasPermission("role:write") && isSuperAdmin;
+  const canDelete = useHasPermission("role:delete") && isSuperAdmin;
 
   const { data: roles = [], isLoading } = useAdminRoleListQuery();
   const { createMutation, updateMutation, deleteMutation } =
@@ -199,7 +206,7 @@ const RoleManager = () => {
   const handleDelete = (role: AdminRole) =>
     openConfirm({
       title: `'${role.name}' 직책을 삭제할까요?`,
-      description: "이 직책에 속한 관리자가 없어야 지울 수 있습니다.",
+      description: "이 직책을 가진 운영자가 없어야 지울 수 있습니다. 먼저 운영자 관리에서 이 직책을 빼 주세요.",
       warning: "삭제한 직책은 되돌릴 수 없습니다.",
       confirmText: "삭제",
       tone: "danger",
@@ -222,6 +229,13 @@ const RoleManager = () => {
   }
 
   return (
+    <>
+    {!isSuperAdmin && (
+      <Alert tone="info" title="직책은 최고관리자만 만들고 고칠 수 있습니다.">
+        이 화면에서는 직책과 권한 구성을 확인만 할 수 있습니다. 바꿔야 하면
+        최고관리자에게 요청해 주세요.
+      </Alert>
+    )}
     <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
       {/* ------------------------------ 직책 목록 ----------------------------- */}
       <Card
@@ -373,7 +387,7 @@ const RoleManager = () => {
                   value={editing.description}
                   maxLength={DESCRIPTION_MAX}
                   disabled={!canWrite}
-                  placeholder="이 직책이 무슨 일을 하는지 적어 두면 관리자를 배정할 때 헷갈리지 않습니다."
+                  placeholder="이 직책이 무슨 일을 하는지 적어 두면 운영자를 배정할 때 헷갈리지 않습니다."
                   onChange={(event) =>
                     patch({ description: event.target.value })
                   }
@@ -387,7 +401,7 @@ const RoleManager = () => {
               {/*
                 갈래마다 **카드를 따로 둔다.**
 
-                하나의 긴 표 안에 머리글을 여섯 번 끼워 넣으면, 지금 보고 있는 줄이
+                하나의 긴 표 안에 갈래 머리글을 여러 번 끼워 넣으면, 지금 보고 있는 줄이
                 어느 갈래에 속하는지 위로 되짚어 올라가야 안다. 카드로 끊으면
                 갈래가 곧 덩어리라 되짚을 일이 없다.
 
@@ -417,8 +431,9 @@ const RoleManager = () => {
                         자료 이름 칸에 바닥을 준다. 없으면 열이 많은 갈래에서
                         이름 칸이 먼저 줄어들어 '크레딧 수동 조정'이 두 줄로 깨진다.
                         좁은 화면에서는 표만 안쪽에서 가로로 밀린다.
+                        (이름 200 + 체크칸 84 × 최대 5열 + 간격 · 여백)
                       */}
-                      <div className="min-w-[560px]">
+                      <div className="min-w-[700px]">
                         <div
                           className="grid items-center gap-2 border-b border-border-main bg-subtle px-5 py-2 body-6 font-medium text-font-2"
                           style={{ gridTemplateColumns: GRID_TEMPLATE }}
@@ -465,6 +480,12 @@ const RoleManager = () => {
                                     {def.isSensitive && (
                                       <Badge tone="warning">민감</Badge>
                                     )}
+                                    {/* 자료 전체가 서버와 아직 이어지지 않았으면 줄에서 바로 보인다. */}
+                                    {def.actions.every((action) =>
+                                      UNWIRED_PERMISSIONS.has(
+                                        permissionKey(resource, action),
+                                      ),
+                                    ) && <Badge tone="neutral">미연결</Badge>}
                                   </span>
                                   <span className="block truncate body-6 text-font-2">
                                     {def.description}
@@ -481,14 +502,32 @@ const RoleManager = () => {
                                       className="flex items-center justify-center"
                                     >
                                       {supported ? (
-                                        <Checkbox
-                                          aria-label={`${def.label} ${PERMISSION_ACTION_LABEL[action]}`}
-                                          disabled={!canWrite}
-                                          checked={granted.includes(action)}
-                                          onChange={() =>
-                                            togglePermission(resource, action)
+                                        <span
+                                          className="flex flex-col items-center gap-0.5"
+                                          title={
+                                            UNWIRED_PERMISSIONS.has(
+                                              permissionKey(resource, action),
+                                            )
+                                              ? "서버에 이 권한을 쓰는 기능이 아직 없습니다. 켜도 달라지는 것이 없습니다."
+                                              : undefined
                                           }
-                                        />
+                                        >
+                                          <Checkbox
+                                            aria-label={`${def.label} ${def.actionLabels?.[action] ?? PERMISSION_ACTION_LABEL[action]}`}
+                                            disabled={!canWrite}
+                                            checked={granted.includes(action)}
+                                            onChange={() =>
+                                              togglePermission(resource, action)
+                                            }
+                                          />
+                                          {UNWIRED_PERMISSIONS.has(
+                                            permissionKey(resource, action),
+                                          ) && (
+                                            <span className="caption-3 text-font-disabled">
+                                              미연결
+                                            </span>
+                                          )}
+                                        </span>
                                       ) : (
                                         /* 같은 갈래 안에서도 그 자료에 없는 행위는 선으로 둔다. 꺼진 것과 구분돼야 한다. */
                                         <span className="text-font-disabled">
@@ -521,6 +560,7 @@ const RoleManager = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

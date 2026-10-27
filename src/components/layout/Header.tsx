@@ -1,6 +1,8 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useLogoutMutation } from "@/api/auth/logout";
 import { ADMIN_MENU, isMenuItemActive } from "@/constants/menu";
@@ -45,6 +47,10 @@ const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
   const admin = useAdminStore((state) => state.admin);
+  // 옛 세션(localStorage)에는 roles 가 없을 수 있다.
+  const adminRoleNames = (admin?.roles ?? [])
+    .map((role) => role.roleName)
+    .join(", ");
   const { mutate: submitLogout, isPending: isLoggingOut } = useLogoutMutation();
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -53,6 +59,15 @@ const Header = () => {
 
   const breadcrumb = findBreadcrumb(pathname);
   const isDark = resolvedTheme === "dark";
+  const pageLabel = breadcrumb[breadcrumb.length - 1];
+
+  /*
+    탭 제목에 지금 화면 이름을 넣는다. 콘솔을 탭 여러 개로 띄워 두면
+    전부 "PLAT 관리자"라 어느 탭이 무엇인지 알 수 없다.
+  */
+  useEffect(() => {
+    document.title = pageLabel ? `${pageLabel} · PLAT 관리자` : "PLAT 관리자";
+  }, [pageLabel, pathname]);
 
   /*
     로그아웃은 되돌릴 수 없는 동작은 아니지만, 작성 중이던 폼이 통째로 사라진다.
@@ -69,19 +84,23 @@ const Header = () => {
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border-main bg-surface px-6">
-      <nav className="flex min-w-0 items-center gap-1.5 body-5 text-font-2">
-        {breadcrumb.map((label, index) => (
-          <span key={label} className="flex items-center gap-1.5">
-            {index > 0 && <ChevronRight size={13} />}
+      {/*
+        좁아져도 글자를 세로로 쪼개지 않는다. 상위 메뉴는 그대로 두고 마지막(현재 화면)만 말줄임한다.
+      */}
+      <nav className="flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap body-5 text-font-2">
+        {breadcrumb.map((label, index) => {
+          const isLast = index === breadcrumb.length - 1;
+
+          return (
             <span
-              className={
-                index === breadcrumb.length - 1 ? "text-font-1" : undefined
-              }
+              key={label}
+              className={cn("flex items-center gap-1.5", isLast ? "min-w-0" : "shrink-0")}
             >
-              {label}
+              {index > 0 && <ChevronRight size={13} className="shrink-0" />}
+              <span className={isLast ? "truncate text-font-1" : undefined}>{label}</span>
             </span>
-          </span>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="flex shrink-0 items-center gap-3">
@@ -138,12 +157,16 @@ const Header = () => {
                     {admin.name.slice(0, 1)}
                   </span>
 
-                  <span className="text-left leading-tight">
+                  <span className="min-w-0 max-w-[180px] text-left leading-tight">
                     <span className="block body-5 font-medium text-font-1">
                       {admin.name}
                     </span>
-                    <span className="block body-6 text-font-2">
-                      {admin.roleName}
+                    {/* 직책이 여러 개면 이어 붙여 한 줄로 자르고, 전체는 title 로 보여 준다. */}
+                    <span
+                      className="block truncate body-6 text-font-2"
+                      title={adminRoleNames}
+                    >
+                      {adminRoleNames}
                     </span>
                   </span>
                 </button>

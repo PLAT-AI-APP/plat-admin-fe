@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { LoginSchema } from "@/schema/auth.schema";
-import { useAdminStore } from "@/store/useAdminStore";
+import { nextRefreshExpiresAt, useAdminStore } from "@/store/useAdminStore";
 import type { AppError } from "@/type/api";
 import type { LoginResponse } from "@/type/auth";
 
@@ -13,7 +13,7 @@ import type { LoginResponse } from "@/type/auth";
  * `email`로 두고 여기서 한 번 맞춘다.
  */
 export const login = async (values: LoginSchema) => {
-  const response = await liveAxios.post<LoginResponse>("/admin/auth/login", {
+  const response = await liveAxios.post<LoginResponse>("/auth/login", {
     username: values.email,
     password: values.password,
   });
@@ -32,7 +32,8 @@ export const useLoginMutation = () => {
 
   return useMutation<LoginResponse, AppError, LoginSchema>({
     mutationFn: login,
-    onSuccess: ({ accessToken, refreshToken, admin, mustChangePassword }) =>
-      setSession({ accessToken, refreshToken, admin, mustChangePassword }),
+    /* 재발급 토큰은 서버가 HttpOnly 쿠키로 심는다. 화면은 끊기는 시각만 기억한다. */
+    onSuccess: ({ accessToken, admin, mustChangePassword }) =>
+      setSession({ accessToken, refreshExpiresAt: nextRefreshExpiresAt(), admin, mustChangePassword }),
   });
 };

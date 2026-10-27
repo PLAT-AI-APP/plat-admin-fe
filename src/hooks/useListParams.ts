@@ -1,9 +1,12 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 
 type ParamValue = string | number;
+
+/** 목록 화면별 마지막 주소를 담는 sessionStorage 키 접두사 */
+export const LIST_URL_KEY_PREFIX = "plat-admin:list-url:";
 
 /**
  * 목록 화면의 검색어 · 필터 · 페이지를 주소와 묶는다.
@@ -39,6 +42,23 @@ export const useListParams = <T extends Record<string, ParamValue>>(
     return Object.fromEntries(entries) as T;
   }, [defaults, searchParams]);
 
+  /*
+    상세에서 "목록으로"를 누르면 보던 조건 그대로 돌아가도록 마지막 주소를 남긴다.
+    BackLink가 읽는다. 탭마다 따로 가져야 해서 sessionStorage에 둔다.
+  */
+  useEffect(() => {
+    const queryString = searchParams.toString();
+
+    try {
+      sessionStorage.setItem(
+        `${LIST_URL_KEY_PREFIX}${pathname}`,
+        queryString ? `${pathname}?${queryString}` : pathname,
+      );
+    } catch {
+      // 저장소를 못 쓰면 BackLink가 조건 없는 목록으로 간다.
+    }
+  }, [pathname, searchParams]);
+
   const setParams = useCallback(
     (patch: Partial<T>) => {
       const next = { ...params, ...patch };
@@ -58,7 +78,8 @@ export const useListParams = <T extends Record<string, ParamValue>>(
 
       Object.entries(next).forEach(([key, value]) => {
         // 기본값은 주소에 쓰지 않는다. 안 그러면 첫 화면부터 주소가 지저분해진다.
-        if (value === "" || value === defaults[key]) return;
+        // 빈 값이라도 기본값이 아니면(기본 탭이 "발송 대기"인데 "전체"를 고름) `key=` 로 남겨야 다시 읽을 때 기본값으로 돌아가지 않는다.
+        if (value === defaults[key]) return;
 
         query.set(key, String(value));
       });

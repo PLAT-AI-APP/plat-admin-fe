@@ -19,27 +19,28 @@ import {
   bannedWords,
   universes,
   syncCharacterDerivedCounts,
-} from "../db/character";
+} from "@/mocks/db/character";
 import {
   MOCK_DELAY_MS,
   matchesKeyword,
   nextId,
   paginate,
   randomInt,
-} from "../utils";
+} from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
 /** 내보내기 작업이 완료되기까지 걸리는 목업 처리 시간 */
 const EXPORT_PROCESSING_MS = 2_500;
 
-const findCharacter = (characterId: number) =>
+/** 라우트 파라미터는 문자열 그대로 비교한다. Snowflake를 숫자로 바꾸면 끝자리가 뭉개진다. */
+const findCharacter = (characterId: string) =>
   characters.find((character) => character.characterId === characterId);
 
-const findProfile = (characterId: number) =>
+const findProfile = (characterId: string) =>
   characterProfiles.find((profile) => profile.characterId === characterId);
 
-const findModeration = (characterId: number) =>
+const findModeration = (characterId: string) =>
   characterModerations.find((item) => item.characterId === characterId);
 
 /** 삭제 처리된 캐릭터는 목록에서 제외한다. (실제 서버도 soft delete를 쓴다) */
@@ -69,7 +70,11 @@ const sortCharacters = (rows: Character[], sort: string): Character[] => {
     SORT_COMPARATORS[sort as CharacterSort] ?? SORT_COMPARATORS.CREATED_DESC;
 
   return [...rows].sort(
-    (a, b) => comparator(a, b) || a.characterId - b.characterId,
+    /*
+      ID는 문자열이라 빼기로 비교할 수 없다. 사전순으로만 갈라도 순서는 흔들리지 않는다 —
+      여기서 필요한 것은 "항상 같은 순서"지 ID의 크기 순서가 아니다.
+    */
+    (a, b) => comparator(a, b) || a.characterId.localeCompare(b.characterId),
   );
 };
 
@@ -92,7 +97,7 @@ const filterCharacters = (url: URL): Character[] => {
         keyword,
         character.name,
         character.creatorNickname,
-        String(character.characterId),
+        character.characterId,
         ...character.tags,
       )
     ) {
@@ -118,7 +123,7 @@ const filterCharacters = (url: URL): Character[] => {
  * 매칭 ID를 목업 금지어 사전에서 다시 찾아 붙인다. 이 사전은 캐릭터 목업 전용이다 —
  * 금지어 화면은 실서버를 보므로 두 곳의 단어가 같을 이유가 없다.
  */
-const buildNsfwMatches = (characterId: number): CharacterNsfwMatch[] => {
+const buildNsfwMatches = (characterId: string): CharacterNsfwMatch[] => {
   const ids = findModeration(characterId)?.nsfwMatchedKeywordIds ?? [];
 
   return ids.flatMap((keywordId) => {
@@ -128,12 +133,52 @@ const buildNsfwMatches = (characterId: number): CharacterNsfwMatch[] => {
   });
 };
 
+const ASSET_SITUATION_POOL = [
+  "비 내리는 골목에서 우산을 건네며 처음 마주치는 장면",
+  "축제 밤, 불꽃 아래에서 조용히 속마음을 털어놓는 순간",
+  "도서관 구석 창가에서 졸다가 눈이 마주친 오후",
+  "전투가 끝난 폐허 위에서 서로의 상처를 살피는 장면",
+  "새벽 기차역 플랫폼에서 떠나기 직전 마지막 인사",
+];
+
+/**
+ * 등장 세계관에서 에셋을 만든다. 세계관마다 `assetCount`만큼이라 캐릭터의
+ * `assetCount`(등장 세계관 합)와 개수가 맞는다. 이미지는 목업의 다른 그림처럼
+ * picsum 예시를 쓰되, 세로로 긴 일러스트를 섞어 `contain` 그리드가 자르지 않는지 본다.
+ * 네 장에 한 장은 URL을 비워 자리표시(파일 ID)도 함께 확인한다.
+ */
+const buildAssets = (appeared: typeof universes): CharacterDetailResponse["assets"] =>
+  appeared.flatMap((universe) =>
+    Array.from({ length: universe.assetCount }, (_, index) => ({
+      assetId: `${universe.universeId}-${index + 1}`,
+      fileId: `${universe.universeId}${String(index + 1).padStart(3, "0")}`,
+      assetName: `${universe.name} 에셋 ${index + 1}`,
+      assetSituation:
+        index % 4 === 3
+          ? null
+          : ASSET_SITUATION_POOL[index % ASSET_SITUATION_POOL.length],
+      url:
+        index % 4 === 2
+          ? null
+          : `https://picsum.photos/seed/plat-asset-${universe.universeId}-${index + 1}/${index % 2 ? "600/900" : "800/800"}`,
+    })),
+  );
+
 /** 상세 응답은 프로필 시드와 세계관 목록을 합쳐 만든다. */
 const buildCharacterDetail = (
   character: Character,
 ): CharacterDetailResponse => {
   const profile = findProfile(character.characterId);
   const moderation = findModeration(character.characterId);
+  /*
+    이 캐릭터가 **등장하는** 세계관. 소유가 아니라 등장 기준이라, 다른 크리에이터의
+    세계관에 초대된 경우도 함께 나온다.
+  */
+  const appeared = universes.filter((universe) =>
+    universe.characters.some(
+      (item) => item.characterId === character.characterId,
+    ),
+  );
 
   return {
     ...character,
@@ -150,15 +195,8 @@ const buildCharacterDetail = (
       화면이 두 경우를 모두 그리는지 확인하려고 필드를 명시적으로 남겨 둔다.
     */
     profileImageFileId: null,
-    /*
-      이 캐릭터가 **등장하는** 세계관. 소유가 아니라 등장 기준이라, 다른 크리에이터의
-      세계관에 초대된 경우도 함께 나온다.
-    */
-    universes: universes.filter((universe) =>
-      universe.characters.some(
-        (item) => item.characterId === character.characterId,
-      ),
-    ),
+    universes: appeared,
+    assets: buildAssets(appeared),
     updatedAt: profile?.updatedAt ?? character.createdAt,
   };
 };
@@ -167,7 +205,7 @@ const notFound = (message: string) =>
   HttpResponse.json({ code: "NOT_FOUND", message }, { status: 404 });
 
 export const characterHandlers = [
-  http.get(`${BASE_URI}/admin/characters`, async ({ request }) => {
+  http.get(`${BASE_URI}/characters`, async ({ request }) => {
     const url = new URL(request.url);
 
     await delay(MOCK_DELAY_MS);
@@ -175,8 +213,8 @@ export const characterHandlers = [
     return HttpResponse.json(paginate(filterCharacters(url), url));
   }),
 
-  http.get(`${BASE_URI}/admin/characters/:characterId`, async ({ params }) => {
-    const character = findCharacter(Number(params.characterId));
+  http.get(`${BASE_URI}/characters/:characterId`, async ({ params }) => {
+    const character = findCharacter(String(params.characterId));
 
     await delay(MOCK_DELAY_MS);
 
@@ -186,9 +224,9 @@ export const characterHandlers = [
   }),
 
   http.patch(
-    `${BASE_URI}/admin/characters/:characterId/visibility`,
+    `${BASE_URI}/characters/:characterId/visibility`,
     async ({ params, request }) => {
-      const character = findCharacter(Number(params.characterId));
+      const character = findCharacter(String(params.characterId));
       const { visibility } = (await request.json()) as {
         visibility: CharacterVisibility;
       };
@@ -210,9 +248,9 @@ export const characterHandlers = [
     숨김으로 두었을 수도 있기 때문이다. 노출은 운영자가 따로 판단해 올린다.
   */
   http.patch(
-    `${BASE_URI}/admin/characters/:characterId/status`,
+    `${BASE_URI}/characters/:characterId/status`,
     async ({ params, request }) => {
-      const character = findCharacter(Number(params.characterId));
+      const character = findCharacter(String(params.characterId));
       const body = (await request.json()) as CharacterStatusBody;
 
       if (!character) return notFound("존재하지 않는 캐릭터입니다.");
@@ -250,9 +288,9 @@ export const characterHandlers = [
   ),
 
   http.delete(
-    `${BASE_URI}/admin/characters/:characterId`,
+    `${BASE_URI}/characters/:characterId`,
     async ({ params }) => {
-      const character = findCharacter(Number(params.characterId));
+      const character = findCharacter(String(params.characterId));
 
       if (!character) return notFound("존재하지 않는 캐릭터입니다.");
 
@@ -269,7 +307,7 @@ export const characterHandlers = [
     },
   ),
 
-  http.get(`${BASE_URI}/admin/chat-exports`, async ({ request }) => {
+  http.get(`${BASE_URI}/chat-exports`, async ({ request }) => {
     const url = new URL(request.url);
     const status = url.searchParams.get("status") ?? "";
 
@@ -285,7 +323,7 @@ export const characterHandlers = [
     return HttpResponse.json(paginate(sorted, url));
   }),
 
-  http.post(`${BASE_URI}/admin/chat-exports`, async ({ request }) => {
+  http.post(`${BASE_URI}/chat-exports`, async ({ request }) => {
     const body = (await request.json()) as ChatExportSchema;
     const character = findCharacter(body.targetId);
 
@@ -316,7 +354,7 @@ export const characterHandlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
 
-  http.get(`${BASE_URI}/admin/chat-exports/:jobId`, async ({ params }) => {
+  http.get(`${BASE_URI}/chat-exports/:jobId`, async ({ params }) => {
     const jobId = Number(params.jobId);
     const job = chatExportJobs.find((item) => item.jobId === jobId);
 

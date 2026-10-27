@@ -3,7 +3,6 @@ import { liveAxios } from "..";
 import { showAppToast } from "@/lib/toast";
 import type { AppError } from "@/type/api";
 import type {
-  UniverseCategory,
   UniverseReviewStatus,
   UniverseStatus,
   UniverseTendency,
@@ -13,8 +12,8 @@ import type {
 /**
  * 세계관 운영 조치(실서버 plat-admin, liveAxios).
  *
- * 두 엔드포인트로 나뉜다. 일반 운영 값은 `PATCH /admin/universes/{id}`,
- * 심사 결과는 `PATCH /admin/universes/{id}/review`. 둘 다 204라 응답에 값이 없어,
+ * 두 엔드포인트로 나뉜다. 일반 운영 값은 `PATCH /universes/{id}`,
+ * 심사 결과는 `PATCH /universes/{id}/review`. 둘 다 204라 응답에 값이 없어,
  * 보낸 값을 그대로 문구에 쓴다.
  */
 
@@ -22,10 +21,14 @@ import type {
 export interface UniversePatchBody {
   visibility?: UniverseVisibility;
   tendency?: UniverseTendency;
-  category?: UniverseCategory;
   commentEnabled?: boolean;
-  /** ACTIVE ↔ INACTIVE 만 있다. 삭제는 하드 딜리트라 상태로 남지 않는다. */
+  /** ACTIVE ↔ INACTIVE 만 보낼 수 있다. 인수 대기 · 삭제 · 파기는 탈퇴 · 삭제 · 파기 배치가 정한다. */
   status?: UniverseStatus;
+  /**
+   * 성인(19) 재분류. 켜면 성인인증 유저에게만 보이고 이미지가 보호 저장소로 옮겨진다.
+   * 끄면 반대로 일반 세계관이 된다.
+   */
+  adult?: boolean;
 }
 
 export interface UniverseReviewBody {
@@ -38,14 +41,14 @@ export const patchUniverse = async (
   universeId: string,
   body: UniversePatchBody,
 ) => {
-  await liveAxios.patch(`/admin/universes/${universeId}`, body);
+  await liveAxios.patch(`/universes/${universeId}`, body);
 };
 
 export const reviewUniverse = async (
   universeId: string,
   body: UniverseReviewBody,
 ) => {
-  await liveAxios.patch(`/admin/universes/${universeId}/review`, body);
+  await liveAxios.patch(`/universes/${universeId}/review`, body);
 };
 
 /**
@@ -94,11 +97,11 @@ export const useUniverseMutation = () => {
   const queryClient = useQueryClient();
 
   const invalidateUniverses = () => {
-    queryClient.invalidateQueries({ queryKey: ["get-universe-list"] });
+    queryClient.invalidateQueries({ queryKey: ["get-admin-universe-list"] });
     queryClient.invalidateQueries({ queryKey: ["get-universe-detail"] });
   };
 
-  /** 상태·공개범위·성향·카테고리·댓글 등 일반 운영 값 변경. */
+  /** 상태·공개범위·성향·댓글 등 일반 운영 값 변경. */
   const patchMutation = useMutation<
     void,
     AppError,

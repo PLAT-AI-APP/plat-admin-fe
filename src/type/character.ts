@@ -1,8 +1,6 @@
+import type { CreatorTierCode } from "./creatorTier";
 import type { HashtagCategory } from "./hashtag";
-import {
-  SERVICE_LANGUAGE_LABEL,
-  type ServiceLanguage,
-} from "./language";
+import type { ServiceLanguage } from "./language";
 
 /** 캐릭터 노출 상태 */
 export type CharacterVisibility = "PUBLIC" | "PRIVATE" | "HIDDEN";
@@ -11,7 +9,8 @@ export type CharacterVisibility = "PUBLIC" | "PRIVATE" | "HIDDEN";
 export type CharacterStatus = "ACTIVE" | "BLOCKED" | "DELETED";
 
 export interface Character {
-  characterId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  characterId: string;
   name: string;
   thumbnailUrl: string;
   /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
@@ -50,27 +49,29 @@ export interface CharacterDetail extends Character {
 export type UniverseVisibility = "PUBLIC" | "PRIVATE" | "UNLISTED";
 
 /**
- * 세계관 운영 상태. 서버 `UniverseStatus` 중 **운영에서 만날 수 있는 값**이다.
+ * 세계관 운영 상태. 서버 `UniverseStatus`와 같다.
  *
- * 세계관 삭제는 하드 딜리트다 — 지우면 데이터가 그대로 폐기되어 조회 자체가
- * 되지 않는다. 그래서 "삭제 대기"·"콘텐츠 파기" 같은 중간 상태가 존재할 수 없고,
- * 화면이 다룰 상태는 운영 중(`ACTIVE`)과 내려둔 것(`INACTIVE`) 둘뿐이다.
+ * - `ACTIVE` · `INACTIVE`: 운영이 직접 켜고 끄는 상태. 운영 조치로 오갈 수 있는 것은 이 둘뿐이다.
+ * - `ORPHANED`: 제작자가 탈퇴하며 이용허락과 함께 남긴 세계관. 인수 심사를 기다리며,
+ *   노출 · 새 대화는 닫히고 이미 있던 채팅방 대화만 이어진다.
+ * - `DELETED`: 삭제 대기. 삭제는 소프트 삭제라 파기 예정 시각까지 행이 남는다.
+ * - `PURGED`: 콘텐츠 파기. 파기 배치가 이미지 · 본문을 지운 뒤 껍데기만 남은 상태다.
+ *
+ * 관리자 목록 · 상세는 상태로 거르지 않아 다섯 값이 모두 올 수 있다.
  */
-export type UniverseStatus = "ACTIVE" | "INACTIVE";
+export type UniverseStatus =
+  | "ACTIVE"
+  | "INACTIVE"
+  | "ORPHANED"
+  | "DELETED"
+  | "PURGED";
+
+/** 운영 조치(활성화 · 비활성화)로 오갈 수 있는 상태인지. 서버 `UniverseModerationService`와 같다. */
+export const isOperableUniverseStatus = (status: UniverseStatus) =>
+  status === "ACTIVE" || status === "INACTIVE";
 
 /** 세계관 심사 상태. 서버 `ReviewStatus`와 같다. 승인 전에는 앱에 노출되지 않는다. */
 export type UniverseReviewStatus = "PENDING" | "APPROVED" | "REJECTED";
-
-/** 세계관 장르. 서버 `UniverseCategory`와 같다. */
-export type UniverseCategory =
-  | "ROMANCE"
-  | "FANTASY"
-  | "DRAMA"
-  | "MARTIAL_ARTS"
-  | "GL"
-  | "BL"
-  | "HORROR"
-  | "MYSTERY";
 
 /** 세계관 성향. 서버 `UniverseTendency`와 같다. */
 export type UniverseTendency = "ALL" | "MALE_ORIENTED" | "FEMALE_ORIENTED";
@@ -92,18 +93,21 @@ export type ScenarioType = "START" | "NORMAL" | "EVENT" | "ENDING";
 export type ScenarioLifecycle = "ACTIVE" | "HIDDEN" | "DEPRECATED";
 
 /**
- * 시나리오(에피소드) — **목업 큐레이션 구간에서만 쓰는 모양**이다.
+ * 시나리오(에피소드) — **MSW 목업 시드의 모양**이다.
  *
  * 세계관이 "무대"라면 시나리오는 **그 무대에서 시작하는 한 편의 이야기**다.
  * 유저는 세계관에 들어가 시나리오를 고르고, 그 시나리오의 상황과 첫 대사로
  * 대화를 시작한다. (plat-fe의 캐릭터 상세 > 시나리오 선택)
  *
  * 실서버 상세는 상황·첫 대사를 따로 주지 않고 **언어별 본문(`content`)** 하나로 준다.
- * 실연동된 상세 화면은 아래 `UniverseScenarioDetail`을 쓴다.
+ * 실연동된 상세 화면은 아래 `UniverseScenarioDetail`을 쓴다. 이 모양은 이제
+ * 목업 시드(`mocks/db/character`)가 세계관의 `scenarioCount`를 세는 데만 남아 있다.
  */
 export interface UniverseScenario {
-  scenarioId: number;
-  universeId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  scenarioId: string;
+  /** Snowflake. 문자열 그대로 다룬다. */
+  universeId: string;
   /** 회차. 목록 정렬 기준이자 유저에게 보이는 번호다. */
   episodeNo: number;
   type: ScenarioType;
@@ -119,12 +123,6 @@ export interface UniverseScenario {
 }
 
 /**
- * 세계관.
- *
- * 크리에이터가 만드는 콘텐츠의 단위다. **캐릭터 한 명과 시나리오 여러 편**을
- * 품고 있고, 메인 노출 큐레이션이 고르는 대상도 이 세계관이다.
- */
-/**
  * 세계관에 등장하는 캐릭터.
  *
  * **세계관과 캐릭터는 N:M이다.** 한 세계관에 여러 캐릭터가 나올 수 있고,
@@ -132,21 +130,26 @@ export interface UniverseScenario {
  * 목록 카드에는 첫 번째 캐릭터를 대표로 쓴다.
  */
 export interface UniverseCharacter {
-  characterId: number;
+  /** Snowflake. 문자열 그대로 다룬다. */
+  characterId: string;
   name: string;
   thumbnailUrl: string;
 }
 
 /**
- * 세계관 — **목업 큐레이션 구간의 행 타입**이다.
+ * 세계관 — **MSW 목업 시드의 행 타입**이다.
  *
- * 메인 노출(배너 · 오늘의 PICK · 공식 맛보기 · 에셋 추천)과 세계관 선택 모달이
- * 이 모양을 쓴다. 큐레이션은 아직 MSW 목업이고 슬롯도 목업 ID로 저장되어 있어
- * **여기 타입을 실서버 DTO로 바꾸면 큐레이션 화면이 통째로 깨진다.**
- * 실서버 목록 행은 `UniverseListRow`, 상세는 `UniverseDetail`이다.
+ * 크리에이터가 만드는 콘텐츠의 단위로, 캐릭터와 시나리오 여러 편을 품는다.
+ * 세계관 보드·상세와 메인 노출(홈 섹션·배너)·세계관 선택 모달은 이미 실서버
+ * 계약(`AdminUniverseListItem`·`UniverseDetail`)으로 옮겨 가서 이 모양을 쓰지 않는다.
+ *
+ * 남은 사용처는 아직 목업인 구간뿐이다. 캐릭터 상세(`CharacterDetail.universes`)가
+ * "등장 세계관" 목록으로 이 행을 그리고, 전역 검색·댓글·공식 계정 목업 시드가 이 배열을
+ * 읽는다. 실서버 계약과 필드 이름(`name`·`thumbnailUrl`)이 다른 것은 그 때문이다.
  */
 export interface Universe {
-  universeId: number;
+  /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
+  universeId: string;
   /** 큐레이션에서 "제목"으로 노출된다. */
   name: string;
   /** 큐레이션에서 "설명"으로 노출된다. */
@@ -161,19 +164,11 @@ export interface Universe {
   characters: UniverseCharacter[];
   tags: string[];
   /**
-   * 이 세계관이 **번역을 갖춘 언어**. 한국어는 항상 포함된다.
-   *
-   * 메인 노출(배너 · 오늘의 PICK · 공식 맛보기 · 에셋 추천)은 언어별로 목록을
-   * 따로 관리하는데, 그 후보를 거르는 기준이 이 값이다. 영어 번역이 없는
-   * 세계관을 영어 목록에 실으면 앱에서는 한국어 원문이 그대로 나간다.
-   */
-  supportedLanguages: ServiceLanguage[];
-  /**
    * 공식 여부.
    *
    * **저장된 값이 아니라 조회 시점에 계산된 값이다.**
    * 소유 크리에이터가 공식 계정으로 등록되어 있으면 참이다. 그래서 이 값만
-   * 따로 켜고 끌 수 없고, 바꾸려면 `공식 계정`(`/universes/official`)에서
+   * 따로 켜고 끌 수 없고, 바꾸려면 `공식 계정`(`/users/official`)에서
    * 계정을 등록·해제한다.
    */
   isOfficial: boolean;
@@ -183,7 +178,6 @@ export interface Universe {
   creatorNickname: string;
   visibility: UniverseVisibility;
   status: UniverseStatus;
-  category: UniverseCategory;
   tendency: UniverseTendency;
   reviewStatus: UniverseReviewStatus;
   /** 심사 반려 사유. `reviewStatus`가 `REJECTED`일 때만 있다. */
@@ -199,12 +193,6 @@ export interface Universe {
   createdAt: string;
 }
 
-/**
- * 세계관 상세.
- *
- * 목록에는 시나리오를 싣지 않는다. 한 세계관에 열 편이 넘게 달릴 수 있어
- * 목록 응답이 통째로 무거워진다.
- */
 /** 세계관의 대표 캐릭터. 목록 카드·배너처럼 한 명만 보여 주는 자리에서 쓴다. */
 export const mainCharacterOf = (universe: Universe): UniverseCharacter | undefined =>
   universe.characters[0];
@@ -233,24 +221,6 @@ export const isExposableUniverse = (universe: UniverseExposureState) =>
   universe.visibility === "PUBLIC" &&
   universe.reviewStatus === "APPROVED";
 
-/** 해당 언어 번역을 갖춘 세계관인지. 언어별 큐레이션 후보를 거를 때 쓴다. */
-export const supportsLanguage = (
-  universe: Pick<Universe, "supportedLanguages">,
-  language: ServiceLanguage,
-) => universe.supportedLanguages.includes(language);
-
-/**
- * 그 언어 화면에 나갈 수 있는 세계관인지.
- *
- * 노출 가능 상태(승인 · 공개 · 활성)만으로는 부족하다. **번역이 없는 언어의
- * 목록에 실리면 앱에서는 그 자리에 한국어 원문이 나간다.** 언어별 목록은
- * 상태와 번역을 함께 본다.
- */
-export const isExposableInLanguage = (
-  universe: Universe,
-  language: ServiceLanguage,
-) => isExposableUniverse(universe) && supportsLanguage(universe, language);
-
 /**
  * 노출될 수 없는 이유. 화면에 그대로 찍는다.
  * 노출 가능하면 `undefined`.
@@ -258,6 +228,9 @@ export const isExposableInLanguage = (
 export const universeBlockReason = (
   universe: UniverseExposureState,
 ): string | undefined => {
+  if (universe.status === "ORPHANED") return "인수 대기";
+  if (universe.status === "DELETED") return "삭제 대기";
+  if (universe.status === "PURGED") return "콘텐츠 파기";
   if (universe.status === "INACTIVE") return "비활성";
   if (universe.reviewStatus === "PENDING") return "심사 대기";
   if (universe.reviewStatus === "REJECTED") return "심사 반려";
@@ -267,26 +240,11 @@ export const universeBlockReason = (
   return undefined;
 };
 
-/**
- * 그 언어 목록에 실을 수 없는 이유.
- *
- * 상태 문제(`universeBlockReason`)를 먼저 보고, 상태가 멀쩡하면 번역 여부를 본다.
- * 번역이 없는 쪽이 더 흔한데 화면에 안 적어 두면 "왜 후보에 없지"를 매번 다시 찾는다.
- */
-export const universeLanguageBlockReason = (
-  universe: Universe,
-  language: ServiceLanguage,
-): string | undefined =>
-  universeBlockReason(universe) ??
-  (supportsLanguage(universe, language)
-    ? undefined
-    : `${SERVICE_LANGUAGE_LABEL[language]} 번역 없음`);
-
 /* ------------------------------------------------------------------ */
 /* 실서버(plat-admin) 세계관 계약                                        */
 /*                                                                    */
 /* 위 `Universe`/`UniverseScenario`(목업)와 달리 아래 타입은 실서버        */
-/* `/admin/universes`(liveAxios) 응답을 화면 용어로 옮긴 것이다.          */
+/* `/universes`(liveAxios) 응답을 화면 용어로 옮긴 것이다.          */
 /* 서버 DTO ↔ 화면 타입 변환은 `src/api/universe/*`에서만 한다.           */
 /*                                                                    */
 /* 관리자 서버는 파일 저장소 어댑터를 스캔하지 않아 이미지 URL을 만들지 못한다.  */
@@ -299,7 +257,6 @@ export interface AdminUniverseListItem {
   universeId: string;
   title: string;
   introduce: string;
-  category: UniverseCategory;
   tendency: UniverseTendency;
   visibility: UniverseVisibility;
   status: UniverseStatus;
@@ -336,8 +293,15 @@ export interface AdminUniverseListItem {
   scenarioCount: number;
   /** 번역이 채워진 언어 수 */
   translationCount: number;
+  /** 탈퇴한 제작자가 남긴 것을 공식 계정이 인수해 운영하는지. */
+  isAdopted: boolean;
   createdAt: string;
   updatedAt: string | null;
+  /**
+   * 성인(19) 세계관인가. 성인인증 유저에게만 보이고 이미지는 보호 저장소에 둔다.
+   * 운영자가 `PATCH /universes/{id}`의 `adult`로 재분류할 수 있다.
+   */
+  isAdult: boolean;
 }
 
 /** 소유 크리에이터 요약. 공식 판정·계정 이동의 근거다. */
@@ -345,7 +309,8 @@ export interface UniverseCreatorSummary {
   creatorId: string;
   userId: string | null;
   nickname: string | null;
-  grade: string;
+  /** 제작자 등급. 등급이 없으면 NONE. */
+  tier: CreatorTierCode;
   status: string;
 }
 
@@ -406,13 +371,12 @@ export interface UniverseScenarioDetail {
 /**
  * 세계관 상세(실서버).
  *
- * 서비스 경로가 status=ACTIVE만 보는 것과 달리 삭제·파기까지 전부 조회한다.
+ * 서비스 경로가 status=ACTIVE만 보는 것과 달리 인수 대기·삭제·파기까지 전부 조회한다.
  * 목록에 없는 번역·에셋·시나리오 본문을 담아 운영 검수에 쓴다.
  */
 export interface UniverseDetail {
   universeId: string;
   creator: UniverseCreatorSummary;
-  category: UniverseCategory;
   tendency: UniverseTendency;
   visibility: UniverseVisibility;
   status: UniverseStatus;
@@ -426,12 +390,18 @@ export interface UniverseDetail {
   profileImageUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
+  /** 탈퇴한 제작자가 남긴 것을 공식 계정이 인수한 시각. 인수하지 않았으면 null. */
+  adoptedAt: string | null;
+  /** 제작자가 처음 만들 때 권리 책임(저작권·초상권 등)에 동의한 시각. 앱에서 만든 세계관만 있다. */
+  rightsAgreedAt: string | null;
   translations: UniverseTranslationView[];
   hashtags: UniverseHashtagView[];
   character: UniverseCharacterView | null;
   assets: UniverseAssetView[];
   /** 회차 오름차순으로 정렬되어 온다. */
   scenarios: UniverseScenarioDetail[];
+  /** 성인(19) 세계관인가. 뜻은 `AdminUniverseListItem.isAdult`와 같다. */
+  isAdult: boolean;
 }
 
 /** 채팅 내보내기 작업 */
@@ -440,7 +410,8 @@ export type ChatExportStatus = "PENDING" | "PROCESSING" | "DONE" | "FAILED";
 export interface ChatExportJob {
   jobId: number;
   targetType: "CHARACTER" | "USER";
-  targetId: number;
+  /** 캐릭터·유저 ID. 둘 다 Snowflake라 문자열 그대로 다룬다. */
+  targetId: string;
   targetName: string;
   startDate: string;
   endDate: string;

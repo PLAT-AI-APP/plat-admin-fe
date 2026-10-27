@@ -9,5 +9,5 @@ export default async function CharacterDetailPage({
 }: CharacterDetailPageProps) {
   const { characterId } = await params;
 
-  return <CharacterDetailView characterId={Number(characterId)} />;
+  return <CharacterDetailView characterId={characterId} />;
 }

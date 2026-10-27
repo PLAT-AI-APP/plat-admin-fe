@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useModelCatalogQuery } from "@/api/ai/getModelCatalog";
 import { useModelPingMutation } from "@/api/ai/pingModel";
+import { useCan } from "@/hooks/useCan";
 import { Activity, CheckCircle, Warning } from "@/icons";
 import { formatWithCommas } from "@/lib/utils";
 import type {
@@ -15,7 +16,8 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Select from "@/components/ui/Select";
-import Table, { TableCellStack } from "@/components/ui/Table";
+import Table from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import type { TableColumn } from "@/components/ui/Table";
 import {
   AI_MODEL_STATUS_LABEL,
@@ -23,7 +25,7 @@ import {
   AI_PROVIDER_FILTER_OPTIONS,
   AI_PROVIDER_LABEL,
   AI_PROVIDER_TONE,
-} from "../../_constants/aiOptions";
+} from "@/app/(admin)/ai/_constants/aiOptions";
 
 const ModelCatalogManager = () => {
   const [provider, setProvider] = useState<AiProvider | "">("");
@@ -38,6 +40,8 @@ const ModelCatalogManager = () => {
   });
 
   const pingMutation = useModelPingMutation();
+  /* 제공사를 실제로 불러 비용이 들어 서버가 `aiModel:write` 를 요구한다. */
+  const canPing = useCan("aiModel:write");
 
   const handlePing = (model: string) => {
     pingMutation.mutate(model, {
@@ -94,6 +98,16 @@ const ModelCatalogManager = () => {
       render: (item) => `${formatWithCommas(item.outputPricePerMillion)}원`,
     },
     {
+      key: "cachePrice",
+      header: "캐시 읽기 / 쓰기",
+      align: "right",
+      numeric: true,
+      render: (item) =>
+        `${formatWithCommas(item.cacheReadPricePerMillion)} / ${formatWithCommas(
+          item.cacheWritePricePerMillion,
+        )}원`,
+    },
+    {
       key: "pingResult",
       header: "테스트 결과",
       render: (item) => {
@@ -130,7 +144,8 @@ const ModelCatalogManager = () => {
       header: "",
       width: "120px",
       align: "center",
-      render: (item) => (
+      render: (item) =>
+        canPing && (
         <Button
           size="sm"
           leftIcon={<Activity size={15} />}
@@ -142,7 +157,7 @@ const ModelCatalogManager = () => {
         >
           테스트 호출
         </Button>
-      ),
+        ),
     },
   ];
 
@@ -150,10 +165,10 @@ const ModelCatalogManager = () => {
     <>
       <Alert tone="info" title="모델이 어떤 물건인지만 봅니다.">
         &apos;AI 모델 관리&apos;와 같은 모델 목록이고, 이 화면은 제공사 쪽
-        사실만 보여줍니다. 사용 여부·역할·차감 크레딧 같은 운영 값은 그쪽에서
-        바꾸세요. 단가와 컨텍스트 윈도우는 제공사가 내려주는 값이 아니라 운영이
-        적어 두는 값이라 실제와 어긋날 수 있습니다. 테스트 호출 결과는 저장되지
-        않고 이 화면에서만 유지됩니다.
+        사실만 보여줍니다. 사용 여부·역할·판매 배수 같은 운영 값은 그쪽에서
+        바꾸세요. 단가는 제공사가 내려주는 값이 아니라 운영이 적어 두는 값이라,
+        제공사가 가격을 바꾸면 &apos;AI 모델 관리&apos;의 설정 수정에서 고칩니다.
+        테스트 호출 결과는 저장되지 않고 이 화면에서만 유지됩니다.
       </Alert>
 
       <Card noPadding>

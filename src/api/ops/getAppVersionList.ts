@@ -4,7 +4,7 @@ import type { AppError } from "@/type/api";
 import type { AppVersion } from "@/type/ops";
 
 export const getAppVersionList = async () => {
-  const response = await adminAxios.get<AppVersion[]>("/admin/app-versions");
+  const response = await adminAxios.get<AppVersion[]>("/app-versions");
 
   return response.data;
 };

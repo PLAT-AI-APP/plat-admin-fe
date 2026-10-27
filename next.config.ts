@@ -65,8 +65,29 @@ console.log(
     }`,
 );
 
+/**
+ * 모든 화면 응답에 붙이는 보안 헤더.
+ * - X-Frame-Options · frame-ancestors: 다른 사이트가 콘솔을 iframe 에 넣어 승인·삭제 버튼을 누르게 하지 못한다.
+ * - X-Content-Type-Options: 응답 형식을 추측해 스크립트로 실행하지 않는다.
+ * - Referrer-Policy: 밖으로 나갈 때 콘솔 주소의 경로·쿼리를 넘기지 않는다.
+ * - CSP 는 스크립트 출처까지 묶지 않고, 깨질 일 없는 지시어(플러그인·base 태그·프레임 삽입 차단)만 둔다.
+ */
+const SECURITY_HEADERS = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Content-Security-Policy",
+    value: "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+  },
+];
+
 const nextConfig: NextConfig = {
   output: "standalone",
+
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
 
   /**
    * 프로파일에서 나온 값을 번들에 심는다.
@@ -80,17 +101,49 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_API_MOCKING: appEnv.mocking ? "enabled" : "disabled",
     NEXT_PUBLIC_LIVE_BASE_URI: appEnv.liveBaseUri,
     NEXT_PUBLIC_IMAGE_BASE_URI: appEnv.imageBaseUri,
+    NEXT_PUBLIC_USER_SITE_URI: appEnv.userSiteUri,
   },
 
-  images: {
-    remotePatterns: [
+  /**
+   * 합친 화면의 옛 주소.
+   *
+   * 결제 장부 · 환불 관리 · 결제 보존 원장은 결제 내역으로 합쳤다.
+   *
+   * 옛 주소를 404로 끊지 않고 결제 내역의 같은 자리로 보낸다. 알림 · 북마크 · 공유된
+   * 링크가 옛 주소를 들고 있다. 환불 상세는 환불 ID만으로 결제를 찾을 수 없어 환불
+   * 요청 탭으로 보낸다. 쿼리(`userId` 등)는 Next가 그대로 넘긴다.
+   */
+  async redirects() {
+    return [
+      { source: "/billing/ledger", destination: "/billing/payments", permanent: false },
       {
-        protocol: "https",
-        hostname: "picsum.photos",
-        port: "",
-        pathname: "/**",
+        source: "/billing/refunds/:path*",
+        destination: "/billing/payments?tab=REFUND_REQUESTED",
+        permanent: false,
       },
-    ],
+      {
+        source: "/billing/retention",
+        destination: "/billing/payments?tab=WITHDRAWN",
+        permanent: false,
+      },
+      /*
+        메뉴 개편(운영 · 개발 · 관리)으로 같은 대상을 다루던 화면을 탭으로 합쳤다.
+        옛 주소는 합친 화면의 같은 탭으로 보낸다.
+      */
+      { source: "/main-exposure/banners", destination: "/main-exposure?tab=banners", permanent: false },
+      { source: "/main-exposure/today-pick", destination: "/main-exposure?tab=today-pick", permanent: false },
+      { source: "/ai/catalog", destination: "/ai/models?tab=catalog", permanent: false },
+      { source: "/ai/keys", destination: "/ops/secrets?tab=ai-keys", permanent: false },
+      { source: "/billing/chat-policy", destination: "/billing/pricing?tab=chat", permanent: false },
+      { source: "/billing/credit-policies", destination: "/billing/pricing?tab=fixed", permanent: false },
+      /* 운영자 활동은 시스템 로그에서 떼어 관리 구역으로 옮겼다. 쿼리(actorId 등)는 그대로 넘어간다. */
+      {
+        source: "/ops/logs",
+        has: [{ type: "query", key: "tab", value: "admin" }],
+        destination: "/ops/admin-activity",
+        permanent: false,
+      },
+    ];
   },
 
   /**

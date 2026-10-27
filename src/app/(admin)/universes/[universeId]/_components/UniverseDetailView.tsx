@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useUniverseDetailQuery } from "@/api/universe/getUniverseDetail";
@@ -10,20 +10,20 @@ import {
   useUniverseMutation,
   type UniversePatchBody,
 } from "@/api/universe/mutateUniverse";
-import { ChevronRight } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { resolveImageUrl } from "@/lib/imageUrl";
-import { cn, formatStatCount, formatWithCommas } from "@/lib/utils";
+import { formatWithCommas } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
+import { useCan } from "@/hooks/useCan";
 import { universeBlockReason, type UniverseDetail } from "@/type/character";
 import {
   universeRejectSchema,
   type UniverseRejectSchema,
 } from "@/schema/universe.schema";
 import BackLink from "@/components/layout/BackLink";
-import PageHeader from "@/components/layout/PageHeader";
 import Alert from "@/components/ui/Alert";
 import Badge from "@/components/ui/Badge";
+import { TIER_NAME } from "@/components/creatorTier/tierMeta";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Dropdown from "@/components/ui/Dropdown";
@@ -33,22 +33,27 @@ import FormField from "@/components/ui/FormField";
 import Modal from "@/components/ui/Modal";
 import Skeleton from "@/components/ui/Skeleton";
 import Textarea from "@/components/ui/Textarea";
-import UniverseAssetGallery from "./UniverseAssetGallery";
+import AssetGridSection from "@/components/detail/AssetGridSection";
+import CreatorProfileSection from "@/components/detail/CreatorProfileSection";
+import DetailHero from "@/components/detail/DetailHero";
+import DetailSection from "@/components/detail/DetailSection";
+import DetailSectionTabs from "@/components/detail/DetailSectionTabs";
+import HashtagLine from "@/components/detail/HashtagLine";
+import AdultMark from "@/components/detail/AdultMark";
+import StatusChip from "@/components/detail/StatusChip";
 import UniverseScenarioPanel from "./UniverseScenarioPanel";
-import UniverseSettingsModal, {
+import UniverseSettingsFormModal, {
   type UniverseSettingsMode,
-} from "./UniverseSettingsModal";
+} from "./UniverseSettingsFormModal";
 import UniverseTranslationPanel from "./UniverseTranslationPanel";
 import { buildUniverseActions } from "./universeActions";
 import {
-  creatorGradeLabel,
   creatorStatusLabel,
   creatorStatusTone,
   isRiskyCreatorStatus,
   universeTitleOf,
-} from "./universeMeta";
+} from "@/app/(admin)/universes/[universeId]/_lib/universeMeta";
 import {
-  UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_REVIEW_LABEL,
   UNIVERSE_REVIEW_TONE,
   UNIVERSE_STATUS_LABEL,
@@ -56,28 +61,24 @@ import {
   UNIVERSE_TENDENCY_LABEL,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
-} from "../../_constants/character";
+} from "@/constants/universeOptions";
 
 interface UniverseDetailViewProps {
   universeId: string;
 }
 
-/** 세계관 지표 한 칸. 축약값 아래에 원값을 남겨 대조할 수 있게 한다. */
-const StatBox = ({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}) => (
-  <div className="rounded-field border border-border-main px-3 py-2.5">
-    <p className="caption-1 text-font-2">{label}</p>
-    <p className="mt-1 title-4 text-font-1 tabular-nums">{value}</p>
-    {hint && <p className="caption-3 text-font-2 tabular-nums">{hint}</p>}
-  </div>
-);
+/** 섹션 탭이 스크롤할 DOM id */
+const SECTION = {
+  translation: "universe-translation",
+  creator: "universe-creator",
+  assets: "universe-assets",
+  characters: "universe-characters",
+  scenarios: "universe-scenarios",
+} as const;
+
+/** 히어로의 한 줄 소개는 앱 기본 언어(한국어) 본문에서 가져온다. */
+const koreanOf = (universe: UniverseDetail) =>
+  universe.translations.find((t) => t.language === "KO");
 
 /**
  * 세계관 상세 · 운영 콘솔.
@@ -87,15 +88,19 @@ const StatBox = ({
  *
  * - **판단에 필요한 것을 실제로 보여 준다.** 이미지(대표·에셋·캐릭터)를 원본
  *   경로로 그리고, 비어 있는 번역까지 드러내고, 회차 본문을 언어별로 대조한다.
- * - **판단한 것을 바로 조치한다.** 서버가 받는 값(심사·상태·공개 범위·장르·성향·
+ * - **판단한 것을 바로 조치한다.** 서버가 받는 값(심사·상태·공개 범위·성향·
  *   댓글)은 전부 헤더 드롭다운에서 처리한다.
  *
- * 삭제는 하드 딜리트다. 지운 세계관은 데이터째 사라져 이 화면으로도 열리지 않으므로
- * 삭제·복구는 다루지 않는다.
+ * 삭제는 소프트 삭제라 삭제 대기 · 파기 세계관도 이 화면으로 열린다. 삭제 · 복구 조치는 다루지 않는다.
+ * 탈퇴한 제작자가 남긴 세계관은 "인수 대기"로, 공식 계정이 인수했으면 "운영 인수"로 표시한다.
  */
 const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   const { data, isError } = useUniverseDetailQuery(universeId);
+  // 인수 심사 목록은 세계관 ID 로도 찾는다. 인수 번호와 처리 이력이 거기 있다.
+  const handoverListHref = `/universes/handovers?status=ALL&keyword=${universeId}`;
   const { patchMutation, reviewMutation } = useUniverseMutation();
+  /* 심사 · 상태 · 공개 범위 · 분류 · 댓글 조치는 서버에서 모두 `universe:write` 다. */
+  const canWrite = useCan("universe:write");
   const [isRejectOpen, setRejectOpen] = useState(false);
   const [settingsMode, setSettingsMode] = useState<UniverseSettingsMode | null>(
     null,
@@ -108,7 +113,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<UniverseRejectSchema>({
     resolver: zodResolver(universeRejectSchema),
     defaultValues: { reason: "" },
@@ -157,18 +162,9 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
           }),
         onActivate: () =>
           runPatch({ status: "ACTIVE" }, "세계관을 활성화했습니다."),
-        onDeactivate: () =>
-          openConfirm({
-            title: "세계관을 비활성화할까요?",
-            description:
-              "앱에서 즉시 내려갑니다. 콘텐츠는 지워지지 않고 언제든 다시 활성화할 수 있습니다.",
-            confirmText: "비활성화",
-            tone: "danger",
-            onConfirm: () =>
-              runPatch({ status: "INACTIVE" }, "세계관을 비활성화했습니다."),
-          }),
         onChangeVisibility: () => setSettingsMode("visibility"),
         onChangeClassification: () => setSettingsMode("classification"),
+        onChangeAdult: () => setSettingsMode("adult"),
         onToggleComment: (next) => {
           if (next) {
             runPatch({ commentEnabled: true }, "댓글을 다시 허용했습니다.");
@@ -198,10 +194,22 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   });
 
   const onChangeSettings = (body: UniversePatchBody) => {
+    if (body.adult !== undefined) {
+      runPatch(
+        body,
+        body.adult
+          ? "성인 콘텐츠로 분류했습니다."
+          : "일반 콘텐츠로 분류했습니다.",
+        () => setSettingsMode(null),
+      );
+
+      return;
+    }
+
     const message =
       body.visibility !== undefined
         ? `공개 범위를 ${UNIVERSE_VISIBILITY_LABEL[body.visibility]}(으)로 바꿨습니다.`
-        : "장르 · 성향을 바꿨습니다.";
+        : "성향을 바꿨습니다.";
 
     runPatch(body, message, () => setSettingsMode(null));
   };
@@ -212,12 +220,6 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   return (
     <>
       <BackLink href="/universes" label="세계관" />
-
-      <PageHeader
-        title={data ? universeTitleOf(data) : "세계관 상세"}
-        description={data ? `#${data.universeId}` : undefined}
-        action={data ? <Dropdown items={actions} /> : undefined}
-      />
 
       {/*
         세 갈래 중 하나는 반드시 그린다. `isLoading`만 보면 조회가 실패한 뒤
@@ -242,192 +244,202 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
 
       {data && (
         <>
-          {/*
-            정지·회수된 크리에이터의 세계관은 심사를 통과시켜도 계정 쪽 조치로
-            다시 내려갈 수 있다. 승인 버튼을 누르기 전에 보이는 자리에 둔다.
-          */}
-          {isCreatorRisky && (
-            <Alert tone="warning" title="정지된 크리에이터의 세계관입니다">
-              소유 크리에이터가 {creatorStatusLabel(data.creator.status)} 상태입니다.
-              심사를 승인해도 계정 조치로 다시 내려갈 수 있으니, 계정 상태를 먼저
-              확인하세요.
-            </Alert>
-          )}
-
-          <Card>
-            <div className="flex gap-4">
-              <EntityImage
-                src={resolveImageUrl(
-                  data.profileImageUrl,
-                  data.profileImageFileId,
-                  "UNIVERSE_PROFILE",
-                  "SQ140",
-                )}
-                alt={universeTitleOf(data)}
-                fileId={data.profileImageFileId}
-                ratio="square"
-                className="w-28 shrink-0"
-              />
-
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge tone={UNIVERSE_STATUS_TONE[data.status]}>
-                    {UNIVERSE_STATUS_LABEL[data.status]}
-                  </Badge>
-                  <Badge tone={UNIVERSE_VISIBILITY_TONE[data.visibility]}>
-                    {UNIVERSE_VISIBILITY_LABEL[data.visibility]}
-                  </Badge>
-                  <Badge tone={UNIVERSE_REVIEW_TONE[data.reviewStatus]}>
-                    {UNIVERSE_REVIEW_LABEL[data.reviewStatus]}
-                  </Badge>
-                  <Badge tone="neutral">
-                    {UNIVERSE_CATEGORY_LABEL[data.category]}
-                  </Badge>
-                  <Badge tone="neutral">
-                    {UNIVERSE_TENDENCY_LABEL[data.tendency]}
-                  </Badge>
-                  {!data.commentEnabled && (
-                    <Badge tone="neutral">댓글 불가</Badge>
+          <Card bodyClassName="flex flex-col gap-4">
+            <DetailHero
+              image={
+                <EntityImage
+                  src={resolveImageUrl(
+                    data.profileImageUrl,
+                    data.profileImageFileId,
+                    "UNIVERSE_PROFILE",
+                    "SQ140",
                   )}
-                </div>
+                  alt={universeTitleOf(data)}
+                  fileId={data.profileImageFileId}
+                  ratio="square"
+                  shape="chip"
+                />
+              }
+              chips={
+                <>
+                  <StatusChip tone={UNIVERSE_STATUS_TONE[data.status]}>
+                    {UNIVERSE_STATUS_LABEL[data.status]}
+                  </StatusChip>
+                  {data.adoptedAt && (
+                    <StatusChip tone="brand">운영 인수</StatusChip>
+                  )}
+                  <StatusChip tone={UNIVERSE_VISIBILITY_TONE[data.visibility]}>
+                    {UNIVERSE_VISIBILITY_LABEL[data.visibility]}
+                  </StatusChip>
+                  <StatusChip tone={UNIVERSE_REVIEW_TONE[data.reviewStatus]}>
+                    {UNIVERSE_REVIEW_LABEL[data.reviewStatus]}
+                  </StatusChip>
+                  {/* 좋고 나쁨이 없는 분류라 점 없이 둔다. 더보기에서 바꾸는 값이다. */}
+                  <StatusChip>{UNIVERSE_TENDENCY_LABEL[data.tendency]}</StatusChip>
+                  {!data.commentEnabled && (
+                    <StatusChip tone="danger">댓글 중지</StatusChip>
+                  )}
+                </>
+              }
+              title={universeTitleOf(data)}
+              titleMark={
+                data.isAdult ? (
+                  <AdultMark title="성인 콘텐츠 · 성인인증 유저에게만 보입니다." />
+                ) : undefined
+              }
+              idLabel={`#${data.universeId}`}
+              subtitle={koreanOf(data)?.introduce.trim() || undefined}
+              hashtags={
+                <HashtagLine
+                  items={data.hashtags.map((tag) => ({
+                    key: tag.hashtagId,
+                    label: tag.label,
+                    isDisabled: !tag.isEnabled,
+                    isAdult: tag.isAdult,
+                  }))}
+                />
+              }
+              stats={[
+                {
+                  label: "등장 캐릭터",
+                  value: `${data.character ? 1 : 0}명`,
+                },
+                // 축약하지 않는다. 조치 근거로 남길 숫자라 원값이 필요하다.
+                { label: "대화량", value: formatWithCommas(data.chatCount) },
+                { label: "좋아요", value: formatWithCommas(data.likeCount) },
+              ]}
+              action={canWrite ? <Dropdown items={actions} /> : undefined}
+              createdAt={data.createdAt}
+              updatedAt={data.updatedAt}
+            />
 
-                {/* 왜 앱에 안 보이는지를 뱃지 조합 대신 한 줄로 명시한다. */}
-                {blockReason ? (
-                  <p className="mt-2.5 body-5 text-warning">
-                    현재 앱에 노출되지 않습니다 · 사유: {blockReason}
-                  </p>
-                ) : (
-                  <p className="mt-2.5 body-5 text-success">
-                    앱에 정상 노출 가능한 상태입니다.
-                  </p>
-                )}
+            {/* 왜 앱에 안 보이는지를 칩 조합 대신 한 줄로 명시한다. */}
+            {blockReason ? (
+              <p className="body-5 text-warning">
+                현재 앱에 노출되지 않습니다 · 사유: {blockReason}
+              </p>
+            ) : (
+              <p className="body-5 text-success">
+                앱에 정상 노출 가능한 상태입니다.
+              </p>
+            )}
 
-                <p className="mt-2 body-6 text-font-2 tabular-nums">
-                  등록 {formatDateTime(data.createdAt)}
-                  {data.updatedAt && ` · 수정 ${formatDateTime(data.updatedAt)}`}
-                </p>
-              </div>
-            </div>
-
-            {/* 심사 반려 사유는 크리에이터 문의로 이어지므로 눈에 띄게 둔다. */}
-            {data.reviewStatus === "REJECTED" && data.reviewRejectionReason && (
-              <Alert tone="danger" title="심사 반려" className="mt-4">
-                {data.reviewRejectionReason}
+            {/*
+              정지·회수된 크리에이터의 세계관은 심사를 통과시켜도 계정 쪽 조치로
+              다시 내려갈 수 있다. 승인 버튼을 누르기 전에 보이는 자리에 둔다.
+            */}
+            {isCreatorRisky && (
+              <Alert tone="warning" title="정지된 크리에이터의 세계관입니다">
+                소유 크리에이터가 {creatorStatusLabel(data.creator.status)}{" "}
+                상태입니다. 심사를 승인해도 계정 조치로 다시 내려갈 수 있으니,
+                계정 상태를 먼저 확인하세요.
               </Alert>
             )}
 
-            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <StatBox
-                label="시나리오"
-                value={`${formatWithCommas(data.scenarios.length)}편`}
-              />
-              <StatBox
-                label="에셋"
-                value={formatWithCommas(data.assets.length)}
-              />
-              <StatBox
-                label="대화"
-                // 앱 화면과 같은 축약 규칙으로 보여 준다(운영자가 앱과 대조한다).
-                value={formatStatCount(data.chatCount)}
-                // 축약된 숫자만으로는 조치 근거를 남길 수 없어 원값을 함께 둔다.
-                hint={
-                  data.chatCount >= 1_000
-                    ? formatWithCommas(data.chatCount)
-                    : undefined
-                }
-              />
-              <StatBox
-                label="좋아요"
-                value={formatStatCount(data.likeCount)}
-                hint={
-                  data.likeCount >= 1_000
-                    ? formatWithCommas(data.likeCount)
-                    : undefined
-                }
-              />
-            </div>
-          </Card>
+            {data.status === "ORPHANED" && (
+              <Alert tone="warning" title="탈퇴한 크리에이터가 남긴 캐릭터입니다.">
+                인수 심사를 기다립니다. 기존 채팅방 대화만 이어집니다.{" "}
+                <Link href={handoverListHref} className="underline">
+                  인수 심사로 이동
+                </Link>
+              </Alert>
+            )}
 
-          <UniverseTranslationPanel translations={data.translations} />
+            {data.adoptedAt && (
+              <p className="body-5 text-font-2">
+                탈퇴한 크리에이터에게서 공식 계정이 인수해 운영 중입니다 · 인수{" "}
+                {formatDateTime(data.adoptedAt)} ·{" "}
+                <Link href={handoverListHref} className="underline">
+                  인수 기록
+                </Link>
+              </p>
+            )}
 
-          {/* 해시태그. 성인 태그가 걸린 세계관인지 함께 본다. */}
-          <Card title={`해시태그 ${data.hashtags.length}개`}>
-            {data.hashtags.length === 0 ? (
-              <EmptyState title="등록된 해시태그가 없습니다." />
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {data.hashtags.map((tag) => (
-                  <span
-                    key={tag.hashtagId}
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-chip px-2 py-1 body-6",
-                      tag.isEnabled
-                        ? "bg-subtle text-font-1"
-                        : "bg-subtle text-font-disabled line-through",
-                    )}
-                  >
-                    #{tag.label}
-                    {tag.isAdult && (
-                      <span className="caption-3 text-danger">19</span>
-                    )}
-                  </span>
-                ))}
-              </div>
+            {data.rightsAgreedAt && (
+              <p className="body-5 text-font-2">
+                크리에이터 권리 책임 동의 · {formatDateTime(data.rightsAgreedAt)}
+              </p>
+            )}
+
+            {/* 심사 반려 사유는 크리에이터 문의로 이어지므로 눈에 띄게 둔다. */}
+            {data.reviewStatus === "REJECTED" && data.reviewRejectionReason && (
+              <Alert tone="danger" title="심사 반려">
+                {data.reviewRejectionReason}
+              </Alert>
             )}
           </Card>
 
-          <UniverseAssetGallery assets={data.assets} />
+          <DetailSectionTabs
+            items={[
+              { label: "번역언어", value: SECTION.translation },
+              { label: "크리에이터", value: SECTION.creator },
+              {
+                label: "에셋",
+                value: SECTION.assets,
+                count: data.assets.length,
+              },
+              {
+                label: "등장 캐릭터",
+                value: SECTION.characters,
+                count: data.character ? 1 : 0,
+              },
+              {
+                label: "시나리오",
+                value: SECTION.scenarios,
+                count: data.scenarios.length,
+              },
+            ]}
+          />
 
-          <UniverseScenarioPanel scenarios={data.scenarios} />
+          <UniverseTranslationPanel
+            id={SECTION.translation}
+            translations={data.translations}
+          />
 
-          {/*
-            대표 캐릭터.
+          <CreatorProfileSection
+            id={SECTION.creator}
+            userId={data.creator.userId}
+            fallbackNickname={data.creator.nickname}
+            fallbackId={data.creator.creatorId}
+            chips={
+              <>
+                {data.creator.tier !== "NONE" && (
+                  <Badge tone="neutral">{TIER_NAME[data.creator.tier]}</Badge>
+                )}
+                <Badge tone={creatorStatusTone(data.creator.status)}>
+                  {creatorStatusLabel(data.creator.status)}
+                </Badge>
+              </>
+            }
+          />
 
-            캐릭터 상세(`/universes/characters/{id}`)로 링크하지 않는다. 그 화면은
-            아직 목업 구간이라 number ID로 조회하는데, 여기 오는 값은 실서버
-            Snowflake 문자열이라 **누르면 반드시 404**다. 실연동 전까지는 링크
-            대신 이 화면 안에서 캐릭터 정보를 그대로 보여 준다.
-          */}
-          {data.character && (
-            <Card title="대표 캐릭터">
-              <div className="flex items-center gap-3">
-                <EntityImage
-                  src={resolveImageUrl(
-                    data.character.profileImageUrl,
-                    data.character.profileImageFileId,
-                    "CHARACTER_PROFILE",
-                    "SQ140",
-                  )}
-                  alt={data.character.name ?? "대표 캐릭터"}
-                  fileId={data.character.profileImageFileId}
-                  ratio="square"
-                  className="w-16 shrink-0 rounded-full"
-                />
+          <AssetGridSection id={SECTION.assets} assets={data.assets} />
 
-                <div className="min-w-0">
-                  <p className="truncate title-5 text-font-1">
-                    {data.character.name ?? "이름 없음"}
-                  </p>
-                  <p className="mt-0.5 body-6 text-font-2 tabular-nums">
-                    캐릭터 #{data.character.characterId}
-                  </p>
-                  <p className="mt-1 caption-3 text-font-disabled">
-                    캐릭터 상세는 아직 실서버와 연동되지 않아 이동할 수 없습니다.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          )}
+          <DetailSection
+            id={SECTION.characters}
+            title="등장 캐릭터"
+            meta={`총 ${data.character ? 1 : 0}개`}
+          >
+            {data.character ? (
+              <CharacterRow character={data.character} />
+            ) : (
+              <EmptyState
+                title="등장하는 캐릭터가 없습니다."
+                description="캐릭터가 없는 세계관은 유저가 대화를 시작할 상대가 없습니다."
+              />
+            )}
+          </DetailSection>
 
-          {/* 공식 여부의 근거가 되는 계정이라 세계관 상세에서 바로 이어 준다. */}
-          <Card title="제작자">
-            <CreatorRow creator={data.creator} />
-          </Card>
+          <UniverseScenarioPanel
+            id={SECTION.scenarios}
+            scenarios={data.scenarios}
+          />
         </>
       )}
 
       {/* 심사 반려 모달. 반려 사유는 필수이며, 반려 시 공개 범위가 비공개로 함께 내려간다. */}
       <Modal
+        isDirty={isDirty}
         isOpen={isRejectOpen}
         onClose={() => setRejectOpen(false)}
         title="심사 반려"
@@ -465,7 +477,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
       </Modal>
 
       {data && (
-        <UniverseSettingsModal
+        <UniverseSettingsFormModal
           mode={settingsMode}
           universe={data}
           isPending={patchMutation.isPending}
@@ -478,55 +490,47 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
 };
 
 /**
- * 제작자 한 줄.
+ * 등장 캐릭터 한 줄.
  *
- * 링크는 **갈 수 있는 곳이 있을 때만** 건다. 유저 상세가 있으면 그쪽으로,
- * 없으면 이 크리에이터의 세계관 목록으로 좁혀 준다. 둘 다 없으면(크리에이터
- * 식별자만 비는 경우) 링크 없이 정보만 남긴다 — 눌러서 아무 데도 못 가는
- * 링크는 운영자가 화면을 신뢰하지 않게 만든다.
+ * 캐릭터 상세(`/universes/characters/{id}`)로 링크하지 않는다. 그 화면은 아직
+ * 목업 구간이라, 여기 오는 실서버 Snowflake로 열면 **반드시 404**다. 실연동 전까지는
+ * 링크 없이 이 화면 안에서 캐릭터 정보를 그대로 보여 준다.
+ *
+ * 서버가 이 자리에 주는 값은 이름과 이미지뿐이다. 캐릭터 상태 · 소개 · 태그 · 지표는
+ * 응답에 없어서 그리지 않는다.
  */
-const CreatorRow = ({ creator }: { creator: UniverseDetail["creator"] }) => {
-  const href = creator.userId
-    ? `/users/${creator.userId}`
-    : creator.creatorId
-      ? `/universes?creatorId=${creator.creatorId}`
-      : undefined;
+const CharacterRow = ({
+  character,
+}: {
+  character: NonNullable<UniverseDetail["character"]>;
+}) => (
+  <div className="flex items-center gap-4">
+    <EntityImage
+      src={resolveImageUrl(
+        character.profileImageUrl,
+        character.profileImageFileId,
+        "CHARACTER_PROFILE",
+        "SQ140",
+      )}
+      alt={character.name ?? "캐릭터"}
+      fileId={character.profileImageFileId}
+      ratio="square"
+      shape="chip"
+      className="w-36 shrink-0"
+    />
 
-  const body = (
-    <>
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <p className="truncate title-5 text-font-1">
-            {creator.nickname ?? "이름 없음"}
-          </p>
-          <Badge tone="neutral">{creatorGradeLabel(creator.grade)}</Badge>
-          <Badge tone={creatorStatusTone(creator.status)}>
-            {creatorStatusLabel(creator.status)}
-          </Badge>
-        </div>
-
-        <p className="mt-1 body-6 text-font-2 tabular-nums">
-          크리에이터 #{creator.creatorId}
-          {creator.userId && ` · 유저 #${creator.userId}`}
-        </p>
-      </div>
-
-      {href && <ChevronRight size={16} className="shrink-0 text-font-2" />}
-    </>
-  );
-
-  if (!href) {
-    return <div className="flex items-center justify-between gap-3">{body}</div>;
-  }
-
-  return (
-    <Link
-      href={href}
-      className="-m-2 flex items-center justify-between gap-3 rounded-field p-2 transition hover:bg-surface-hover"
-    >
-      {body}
-    </Link>
-  );
-};
+    <div className="min-w-0">
+      <p className="truncate title-4 text-font-0">
+        {character.name ?? "이름 없음"}
+      </p>
+      <p className="mt-1 body-6 text-font-2 tabular-nums">
+        캐릭터 #{character.characterId}
+      </p>
+      <p className="mt-2 caption-3 text-font-disabled">
+        캐릭터 상세는 아직 실서버와 연동되지 않아 이동할 수 없습니다.
+      </p>
+    </div>
+  </div>
+);
 
 export default UniverseDetailView;

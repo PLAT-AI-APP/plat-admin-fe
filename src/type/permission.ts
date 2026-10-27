@@ -17,7 +17,9 @@ export type PermissionResource =
   | "mainExposure"
   | "character"
   | "officialAccount"
+  | "serviceAdmin"
   | "universe"
+  | "universeHandover"
   | "hashtag"
   | "bannedWord"
   | "chatExport"
@@ -25,21 +27,30 @@ export type PermissionResource =
   | "report"
   | "user"
   | "aiModel"
+  | "aiCost"
   | "systemPrompt"
   | "billingProduct"
   | "creditPolicy"
   | "creditAdjustment"
   | "ledger"
-  | "paymentRecord"
+  | "earning"
+  | "rewardProduct"
+  | "payment"
+  | "refund"
+  | "refundForce"
   | "notice"
   | "qna"
+  | "faq"
   | "notification"
   | "push"
+  | "mailTemplate"
   | "legal"
   | "role"
   | "manager"
   | "appVersion"
   | "server"
+  | "maintenance"
+  | "siteSetting"
   | "log"
   | "systemLog"
   | "batch";
@@ -68,6 +79,13 @@ interface ResourceDef {
   actions: PermissionAction[];
   /** 개인정보 · 금전처럼 특별히 좁게 열어야 하는 자료 */
   isSensitive?: boolean;
+  /**
+   * 이 자료에서만 행위를 다르게 부르는 이름.
+   *
+   * 표의 열 이름은 갈래가 함께 쓰지만, 거부 안내는 자료 하나를 짚어 말한다.
+   * `환불 > 지급 · 차감 · 환불`처럼 읽히면 무엇이 막혔는지 다시 해석해야 한다.
+   */
+  actionLabels?: Partial<Record<PermissionAction, string>>;
 }
 
 export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
@@ -77,7 +95,7 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     actions: ["read"],
   },
   mainExposure: {
-    label: "메인 노출",
+    label: "홈 편성",
     description: "배너 · 오늘의 PICK · 공식 맛보기 · 에셋 추천",
     actions: ["read", "write", "delete"],
   },
@@ -96,15 +114,37 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     description: "공식으로 취급할 유저 ID 지정. 공식 세계관 전체가 여기서 정해진다.",
     actions: ["read", "write", "delete"],
   },
+  serviceAdmin: {
+    /*
+      유저 권한과 따로 뗀다. 정지 같은 제재와 달리 서비스 안에서 관리자 기능을 쓸 수 있는
+      계정을 만드는 일이라, 유저를 볼 수 있는 사람 모두에게 딸려 가면 안 된다.
+    */
+    label: "서비스 관리자",
+    description:
+      "운영자가 서비스 화면에서 쓰는 계정에 관리자(ADMIN) 역할을 주고 뺀다.",
+    actions: ["read", "write"],
+    isSensitive: true,
+  },
   universe: {
     label: "세계관",
     description:
       "캐릭터와 시나리오를 품는 콘텐츠 단위. 심사 · 상태 · 댓글을 운영에서 조치한다.",
     actions: ["read", "write"],
   },
+  universeHandover: {
+    /*
+      세계관 권한과 따로 뗀다. 승인하면 세계관과 이미지 소유가 공식 계정으로 넘어가 회사가
+      권리침해 · 개인정보 책임을 직접 지고, 반려하면 세계관이 삭제된다.
+    */
+    label: "탈퇴 캐릭터 인수",
+    description:
+      "탈퇴한 크리에이터가 남긴 캐릭터를 공식 계정이 인수할지 심사한다. 반려하면 삭제된다.",
+    actions: ["read", "write"],
+    actionLabels: { write: "승인 · 반려" },
+  },
   hashtag: {
     label: "해시태그",
-    description: "사용자가 고를 수 있는 태그 목록",
+    description: "유저가 고를 수 있는 태그 목록",
     actions: ["read", "write", "delete"],
   },
   bannedWord: {
@@ -129,7 +169,7 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
   },
   report: {
     label: "신고",
-    description: "캐릭터 · 댓글 · 유저 신고 처리",
+    description: "댓글 · 세계관 신고 판정 · 조치",
     actions: ["read", "write"],
   },
   user: {
@@ -140,8 +180,19 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
   },
   aiModel: {
     label: "AI 모델",
-    description: "모델 카탈로그 확인과 운영 설정",
+    /* 요금(단가 · 판매 배수)은 운영이 고쳐 노트 요금(creditPolicy)으로 옮겼다. 여기는 개발의 튜닝만 남는다. */
+    description: "모델 카탈로그 확인과 튜닝(사용 여부 · 토큰 · temperature · 역할)",
     actions: ["read", "write"],
+  },
+  aiCost: {
+    /*
+      AI 모델 권한과 따로 뗀다. 모델을 켜고 끄는 사람이 원가와 마진까지 볼 필요는 없고,
+      유저별 사용 금액 순위가 함께 나온다.
+    */
+    label: "AI 원가·매출",
+    description: "제공사 원가와 노트 매출 · 마진, 모델별 · 유저별 사용 금액",
+    actions: ["read"],
+    isSensitive: true,
   },
   systemPrompt: {
     label: "시스템 프롬프트",
@@ -154,26 +205,43 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     actions: ["read", "write", "delete"],
     isSensitive: true,
   },
+  earning: {
+    label: "크리에이터 수익",
+    description: "크리에이터 수익 포인트 · 등급 · 적립 · 교환 요청 · 수익 정책",
+    actions: ["read", "write", "adjust", "send"],
+    isSensitive: true,
+    actionLabels: {
+      write: "동결 · 해제 · 정책",
+      adjust: "포인트 지급 · 차감 · 적립 재실행",
+      send: "교환 발송 · 반려",
+    },
+  },
+  rewardProduct: {
+    label: "교환 상품",
+    description: "크리에이터가 수익 포인트로 교환하는 상품권 · 노트 상품",
+    actions: ["read", "write", "delete"],
+  },
   billingProduct: {
     label: "결제 상품",
-    description: "크레딧 상품과 결제 금액",
+    description: "노트 상품과 결제 금액",
     actions: ["read", "write", "delete"],
     isSensitive: true,
   },
   creditPolicy: {
-    label: "크레딧 정책",
-    description: "지급 · 차감 기준",
+    /* 노트 가격을 정하는 일은 모두 여기다. 응답 형식도 그 턴의 가격대라 같은 권한으로 연다. */
+    label: "노트 요금",
+    description: "채팅 요금 · 모델별 요금 · 응답 형식 · 고정 지급 · 차감 기준",
     actions: ["read", "write"],
     isSensitive: true,
   },
   creditAdjustment: {
-    label: "크레딧 수동 조정",
+    label: "노트 수동 조정",
     /*
       `write`가 아니라 `adjust`다.
       조정은 승인 단계 없이 곧바로 유저 잔액에 반영되고 장부에 남는다.
       '등록 · 수정'이라는 이름으로 두면 다른 자료와 같은 무게로 읽힌다.
     */
-    description: "유저 크레딧을 직접 지급 · 차감한다. 되돌릴 수 없다.",
+    description: "유저 노트를 직접 지급 · 차감한다. 되돌릴 수 없다.",
     actions: ["read", "adjust"],
     isSensitive: true,
   },
@@ -183,17 +251,35 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     actions: ["read"],
     isSensitive: true,
   },
-  paymentRecord: {
-    /*
-      장부 권한과 따로 뗀다. 여기 남는 것은 **탈퇴하고 개인정보까지 파기된 회원의
-      결제 기록**이라, 법정 보존 의무 때문에 지우지 못하고 들고 있는 자료다.
-      장부를 보는 사람 전부가 열 이유는 없고, 열람 자체가 감사 대상이 된다.
-    */
-    label: "결제 보존 원장",
-    description:
-      "탈퇴 · 파기 후에도 법정 5년간 남기는 결제 기록. 결제사 거래번호로만 조회한다.",
+  payment: {
+    label: "결제 내역",
+    description: "PG 결제 주문과 거래 기록. 돈이 오간 사실이라 고치지 않는다.",
     actions: ["read"],
     isSensitive: true,
+  },
+  refund: {
+    label: "환불",
+    /*
+      `write`가 아니라 `adjust`다. 승인하면 PG로 실제 돈이 나가고 노트가 회수된다.
+      되돌릴 수 없어 노트 수동 조정과 같은 무게로 둔다. 거절도 같은 권한이다 —
+      유저에게 사유가 그대로 나가는 결정이라 승인과 떼어 줄 이유가 없다.
+    */
+    description: "유저 환불 요청을 승인 · 거절한다. 승인하면 PG로 돈이 나간다.",
+    actions: ["read", "adjust"],
+    isSensitive: true,
+    actionLabels: { adjust: "승인 · 거절" },
+  },
+  refundForce: {
+    label: "강제 환불",
+    /*
+      일반 환불 담당에게 딸려 가지 않도록 `refund`와 따로 뗐다. 노트를 이미 썼어도 결제 금액 전액이
+      나가고 쓴 노트는 회사 손실로 남는다. 보기는 결제 내역 권한으로 충분해 조회 행위가 없다.
+    */
+    description:
+      "사용 여부 · 기한을 건너뛰고 전액 환불한다. 이미 쓴 노트는 회수하지 않고 손실로 남는다.",
+    actions: ["adjust"],
+    isSensitive: true,
+    actionLabels: { adjust: "강제 환불" },
   },
   notice: {
     label: "공지사항",
@@ -205,10 +291,21 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     description: "문의 확인과 답변. 답변은 유저에게 그대로 보인다.",
     actions: ["read", "write", "send"],
   },
+  faq: {
+    label: "FAQ",
+    description: "고객센터의 자주 하는 질문. 노출하면 유저 화면에 바로 보인다.",
+    actions: ["read", "write", "delete"],
+  },
   notification: {
     label: "알림 템플릿",
     description: "서비스 알림 문구",
     actions: ["read", "write"],
+  },
+  mailTemplate: {
+    /* 템플릿은 코드에 있다. 여기서는 보기만 해서 고칠 권한이 없다. */
+    label: "메일 템플릿",
+    description: "서비스가 보내는 메일과 발송 시점, 미리보기",
+    actions: ["read"],
   },
   push: {
     label: "푸시 발송",
@@ -218,8 +315,10 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
   legal: {
     label: "법적 고지",
     description: "이용약관 · 개인정보처리방침. 활성 지정은 법적 효력을 갖는다.",
-    actions: ["read", "write", "publish"],
+    /* 번역 내리기는 되돌릴 수 없어 서버가 `delete` 로 뗐다. */
+    actions: ["read", "write", "delete", "publish"],
     isSensitive: true,
+    actionLabels: { delete: "번역 내리기" },
   },
   role: {
     label: "직책 · 권한",
@@ -228,8 +327,8 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     isSensitive: true,
   },
   manager: {
-    label: "관리자 계정",
-    description: "관리자를 추가하고 직책을 배정한다.",
+    label: "운영자 계정",
+    description: "운영자를 추가하고 직책을 배정한다.",
     actions: ["read", "write", "delete"],
     isSensitive: true,
   },
@@ -239,26 +338,47 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
     actions: ["read", "write"],
   },
   server: {
-    label: "서버 상태",
-    description: "서버와 외부 의존성 상태",
-    actions: ["read"],
+    /*
+      조회와 달리 **앱 재시작**이 붙는다. 서비스마다 한 대뿐이면 재시작하는
+      동안 그 서비스의 요청이 끊기므로 write로 뗀다.
+    */
+    label: "서버 · 키",
+    description: "서버 · 서비스 상태 조회와 앱 재시작, AI 제공사 키 · 서버 시크릿 교체",
+    actions: ["read", "write"],
+  },
+  maintenance: {
+    /*
+      서버 권한과 따로 뗀다. 점검은 개발이 만든 기능이지만 거는 사람은 운영이다.
+      점검을 걸 사람에게 재시작 · 키 교체까지 딸려 가면 안 된다.
+    */
+    label: "서비스 점검",
+    description: "점검 예고 · 소프트 종료 · 점검 시작과 끝내기. 걸면 유저 화면이 막힌다.",
+    actions: ["read", "write"],
+  },
+  siteSetting: {
+    /* 사업자 정보는 푸터에 그대로 나가 PG 심사·법적 표시와 닿는다. 점검처럼 운영이 고친다. */
+    label: "사이트 설정",
+    description: "푸터 사업자 정보 · 고객센터 · 개인정보보호책임자와 베타 배너. 저장하면 유저 화면에 바로 보인다.",
+    actions: ["read", "write"],
   },
   log: {
     /*
-      변경된 값이 payload에 그대로 남는다. 즉 이 권한은 "다른 관리자가 무엇을
+      변경된 값이 payload에 그대로 남는다. 즉 이 권한은 "다른 운영자가 무엇을
       어떤 값으로 바꿨는지"를 전부 열어 주는 것과 같아서 민감으로 둔다.
-      시스템 이벤트와 한 권한으로 묶으면, 장애를 보려는 사람에게 감사 기록까지
+      시스템 로그와 한 권한으로 묶으면, 장애를 보려는 사람에게 감사 기록까지
       함께 열어 주게 된다.
     */
-    label: "관리자 활동 로그",
+    label: "운영자 활동 기록",
     description: "누가 무엇을 어떤 값으로 바꿨는지. 변경 값이 그대로 남는다.",
     actions: ["read"],
     isSensitive: true,
   },
   systemLog: {
-    label: "시스템 이벤트",
-    description: "조치가 필요한 경고 · 오류. 원본 로그는 관제 도구에 있다.",
+    /* 액세스 로그도 장애를 보는 개발의 자리라 여기로 옮겼다. 요청한 유저와 경로가 그대로 보여 민감으로 둔다. */
+    label: "시스템 로그",
+    description: "액세스 로그와 조치가 필요한 경고 · 오류. 원본 로그는 관제 도구에 있다.",
     actions: ["read"],
+    isSensitive: true,
   },
   batch: {
     /*
@@ -266,17 +386,40 @@ export const PERMISSION_RESOURCES: Record<PermissionResource, ResourceDef> = {
       배치를 한 번 더 돌리는 일은 되돌릴 수 없는 처리가 섞여 있어 write로 뗀다.
     */
     label: "배치 작업",
-    description: "예약 실행 잡의 이력 조회와 수동 재실행",
+    description: "예약 실행 잡의 이력 · 수익 대사 결과 조회와 수동 재실행",
     actions: ["read", "write"],
   },
 };
+
+/**
+ * 서버에 아직 이 권한을 요구하는 기능이 없는 권한.
+ *
+ * 켤 수는 있지만 켜도 달라지는 것이 없다. 설정 화면에 그대로 두면 "이걸 켰는데 왜 안 되지"
+ * 또는 "이걸 꺼 뒀으니 막혀 있겠지"로 읽힌다. 화면에 '미연결'로 표시해 둔다.
+ * 서버 `AdminAuthority` 에 해당 권한이 생기면 여기서 뺀다.
+ */
+export const UNWIRED_PERMISSIONS: ReadonlySet<PermissionKey> = new Set<PermissionKey>([
+  "character:read",
+  "character:write",
+  "character:delete",
+  "chatExport:write",
+  "qna:write",
+  "notification:read",
+  "notification:write",
+  "push:read",
+  "push:write",
+  "push:delete",
+  "push:send",
+  "appVersion:read",
+  "appVersion:write",
+]);
 
 export const PERMISSION_ACTION_LABEL: Record<PermissionAction, string> = {
   read: "조회",
   write: "등록 · 수정",
   delete: "삭제",
   publish: "게시",
-  adjust: "지급 · 차감",
+  adjust: "지급 · 차감 · 환불",
   send: "발송",
 };
 
@@ -285,9 +428,10 @@ export const PERMISSION_ACTION_HINT: Record<PermissionAction, string> = {
   read: "목록과 상세를 봅니다.",
   write: "새로 만들고 고칩니다.",
   delete: "지웁니다. 되돌릴 수 없습니다.",
-  publish: "앱에 공개합니다. 모든 이용자가 보게 됩니다.",
-  adjust: "유저 크레딧을 실제로 지급하거나 차감합니다.",
-  send: "외부(이용자)에게 내보냅니다.",
+  publish: "앱에 공개합니다. 모든 유저가 보게 됩니다.",
+  adjust:
+    "유저 노트를 실제로 지급 · 차감하거나 환불을 승인 · 거절합니다. 돈과 잔액이 움직입니다.",
+  send: "외부(유저)에게 내보냅니다.",
 };
 
 /* ------------------------------------------------------------------ */
@@ -297,94 +441,107 @@ export const PERMISSION_ACTION_HINT: Record<PermissionAction, string> = {
 /**
  * 자료를 묶는 갈래.
  *
- * **행위 구성이 같은 자료끼리 묶는다.** 업무 영역(캐릭터 · 유저 · 결제)이 아니다.
+ * **업무 영역(도메인)으로 묶는다.** 사이드바 메뉴 그룹과 같은 순서 · 같은 이름이다(키·시크릿은 서버 권한이라 인프라에 둔다).
  *
- * 이 표는 자료(행) × 행위(열)인데, 자료마다 할 수 있는 행위가 다르다.
- * 스물일곱 개를 한 표에 넣으면 행위 여섯 개를 전부 열로 세워야 하고,
- * 그러면 `지급 · 차감` 열은 스물일곱 칸 중 스물여섯 칸이 빈칸이 된다.
- * 크레딧에만 있는 행위가 캐릭터 줄에도 자리를 차지하는 셈이다.
+ * 직책을 설정하는 사람은 "이 직책은 결제를 맡는다"처럼 영역으로 생각한다.
+ * 행위 구성(지우는 자료 · 발송하는 자료)으로 묶으면 결제 권한이 세 갈래에 흩어져,
+ * 결제 담당 직책 하나를 만들려고 카드 여러 장을 오가야 했다.
  *
- * 갈래를 행위 구성으로 나누면 **갈래마다 열 이름이 달라진다.**
- * 돈 갈래의 열은 `조회 · 지급 · 차감`이고, 거기에만 있다.
- * 빈칸이 사라지고, 갈래 이름이 곧 "이 자료들로 무엇을 할 수 있는가"가 된다.
+ * 갈래마다 행위 구성이 달라 **열은 갈래에서 뽑는다**(`categoryActions`).
+ * 위험한 자료는 갈래가 아니라 자료 줄의 `민감` 표시로 드러낸다.
  */
 export interface PermissionCategoryDef {
   id: string;
   label: string;
-  /** 이 갈래의 행위 구성이 왜 이런지. 설정 화면에서 그대로 보여 준다. */
+  /** 이 갈래가 어떤 업무를 다루는지. 설정 화면에서 그대로 보여 준다. */
   description: string;
   resources: readonly PermissionResource[];
 }
 
 export const PERMISSION_CATEGORIES = [
+  /* ── 운영 ── */
   {
-    id: "general",
-    label: "만들고 고치고 지우는 자료",
-    description: "조회 · 등록 · 삭제. 대부분의 자료가 여기에 해당합니다.",
+    id: "dashboard",
+    label: "대시보드",
+    description: "운영 요약 지표",
+    resources: ["dashboard"],
+  },
+  {
+    id: "content",
+    label: "콘텐츠",
+    description: "세계관 · 캐릭터와 해시태그, 앱 홈 편성",
+    resources: ["universe", "character", "hashtag", "mainExposure"],
+  },
+  {
+    id: "moderation",
+    label: "검수·신고",
+    description: "신고 · 댓글 처리와 금지어, 탈퇴 캐릭터 인수 심사, 대화 기록 열람",
+    resources: ["report", "comment", "bannedWord", "universeHandover", "chatExport"],
+  },
+  {
+    id: "user",
+    label: "유저",
+    description: "유저 계정 조회 · 제재와 공식 계정 지정",
+    resources: ["user", "officialAccount"],
+  },
+  {
+    id: "support",
+    label: "고객센터",
+    description: "문의 답변과 공지 · FAQ · 약관. 게시하면 유저가 바로 봅니다.",
+    resources: ["qna", "notice", "faq", "legal"],
+  },
+  {
+    id: "messaging",
+    label: "메시지 발송",
+    description: "메일 템플릿과 알림 문구 · 푸시. 발송하면 되돌릴 수 없습니다.",
+    resources: ["mailTemplate", "notification", "push"],
+  },
+  {
+    id: "billing",
+    label: "결제·노트",
+    description: "결제 · 환불과 상품 · 노트 요금 · 수동 조정, AI 원가. 돈과 잔액이 움직이는 자료가 모여 있습니다.",
     resources: [
-      "mainExposure",
-      "character",
-      "officialAccount",
-      "hashtag",
-      "bannedWord",
-      "systemPrompt",
-      "billingProduct",
-      "role",
-      "manager",
-    ],
-  },
-  {
-    id: "keep",
-    label: "지우지 않는 자료",
-    description:
-      "상태만 바꾸거나 기준이 되는 자료라 삭제가 없습니다. 숨기거나 새로 받습니다.",
-    resources: [
-      "comment",
-      "report",
-      "user",
-      "chatExport",
-      "aiModel",
-      "creditPolicy",
-      "notification",
-      "appVersion",
-      "universe",
-      "batch",
-    ],
-  },
-  {
-    id: "publish",
-    label: "앱에 공개하는 자료",
-    description:
-      "게시하면 모든 이용자가 봅니다. 되돌리기 어려워 '게시'를 따로 뗐습니다.",
-    resources: ["notice", "legal"],
-  },
-  {
-    id: "outbound",
-    label: "밖으로 나가는 자료",
-    description:
-      "이용자에게 발송합니다. 나가면 되돌릴 수 없어 '발송'을 따로 뗐습니다.",
-    resources: ["push", "qna"],
-  },
-  {
-    id: "money",
-    label: "돈이 오가는 자료",
-    description:
-      "유저 잔액에 곧바로 반영됩니다. 되돌릴 수 없어 따로 뗐습니다.",
-    resources: ["creditAdjustment"],
-  },
-  {
-    id: "record",
-    label: "보기만 하는 자료",
-    description:
-      "지표와 기록입니다. 고칠 수 있으면 기록이 아니라 조회만 둡니다.",
-    resources: [
-      "dashboard",
+      "payment",
+      "refund",
+      "refundForce",
       "ledger",
-      "paymentRecord",
-      "server",
-      "log",
-      "systemLog",
+      "billingProduct",
+      "creditPolicy",
+      "creditAdjustment",
+      "aiCost",
     ],
+  },
+  {
+    id: "earning",
+    label: "크리에이터 수익",
+    description: "크리에이터 수익 포인트 · 등급 · 교환 요청과 교환 상품",
+    resources: ["earning", "rewardProduct"],
+  },
+  {
+    id: "service",
+    label: "점검·업데이트",
+    description: "서비스 점검과 앱 버전, 사이트 설정. 걸면 유저 화면에 바로 보입니다.",
+    resources: ["maintenance", "appVersion", "siteSetting"],
+  },
+  /* ── 개발 ── */
+  {
+    id: "ai",
+    label: "AI 엔진",
+    description: "모델 튜닝과 시스템 프롬프트. 전체 대화 품질에 바로 반영됩니다.",
+    resources: ["aiModel", "systemPrompt"],
+  },
+  {
+    id: "infra",
+    label: "인프라",
+    description: "서버 상태 · 재시작과 키 · 시크릿, 배치 · 대사 결과, 시스템 로그",
+    resources: ["server", "batch", "systemLog"],
+  },
+  /* ── 관리 ── */
+  {
+    id: "operators",
+    label: "운영자",
+    description: "운영자 계정 · 직책과 서비스 관리자 부여, 운영자 활동 기록",
+    resources: ["manager", "role", "serviceAdmin", "log"],
   },
 ] as const satisfies readonly PermissionCategoryDef[];
 
@@ -444,8 +601,10 @@ export const permissionLabel = (key: PermissionKey): string => {
     PermissionAction,
   ];
 
-  return `${PERMISSION_RESOURCES[resource]?.label ?? resource} > ${
-    PERMISSION_ACTION_LABEL[action] ?? action
+  const def = PERMISSION_RESOURCES[resource];
+
+  return `${def?.label ?? resource} > ${
+    def?.actionLabels?.[action] ?? PERMISSION_ACTION_LABEL[action] ?? action
   }`;
 };
 
@@ -497,11 +656,3 @@ export const normalizePermissions = (
   return ALL_PERMISSIONS.filter((key) => next.has(key));
 };
 
-/** 자료 하나에 걸린 권한만 추린다. 설정 화면에서 줄 단위로 쓴다. */
-export const permissionsOfResource = (
-  permissions: PermissionKey[],
-  resource: PermissionResource,
-): PermissionAction[] =>
-  PERMISSION_RESOURCES[resource].actions.filter((action) =>
-    permissions.includes(permissionKey(resource, action)),
-  );

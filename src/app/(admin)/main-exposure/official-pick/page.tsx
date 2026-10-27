@@ -11,7 +11,7 @@ export default function OfficialPickPage() {
 
       <HomeSectionBoard
         section="OFFICIAL_PREVIEW"
-        guide="후보 목록에는 '공식 계정'으로 지정된 크리에이터의 세계관 중 승인 · 공개 상태인 것만 노출됩니다. 후보가 비어 있으면 세계관 > 공식 계정에서 계정을 먼저 등록하세요."
+        guide="후보 목록에는 '공식 계정'으로 지정된 크리에이터의 세계관 중 승인 · 공개 상태인 것만 노출됩니다. 후보가 비어 있으면 유저/크리에이터 > 공식 계정에서 계정을 먼저 등록하세요."
       />
     </>
   );

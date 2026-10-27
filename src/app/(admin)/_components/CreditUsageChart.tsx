@@ -39,7 +39,7 @@ const CreditUsageChart = ({
   return (
     <Card
       className={className}
-      title="크레딧 사용처"
+      title="노트 사용처"
       description={`최근 ${windowDays}일 · 총 ${formatCredit(total)}`}
     >
       <div className="h-[180px] w-full">

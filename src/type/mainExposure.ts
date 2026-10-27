@@ -109,8 +109,11 @@ export interface Banner {
    * 없으면 목록도 삭제 확인창도 썸네일 말고는 배너를 지칭할 말이 없다.
    */
   name: string;
-  /** 배너 이미지 파일 ID. URL은 `buildImageUrl()`로 만든다. */
+  /** 배너 이미지 파일 ID. 서버가 URL을 주지 않는 자리에서만 조립에 쓴다. */
   imageFileId: string;
+  imageUrl: string;
+  /** 목록용 축소본(FIT400). */
+  thumbnailUrl: string;
   /**
    * 배너를 눌렀을 때 이동할 곳.
    *

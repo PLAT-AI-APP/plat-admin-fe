@@ -11,7 +11,7 @@ import {
 import Alert from "@/components/ui/Alert";
 import Button from "@/components/ui/Button";
 import FormField from "@/components/ui/FormField";
-import Input from "@/components/ui/Input";
+import PasswordInput from "@/components/ui/PasswordInput";
 import Modal from "@/components/ui/Modal";
 
 interface PasswordChangeModalProps {
@@ -42,7 +42,8 @@ const PasswordChangeModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    setFocus,
+    formState: { errors, isDirty },
   } = useForm<PasswordChangeSchema>({
     resolver: zodResolver(passwordChangeSchema),
     defaultValues: EMPTY_VALUES,
@@ -58,6 +59,8 @@ const PasswordChangeModal = ({
         reset(EMPTY_VALUES);
         onClose();
       },
+      // 대부분 현재(임시) 비밀번호를 잘못 친 경우라, 그 칸을 골라 바로 다시 치게 한다.
+      onError: () => setFocus("currentPassword", { shouldSelect: true }),
     }),
   );
 
@@ -67,6 +70,7 @@ const PasswordChangeModal = ({
       // 강제 변경 중에는 배경 클릭 · ESC로 닫히면 안 된다.
       onClose={isForced ? () => {} : onClose}
       hideCloseButton={isForced}
+      isDirty={!isForced && isDirty}
       title={isForced ? "비밀번호를 변경해 주세요" : "비밀번호 변경"}
       description={
         isForced
@@ -94,9 +98,9 @@ const PasswordChangeModal = ({
           required
           error={errors.currentPassword?.message}
         >
-          <Input
+          <PasswordInput
             id="current-password"
-            type="password"
+            data-autofocus
             autoComplete="current-password"
             hasError={Boolean(errors.currentPassword)}
             {...register("currentPassword")}
@@ -110,9 +114,8 @@ const PasswordChangeModal = ({
           hint="10자 이상 · 영문 · 숫자 · 특수문자"
           error={errors.newPassword?.message}
         >
-          <Input
+          <PasswordInput
             id="new-password"
-            type="password"
             autoComplete="new-password"
             hasError={Boolean(errors.newPassword)}
             {...register("newPassword")}
@@ -125,9 +128,8 @@ const PasswordChangeModal = ({
           required
           error={errors.confirmPassword?.message}
         >
-          <Input
+          <PasswordInput
             id="confirm-password"
-            type="password"
             autoComplete="new-password"
             hasError={Boolean(errors.confirmPassword)}
             {...register("confirmPassword")}

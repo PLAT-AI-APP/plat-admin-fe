@@ -5,7 +5,7 @@ import type { ProactiveMessage } from "@/type/communication";
 
 export const getProactiveMessageList = async () => {
   const response = await adminAxios.get<ProactiveMessage[]>(
-    "/admin/proactive-messages",
+    "/proactive-messages",
   );
 
   return response.data;

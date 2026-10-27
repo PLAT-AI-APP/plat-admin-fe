@@ -4,7 +4,7 @@ import type { AppError } from "@/type/api";
 import type { BatchJob } from "@/type/ops";
 
 export const getBatchJobList = async () => {
-  const response = await liveAxios.get<BatchJob[]>("/admin/batch/jobs");
+  const response = await liveAxios.get<BatchJob[]>("/batch/jobs");
 
   return response.data;
 };

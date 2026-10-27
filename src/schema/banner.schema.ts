@@ -34,7 +34,7 @@ export const bannerSchema = z
       .string()
       .trim()
       .refine((value) => !value || LINK_URL_PATTERN.test(value), {
-        message: "링크는 https:// 또는 앱 딥링크(plat://) 형식으로 입력해 주세요.",
+        error: "링크는 https:// 또는 앱 딥링크(plat://) 형식으로 입력해 주세요.",
       }),
     isActive: z.boolean(),
     /* 시각이 아니라 날짜다(`YYYY-MM-DD`). 서버도 날짜로 들고 있다. */
@@ -44,7 +44,7 @@ export const bannerSchema = z
   .refine(
     ({ startDate, endDate }) => !startDate || !endDate || startDate <= endDate,
     {
-      message: "노출 종료일은 시작일 이후여야 합니다.",
+      error: "노출 종료일은 시작일 이후여야 합니다.",
       path: ["endDate"],
     },
   );

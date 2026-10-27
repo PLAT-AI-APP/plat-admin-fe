@@ -46,7 +46,7 @@ export interface CharacterListParams {
 
 export const getCharacterList = async (params: CharacterListParams) => {
   const response = await adminAxios.get<PageResponse<Character>>(
-    "/admin/characters",
+    "/characters",
     { params },
   );
 

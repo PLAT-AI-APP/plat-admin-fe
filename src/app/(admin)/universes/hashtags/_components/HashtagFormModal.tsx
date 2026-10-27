@@ -17,7 +17,7 @@ import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
-import { HASHTAG_CATEGORY_OPTIONS } from "./hashtagOptions";
+import { HASHTAG_CATEGORY_OPTIONS } from "@/app/(admin)/universes/hashtags/_constants/hashtagOptions";
 
 interface HashtagFormModalProps {
   isOpen: boolean;
@@ -57,7 +57,7 @@ const HashtagFormModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<HashtagSchema>({
     resolver: zodResolver(hashtagSchema),
     defaultValues: EMPTY_VALUES,
@@ -86,10 +86,11 @@ const HashtagFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={hashtagId !== undefined ? "해시태그 수정" : "해시태그 추가"}
-      description="여기에 등록한 태그만 사용자가 캐릭터·세계관에 붙일 수 있습니다."
+      description="여기에 등록한 태그만 유저가 캐릭터·세계관에 붙일 수 있습니다."
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={isPending}>
@@ -112,7 +113,7 @@ const HashtagFormModal = ({
           htmlFor="hashtag-category"
           required
           error={errors.category?.message}
-          hint="사용자 선택 화면에서 묶이는 기준입니다."
+          hint="유저 선택 화면에서 묶이는 기준입니다."
         >
           <Controller
             control={control}
@@ -185,7 +186,7 @@ const HashtagFormModal = ({
                 <div>
                   <p className="body-5 font-medium text-font-1">노출 여부</p>
                   <p className="mt-0.5 body-6 text-font-2">
-                    끄면 사용자 선택 목록에서 사라집니다. 이미 달린 태그는 그대로
+                    끄면 유저 선택 목록에서 사라집니다. 이미 달린 태그는 그대로
                     남습니다.
                   </p>
                 </div>

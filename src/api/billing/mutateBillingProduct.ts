@@ -10,7 +10,7 @@ import { showAppToast } from "@/lib/toast";
 
 export const createBillingProduct = async (values: BillingProductFormValues) => {
   const response = await liveAxios.post<BillingProduct>(
-    "/admin/billing/products",
+    "/billing/products",
     values,
   );
 
@@ -22,7 +22,7 @@ export const updateBillingProduct = async (
   values: BillingProductFormValues,
 ) => {
   const response = await liveAxios.put<BillingProduct>(
-    `/admin/billing/products/${productId}`,
+    `/billing/products/${productId}`,
     values,
   );
 
@@ -33,7 +33,7 @@ export const updateBillingProductStatus = async (
   productId: number,
   status: ProductStatus,
 ) => {
-  await liveAxios.patch(`/admin/billing/products/${productId}/status`, {
+  await liveAxios.patch(`/billing/products/${productId}/status`, {
     status,
   });
 };

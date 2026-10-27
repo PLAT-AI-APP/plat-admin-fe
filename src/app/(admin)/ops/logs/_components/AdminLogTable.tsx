@@ -23,7 +23,7 @@ import {
   AUDIT_RESULT_TONE,
   LOG_DOMAIN_OPTIONS,
   getLogDomainLabel,
-} from "../_constants/labels";
+} from "@/app/(admin)/ops/logs/_constants/logOptions";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
 const CSV_COLUMNS: CsvColumn<AdminAuditLog>[] = [
@@ -84,13 +84,16 @@ const AdminLogTable = ({ params, setParams }: AdminLogTableProps) => {
       header: "실행자",
       width: "160px",
       render: (row) => (
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <span className="text-font-1">
             {formatAdmin(row.actor, row.actorId)}
           </span>
-          {/* 지금 직책이 아니라 실행 당시 직책이다. 권한을 되짚을 때 필요하다. */}
+          {/* 지금 직책이 아니라 실행 당시 직책(여럿이면 ", "로 이은 값)이다. 권한을 되짚을 때 필요하다. */}
           {row.roleName && (
-            <span className="body-6 text-font-2">{row.roleName}</span>
+            // 직책이 여럿이면 ", "로 이어 붙인 값이 와 길어질 수 있다.
+            <span className="truncate body-6 text-font-2" title={row.roleName}>
+              {row.roleName}
+            </span>
           )}
         </div>
       ),
@@ -160,7 +163,7 @@ const AdminLogTable = ({ params, setParams }: AdminLogTableProps) => {
       {filteredActorName && (
         <Alert
           tone="info"
-          title={`'${filteredActorName}' 관리자의 활동만 보고 있습니다.`}
+          title={`'${filteredActorName}' 운영자의 활동만 보고 있습니다.`}
           action={
             <button
               type="button"
@@ -190,7 +193,7 @@ const AdminLogTable = ({ params, setParams }: AdminLogTableProps) => {
 
           <div className="flex items-center gap-2">
             <CsvExportButton
-              fileName="관리자활동로그"
+              fileName="운영자활동로그"
               rows={data?.content ?? []}
               columns={CSV_COLUMNS}
               disabled={isLoading}

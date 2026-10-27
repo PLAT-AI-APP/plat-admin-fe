@@ -1,22 +1,24 @@
 /**
  * 서버 이미지 URL 빌더.
  *
- * 관리자 서버는 파일 저장소 어댑터를 스캔하지 않아 **응답의 `*Url` 필드가
- * 대부분 null로 온다.** 대신 `fileId`는 항상 준다. 서비스 서버의 이미지
- * 엔드포인트는 인증이 필요 없는 공개 경로이므로, 어드민은 fileId만 있으면
- * `<img src>`에 그대로 걸어 실제 이미지를 볼 수 있다.
+ * 서버 응답이 URL을 주지 않는 화면(업로드 직후 미리보기 등)을 위해 fileId로
+ * 공개 경로를 조립한다. 이미지 엔드포인트는 인증이 필요 없다.
  *
- *   GET /images/{fileId}?type={FileType}&v={ImageVariant}
+ *   GET /images/{type}/{fileId}/{variant}
  *
- * 이 파일이 있는 이유: 화면마다 URL을 조립하면 `type`을 빠뜨리거나(422),
- * 그 파일 타입에 없는 variant를 요청해(422) 이미지가 조용히 깨진다.
- * 타입별로 **허용된 variant만** 고를 수 있게 여기서 막는다.
+ * 이 파일이 있는 이유: 화면마다 조립하면 그 타입에 없는 variant를 요청해(400)
+ * 이미지가 조용히 깨진다. 타입별로 **허용된 variant만** 고를 수 있게 여기서 막는다.
+ *
+ * 원본 해상도(`ORIGIN`)는 공개 경로로 열리지 않는다(서명 없으면 404). 화면 표시는
+ * 긴 변 최대 1600px 로 줄인 `LG`를 쓰고, 원본이 꼭 필요한 곳은 서버가 서명 URL 을 준다.
  */
+
+import { IMAGE_PROXY_PATH } from "@/config/appEnv";
 
 /**
  * 이미지 서버 베이스.
  *
- * 이미지는 관리자 API(`/admin/**`)가 아니라 서비스 서버가 서빙한다.
+ * 이미지는 관리자 API(admin 앱)가 아니라 서비스 서버가 서빙한다.
  * 목업 구간에서도 이미지는 실제 서버에서 가져와야 하므로 별도 변수로 둔다.
  * 값이 없으면 URL을 만들지 않고 화면이 자리표시를 그린다.
  */
@@ -27,17 +29,19 @@ const IMAGE_BASE_URI =
 /**
  * 파일 타입별 허용 variant.
  *
- * **서버 `FileTypePolicy`와 같아야 한다.** 여기 없는 값을 보내면 422가 난다.
+ * **서버 `FileTypePolicy`와 같아야 한다.** 여기 없는 값을 보내면 400이 난다.
  * 예를 들어 `UNIVERSE_PROFILE`에는 `SQ40`이 없다 — 세계관 썸네일을 유저
  * 아바타처럼 40px로 받으려다 깨지는 사고가 실제로 나기 쉬운 자리다.
  */
 export const IMAGE_VARIANTS = {
-  USER_PROFILE: ["ORIGIN", "SQ40", "SQ80"],
-  UNIVERSE_PROFILE: ["ORIGIN", "SQ80", "SQ140"],
-  UNIVERSE_ASSET: ["ORIGIN", "SQ80"],
-  CHARACTER_PROFILE: ["ORIGIN", "SQ40", "SQ140"],
+  USER_PROFILE: ["LG", "SQ40", "SQ80"],
+  UNIVERSE_PROFILE: ["LG", "SQ80", "SQ140"],
+  UNIVERSE_ASSET: ["LG", "SQ80"],
+  CHARACTER_PROFILE: ["LG", "SQ40", "SQ140"],
   /** 배너는 가로로 긴 그림이라 정사각 변형본이 없다. 목록 썸네일은 `FIT400`을 쓴다. */
-  MAIN_BANNER: ["ORIGIN", "FIT400"],
+  MAIN_BANNER: ["LG", "FIT400"],
+  /** 교환 상품 아이콘. 제작자 화면은 SQ140, 어드민 목록은 SQ80을 쓴다. */
+  REWARD_PRODUCT: ["LG", "SQ80", "SQ140"],
 } as const;
 
 export type ImageFileType = keyof typeof IMAGE_VARIANTS;
@@ -59,22 +63,35 @@ export type ImageVariantOf<T extends ImageFileType> =
 export const buildImageUrl = <T extends ImageFileType>(
   fileId: string | null | undefined,
   type: T,
-  variant: ImageVariantOf<T> = "ORIGIN" as ImageVariantOf<T>,
+  variant: ImageVariantOf<T> = "LG" as ImageVariantOf<T>,
 ): string | undefined => {
   if (!fileId || !IMAGE_BASE_URI) return undefined;
 
-  return `${IMAGE_BASE_URI}/images/${fileId}?type=${type}&v=${variant}`;
+  return `${IMAGE_BASE_URI}/images/${type.toLowerCase()}/${fileId}/${variant.toLowerCase()}`;
 };
 
-/**
- * 서버가 준 URL을 우선 쓰고, 없으면 fileId로 만든다.
- *
- * 관리자 서버가 나중에 URL을 채워 주기 시작하면 **화면을 고치지 않고도**
- * 그 값을 쓰게 된다. 지금 fileId로만 조립해 두면 그때 전수 수정이 필요하다.
- */
+/** 서버가 준 URL을 우선 쓰고, 없으면 fileId로 만든다. */
 export const resolveImageUrl = <T extends ImageFileType>(
   url: string | null | undefined,
   fileId: string | null | undefined,
   type: T,
-  variant: ImageVariantOf<T> = "ORIGIN" as ImageVariantOf<T>,
+  variant: ImageVariantOf<T> = "LG" as ImageVariantOf<T>,
 ): string | undefined => url || buildImageUrl(fileId, type, variant);
+
+const IS_DEV_SERVER = process.env.NODE_ENV === "development";
+
+/**
+ * `<img>`에 넣기 직전의 주소. 로컬 실행에서만 이미지 서버 주소를 같은 오리진 프록시로 바꾼다.
+ *
+ * 서버가 준 서명 원본처럼 화면이 조립하지 않은 주소도 이미지 서버를 가리키면 함께 바꾼다.
+ * 이유는 `IMAGE_PROXY_PATH` 주석에 있다. 업로드 미리보기(`blob:`) 같은 다른 주소는 그대로 둔다.
+ */
+export const toLoadableImageUrl = <T extends string | null | undefined>(url: T): T | string => {
+  if (!IS_DEV_SERVER || !url || !IMAGE_BASE_URI) return url;
+
+  const imagePrefix = `${IMAGE_BASE_URI}/images/`;
+
+  return url.startsWith(imagePrefix)
+    ? `${IMAGE_PROXY_PATH}/${url.slice(imagePrefix.length)}`
+    : url;
+};

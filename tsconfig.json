@@ -31,7 +31,6 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules",
-    "plat-admin-template"
+    "node_modules"
   ]
 }

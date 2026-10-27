@@ -5,7 +5,7 @@ import type { NotificationTemplate } from "@/type/communication";
 
 export const getNotificationTemplateList = async () => {
   const response = await adminAxios.get<NotificationTemplate[]>(
-    "/admin/notifications/templates",
+    "/notifications/templates",
   );
 
   return response.data;

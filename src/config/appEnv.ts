@@ -4,9 +4,12 @@
  * Spring 의 `spring.profiles.active` 와 같은 자리다. 어느 서버를 볼지는
  * `.env` 를 손으로 고쳐서가 아니라 **프로파일 하나로** 정해진다.
  *
- *   local   → 로컬 plat-be (`http://localhost:8080`)
- *   develop → 개발 서버 (`https://api-dev.plat.so`)
- *   main    → 운영 서버 (`https://api.plat.so`)
+ *   local   → 로컬 plat-be 관리자 앱 (`http://localhost:8081`)
+ *   develop → 개발 서버 (`https://admin-api-dev.plat.so`)
+ *   main    → 운영 서버 (`https://admin-api.plat.so`)
+ *
+ * plat-be 는 앱이 나뉘어 있다. 관리자 API는 admin 앱이, 이미지(`/images/**`)는
+ * api 앱이 받으므로 실서버 주소와 이미지 주소가 다르다.
  *
  * 프로파일은 `next.config.ts` 가 정하고(환경 변수 → CI 브랜치 → git 브랜치),
  * 여기서 나온 값들을 `NEXT_PUBLIC_*` 로 번들에 심는다. 그래서 화면 코드는
@@ -43,39 +46,45 @@ export const profileOfBranch = (
 interface AppProfilePreset {
   /** 화면·로그에 쓰는 이름. */
   label: string;
-  /** 실서버(plat-be) 오리진. */
+  /** 실서버(plat-be admin 앱) 오리진. */
   liveBaseUri: string;
-  /** 이미지 서빙 오리진(`GET /images/{fileId}`). 보통 실서버와 같다. */
+  /** 이미지 서빙 오리진(`GET /images/{type}/{fileId}/{variant}`). plat-be api 앱이 받는다. */
   imageBaseUri: string;
   /** MSW 목업 워커를 띄우는가. */
   mocking: boolean;
+  /** 사용자 사이트(plat-fe) 오리진. 문서의 '사이트에서 보기' 링크가 쓴다. */
+  userSiteUri: string;
 }
 
 /**
  * 프로파일별 기본값.
  *
- * **운영(`main`)은 목업을 끈다.** 아직 실서버가 열어 주지 않은 도메인은
+ * **운영(`main`)과 개발(`develop`)은 목업을 끈다.** 아직 실서버가 열어 주지 않은 도메인은
  * 목업이 아니라 404 로 끝나는 것이 맞다 — 운영에서 가짜 데이터가 그려지면
  * 어느 화면이 진짜로 붙었는지 아무도 구분하지 못한다.
  */
 export const APP_PROFILE_PRESETS: Record<AppProfile, AppProfilePreset> = {
   local: {
     label: "로컬",
-    liveBaseUri: "http://localhost:8080",
+    liveBaseUri: "http://localhost:8081",
     imageBaseUri: "http://localhost:8080",
     mocking: true,
+    userSiteUri: "http://localhost:3000",
   },
   develop: {
     label: "개발",
-    liveBaseUri: "https://api-dev.plat.so",
+    liveBaseUri: "https://admin-api-dev.plat.so",
     imageBaseUri: "https://api-dev.plat.so",
-    mocking: true,
+    // 클로즈베타는 dev 서버로 운영한다. 운영자가 가짜 화면을 진짜로 착각하지 않게 목업을 끈다.
+    mocking: false,
+    userSiteUri: "https://dev.plat.so",
   },
   main: {
     label: "운영",
-    liveBaseUri: "https://api.plat.so",
+    liveBaseUri: "https://admin-api.plat.so",
     imageBaseUri: "https://api.plat.so",
     mocking: false,
+    userSiteUri: "https://plat.so",
   },
 };
 
@@ -83,7 +92,7 @@ export const APP_PROFILE_PRESETS: Record<AppProfile, AppProfilePreset> = {
  * 목업 구간의 관리자 API 오리진. **아무것도 뜨지 않는 포트**여야 한다.
  *
  * 실서버와 오리진이 같으면 목업 워커가 실서버 요청까지 가로챈다.
- * 로컬 plat-be 가 8080 이므로 여기는 8080 이 아니어야 한다.
+ * 로컬 plat-be 가 8080~8083 이므로 그 포트가 아니어야 한다.
  */
 export const MOCK_ORIGIN = "http://localhost:9090";
 
@@ -103,6 +112,18 @@ export const MOCK_ORIGIN = "http://localhost:9090";
  */
 export const LIVE_PROXY_PATH = "/live-api";
 
+/**
+ * 로컬 실행(`next dev`)에서 이미지를 받는 길.
+ *
+ * plat-be nginx 가 모든 응답에 `Cross-Origin-Resource-Policy: same-site` 를 붙인다.
+ * 그래서 `localhost` 화면은 `api-dev.plat.so` 이미지를 `<img>`로 불러오지 못한다 —
+ * 공개 변형본도, 서명 원본도 브라우저가 막는다. 배포본은 plat.so 하위 도메인이라 괜찮다.
+ *
+ * 로컬에서만 이미지 주소를 이 경로로 바꾸고 `src/app/live-images` 라우트가 이미지
+ * 서버에서 받아 돌려준다. 같은 오리진이라 헤더에 걸리지 않는다.
+ */
+export const IMAGE_PROXY_PATH = "/live-images";
+
 export interface AppEnv {
   profile: AppProfile;
   label: string;
@@ -114,6 +135,8 @@ export interface AppEnv {
   liveBaseUri: string;
   /** 이미지 서빙 베이스. */
   imageBaseUri: string;
+  /** 사용자 사이트 오리진. */
+  userSiteUri: string;
 }
 
 const override = (value: string | undefined) => value?.trim() || undefined;
@@ -146,6 +169,8 @@ export const resolveAppEnv = (
     liveBaseUri,
     imageBaseUri:
       override(env.NEXT_PUBLIC_IMAGE_BASE_URI) ?? preset.imageBaseUri,
+    userSiteUri:
+      override(env.NEXT_PUBLIC_USER_SITE_URI) ?? preset.userSiteUri,
     /* 목업을 끄면 죽은 오리진을 둘 이유가 없다. 실서버가 직접 받게 한다. */
     mockBaseUri:
       override(env.NEXT_PUBLIC_BASE_URI) ?? (mocking ? MOCK_ORIGIN : liveBaseUri),

@@ -1,10 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { findRoutePermission } from "@/constants/menu";
+import type { ReactNode } from "react";
+import { findRoutePermission, isUnavailableMockRoute } from "@/constants/menu";
 import { useAdminStore } from "@/store/useAdminStore";
 import { hasPermission, type PermissionKey } from "@/type/permission";
-import { PermissionDenied } from "./PermissionGate";
+import MockRouteUnavailable from "./MockRouteUnavailable";
+import PermissionDenied from "./PermissionDenied";
 
 /**
  * 권한 없는 주소 접근을 막는다.
@@ -18,9 +20,18 @@ import { PermissionDenied } from "./PermissionGate";
  *
  * 실제로 막는 것은 서버다. 이 화면은 실수를 줄이는 장치일 뿐이다.
  */
-const RoutePermissionGate = ({ children }: { children: React.ReactNode }) => {
+const RoutePermissionGate = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const admin = useAdminStore((state) => state.admin);
+
+  if (isUnavailableMockRoute(pathname)) return <MockRouteUnavailable />;
+
+  /*
+    대시보드(`/`)는 로그인 직후 첫 화면이다. 여기서 막으면 대시보드 권한이 없는 운영자는
+    "권한 없음"에 갇힌다. 판단은 화면(DashboardEntry → FirstMenuRedirect)이 직접 해서
+    볼 수 있는 첫 메뉴로 넘긴다.
+  */
+  if (pathname === "/") return <>{children}</>;
 
   const required = findRoutePermission(pathname);
 

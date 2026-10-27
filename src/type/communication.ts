@@ -1,27 +1,128 @@
+import type { RefundRejectReasonCode, RefundStatus } from "@/type/billing";
+
 /**
  * 커뮤니케이션 도메인 타입.
- * 전부 MOCK 범위지만, 나중에 켜기만 하면 되도록 화면과 타입을 미리 구현한다.
+ * Q&A · FAQ는 실서버 계약을 따른다. 나머지(알림 · 선제 메시지 · 푸시)는 MOCK 범위지만,
+ * 나중에 켜기만 하면 되도록 화면과 타입을 미리 구현한다.
  */
 
-/** Q&A */
-export type QnaStatus = "OPEN" | "ANSWERED" | "CLOSED";
-export type QnaCategory = "ACCOUNT" | "PAYMENT" | "CHARACTER" | "BUG" | "ETC";
+/** Q&A. `CANCELLED` 는 유저가 답변 전에 거둔 문의이며 답변할 수 없다(서버가 409 `QNA_CANCELLED` 로 막는다). */
+export type QnaStatus = "OPEN" | "ANSWERED" | "CANCELLED";
+export type QnaCategory =
+  | "REFUND"
+  | "ACCOUNT"
+  | "PAYMENT"
+  | "CHARACTER"
+  | "BUG"
+  | "EARNING"
+  | "ETC";
+
+/**
+ * 수익 · 교환 문의에 유저가 붙인 교환 건(문의 시점 스냅샷). 진행 상태는 교환 요청 화면에서 번호로 찾아 본다.
+ * 유저에게도 번호 · 상품만 보이고, 결과는 관리자가 답변으로 알린다.
+ */
+export interface QnaRedemptionLink {
+  redemptionNo: string;
+  productName: string;
+}
+
+/**
+ * 환불 문의에 묶인 환불 요청.
+ *
+ * 유저가 환불을 신청하면 서버가 `REFUND` 문의를 함께 연다. 이 블록은 관리자에게만 보이는 환불의
+ * 지금 상태다 — 유저에게는 환불 결과가 자동으로 전달되지 않고, 관리자가 답변으로 직접 알린다.
+ * 환불 처리 자체(노트 회수, PG 취소)는 결제 도메인이 그대로 맡는다.
+ * 값은 서버가 환불 표에서 실시간으로 읽어 채운다.
+ */
+export interface QnaRefundLink {
+  /** Snowflake. 결제 상세(`/billing/payments/[orderId]`)로 이어진다. */
+  paymentOrderId: string;
+  orderUid: string;
+  refundId: string;
+  productName: string;
+  /** 최소 단위 정수. 결제 상세의 `refundAmount`와 같은 의미다. */
+  refundAmount: number;
+  refundCredit: number;
+  status: RefundStatus;
+  rejectReasonCode: RefundRejectReasonCode | null;
+  /** 거절 사유. 결제 기록으로만 남고 유저에게는 자동으로 보이지 않는다. */
+  rejectReason: string | null;
+  requestedAt: string;
+  decidedAt: string | null;
+  /**
+   * PG 실패 뒤 회수했던 노트를 유저에게 되돌렸는지(clawback RESTORED).
+   * `FAILED`이면서 `true`면 "환불 불가"로 확정된 것이고, `false`면 결제 상세에서 마무리할 일이 남았다.
+   */
+  creditRestored: boolean;
+  /**
+   * 승인 대기 중에 그 결제의 노트가 쓰였는지. 쓰였으면 승인해도 자동 거절된다.
+   * 아직 서버 Q&A 응답에 없다 — 오면 확인 문구가 그대로 경고를 띄운다.
+   */
+  creditUsedSinceRequest?: boolean;
+}
 
 export interface QnaItem {
-  qnaId: number;
+  /** Snowflake. 문자열 그대로 다룬다. */
+  qnaId: string;
   category: QnaCategory;
   title: string;
   content: string;
   status: QnaStatus;
   /** Snowflake. 문자열 그대로 다룬다 — 이유는 `User.userId`에 있다. */
   userId: string;
+  /** 탈퇴 등으로 유저가 없으면 서버가 "(알 수 없음)"으로 채운다. */
   userNickname: string;
-  answer?: string;
-  answeredBy?: string;
+  answer: string | null;
+  answeredBy: string | null;
   /** 답변 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
-  answeredById?: number;
-  answeredAt?: string;
+  answeredById: number | null;
+  answeredAt: string | null;
+  /** 유저가 취소한 시각. `CANCELLED` 문의에만 있다. */
+  cancelledAt: string | null;
   createdAt: string;
+  /** `REFUND` 문의에만 있다. */
+  refund: QnaRefundLink | null;
+  /** 교환 건을 붙인 `EARNING` 문의에만 있다. 구버전 서버는 주지 않는다. */
+  redemption?: QnaRedemptionLink | null;
+  /** 답변 기한(접수 + 3영업일). 답변 대기(`OPEN`) 문의에만 있다. 구버전 서버는 주지 않는다. */
+  dueAt?: string | null;
+}
+
+/** 자주 하는 질문 */
+export type FaqCategory =
+  | "SERVICE"
+  | "ACCOUNT"
+  | "VERIFICATION"
+  | "PAYMENT"
+  | "REFUND"
+  | "CHARACTER"
+  | "CHAT"
+  | "CREATOR"
+  | "REPORT"
+  | "ETC";
+
+export interface FaqItem {
+  faqId: string;
+  category: FaqCategory;
+  question: string;
+  answer: string;
+  /** 유저 화면 노출 여부 */
+  isVisible: boolean;
+  /** 같은 카테고리 안에서 작을수록 위에 보인다. */
+  sortOrder: number;
+  /** 수정 이력이 없으면 서버가 작성자로 채운다. */
+  updatedBy: string;
+  /** 수정 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
+  updatedById: number | null;
+  /** 수정 이력이 없으면 서버가 작성일로 채운다. */
+  updatedAt: string;
+}
+
+export interface FaqFormValues {
+  category: FaqCategory;
+  question: string;
+  answer: string;
+  isVisible: boolean;
 }
 
 /** 알림 템플릿 */
@@ -47,7 +148,11 @@ export type ProactiveTrigger =
 
 export interface ProactiveMessage {
   messageId: number;
-  characterId?: number;
+  /**
+   * 대상 캐릭터. 비어 있으면 모든 캐릭터에 쓰는 공용 메시지다.
+   * 캐릭터 ID는 Snowflake라 문자열 그대로 다룬다 — 이 도메인이 목업이어도 가리키는 대상은 실서버 ID다.
+   */
+  characterId?: string;
   characterName?: string;
   trigger: ProactiveTrigger;
   content: string;
@@ -74,4 +179,21 @@ export interface PushCampaign {
   /** 등록 관리자 계정 ID. 계정이 삭제되면 이름만 남는다. */
   createdById?: number;
   createdAt: string;
+}
+
+/** 서비스가 자동으로 보내는 메일 하나. 템플릿 원본은 서버 코드에 있다. */
+export interface MailTemplate {
+  /** 템플릿 키(예: PAYMENT_RECEIPT) */
+  key: string;
+  label: string;
+  /** 언제 누구에게 나가는가 */
+  trigger: string;
+}
+
+/** 예시 값으로 채운 메일. 실제 발송과 같은 문구 · 모양이다. */
+export interface MailTemplatePreview {
+  key: string;
+  subject: string;
+  /** 메일 본문 HTML 전체 */
+  html: string;
 }

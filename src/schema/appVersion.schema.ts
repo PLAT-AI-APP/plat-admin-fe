@@ -39,7 +39,7 @@ export const appVersionSchema = z
       !VERSION_PATTERN.test(minimumVersion) ||
       compareVersion(minimumVersion, latestVersion) <= 0,
     {
-      message: "최소 지원 버전은 최신 버전보다 높을 수 없습니다.",
+      error: "최소 지원 버전은 최신 버전보다 높을 수 없습니다.",
       path: ["minimumVersion"],
     },
   );

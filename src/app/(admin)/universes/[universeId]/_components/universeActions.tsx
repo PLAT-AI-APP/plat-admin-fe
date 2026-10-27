@@ -1,5 +1,4 @@
 import {
-  Ban,
   CheckCircle,
   Eye,
   Layers,
@@ -25,9 +24,10 @@ interface BuildUniverseActionsParams {
   onRejectReview: () => void;
   onRequestReview: () => void;
   onActivate: () => void;
-  onDeactivate: () => void;
   onChangeVisibility: () => void;
   onChangeClassification: () => void;
+  /** 성인(19) 재분류. 넘기지 않으면 메뉴에 두지 않는다. */
+  onChangeAdult?: () => void;
   onToggleComment: (next: boolean) => void;
 }
 
@@ -38,8 +38,8 @@ interface BuildUniverseActionsParams {
  * 상태·분류·댓글 조치를 상세 헤더의 드롭다운으로 모은다. 이미 그 상태인 항목과
  * 조치 전송 중에는 항목을 비활성화한다.
  *
- * 삭제는 하드 딜리트라 이 메뉴에 없다. 지운 세계관은 데이터째 사라져 상세가
- * 열리지 않으므로, 조치할 대상 자체가 없다.
+ * 삭제는 이 메뉴에 없다. 삭제 · 파기는 제작자 삭제와 파기 배치가, 인수 대기는 탈퇴가 정한다.
+ * 비활성화는 없다. 공개된 세계관을 내릴 때는 사유를 남기는 심사 반려로 한다.
  */
 export const buildUniverseActions = ({
   universe,
@@ -48,9 +48,9 @@ export const buildUniverseActions = ({
   onRejectReview,
   onRequestReview,
   onActivate,
-  onDeactivate,
   onChangeVisibility,
   onChangeClassification,
+  onChangeAdult,
   onToggleComment,
 }: BuildUniverseActionsParams): DropdownItem[] => {
   const reviewActions: DropdownItem[] = [
@@ -77,21 +77,18 @@ export const buildUniverseActions = ({
     },
   ];
 
-  const statusActions: DropdownItem[] = [
-    {
-      label: "활성화",
-      icon: <CheckCircle size={15} />,
-      disabled: universe.status === "ACTIVE",
-      onSelect: onActivate,
-    },
-    {
-      label: "비활성화(앱에서 내림)",
-      icon: <Ban size={15} />,
-      tone: "danger" as const,
-      disabled: universe.status === "INACTIVE",
-      onSelect: onDeactivate,
-    },
-  ];
+  // 비활성화는 없앴다 — 공개된 세계관을 내릴 때는 사유가 남는 "심사 반려"로 한다.
+  // 예전에 비활성으로 내려 둔 세계관만 다시 열 수 있게 활성화를 남긴다.
+  const statusActions: DropdownItem[] =
+    universe.status === "INACTIVE"
+      ? [
+          {
+            label: "활성화",
+            icon: <CheckCircle size={15} />,
+            onSelect: onActivate,
+          },
+        ]
+      : [];
 
   const settingActions: DropdownItem[] = [
     {
@@ -100,10 +97,19 @@ export const buildUniverseActions = ({
       onSelect: onChangeVisibility,
     },
     {
-      label: "장르 · 성향 변경",
+      label: "성향 변경",
       icon: <Layers size={15} />,
       onSelect: onChangeClassification,
     },
+    ...(onChangeAdult
+      ? [
+          {
+            label: "성인 콘텐츠 분류 변경",
+            icon: <ShieldAlert size={15} />,
+            onSelect: onChangeAdult,
+          },
+        ]
+      : []),
   ];
 
   const commentAction: DropdownItem = {

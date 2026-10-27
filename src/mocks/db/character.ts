@@ -4,15 +4,13 @@ import type {
   ScenarioLifecycle,
   ScenarioType,
   Universe,
-  UniverseCategory,
   UniverseReviewStatus,
   UniverseScenario,
   UniverseStatus,
   UniverseTendency,
 } from "@/type/character";
-import type { ServiceLanguage } from "@/type/language";
 import type { BannedWord, BannedWordType } from "@/type/bannedWord";
-import { daysAgo, pickOne, randomInt } from "../utils";
+import { daysAgo, pickOne, randomInt } from "@/mocks/utils";
 import { pickManager } from "./ops";
 import { CHARACTER_TAG_POOL, hashtags } from "./hashtag";
 import { creatorUsers, officialCreatorUsers, users } from "./user";
@@ -75,31 +73,6 @@ const buildTags = (seed: number): string[] => {
   ).filter((tag, index, tags) => tags.indexOf(tag) === index);
 };
 
-/**
- * 언어별 번역 보유율(%).
- *
- * **모든 세계관이 6개 언어를 다 갖춘 시드를 넣으면 안 된다.** 그러면 언어별
- * 후보 목록이 전부 똑같아져서, 언어를 나눈 이유(영어 번역이 없는 세계관은
- * 영어 목록에 못 오른다)가 화면에서 확인되지 않는다.
- */
-const TRANSLATION_RATE: Record<Exclude<ServiceLanguage, "KO">, number> = {
-  EN: 62,
-  JA: 45,
-  ZH: 30,
-  TH: 20,
-  VI: 14,
-};
-
-/** seed 기반 번역 보유 언어. 한국어는 원문이라 항상 있다. */
-const buildSupportedLanguages = (seed: number): ServiceLanguage[] => [
-  "KO",
-  ...Object.entries(TRANSLATION_RATE)
-    .filter(
-      ([, rate], index) => randomInt(seed * 13 + index * 7, 0, 99) < rate,
-    )
-    .map(([language]) => language as ServiceLanguage),
-];
-
 /** 캐릭터가 만들어진 날. 세계관 등록일이 이보다 앞서지 않도록 여기서 한 번만 계산한다. */
 const characterCreatedDaysAgo = (index: number) => index * 3 + 2;
 
@@ -117,7 +90,8 @@ const characterBases = CHARACTER_NAMES.map((name, index) => {
   const status = index % 11 === 0 ? "BLOCKED" : "ACTIVE";
 
   return {
-    characterId: seed,
+    // Snowflake ID 는 문자열이다. 목업도 같은 모양으로 둬야 화면이 실서버와 같게 동작한다.
+    characterId: String(seed),
     name,
     thumbnailUrl: `https://picsum.photos/seed/plat-character-${seed}/160/160`,
     creatorId: creator.userId,
@@ -136,17 +110,6 @@ const characterBases = CHARACTER_NAMES.map((name, index) => {
     createdAt: daysAgo(characterCreatedDaysAgo(index)),
   };
 });
-
-const UNIVERSE_CATEGORIES: readonly UniverseCategory[] = [
-  "ROMANCE",
-  "FANTASY",
-  "DRAMA",
-  "MARTIAL_ARTS",
-  "GL",
-  "BL",
-  "HORROR",
-  "MYSTERY",
-];
 
 const UNIVERSE_TENDENCIES: readonly UniverseTendency[] = [
   "ALL",
@@ -167,7 +130,7 @@ const REVIEW_REJECTION_REASONS = [
  * 세계관에도 등장한다. 매핑을 따로 두지 않고 세계관에 캐릭터 하나를 박아 두면
  * "이 캐릭터가 어디에 나오나"를 셀 수 없다.
  */
-const universeCharacterIds = (seed: number, ownerIndex: number): number[] => {
+const universeCharacterIds = (seed: number, ownerIndex: number): string[] => {
   const owner = characterBases[ownerIndex].characterId;
   // 3번에 한 번꼴로 다른 세계관의 캐릭터가 함께 등장한다.
   const hasGuest = seed % 3 === 0;
@@ -193,15 +156,15 @@ export const universes: Universe[] = characterBases.flatMap(
         심사·운영 상태를 섞어 둔다. 서버는 승인되지 않았거나 내려둔 세계관을
         홈 섹션에서 빼기 때문에, 운영 화면에서 그 이유를 구분할 수 있어야 한다.
 
-        삭제는 하드 딜리트라 상태로 남지 않는다 — 지운 세계관은 자료에서 통째로
-        사라지므로 목업도 살아 있는 것만 만든다.
+        목업은 살아 있는 것(활성 · 비활성)만 만든다. 실서버는 삭제 대기 · 파기 ·
+        인수 대기 세계관도 함께 준다.
       */
       const reviewStatus: UniverseReviewStatus =
         seed % 17 === 0 ? "REJECTED" : seed % 9 === 0 ? "PENDING" : "APPROVED";
       const status: UniverseStatus = seed % 19 === 0 ? "INACTIVE" : "ACTIVE";
 
       return {
-        universeId: seed,
+        universeId: String(seed),
         characters: universeCharacterIds(seed, index).map((characterId) => {
           const item = characterBases.find(
             (base) => base.characterId === characterId,
@@ -221,7 +184,6 @@ export const universes: Universe[] = characterBases.flatMap(
           "오래전 봉인된 기억을 따라가며, 당신과 함께 잃어버린 조각을 되찾는 이야기입니다.",
         thumbnailUrl: `https://picsum.photos/seed/plat-universe-${seed}/1200/440`,
         tags: buildTags(seed * 2),
-        supportedLanguages: buildSupportedLanguages(seed),
         /* 공식 여부는 공식 계정 목록에서 파생된다. db/official의 syncOfficialFlags가 채운다. */
         isOfficial: false,
         visibility:
@@ -231,7 +193,6 @@ export const universes: Universe[] = characterBases.flatMap(
               : ("PUBLIC" as const)
             : ("PRIVATE" as const),
         status,
-        category: pickOne(seed * 2, UNIVERSE_CATEGORIES),
         tendency: pickOne(seed * 4, UNIVERSE_TENDENCIES),
         reviewStatus,
         reviewRejectionReason:
@@ -285,7 +246,11 @@ const SCENARIO_FIRST_DIALOGUES = [
 export const universeScenarios: UniverseScenario[] = universes.flatMap(
   (universe, index) =>
     Array.from({ length: randomInt(index + 5, 1, 4) }, (_, episodeIndex) => {
-      const seed = universe.universeId * 10 + episodeIndex + 1;
+      /*
+        시드는 배열 순번으로 만든다. ID가 문자열이라 곱셈에 쓸 수 없고,
+        회차가 4편을 넘지 않아 순번 × 10 + 회차면 시나리오끼리 겹치지 않는다.
+      */
+      const seed = (index + 1) * 10 + episodeIndex + 1;
       const isStart = episodeIndex === 0;
 
       const type: ScenarioType = isStart
@@ -306,7 +271,7 @@ export const universeScenarios: UniverseScenario[] = universes.flatMap(
             : "ACTIVE";
 
       return {
-        scenarioId: seed,
+        scenarioId: String(seed),
         universeId: universe.universeId,
         episodeNo: episodeIndex + 1,
         type,
@@ -330,12 +295,9 @@ universes.forEach((universe) => {
 });
 
 /**
- * 캐릭터 지표는 하위 세계관의 합이다.
- * 상세 화면에서 캐릭터 지표와 세계관 목록이 나란히 보이므로 따로 난수를 뿌리면 바로 어긋난다.
- */
-/**
  * 캐릭터 지표는 **그 캐릭터가 등장하는 세계관**의 합이다.
  * 소유가 아니라 등장 기준이라, 다른 사람의 세계관에 초대된 캐릭터도 함께 잡힌다.
+ * 상세 화면에서 캐릭터 지표와 세계관 목록이 나란히 보이므로 따로 난수를 뿌리면 바로 어긋난다.
  */
 export const characters: Character[] = characterBases.map((character) => {
   const appearedUniverses = universes.filter((universe) =>
@@ -410,7 +372,7 @@ const CHARACTER_PERSONALITY_POOL = [
  * 목록 응답(Character)에는 포함되지 않으므로 시드를 분리해 둔다.
  */
 export interface CharacterProfile {
-  characterId: number;
+  characterId: string;
   description: string;
   greeting: string;
   personality: string;
@@ -474,7 +436,7 @@ export const banOnlyWords = bannedWords.filter((item) => item.type === "BAN");
  * 어차피 별도 응답으로 붙을 값들이다.
  */
 export interface CharacterModeration {
-  characterId: number;
+  characterId: string;
   /**
    * NSFW 판정에 걸린 금지어. `Character.isNsfw`가 참인 근거다.
    *

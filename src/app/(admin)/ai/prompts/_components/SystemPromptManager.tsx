@@ -20,7 +20,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import Table from "@/components/ui/Table";
 import type { TableColumn } from "@/components/ui/Table";
 import PromptMarkdown from "./PromptMarkdown";
-import PromptVersionModal from "./PromptVersionModal";
+import PromptVersionFormModal from "./PromptVersionFormModal";
 
 const SystemPromptManager = () => {
   // 선택 전에는 첫 번째 프롬프트를 자동으로 보여준다. (useEffect로 서버 값을 복사하지 않는다)
@@ -34,6 +34,8 @@ const SystemPromptManager = () => {
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
 
   const canDelete = useHasPermission("systemPrompt:delete");
+  /* 새 버전 저장 · 활성화는 서버에서 `systemPrompt:write` 다. */
+  const canWrite = useHasPermission("systemPrompt:write");
 
   const { data: prompts, isLoading: isListLoading } = useSystemPromptListQuery();
 
@@ -182,13 +184,15 @@ const SystemPromptManager = () => {
         >
           {!version.isActive && (
             <>
-              <Button
-                size="sm"
-                onClick={() => handleActivate(version)}
-                disabled={activateMutation.isPending}
-              >
-                활성화
-              </Button>
+              {canWrite && (
+                <Button
+                  size="sm"
+                  onClick={() => handleActivate(version)}
+                  disabled={activateMutation.isPending}
+                >
+                  활성화
+                </Button>
+              )}
 
               {canDelete && (
                 <IconButton
@@ -311,14 +315,16 @@ const SystemPromptManager = () => {
                     : detail.description
                 }
                 action={
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    leftIcon={<Plus size={15} />}
-                    onClick={() => setIsVersionModalOpen(true)}
-                  >
-                    새 버전 저장
-                  </Button>
+                  canWrite && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<Plus size={15} />}
+                      onClick={() => setIsVersionModalOpen(true)}
+                    >
+                      새 버전 저장
+                    </Button>
+                  )
                 }
               >
                 {activeVersionItem ? (
@@ -362,7 +368,7 @@ const SystemPromptManager = () => {
       </div>
 
       {detail && (
-        <PromptVersionModal
+        <PromptVersionFormModal
           isOpen={isVersionModalOpen}
           onClose={() => setIsVersionModalOpen(false)}
           promptLabel={detail.label}

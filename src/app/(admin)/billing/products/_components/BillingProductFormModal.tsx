@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { formatCredit } from "@/lib/utils";
 import {
   billingProductSchema,
@@ -20,11 +20,12 @@ import FormField from "@/components/ui/FormField";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
+import Switch from "@/components/ui/Switch";
 import Textarea from "@/components/ui/Textarea";
 import {
   PRODUCT_PLATFORM_OPTIONS,
   PRODUCT_STATUS_OPTIONS,
-} from "./productOptions";
+} from "@/app/(admin)/billing/products/_constants/productOptions";
 
 interface BillingProductFormModalProps {
   isOpen: boolean;
@@ -49,11 +50,11 @@ const BillingProductFormModal = ({
   isSubmitting,
 }: BillingProductFormModalProps) => {
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<BillingProductSchema>({
     resolver: zodResolver(billingProductSchema),
   });
@@ -74,6 +75,7 @@ const BillingProductFormModal = ({
             bonusCredit: product.bonusCredit,
             status: product.status,
             sortOrder: product.sortOrder,
+            firstPurchaseOnly: product.firstPurchaseOnly,
           }
         : {
             code: "",
@@ -85,24 +87,28 @@ const BillingProductFormModal = ({
             bonusCredit: 0,
             status: "ON_SALE",
             sortOrder: defaultSortOrder,
+            firstPurchaseOnly: false,
           },
     );
   }, [isOpen, product, defaultSortOrder, defaultPlatform, reset]);
 
-  const values = watch();
-  const totalCredit = (values.credit || 0) + (values.bonusCredit || 0);
+  const [credit, bonusCredit, amountMinor] = useWatch({
+    control,
+    name: ["credit", "bonusCredit", "amountMinor"],
+  });
+  const totalCredit = (credit || 0) + (bonusCredit || 0);
   // 크레딧 1개당 실제 결제 단가. 상품 간 가격 균형을 확인하는 용도다.
-  const unitPrice =
-    totalCredit > 0 ? (values.amountMinor || 0) / totalCredit : 0;
+  const unitPrice = totalCredit > 0 ? (amountMinor || 0) / totalCredit : 0;
 
   const submit = handleSubmit((formValues) => onSubmit(formValues));
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={product ? "상품 수정" : "상품 추가"}
-      description="결제 금액은 원 단위 정수, 크레딧은 정수로만 입력합니다."
+      description="결제 금액은 원 단위 정수, 노트는 정수로만 입력합니다."
       size="md"
       footer={
         <>
@@ -125,7 +131,7 @@ const BillingProductFormModal = ({
           >
             <Input
               id="product-name"
-              placeholder="스타터"
+              placeholder="1,000 노트"
               hasError={Boolean(errors.name)}
               {...register("name")}
             />
@@ -201,7 +207,7 @@ const BillingProductFormModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <FormField
-            label="지급 크레딧"
+            label="지급 노트"
             htmlFor="product-credit"
             required
             error={errors.credit?.message}
@@ -219,7 +225,7 @@ const BillingProductFormModal = ({
           </FormField>
 
           <FormField
-            label="보너스 크레딧"
+            label="보너스 노트"
             htmlFor="product-bonus-credit"
             required
             error={errors.bonusCredit?.message}
@@ -271,10 +277,33 @@ const BillingProductFormModal = ({
           </FormField>
         </div>
 
+        <FormField
+          label="첫 구매 전용"
+          hint="결제 이력이 없는 유저에게만 보이고 살 수 있어요"
+          error={errors.firstPurchaseOnly?.message}
+        >
+          <Controller
+            control={control}
+            name="firstPurchaseOnly"
+            render={({ field }) => (
+              <div className="flex items-center gap-2">
+                <Switch
+                  label="첫 구매 전용 여부"
+                  checked={field.value}
+                  onChange={field.onChange}
+                />
+                <span className="body-5 text-font-2">
+                  {field.value ? "첫 구매 전용" : "일반 상품"}
+                </span>
+              </div>
+            )}
+          />
+        </FormField>
+
         {/* 저장 전에 최종 지급 구성을 한 번 더 확인할 수 있게 요약을 둔다. */}
         <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 body-5">
           <div className="flex items-center gap-2">
-            <dt className="text-font-2">총 지급 크레딧</dt>
+            <dt className="text-font-2">총 지급 노트</dt>
             <dd className="font-semibold text-font-1 tabular-nums">
               {formatCredit(totalCredit)}
             </dd>
@@ -282,7 +311,7 @@ const BillingProductFormModal = ({
 
           <div className="flex items-center gap-2">
             <dt className="text-font-2">
-              크레딧당 단가
+              노트당 단가
               <span className="ml-1 text-font-disabled">
                 ({MIN_UNIT_PRICE}~{MAX_UNIT_PRICE}원)
               </span>

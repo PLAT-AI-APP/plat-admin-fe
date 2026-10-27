@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import Skeleton from "@/components/ui/Skeleton";
-import UniverseBoard from "./_components/UniverseBoard";
+import UniverseManager from "./_components/UniverseManager";
 
 export default function UniversePage() {
   return (
@@ -12,7 +12,7 @@ export default function UniversePage() {
       />
 
       <Suspense fallback={<Skeleton className="h-64 w-full rounded-card" />}>
-        <UniverseBoard />
+        <UniverseManager />
       </Suspense>
     </>
   );

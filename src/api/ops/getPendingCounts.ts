@@ -1,11 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
-import { adminAxios } from "..";
+import { liveAxios } from "..";
+import { usePendingRedemptionCountQuery } from "@/api/earning/getRedemptionList";
 import type { AppError } from "@/type/api";
 import type { PendingCounts } from "@/type/ops";
 
+/** 운영 서버가 주는 건수. 교환 요청은 수익 서버가 따로 준다. */
+type OpsPendingCounts = Omit<PendingCounts, "redemption">;
+
 export const getPendingCounts = async () => {
-  const response = await adminAxios.get<PendingCounts>(
-    "/admin/ops/pending-counts",
+  const response = await liveAxios.get<OpsPendingCounts>(
+    "/ops/pending-counts",
   );
 
   return response.data;
@@ -19,9 +23,12 @@ const PENDING_REFETCH_MS = 60_000;
  *
  * 대시보드 요약과 따로 둔다. 대시보드는 화면을 열 때 한 번 보는 값이고,
  * 이 값은 콘솔에 머무는 내내 갱신되어야 한다.
+ *
+ * Q&A · 댓글 · 신고 · 인수 심사 목록이 모두 실서버라 건수도 목업 여부와 상관없이 실서버에서 받는다.
+ * 영역별 권한은 서버가 거른다. 교환 요청 건수는 수익 조회 권한이 없으면 부르지 않는다.
  */
 export const usePendingCountsQuery = () => {
-  return useQuery<PendingCounts, AppError>({
+  const opsQuery = useQuery<OpsPendingCounts, AppError>({
     queryKey: ["get-pending-counts"],
     queryFn: getPendingCounts,
     refetchInterval: PENDING_REFETCH_MS,
@@ -29,4 +36,21 @@ export const usePendingCountsQuery = () => {
     refetchOnWindowFocus: true,
     staleTime: 0,
   });
+  const redemptionQuery = usePendingRedemptionCountQuery();
+
+  const data: PendingCounts = {
+    qna: opsQuery.data?.qna ?? 0,
+    comment: opsQuery.data?.comment ?? 0,
+    report: opsQuery.data?.report ?? 0,
+    // 서버가 아직 필드를 주지 않는 환경(구버전)에서도 0으로 둔다.
+    handover: opsQuery.data?.handover ?? 0,
+    refund: opsQuery.data?.refund ?? 0,
+    paymentIssue: opsQuery.data?.paymentIssue ?? 0,
+    qnaOverdue: opsQuery.data?.qnaOverdue ?? 0,
+    reportOverdue: opsQuery.data?.reportOverdue ?? 0,
+    refundOverdue: opsQuery.data?.refundOverdue ?? 0,
+    redemption: redemptionQuery.data ?? 0,
+  };
+
+  return { data };
 };

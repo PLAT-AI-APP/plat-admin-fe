@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { useNoticeListQuery } from "@/api/notice/getNoticeList";
 import { useNoticeMutation } from "@/api/notice/mutateNotice";
+import { useCan } from "@/hooks/useCan";
 import { Ban, Edit, Megaphone, Plus, Star, Trash } from "@/icons";
 import type { CsvColumn } from "@/lib/csv";
 import { formatDateTime } from "@/lib/dayjs";
@@ -26,15 +28,16 @@ import Dropdown, { type DropdownItem } from "@/components/ui/Dropdown";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, { TableCellStack, type TableColumn } from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import NoticeFormModal from "./NoticeFormModal";
-import NoticeViewModal from "./NoticeViewModal";
+import NoticeDetailModal from "./NoticeDetailModal";
 import {
   NOTICE_CATEGORY_FILTER_OPTIONS,
   NOTICE_CATEGORY_TONE,
   NOTICE_STATUS_FILTER_OPTIONS,
   NOTICE_STATUS_TONE,
-} from "./noticeOptions";
+} from "@/app/(admin)/communication/notices/_constants/noticeOptions";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
 const NOTICE_CSV_COLUMNS: CsvColumn<NoticeSummary>[] = [
@@ -45,22 +48,30 @@ const NOTICE_CSV_COLUMNS: CsvColumn<NoticeSummary>[] = [
   { header: "고정", value: (row) => (row.isPinned ? "Y" : "N") },
   { header: "조회 수", value: (row) => row.viewCount },
   {
-    header: "관리자",
+    header: "운영자",
     value: (row) => formatAdmin(row.createdBy, row.createdById),
   },
   { header: "등록일", value: (row) => formatDateTime(row.createdAt) },
   {
-    header: "최종 수정 관리자",
+    header: "최종 수정 운영자",
     value: (row) => (row.updatedBy ? formatAdmin(row.updatedBy, row.updatedById) : ""),
   },
   { header: "수정일", value: (row) => formatDateTime(row.updatedAt) },
 ];
 
+/** 주소에 실리는 목록 조건 */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  category: "",
+  status: "",
+};
+
 const NoticeManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [category, setCategory] = useState<NoticeCategory | "">("");
-  const [status, setStatus] = useState<NoticeStatus | "">("");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const category = params.category as NoticeCategory | "";
+  const status = params.status as NoticeStatus | "";
 
   const [editingNoticeId, setEditingNoticeId] = useState<number | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -76,11 +87,11 @@ const NoticeManager = () => {
 
   const { createMutation, updateMutation, statusMutation, deleteMutation } =
     useNoticeMutation();
+  const canWrite = useCan("notice:write");
+  const canPublish = useCan("notice:publish");
+  const canDelete = useCan("notice:delete");
 
   const notices = data?.content ?? [];
-
-  /** 필터가 바뀌면 이전 페이지 번호가 의미를 잃으므로 1로 되돌린다. */
-  const resetPage = () => setPage(1);
 
   const handleOpenCreate = () => {
     setEditingNoticeId(undefined);
@@ -140,32 +151,47 @@ const NoticeManager = () => {
    * 행 액션. 아이콘 버튼을 늘리지 않고 더보기 메뉴 하나로 모은다.
    * 상세 보기는 행을 누르면 열리므로 메뉴에 두지 않는다.
    */
-  const buildRowActions = (notice: NoticeSummary): DropdownItem[] => [
-    notice.status === "PUBLISHED"
-      ? {
-          label: "숨김",
-          icon: <Ban size={15} />,
-          disabled: statusMutation.isPending,
-          onSelect: () => handleHide(notice),
-        }
-      : {
-          label: "게시",
-          icon: <Megaphone size={15} />,
-          disabled: statusMutation.isPending,
-          onSelect: () => handlePublish(notice),
-        },
-    {
-      label: "수정",
-      icon: <Edit size={15} />,
-      onSelect: () => handleOpenEdit(notice),
-    },
-    {
-      label: "삭제",
-      icon: <Trash size={15} />,
-      tone: "danger",
-      onSelect: () => handleDelete(notice),
-    },
-  ];
+  const buildRowActions = (notice: NoticeSummary): DropdownItem[] => {
+    const items: DropdownItem[] = [];
+
+    /* 게시 · 숨김은 서버에서 `notice:publish` 다. */
+    if (canPublish) {
+      items.push(
+        notice.status === "PUBLISHED"
+          ? {
+              label: "숨김",
+              icon: <Ban size={15} />,
+              disabled: statusMutation.isPending,
+              onSelect: () => handleHide(notice),
+            }
+          : {
+              label: "게시",
+              icon: <Megaphone size={15} />,
+              disabled: statusMutation.isPending,
+              onSelect: () => handlePublish(notice),
+            },
+      );
+    }
+
+    if (canWrite) {
+      items.push({
+        label: "수정",
+        icon: <Edit size={15} />,
+        onSelect: () => handleOpenEdit(notice),
+      });
+    }
+
+    if (canDelete) {
+      items.push({
+        label: "삭제",
+        icon: <Trash size={15} />,
+        tone: "danger",
+        onSelect: () => handleDelete(notice),
+      });
+    }
+
+    return items;
+  };
 
   const columns: TableColumn<NoticeSummary>[] = [
     {
@@ -223,7 +249,7 @@ const NoticeManager = () => {
     },
     {
       key: "createdBy",
-      header: "관리자",
+      header: "운영자",
       width: "140px",
       // 계정이 삭제돼도 남는 등록자 이름 스냅샷.
       render: (row) => (
@@ -245,15 +271,21 @@ const NoticeManager = () => {
       header: "",
       width: "56px",
       align: "center",
-      render: (row) => (
-        // 행 클릭(상세 모달)과 겹치지 않도록 액션 영역의 클릭은 여기서 멈춘다.
-        <div
-          className="flex justify-center"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <Dropdown items={buildRowActions(row)} />
-        </div>
-      ),
+      render: (row) => {
+        const items = buildRowActions(row);
+
+        if (items.length === 0) return null;
+
+        return (
+          // 행 클릭(상세 모달)과 겹치지 않도록 액션 영역의 클릭은 여기서 멈춘다.
+          <div
+            className="flex justify-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Dropdown items={items} />
+          </div>
+        );
+      },
     },
   ];
 
@@ -271,14 +303,16 @@ const NoticeManager = () => {
               disabled={isLoading}
             />
 
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleOpenCreate}
-            >
-              공지 등록
-            </Button>
+            {canWrite && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={handleOpenCreate}
+              >
+                공지 등록
+              </Button>
+            )}
           </>
         }
         noPadding
@@ -286,10 +320,7 @@ const NoticeManager = () => {
         <div className="flex items-center justify-between gap-3 border-b border-border-main px-5 py-3.5">
           <SearchInput
             value={keyword}
-            onSearch={(next) => {
-              setKeyword(next);
-              resetPage();
-            }}
+            onSearch={(next) => setParams({ keyword: next })}
             placeholder="제목 · 본문 · ID 검색"
           />
 
@@ -298,10 +329,7 @@ const NoticeManager = () => {
               aria-label="분류 필터"
               options={NOTICE_CATEGORY_FILTER_OPTIONS}
               value={category}
-              onChange={(event) => {
-                setCategory(event.target.value as NoticeCategory | "");
-                resetPage();
-              }}
+              onChange={(event) => setParams({ category: event.target.value })}
               selectBoxClassName="w-36"
             />
 
@@ -309,10 +337,7 @@ const NoticeManager = () => {
               aria-label="상태 필터"
               options={NOTICE_STATUS_FILTER_OPTIONS}
               value={status}
-              onChange={(event) => {
-                setStatus(event.target.value as NoticeStatus | "");
-                resetPage();
-              }}
+              onChange={(event) => setParams({ status: event.target.value })}
               selectBoxClassName="w-36"
             />
           </div>
@@ -327,14 +352,16 @@ const NoticeManager = () => {
           emptyTitle="등록된 공지사항이 없습니다."
           emptyDescription="점검·업데이트·이벤트 안내를 등록해 보세요."
           emptyAction={
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleOpenCreate}
-            >
-              공지 등록
-            </Button>
+            canWrite && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={handleOpenCreate}
+              >
+                공지 등록
+              </Button>
+            )
           }
         />
 
@@ -342,7 +369,7 @@ const NoticeManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
 
@@ -352,12 +379,13 @@ const NoticeManager = () => {
         noticeId={editingNoticeId}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+        canPublish={canPublish}
       />
 
-      <NoticeViewModal
+      <NoticeDetailModal
         noticeId={viewingNoticeId}
         onClose={() => setViewingNoticeId(null)}
-        onEdit={handleOpenEdit}
+        onEdit={canWrite ? handleOpenEdit : undefined}
       />
     </>
   );

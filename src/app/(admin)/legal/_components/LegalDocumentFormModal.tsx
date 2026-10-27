@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toDateInputValue } from "@/lib/dayjs";
 import {
   legalDocumentSchema,
@@ -34,11 +34,11 @@ const LegalDocumentFormModal = ({
   isSubmitting,
 }: LegalDocumentFormModalProps) => {
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<LegalDocumentSchema>({
     resolver: zodResolver(legalDocumentSchema),
     defaultValues: {
@@ -61,12 +61,13 @@ const LegalDocumentFormModal = ({
     });
   }, [isOpen, documentType, reset]);
 
-  const content = watch("content");
+  const content = useWatch({ control, name: "content" });
 
   const submit = handleSubmit((formValues) => onSubmit(formValues));
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={`${LEGAL_DOCUMENT_LABEL[documentType]} 새 버전 등록`}

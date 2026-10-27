@@ -1,8 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
+import { usePermittedQuery } from "@/api/usePermittedQuery";
 import {
+  toPageRequest,
   toPageResponse,
-  type AppError,
   type PageResponse,
   type PageWith,
 } from "@/type/api";
@@ -34,6 +34,8 @@ interface LedgerEntryResponse {
   amount: number;
   creditDelta: number;
   productName: string | null;
+  /** 결제에서 나온 줄이면 그 결제. 서버가 아직 안 주면 필드가 없다. */
+  paymentOrderId?: string | null;
   memo: string | null;
   createdAt: string;
 }
@@ -42,13 +44,13 @@ const toLedgerEntry = (entry: LedgerEntryResponse): LedgerEntry => ({
   ...entry,
   userNickname: entry.userNickname ?? `#${entry.userId}`,
   productName: entry.productName ?? undefined,
+  paymentOrderId: entry.paymentOrderId ?? undefined,
   memo: entry.memo ?? "",
 });
 
 /** 화면은 1부터, 서버는 0부터 페이지를 센다. 빈 필터는 서버에 보내지 않는다. */
 const toRequestParams = (params: LedgerListParams) => ({
-  page: Math.max(params.page - 1, 0),
-  size: params.size,
+  ...toPageRequest(params),
   keyword: params.keyword?.trim() || undefined,
   type: params.type || undefined,
   startDate: params.startDate || undefined,
@@ -60,7 +62,7 @@ export const getLedgerList = async (
   params: LedgerListParams,
 ): Promise<PageResponse<LedgerEntry>> => {
   const response = await liveAxios.get<PageWith<LedgerEntryResponse>>(
-    "/admin/ledgers",
+    "/ledgers",
     { params: toRequestParams(params) },
   );
 
@@ -79,7 +81,7 @@ export const getLedgerList = async (
  * 정렬은 서버가 최근순으로 고정한다. 기간은 KST 날짜 기준이다.
  */
 export const useLedgerListQuery = (params: LedgerListParams) => {
-  return useQuery<PageResponse<LedgerEntry>, AppError>({
+  return usePermittedQuery<PageResponse<LedgerEntry>>("ledger:read", {
     queryKey: ["get-ledger-list", params],
     queryFn: () => getLedgerList(params),
   });

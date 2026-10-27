@@ -1,13 +1,11 @@
 import type {
   AdjustmentType,
   BillingProduct,
-  CreditPolicy,
-  CreditPolicyKey,
   LedgerEntry,
   LedgerType,
 } from "@/type/billing";
 import type { UserDetail } from "@/type/user";
-import { daysAgo, pickOne, randomInt, seedOf } from "../utils";
+import { daysAgo, pickOne, randomInt, seedOf } from "@/mocks/utils";
 import { pickManager } from "./ops";
 import { users } from "./user";
 
@@ -30,21 +28,21 @@ export const creditUsers: UserDetail[] = users;
  * 상품 자체를 나눈다. iOS·Android 금액이 웹보다 높은 것은 스토어 수수료 때문이다.
  */
 const PRODUCT_SEEDS: Omit<BillingProduct, "updatedAt">[] = [
-  { productId: 1001, code: "STARTER_WEB", name: "스타터", description: "1,000노트", platform: "WEB", currency: "KRW", amountMinor: 5_900, credit: 1_000, bonusCredit: 0, status: "ON_SALE", sortOrder: 10 },
-  { productId: 1002, code: "BASIC_WEB", name: "베이직", description: "2,500노트 + 보너스 100노트", platform: "WEB", currency: "KRW", amountMinor: 13_900, credit: 2_500, bonusCredit: 100, status: "ON_SALE", sortOrder: 20 },
-  { productId: 1003, code: "STANDARD_WEB", name: "스탠다드", description: "5,000노트 + 보너스 400노트", platform: "WEB", currency: "KRW", amountMinor: 27_900, credit: 5_000, bonusCredit: 400, status: "ON_SALE", sortOrder: 30 },
-  { productId: 1004, code: "PREMIUM_WEB", name: "프리미엄", description: "10,000노트 + 보너스 1,200노트", platform: "WEB", currency: "KRW", amountMinor: 54_900, credit: 10_000, bonusCredit: 1_200, status: "ON_SALE", sortOrder: 40 },
-  { productId: 1005, code: "MEGA_WEB", name: "메가", description: "20,000노트 + 보너스 3,000노트", platform: "WEB", currency: "KRW", amountMinor: 99_900, credit: 20_000, bonusCredit: 3_000, status: "ON_SALE", sortOrder: 50 },
-  { productId: 1006, code: "STARTER_IOS", name: "스타터", description: "1,000노트", platform: "IOS", currency: "KRW", amountMinor: 7_500, credit: 1_000, bonusCredit: 0, status: "ON_SALE", sortOrder: 60 },
-  { productId: 1007, code: "BASIC_IOS", name: "베이직", description: "2,500노트 + 보너스 100노트", platform: "IOS", currency: "KRW", amountMinor: 18_000, credit: 2_500, bonusCredit: 100, status: "ON_SALE", sortOrder: 70 },
-  { productId: 1008, code: "STANDARD_IOS", name: "스탠다드", description: "5,000노트 + 보너스 400노트", platform: "IOS", currency: "KRW", amountMinor: 36_000, credit: 5_000, bonusCredit: 400, status: "ON_SALE", sortOrder: 80 },
-  { productId: 1009, code: "PREMIUM_IOS", name: "프리미엄", description: "10,000노트 + 보너스 1,200노트", platform: "IOS", currency: "KRW", amountMinor: 71_000, credit: 10_000, bonusCredit: 1_200, status: "ON_SALE", sortOrder: 90 },
-  { productId: 1010, code: "MEGA_IOS", name: "메가", description: "20,000노트 + 보너스 3,000노트", platform: "IOS", currency: "KRW", amountMinor: 129_000, credit: 20_000, bonusCredit: 3_000, status: "ON_SALE", sortOrder: 100 },
-  { productId: 1011, code: "STARTER_AOS", name: "스타터", description: "1,000노트", platform: "AOS", currency: "KRW", amountMinor: 7_500, credit: 1_000, bonusCredit: 0, status: "ON_SALE", sortOrder: 110 },
-  { productId: 1012, code: "BASIC_AOS", name: "베이직", description: "2,500노트 + 보너스 100노트", platform: "AOS", currency: "KRW", amountMinor: 18_000, credit: 2_500, bonusCredit: 100, status: "ON_SALE", sortOrder: 120 },
-  { productId: 1013, code: "STANDARD_AOS", name: "스탠다드", description: "5,000노트 + 보너스 400노트", platform: "AOS", currency: "KRW", amountMinor: 36_000, credit: 5_000, bonusCredit: 400, status: "ON_SALE", sortOrder: 130 },
-  { productId: 1014, code: "PREMIUM_AOS", name: "프리미엄", description: "10,000노트 + 보너스 1,200노트", platform: "AOS", currency: "KRW", amountMinor: 71_000, credit: 10_000, bonusCredit: 1_200, status: "ON_SALE", sortOrder: 140 },
-  { productId: 1015, code: "MEGA_AOS", name: "메가", description: "20,000노트 + 보너스 3,000노트", platform: "AOS", currency: "KRW", amountMinor: 129_000, credit: 20_000, bonusCredit: 3_000, status: "ON_SALE", sortOrder: 150 },
+  { productId: 1001, code: "STARTER_WEB", name: "1,000 노트", description: "총 1,000노트 지급", platform: "WEB", currency: "KRW", amountMinor: 5_900, credit: 1_000, bonusCredit: 0, status: "ON_SALE", sortOrder: 10, firstPurchaseOnly: false },
+  { productId: 1002, code: "BASIC_WEB", name: "2,500 노트 + 보너스 100", description: "총 2,600노트 지급", platform: "WEB", currency: "KRW", amountMinor: 13_900, credit: 2_500, bonusCredit: 100, status: "ON_SALE", sortOrder: 20, firstPurchaseOnly: false },
+  { productId: 1003, code: "STANDARD_WEB", name: "5,000 노트 + 보너스 400", description: "총 5,400노트 지급", platform: "WEB", currency: "KRW", amountMinor: 27_900, credit: 5_000, bonusCredit: 400, status: "ON_SALE", sortOrder: 30, firstPurchaseOnly: false },
+  { productId: 1004, code: "PREMIUM_WEB", name: "10,000 노트 + 보너스 1,200", description: "총 11,200노트 지급", platform: "WEB", currency: "KRW", amountMinor: 54_900, credit: 10_000, bonusCredit: 1_200, status: "ON_SALE", sortOrder: 40, firstPurchaseOnly: false },
+  { productId: 1005, code: "MEGA_WEB", name: "20,000 노트 + 보너스 3,000", description: "총 23,000노트 지급", platform: "WEB", currency: "KRW", amountMinor: 99_900, credit: 20_000, bonusCredit: 3_000, status: "ON_SALE", sortOrder: 50, firstPurchaseOnly: false },
+  { productId: 1006, code: "STARTER_IOS", name: "1,000 노트", description: "총 1,000노트 지급", platform: "IOS", currency: "KRW", amountMinor: 7_500, credit: 1_000, bonusCredit: 0, status: "ON_SALE", sortOrder: 60, firstPurchaseOnly: false },
+  { productId: 1007, code: "BASIC_IOS", name: "2,500 노트 + 보너스 100", description: "총 2,600노트 지급", platform: "IOS", currency: "KRW", amountMinor: 18_000, credit: 2_500, bonusCredit: 100, status: "ON_SALE", sortOrder: 70, firstPurchaseOnly: false },
+  { productId: 1008, code: "STANDARD_IOS", name: "5,000 노트 + 보너스 400", description: "총 5,400노트 지급", platform: "IOS", currency: "KRW", amountMinor: 36_000, credit: 5_000, bonusCredit: 400, status: "ON_SALE", sortOrder: 80, firstPurchaseOnly: false },
+  { productId: 1009, code: "PREMIUM_IOS", name: "10,000 노트 + 보너스 1,200", description: "총 11,200노트 지급", platform: "IOS", currency: "KRW", amountMinor: 71_000, credit: 10_000, bonusCredit: 1_200, status: "ON_SALE", sortOrder: 90, firstPurchaseOnly: false },
+  { productId: 1010, code: "MEGA_IOS", name: "20,000 노트 + 보너스 3,000", description: "총 23,000노트 지급", platform: "IOS", currency: "KRW", amountMinor: 129_000, credit: 20_000, bonusCredit: 3_000, status: "ON_SALE", sortOrder: 100, firstPurchaseOnly: false },
+  { productId: 1011, code: "STARTER_AOS", name: "1,000 노트", description: "총 1,000노트 지급", platform: "AOS", currency: "KRW", amountMinor: 7_500, credit: 1_000, bonusCredit: 0, status: "ON_SALE", sortOrder: 110, firstPurchaseOnly: false },
+  { productId: 1012, code: "BASIC_AOS", name: "2,500 노트 + 보너스 100", description: "총 2,600노트 지급", platform: "AOS", currency: "KRW", amountMinor: 18_000, credit: 2_500, bonusCredit: 100, status: "ON_SALE", sortOrder: 120, firstPurchaseOnly: false },
+  { productId: 1013, code: "STANDARD_AOS", name: "5,000 노트 + 보너스 400", description: "총 5,400노트 지급", platform: "AOS", currency: "KRW", amountMinor: 36_000, credit: 5_000, bonusCredit: 400, status: "ON_SALE", sortOrder: 130, firstPurchaseOnly: false },
+  { productId: 1014, code: "PREMIUM_AOS", name: "10,000 노트 + 보너스 1,200", description: "총 11,200노트 지급", platform: "AOS", currency: "KRW", amountMinor: 71_000, credit: 10_000, bonusCredit: 1_200, status: "ON_SALE", sortOrder: 140, firstPurchaseOnly: false },
+  { productId: 1015, code: "MEGA_AOS", name: "20,000 노트 + 보너스 3,000", description: "총 23,000노트 지급", platform: "AOS", currency: "KRW", amountMinor: 129_000, credit: 20_000, bonusCredit: 3_000, status: "ON_SALE", sortOrder: 150, firstPurchaseOnly: false },
 ];
 
 /** 상품 구성은 고정하고, 갱신 시점만 seed 난수로 흩뿌린다. */
@@ -55,95 +53,19 @@ export const billingProducts: BillingProduct[] = PRODUCT_SEEDS.map(
   }),
 );
 
-/** 정책 문구는 운영자가 보는 그대로여야 하므로 고정값으로 둔다. */
-const POLICY_SEEDS: Record<
-  CreditPolicyKey,
-  { label: string; description: string; amount: number; isEnabled: boolean }
-> = {
-  SIGN_UP_BONUS: {
-    label: "가입 축하 크레딧",
-    description: "신규 가입이 완료된 직후 1회 지급합니다.",
-    amount: 300,
-    isEnabled: true,
-  },
-  PROFILE_COMPLETE_BONUS: {
-    label: "프로필 완성 보상",
-    description: "닉네임과 프로필 이미지를 모두 채우면 계정당 1회 지급합니다.",
-    amount: 50,
-    isEnabled: true,
-  },
-  ADULT_VERIFICATION_BONUS: {
-    label: "성인 인증 완료 보상",
-    description: "본인·성인 인증을 마치면 계정당 1회 지급합니다.",
-    amount: 100,
-    isEnabled: true,
-  },
-  DAILY_ATTENDANCE: {
-    label: "일일 출석 보상",
-    description: "하루 첫 접속 시 자동으로 지급합니다.",
-    amount: 20,
-    isEnabled: true,
-  },
-  ATTENDANCE_STREAK_7DAYS: {
-    label: "7일 연속 출석 보상",
-    description: "출석이 7일 연속으로 이어질 때마다 추가로 지급합니다.",
-    amount: 100,
-    isEnabled: true,
-  },
-  DORMANT_RETURN_BONUS: {
-    label: "휴면 복귀 보상",
-    description: "30일 이상 미접속한 유저가 다시 접속하면 1회 지급합니다.",
-    amount: 150,
-    isEnabled: false,
-  },
-  REFERRAL_BONUS: {
-    label: "친구 초대 보상",
-    description: "초대 링크로 가입한 친구가 첫 대화를 마치면 초대한 유저에게 지급합니다.",
-    amount: 200,
-    isEnabled: true,
-  },
-  INVITEE_BONUS: {
-    label: "초대 가입 보상",
-    description: "초대 링크로 가입한 유저 본인에게 가입 즉시 지급합니다.",
-    amount: 100,
-    isEnabled: true,
-  },
-  FIRST_PURCHASE_BONUS: {
-    label: "첫 결제 보너스",
-    description: "첫 크레딧 결제가 완료되면 구매 크레딧과 별도로 1회 지급합니다.",
-    amount: 500,
-    isEnabled: true,
-  },
-};
-
-export const creditPolicies: CreditPolicy[] = (
-  Object.keys(POLICY_SEEDS) as CreditPolicyKey[]
-).map((policyKey, index) => {
-  const seed = index + 1;
-  const editor = pickManager(seed * 5);
-
-  return {
-    policyKey,
-    ...POLICY_SEEDS[policyKey],
-    updatedAt: daysAgo(randomInt(seed * 3, 2, 60), randomInt(seed * 4, 9, 19)),
-    updatedBy: editor.name,
-    updatedById: editor.managerId,
-  };
-});
-
 /** 사유는 조정 유형과 방향이 맞아야 한다. 지급/차감 사유를 분리해서 관리한다. */
 const ADJUSTMENT_REASONS: Record<AdjustmentType, string[]> = {
   GRANT: [
     "결제 오류 보상 (CS 티켓 #2481)",
-    "이벤트 당첨 크레딧 지급",
+    "이벤트 당첨 노트 지급",
     "베타 테스터 보상 지급",
-    "고객 응대 사과 크레딧",
+    "고객 응대 사과 노트",
   ],
   DEDUCT: [
     "중복 결제 건 회수",
-    "어뷰징 의심 크레딧 회수",
-    "환불 처리에 따른 크레딧 회수",
-    "테스트 계정 크레딧 정리",
+    "어뷰징 의심 노트 회수",
+    "환불 처리에 따른 노트 회수",
+    "테스트 계정 노트 정리",
   ],
 };
 
@@ -154,8 +76,8 @@ const USE_MEMOS = [
   "세계관 확장 사용",
 ];
 
-/** 가입 축하 크레딧. 크레딧 정책(SIGN_UP_BONUS)과 같은 금액을 쓴다. */
-const SIGN_UP_BONUS = POLICY_SEEDS.SIGN_UP_BONUS.amount;
+/** 가입 축하 크레딧. 실서버 크레딧 정책(SIGN_UP_BONUS)의 기본 금액과 같게 둔다. */
+const SIGN_UP_BONUS = 300;
 
 /** ledgerId·balanceAfter를 나중에 채우기 위해 그 전 단계의 장부 형태를 따로 둔다. */
 type DraftLedgerEntry = Omit<LedgerEntry, "ledgerId">;
@@ -192,7 +114,7 @@ const buildUserLedger = (user: UserDetail): DraftLedgerEntry[] => {
     type: "CHARGE",
     amount: 0,
     creditDelta: SIGN_UP_BONUS,
-    memo: "가입 축하 크레딧 지급",
+    memo: "가입 축하 노트 지급",
     createdAt: daysAgo(joinedDaysAgo, 10),
   });
 
@@ -221,7 +143,7 @@ const buildUserLedger = (user: UserDetail): DraftLedgerEntry[] => {
       amount: 0,
       creditDelta: credit,
       productName: product.name,
-      memo: "결제 완료 후 크레딧 지급",
+      memo: "결제 완료 후 노트 지급",
       createdAt: daysAgo(createdDaysAgo, 12 + paymentIndex),
     });
 

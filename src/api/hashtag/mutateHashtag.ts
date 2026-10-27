@@ -42,14 +42,14 @@ const toUpdateBody = (values: HashtagFormValues) => ({
 });
 
 export const createHashtag = async (values: HashtagFormValues) => {
-  await liveAxios.post("/admin/hashtags", toCreateBody(values));
+  await liveAxios.post("/hashtags", toCreateBody(values));
 };
 
 export const updateHashtag = async (
   hashtagId: number,
   values: HashtagFormValues,
 ) => {
-  await liveAxios.patch(`/admin/hashtags/${hashtagId}`, toUpdateBody(values));
+  await liveAxios.patch(`/hashtags/${hashtagId}`, toUpdateBody(values));
 };
 
 /**
@@ -60,13 +60,13 @@ export const updateHashtagStatus = async (
   hashtagId: number,
   isActive: boolean,
 ) => {
-  await liveAxios.patch(`/admin/hashtags/${hashtagId}`, {
+  await liveAxios.patch(`/hashtags/${hashtagId}`, {
     isEnabled: isActive,
   });
 };
 
 export const deleteHashtag = async (hashtagId: number) => {
-  await liveAxios.delete(`/admin/hashtags/${hashtagId}`);
+  await liveAxios.delete(`/hashtags/${hashtagId}`);
 };
 
 /** 해시태그 추가·수정·노출 변경·삭제 후 목록을 갱신합니다. */

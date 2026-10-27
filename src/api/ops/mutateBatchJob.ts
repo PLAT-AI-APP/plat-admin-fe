@@ -13,7 +13,7 @@ import { showAppToast } from "@/lib/toast";
  */
 export const runBatchJob = async (jobKey: string) => {
   const response = await liveAxios.post<BatchJobRunResponse>(
-    `/admin/batch/jobs/${jobKey}/run`,
+    `/batch/jobs/${jobKey}/run`,
   );
 
   return toBatchJobRun(response.data);
@@ -24,7 +24,7 @@ export const updateBatchJobEnabled = async (
   jobKey: string,
   isEnabled: boolean,
 ) => {
-  await liveAxios.patch(`/admin/batch/jobs/${jobKey}/enabled`, { isEnabled });
+  await liveAxios.patch(`/batch/jobs/${jobKey}/enabled`, { isEnabled });
 };
 
 /** 수동 실행 · 스케줄 토글 후 잡 목록과 실행 이력을 함께 갱신합니다. */

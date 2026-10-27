@@ -3,7 +3,7 @@ import type {
   HashtagDetail,
   HashtagLanguage,
 } from "@/type/hashtag";
-import { daysAgo } from "../utils";
+import { daysAgo } from "@/mocks/utils";
 
 /**
  * 목업 해시태그.

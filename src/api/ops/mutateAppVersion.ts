@@ -6,7 +6,7 @@ import { showAppToast } from "@/lib/toast";
 
 export const createAppVersion = async (values: AppVersionFormValues) => {
   const response = await adminAxios.post<AppVersion>(
-    "/admin/app-versions",
+    "/app-versions",
     values,
   );
 
@@ -18,7 +18,7 @@ export const updateAppVersion = async (
   values: AppVersionFormValues,
 ) => {
   const response = await adminAxios.put<AppVersion>(
-    `/admin/app-versions/${versionId}`,
+    `/app-versions/${versionId}`,
     values,
   );
 

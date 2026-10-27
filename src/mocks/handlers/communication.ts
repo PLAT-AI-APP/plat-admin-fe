@@ -5,23 +5,21 @@ import type {
   PushCampaign,
   PushStatus,
   PushTarget,
-  QnaStatus,
 } from "@/type/communication";
-import { characters } from "../db/character";
+import { characters } from "@/mocks/db/character";
 import {
   notificationTemplates,
   proactiveMessages,
   pushCampaigns,
-  qnaItems,
-} from "../db/communication";
-import { stampAdmin } from "../session";
+} from "@/mocks/db/communication";
+import { stampAdmin } from "@/mocks/session";
 import {
   MOCK_DELAY_MS,
   matchesKeyword,
   nextId,
   paginate,
   randomInt,
-} from "../utils";
+} from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
@@ -45,85 +43,10 @@ const PUSH_TARGET_COUNT: Record<PushTarget, number> = {
 
 export const communicationHandlers = [
   /* ---------------------------------------------------------------- */
-  /* Q&A                                                               */
-  /* ---------------------------------------------------------------- */
-
-  http.get(`${BASE_URI}/admin/qna`, async ({ request }) => {
-    const url = new URL(request.url);
-    const keyword = url.searchParams.get("keyword") ?? "";
-    const status = url.searchParams.get("status") ?? "";
-    const category = url.searchParams.get("category") ?? "";
-
-    const filtered = qnaItems
-      .filter((item) => (status ? item.status === status : true))
-      .filter((item) => (category ? item.category === category : true))
-      .filter((item) =>
-        matchesKeyword(keyword, item.title, item.content, item.userNickname),
-      )
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
-    await delay(MOCK_DELAY_MS);
-
-    return HttpResponse.json(paginate(filtered, url));
-  }),
-
-  http.get(`${BASE_URI}/admin/qna/:qnaId`, async ({ params }) => {
-    const qnaId = Number(params.qnaId);
-    const item = qnaItems.find((qna) => qna.qnaId === qnaId);
-
-    await delay(MOCK_DELAY_MS);
-
-    if (!item) return notFound();
-
-    return HttpResponse.json(item);
-  }),
-
-  http.post(
-    `${BASE_URI}/admin/qna/:qnaId/answer`,
-    async ({ params, request }) => {
-      const qnaId = Number(params.qnaId);
-      const { answer } = (await request.json()) as { answer: string };
-      const item = qnaItems.find((qna) => qna.qnaId === qnaId);
-
-      if (!item) return notFound();
-
-      const answerer = stampAdmin();
-
-      item.answer = answer;
-      item.answeredBy = answerer.name;
-      item.answeredById = answerer.managerId;
-      item.answeredAt = new Date().toISOString();
-
-      // 답변을 저장하면 상태를 자동으로 올린다. 이미 종료된 문의는 종료 상태를 유지한다.
-      if (item.status === "OPEN") item.status = "ANSWERED";
-
-      await delay(MOCK_DELAY_MS);
-
-      return HttpResponse.json(item);
-    },
-  ),
-
-  http.patch(
-    `${BASE_URI}/admin/qna/:qnaId/status`,
-    async ({ params, request }) => {
-      const qnaId = Number(params.qnaId);
-      const { status } = (await request.json()) as { status: QnaStatus };
-      const item = qnaItems.find((qna) => qna.qnaId === qnaId);
-
-      if (!item) return notFound();
-
-      item.status = status;
-      await delay(MOCK_DELAY_MS);
-
-      return HttpResponse.json(item);
-    },
-  ),
-
-  /* ---------------------------------------------------------------- */
   /* 알림 템플릿                                                        */
   /* ---------------------------------------------------------------- */
 
-  http.get(`${BASE_URI}/admin/notifications/templates`, async () => {
+  http.get(`${BASE_URI}/notifications/templates`, async () => {
     await delay(MOCK_DELAY_MS);
 
     return HttpResponse.json(
@@ -132,7 +55,7 @@ export const communicationHandlers = [
   }),
 
   http.put(
-    `${BASE_URI}/admin/notifications/templates/:templateId`,
+    `${BASE_URI}/notifications/templates/:templateId`,
     async ({ params, request }) => {
       const templateId = Number(params.templateId);
       const body = (await request.json()) as { title: string; body: string };
@@ -153,7 +76,7 @@ export const communicationHandlers = [
   ),
 
   http.patch(
-    `${BASE_URI}/admin/notifications/templates/:templateId/status`,
+    `${BASE_URI}/notifications/templates/:templateId/status`,
     async ({ params, request }) => {
       const templateId = Number(params.templateId);
       const { isEnabled } = (await request.json()) as { isEnabled: boolean };
@@ -176,7 +99,7 @@ export const communicationHandlers = [
   /* 선제 메시지                                                        */
   /* ---------------------------------------------------------------- */
 
-  http.get(`${BASE_URI}/admin/proactive-messages`, async () => {
+  http.get(`${BASE_URI}/proactive-messages`, async () => {
     await delay(MOCK_DELAY_MS);
 
     return HttpResponse.json(
@@ -184,9 +107,9 @@ export const communicationHandlers = [
     );
   }),
 
-  http.post(`${BASE_URI}/admin/proactive-messages`, async ({ request }) => {
+  http.post(`${BASE_URI}/proactive-messages`, async ({ request }) => {
     const body = (await request.json()) as {
-      characterId?: number;
+      characterId?: string;
       trigger: ProactiveTrigger;
       content: string;
       isEnabled: boolean;
@@ -221,11 +144,11 @@ export const communicationHandlers = [
   }),
 
   http.put(
-    `${BASE_URI}/admin/proactive-messages/:messageId`,
+    `${BASE_URI}/proactive-messages/:messageId`,
     async ({ params, request }) => {
       const messageId = Number(params.messageId);
       const body = (await request.json()) as {
-        characterId?: number;
+        characterId?: string;
         trigger: ProactiveTrigger;
         content: string;
         isEnabled: boolean;
@@ -267,7 +190,7 @@ export const communicationHandlers = [
   ),
 
   http.delete(
-    `${BASE_URI}/admin/proactive-messages/:messageId`,
+    `${BASE_URI}/proactive-messages/:messageId`,
     async ({ params }) => {
       const messageId = Number(params.messageId);
       const index = proactiveMessages.findIndex(
@@ -286,7 +209,7 @@ export const communicationHandlers = [
   /* 푸시 캠페인                                                        */
   /* ---------------------------------------------------------------- */
 
-  http.get(`${BASE_URI}/admin/push/campaigns`, async ({ request }) => {
+  http.get(`${BASE_URI}/push/campaigns`, async ({ request }) => {
     const url = new URL(request.url);
     const keyword = url.searchParams.get("keyword") ?? "";
     const status = url.searchParams.get("status") ?? "";
@@ -303,7 +226,7 @@ export const communicationHandlers = [
     return HttpResponse.json(paginate(filtered, url));
   }),
 
-  http.post(`${BASE_URI}/admin/push/campaigns`, async ({ request }) => {
+  http.post(`${BASE_URI}/push/campaigns`, async ({ request }) => {
     const body = (await request.json()) as {
       title: string;
       body: string;
@@ -335,7 +258,7 @@ export const communicationHandlers = [
   }),
 
   http.post(
-    `${BASE_URI}/admin/push/campaigns/:campaignId/send`,
+    `${BASE_URI}/push/campaigns/:campaignId/send`,
     async ({ params }) => {
       const campaignId = Number(params.campaignId);
       const campaign = pushCampaigns.find(
@@ -370,7 +293,7 @@ export const communicationHandlers = [
   ),
 
   http.delete(
-    `${BASE_URI}/admin/push/campaigns/:campaignId`,
+    `${BASE_URI}/push/campaigns/:campaignId`,
     async ({ params }) => {
       const campaignId = Number(params.campaignId);
       const index = pushCampaigns.findIndex(

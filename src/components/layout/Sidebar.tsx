@@ -5,12 +5,14 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import {
   ADMIN_MENU,
+  ADMIN_MENU_SECTIONS,
   AdminMenuGroup,
   findActiveGroupKey,
   isMenuItemActive,
+  isMenuShown,
 } from "@/constants/menu";
 import { usePendingCountsQuery } from "@/api/ops/getPendingCounts";
-import { ChevronDown, ChevronLeft } from "@/icons";
+import { ChevronDown, ChevronLeft, LogoWordmark } from "@/icons";
 import { cn } from "@/lib/utils";
 import { useAdminStore } from "@/store/useAdminStore";
 import { useSidebarStore } from "@/store/useSidebarStore";
@@ -19,8 +21,14 @@ import Badge from "@/components/ui/Badge";
 
 const Sidebar = () => {
   const pathname = usePathname();
-  const { isCollapsed, openGroupKeys, toggleCollapsed, toggleGroup, openGroup } =
-    useSidebarStore();
+  const {
+    isCollapsed,
+    openGroupKeys,
+    toggleCollapsed,
+    toggleGroup,
+    openGroup,
+    expandToGroup,
+  } = useSidebarStore();
 
   const admin = useAdminStore((state) => state.admin);
   // 밀린 일이 있는 메뉴에만 건수를 붙인다. 0이면 뱃지를 그리지 않는다.
@@ -49,7 +57,7 @@ const Sidebar = () => {
 
     // 하위가 없는 단독 메뉴
     if (group.href) {
-      if (!isAllowed(group.permission)) return null;
+      if (!isMenuShown(group) || !isAllowed(group.permission)) return null;
 
       return (
         <li key={group.key}>
@@ -81,8 +89,8 @@ const Sidebar = () => {
     }
 
     /* 볼 수 있는 하위가 하나도 없으면 그룹 자체를 숨긴다. 눌러도 빈 목록만 열린다. */
-    const visibleChildren = (group.children ?? []).filter((item) =>
-      isAllowed(item.permission),
+    const visibleChildren = (group.children ?? []).filter(
+      (item) => isMenuShown(item) && isAllowed(item.permission),
     );
 
     if (visibleChildren.length === 0) return null;
@@ -91,9 +99,12 @@ const Sidebar = () => {
       <li key={group.key}>
         <button
           type="button"
-          onClick={() => toggleGroup(group.key)}
+          // 접힌 상태에선 서브메뉴가 안 보이므로 펼치면서 이 그룹을 연다.
+          onClick={() =>
+            isCollapsed ? expandToGroup(group.key) : toggleGroup(group.key)
+          }
           title={isCollapsed ? group.label : undefined}
-          aria-expanded={isOpen}
+          aria-expanded={isOpen && !isCollapsed}
           className={cn(
             "flex h-10 w-full items-center gap-2.5 rounded-field px-3 body-4 transition",
             isCollapsed && "justify-center px-0",
@@ -142,20 +153,18 @@ const Sidebar = () => {
                   >
                     <span className="flex-1 truncate">{item.label}</span>
 
-                    {item.pendingKey && Boolean(pendingCounts?.[item.pendingKey]) && (
-                      <Badge
-                        tone="danger"
-                        className="min-w-5 justify-center px-1.5 py-0.5 caption-3 tabular-nums"
-                      >
-                        {pendingCounts?.[item.pendingKey]}
-                      </Badge>
-                    )}
+                    {item.pendingKey &&
+                      Boolean(pendingCounts?.[item.pendingKey]) && (
+                        <Badge
+                          tone="danger"
+                          className="min-w-5 justify-center px-1.5 py-0.5 caption-3 tabular-nums"
+                        >
+                          {pendingCounts?.[item.pendingKey]}
+                        </Badge>
+                      )}
 
                     {item.isMock && (
-                      <Badge
-                        tone="neutral"
-                        className="px-1.5 py-0.5 caption-3"
-                      >
+                      <Badge tone="neutral" className="px-1.5 py-0.5 caption-3">
                         MOCK
                       </Badge>
                     )}
@@ -183,13 +192,13 @@ const Sidebar = () => {
         )}
       >
         {!isCollapsed && (
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-chip bg-brand body-5 font-bold text-font-4">
-              P
-            </span>
-            <span className="body-3 font-bold text-font-0">
-              PLAT 관리자
-            </span>
+          <Link
+            href="/"
+            aria-label="PLAT 관리자 홈"
+            className="flex items-center gap-2"
+          >
+            <LogoWordmark aria-hidden className="h-5 w-auto shrink-0" />
+            <span className="body-5 font-semibold text-font-2">관리자</span>
           </Link>
         )}
 
@@ -209,8 +218,33 @@ const Sidebar = () => {
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-3 scrollbar-thin">
-        <ul className="flex flex-col gap-0.5">{ADMIN_MENU.map(renderGroup)}</ul>
+      {/* 마지막 메뉴가 화면 모서리에 붙지 않게 아래를 넉넉히 비운다. 끝까지 내려도 편하게 누를 자리가 남는다. */}
+      <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-20 scrollbar-thin">
+        {ADMIN_MENU_SECTIONS.map((section) => ({
+          ...section,
+          /* 볼 수 있는 그룹이 하나도 없는 구역은 제목째 숨긴다. 운영 직책에는 개발 구역이 아예 없다. */
+          groups: ADMIN_MENU.filter((group) => group.section === section.key)
+            .map(renderGroup)
+            .filter(Boolean),
+        }))
+          .filter((section) => section.groups.length > 0)
+          .map((section, index) => (
+            <section
+              key={section.key}
+              aria-label={section.label}
+              className={cn(index > 0 && "mt-4")}
+            >
+              {/* 접힌 상태에선 글자가 들어갈 자리가 없어 구분선으로 대신한다. 첫 구역은 위에 나눌 것이 없다. */}
+              {isCollapsed ? (
+                index > 0 && <hr className="mx-2 mb-4 border-border-main" />
+              ) : (
+                <p className="mb-1 px-3 body-6 font-semibold text-font-2">
+                  {section.label}
+                </p>
+              )}
+              <ul className="flex flex-col gap-0.5">{section.groups}</ul>
+            </section>
+          ))}
       </nav>
     </aside>
   );

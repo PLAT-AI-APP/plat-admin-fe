@@ -18,7 +18,7 @@ import type {
  */
 interface ManagerUpdateBody {
   name: string;
-  roleId: number;
+  roleIds: number[];
   status: ManagerStatus;
 }
 
@@ -27,14 +27,15 @@ const toUpdateBody = (
   patch: Partial<ManagerUpdateBody>,
 ): ManagerUpdateBody => ({
   name: patch.name ?? manager.name,
-  roleId: patch.roleId ?? manager.roleId,
+  // 상태만 바꿀 때도 지금 가진 직책 전체를 보낸다(전체 교체라 빠지면 직책이 사라진다).
+  roleIds: patch.roleIds ?? manager.roles.map((role) => role.roleId),
   status: patch.status ?? manager.status,
 });
 
 /** 초대. 이메일은 이때만 정할 수 있고 이후에는 바꾸지 못한다(로그인 계정이다). */
 export const inviteManager = async (values: ManagerFormValues) => {
   const response = await liveAxios.post<ManagerCredentialIssued>(
-    "/admin/managers",
+    "/managers",
     values,
   );
 
@@ -46,7 +47,7 @@ export const updateManager = async (
   patch: Partial<ManagerUpdateBody>,
 ) => {
   await liveAxios.patch(
-    `/admin/managers/${manager.managerId}`,
+    `/managers/${manager.managerId}`,
     toUpdateBody(manager, patch),
   );
 };
@@ -59,7 +60,7 @@ export const updateManager = async (
  * 상태만 ACTIVE로 바꾸면 실패 횟수가 남아 다음 오타 한 번에 다시 잠긴다.
  */
 export const unlockManager = async (managerId: number) => {
-  await liveAxios.post(`/admin/managers/${managerId}/unlock`);
+  await liveAxios.post(`/managers/${managerId}/unlock`);
 };
 
 /**
@@ -70,12 +71,12 @@ export const unlockManager = async (managerId: number) => {
  * id로만 적기 때문에 지운 뒤에는 이름으로 되짚을 수 없다.
  */
 export const deleteManager = async (managerId: number) => {
-  await liveAxios.delete(`/admin/managers/${managerId}`);
+  await liveAxios.delete(`/managers/${managerId}`);
 };
 
 export const resetManagerPassword = async (managerId: number) => {
   const response = await liveAxios.post<ManagerCredentialIssued>(
-    `/admin/managers/${managerId}/reset-password`,
+    `/managers/${managerId}/reset-password`,
   );
 
   return response.data;
@@ -115,9 +116,9 @@ export const useManagerMutation = () => {
     { manager: Manager; values: ManagerFormValues }
   >({
     mutationFn: ({ manager, values }) =>
-      updateManager(manager, { name: values.name, roleId: values.roleId }),
+      updateManager(manager, { name: values.name, roleIds: values.roleIds }),
     onSuccess: () => {
-      showAppToast("success", "관리자 정보를 수정했습니다.");
+      showAppToast("success", "운영자 정보를 수정했습니다.");
       invalidateManagerList();
     },
   });
@@ -140,7 +141,7 @@ export const useManagerMutation = () => {
   const deleteMutation = useMutation<void, AppError, Manager>({
     mutationFn: (manager) => deleteManager(manager.managerId),
     onSuccess: () => {
-      showAppToast("success", "관리자 계정을 삭제했습니다.");
+      showAppToast("success", "운영자 계정을 삭제했습니다.");
       invalidateManagerList();
     },
   });

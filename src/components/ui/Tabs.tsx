@@ -1,3 +1,6 @@
+"use client";
+
+import type { KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 
 export interface TabItem<T extends string = string> {
@@ -21,9 +24,31 @@ const Tabs = <T extends string>({
   onChange,
   className,
 }: TabsProps<T>) => {
+  /** 좌우 방향키 · Home · End로 탭을 옮긴다. */
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const index = items.findIndex((item) => item.value === value);
+    const last = items.length - 1;
+
+    const nextIndex = {
+      ArrowRight: index >= last ? 0 : index + 1,
+      ArrowLeft: index <= 0 ? last : index - 1,
+      Home: 0,
+      End: last,
+    }[event.key];
+
+    if (nextIndex === undefined || items.length === 0) return;
+
+    event.preventDefault();
+    onChange(items[nextIndex].value);
+    event.currentTarget
+      .querySelectorAll<HTMLButtonElement>('[role="tab"]')
+      [nextIndex]?.focus();
+  };
+
   return (
     <div
       role="tablist"
+      onKeyDown={handleKeyDown}
       className={cn(
         "flex items-center gap-1 border-b border-border-main",
         className,
@@ -38,6 +63,7 @@ const Tabs = <T extends string>({
             type="button"
             role="tab"
             aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(item.value)}
             className={cn(
               "-mb-px border-b-2 px-4 py-2.5 body-4 transition",

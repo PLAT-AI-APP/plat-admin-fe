@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useListParams } from "@/hooks/useListParams";
+import { useCan } from "@/hooks/useCan";
 import { useUserListQuery } from "@/api/user/getUserList";
 import { useUserMutation } from "@/api/user/mutateUser";
 import { Ban, CheckCircle, Eye } from "@/icons";
@@ -14,6 +15,7 @@ import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import {
   DEVICE_PLATFORM_LABEL,
   GENDER_LABEL,
+  NO_AGREEMENT_RECORD_LABEL,
   UNCOLLECTED_LABEL,
   type User,
   type UserStatus,
@@ -27,15 +29,15 @@ import type { DropdownItem } from "@/components/ui/Dropdown";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, { TableCellStack } from "@/components/ui/Table";
+import Table from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import type { TableColumn } from "@/components/ui/Table";
 import {
   LOGIN_PROVIDER_BADGE_CLASS,
   LOGIN_PROVIDER_LABEL,
   USER_STATUS_FILTER_OPTIONS,
-  USER_STATUS_LABEL,
-  USER_STATUS_TONE,
-} from "../_constants/userOptions";
+} from "@/app/(admin)/users/_constants/userOptions";
+import { USER_STATUS_LABEL, USER_STATUS_TONE } from "@/constants/userOptions";
 import UserSuspendModal from "./UserSuspendModal";
 
 /** CSV 컬럼은 표와 같은 순서로 두어 내려받은 파일이 화면과 일치하게 한다. */
@@ -45,12 +47,12 @@ const USER_CSV_COLUMNS: CsvColumn<User>[] = [
   { header: "이메일", value: (row) => row.email ?? "-" },
   { header: "생년월일", value: (row) => row.birthDate ?? "-" },
   { header: "성별", value: (row) => GENDER_LABEL[row.gender] },
-  // 아직 모으지 않는 값은 Y/N 으로 적지 않는다. 내려받은 파일에서 N이 "동의 안 함"으로 읽힌다.
+  // 기록이 없는 유저는 N 으로 적지 않는다. 내려받은 파일에서 N이 "거절"로 읽힌다.
   {
     header: "마케팅 동의",
     value: (row) =>
       row.isMarketingAgreed === undefined
-        ? UNCOLLECTED_LABEL
+        ? NO_AGREEMENT_RECORD_LABEL
         : row.isMarketingAgreed
           ? "Y"
           : "N",
@@ -95,6 +97,7 @@ const UserManager = () => {
   });
 
   const { statusMutation } = useUserMutation();
+  const canWrite = useCan("user:write");
 
   const handleUnsuspend = (user: User) => {
     openConfirm({
@@ -138,6 +141,8 @@ const UserManager = () => {
         onSelect: () => router.push(`/users/${user.userId}`),
       },
     ];
+
+    if (!canWrite) return items;
 
     if (user.status === "ACTIVE") {
       items.push({
@@ -211,7 +216,7 @@ const UserManager = () => {
             {LOGIN_PROVIDER_LABEL[user.provider]}
           </Badge>
         ) : (
-          <span className="body-5 text-font-3">-</span>
+          <span className="body-5 text-font-disabled">-</span>
         ),
     },
     {
@@ -294,7 +299,7 @@ const UserManager = () => {
           rows={data?.content ?? []}
           getRowKey={(user) => String(user.userId)}
           isLoading={isLoading}
-          onRowClick={(user) => router.push(`/users/${user.userId}`)}
+          getRowHref={(user) => `/users/${user.userId}`}
           emptyTitle="조건에 맞는 유저가 없습니다."
           emptyDescription="검색어나 상태 필터를 바꿔서 다시 찾아보세요."
         />

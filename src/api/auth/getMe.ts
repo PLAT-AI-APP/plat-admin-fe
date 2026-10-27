@@ -6,7 +6,7 @@ import type { AppError } from "@/type/api";
 import type { AdminProfile } from "@/type/auth";
 
 export const getMe = async () => {
-  const response = await liveAxios.get<AdminProfile>("/admin/auth/me");
+  const response = await liveAxios.get<AdminProfile>("/auth/me");
 
   return response.data;
 };
@@ -28,11 +28,16 @@ export const useSyncMyProfile = () => {
   const patchAdmin = useAdminStore((state) => state.patchAdmin);
 
   const { data } = useQuery<AdminProfile, AppError>({
-    queryKey: ["get-my-profile"],
+    queryKey: ["get-me"],
     queryFn: getMe,
     enabled: Boolean(accessToken),
-    // 세션이 살아 있는 동안 다시 부르지 않는다. 목적은 콘솔을 열 때 한 번 맞추는 것이다.
-    staleTime: Infinity,
+    /*
+      콘솔을 열 때 한 번, 그 뒤로는 창으로 돌아올 때 맞춘다. 운영자는 탭을 오래 열어 두고
+      그 사이 직책 권한이 바뀌기도 한다. 1분 안에 다시 돌아온 것은 건너뛴다.
+      403 을 받으면 인터셉터가 곧바로 다시 읽게 한다(ReactQueryProvider).
+    */
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: true,
     retry: false,
   });
 

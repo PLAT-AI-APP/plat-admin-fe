@@ -18,7 +18,7 @@ export const createCreditAdjustment = async (
   request: CreditAdjustmentRequest,
 ) => {
   const response = await liveAxios.post<CreditAdjustment>(
-    "/admin/credits/adjustments",
+    "/credits/adjustments",
     request,
   );
 
@@ -46,11 +46,13 @@ export const useCreditAdjustmentMutation = () => {
   >({
     mutationFn: createCreditAdjustment,
     onSuccess: () => {
-      showAppToast("success", "크레딧을 조정했습니다.");
+      showAppToast("success", "노트를 조정했습니다.");
       queryClient.invalidateQueries({ queryKey: ["get-credit-adjustment-list"] });
       queryClient.invalidateQueries({ queryKey: ["get-adjustable-user-list"] });
       queryClient.invalidateQueries({ queryKey: ["get-ledger-list"] });
       queryClient.invalidateQueries({ queryKey: ["get-ledger-summary"] });
+      // 유저 상세에서 조정하면 보유 노트 칸이 곧바로 바뀌어야 한다.
+      queryClient.invalidateQueries({ queryKey: ["get-user-detail"] });
     },
   });
 

@@ -42,6 +42,3 @@ export interface OfficialAccount {
   registeredAt: string;
 }
 
-/** 공식 계정이 실제로 공식 판정에 쓰이는지. 크리에이터가 없으면 목록에만 남는다. */
-export const isEffectiveOfficialAccount = (account: OfficialAccount) =>
-  Boolean(account.creatorId);

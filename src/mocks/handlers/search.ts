@@ -1,17 +1,18 @@
 import { HttpResponse, delay, http } from "msw";
-import type { GlobalSearchItem } from "@/api/search/getGlobalSearch";
-import { characters, universes } from "../db/character";
-import { hashtags } from "../db/hashtag";
-import { users } from "../db/user";
-import { MOCK_DELAY_MS, matchesKeyword } from "../utils";
+import type { GlobalSearchResponseItem } from "@/api/search/getGlobalSearch";
+import { characters, universes } from "@/mocks/db/character";
+import { hashtags } from "@/mocks/db/hashtag";
+import { users } from "@/mocks/db/user";
+import { MOCK_DELAY_MS, matchesKeyword } from "@/mocks/utils";
 
 const BASE_URI = process.env.NEXT_PUBLIC_BASE_URI;
 
 /** 종류별 최대 노출 수. 한 종류가 결과를 독점하지 않게 한다. */
 const LIMIT_PER_TYPE = 5;
 
+/* 실서버 응답과 같은 모양(`type · id · title · description`)으로 낸다. 이동 경로는 화면이 종류로 만든다. */
 export const searchHandlers = [
-  http.get(`${BASE_URI}/admin/search`, async ({ request }) => {
+  http.get(`${BASE_URI}/search`, async ({ request }) => {
     const url = new URL(request.url);
     const keyword = url.searchParams.get("keyword") ?? "";
 
@@ -19,13 +20,13 @@ export const searchHandlers = [
       return HttpResponse.json({ items: [] });
     }
 
-    const userItems: GlobalSearchItem[] = users
+    const userItems: GlobalSearchResponseItem[] = users
       .filter((user) =>
         matchesKeyword(
           keyword,
           user.nickname,
           user.email ?? "",
-          String(user.userId),
+          user.userId,
         ),
       )
       .slice(0, LIMIT_PER_TYPE)
@@ -34,46 +35,43 @@ export const searchHandlers = [
         id: user.userId,
         title: user.nickname,
         description: user.email ?? "",
-        href: `/users/${user.userId}`,
       }));
 
-    const characterItems: GlobalSearchItem[] = characters
+    const characterItems: GlobalSearchResponseItem[] = characters
       .filter((character) =>
         matchesKeyword(
           keyword,
           character.name,
           character.creatorNickname,
-          String(character.characterId),
+          character.characterId,
         ),
       )
       .slice(0, LIMIT_PER_TYPE)
       .map((character) => ({
         type: "CHARACTER",
-        id: String(character.characterId),
+        id: character.characterId,
         title: character.name,
         description: `크리에이터 ${character.creatorNickname}`,
-        href: `/universes/characters/${character.characterId}`,
       }));
 
-    const universeItems: GlobalSearchItem[] = universes
+    const universeItems: GlobalSearchResponseItem[] = universes
       .filter((universe) =>
         matchesKeyword(
           keyword,
           universe.name,
           ...universe.characters.map((character) => character.name),
-          String(universe.universeId),
+          universe.universeId,
         ),
       )
       .slice(0, LIMIT_PER_TYPE)
       .map((universe) => ({
         type: "UNIVERSE",
-        id: String(universe.universeId),
+        id: universe.universeId,
         title: universe.name,
         description: `캐릭터 ${universe.characters.map((character) => character.name).join(", ")}`,
-        href: `/universes/${universe.universeId}`,
       }));
 
-    const hashtagItems: GlobalSearchItem[] = hashtags
+    const hashtagItems: GlobalSearchResponseItem[] = hashtags
       .filter((hashtag) =>
         matchesKeyword(keyword, ...Object.values(hashtag.labels)),
       )
@@ -83,7 +81,6 @@ export const searchHandlers = [
         id: String(hashtag.hashtagId),
         title: `#${hashtag.labels.KO}`,
         description: `${hashtag.usageCount}곳에서 사용 중`,
-        href: `/universes/hashtags?keyword=${encodeURIComponent(hashtag.labels.KO)}`,
       }));
 
     await delay(MOCK_DELAY_MS);

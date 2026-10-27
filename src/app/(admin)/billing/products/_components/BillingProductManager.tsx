@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useBillingProductListQuery } from "@/api/billing/getBillingProductList";
 import { useBillingProductMutation } from "@/api/billing/mutateBillingProduct";
-import { Edit, Package, Plus } from "@/icons";
+import { useCan } from "@/hooks/useCan";
+import { Edit, Globe, Package, Plus } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { formatCredit, formatCurrency } from "@/lib/utils";
 import { openConfirm } from "@/store/useConfirmStore";
@@ -18,18 +19,17 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Dropdown from "@/components/ui/Dropdown";
 import IconButton from "@/components/ui/IconButton";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import BillingProductFormModal from "./BillingProductFormModal";
+import BillingProductTranslationModal from "./BillingProductTranslationModal";
 import {
   PRODUCT_PLATFORM_LABEL,
   PRODUCT_PLATFORM_TONE,
   PRODUCT_STATUS_LABEL,
   PRODUCT_STATUS_TONE,
-} from "./productOptions";
+} from "@/app/(admin)/billing/products/_constants/productOptions";
 
 const STATUS_ORDER: ProductStatus[] = ["ON_SALE", "HIDDEN", "ENDED"];
 
@@ -42,10 +42,13 @@ const BillingProductManager = () => {
   const { data, isLoading } = useBillingProductListQuery();
   const { createMutation, updateMutation, statusMutation } =
     useBillingProductMutation();
+  /* 등록 · 수정 · 상태 변경은 서버에서 모두 `billingProduct:write` 다. */
+  const canWrite = useCan("billingProduct:write");
 
   const [editingProduct, setEditingProduct] = useState<BillingProduct | undefined>();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [platformTab, setPlatformTab] = useState<PlatformTab>("ALL");
+  const [translatingProduct, setTranslatingProduct] = useState<BillingProduct | null>(null);
 
   const products = data ?? [];
 
@@ -99,7 +102,7 @@ const BillingProductManager = () => {
     openConfirm({
       title: "상품 판매를 종료할까요?",
       description: `'${product.name}' 상품이 결제 화면에서 즉시 사라집니다.`,
-      warning: "이미 결제한 유저의 크레딧에는 영향을 주지 않습니다.",
+      warning: "이미 결제한 유저의 노트에는 영향을 주지 않습니다.",
       confirmText: "판매 종료",
       tone: "danger",
       onConfirm: () =>
@@ -114,7 +117,12 @@ const BillingProductManager = () => {
       width: "220px",
       render: (product) => (
         <TableCellStack
-          primary={product.name}
+          primary={
+            <span className="flex items-center gap-1.5">
+              {product.name}
+              {product.firstPurchaseOnly && <Badge tone="brand">첫 구매</Badge>}
+            </span>
+          }
           secondary={`#${product.productId} · ${product.code}`}
         />
       ),
@@ -151,14 +159,14 @@ const BillingProductManager = () => {
     },
     {
       key: "credit",
-      header: "지급 크레딧",
+      header: "지급 노트",
       align: "right",
       numeric: true,
       render: (product) => formatCredit(product.credit),
     },
     {
       key: "bonusCredit",
-      header: "보너스 크레딧",
+      header: "보너스 노트",
       align: "right",
       numeric: true,
       render: (product) =>
@@ -172,7 +180,7 @@ const BillingProductManager = () => {
     },
     {
       key: "totalCredit",
-      header: "총 크레딧",
+      header: "총 노트",
       align: "right",
       numeric: true,
       render: (product) => (
@@ -213,25 +221,36 @@ const BillingProductManager = () => {
     {
       key: "actions",
       header: "",
-      width: "88px",
+      width: "120px",
       align: "right",
       render: (product) => (
         <div className="flex items-center justify-end gap-1">
+          {/* 번역은 조회 권한으로도 연다. 저장 · 삭제는 모달 안에서 권한별로 막는다. */}
           <IconButton
-            label="수정"
-            icon={<Edit size={16} />}
-            onClick={() => handleOpenEdit(product)}
+            label="번역"
+            icon={<Globe size={16} />}
+            onClick={() => setTranslatingProduct(product)}
           />
 
-          <Dropdown
-            items={STATUS_ORDER.filter((status) => status !== product.status).map(
-              (status) => ({
-                label: `${PRODUCT_STATUS_LABEL[status]}로 변경`,
-                tone: status === "ENDED" ? "danger" : "default",
-                onSelect: () => handleChangeStatus(product, status),
-              }),
-            )}
-          />
+          {canWrite && (
+            <>
+              <IconButton
+                label="수정"
+                icon={<Edit size={16} />}
+                onClick={() => handleOpenEdit(product)}
+              />
+
+              <Dropdown
+                items={STATUS_ORDER.filter((status) => status !== product.status).map(
+                  (status) => ({
+                    label: `${PRODUCT_STATUS_LABEL[status]}로 변경`,
+                    tone: status === "ENDED" ? "danger" : "default",
+                    onSelect: () => handleChangeStatus(product, status),
+                  }),
+                )}
+              />
+            </>
+          )}
         </div>
       ),
     },
@@ -241,16 +260,18 @@ const BillingProductManager = () => {
     <>
       <Card
         title={`상품 ${visibleProducts.length}건`}
-        description="결제 금액과 지급 크레딧 구성을 관리합니다. 금액은 원 단위 정수입니다."
+        description="결제 금액과 지급 노트 구성을 관리합니다. 금액은 원 단위 정수입니다."
         action={
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus size={15} />}
-            onClick={handleOpenCreate}
-          >
-            상품 추가
-          </Button>
+          canWrite && (
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus size={15} />}
+              onClick={handleOpenCreate}
+            >
+              상품 추가
+            </Button>
+          )
         }
         noPadding
       >
@@ -272,16 +293,18 @@ const BillingProductManager = () => {
               ? "등록된 상품이 없습니다."
               : `${PRODUCT_PLATFORM_LABEL[platformTab]} 상품이 없습니다.`
           }
-          emptyDescription="첫 크레딧 상품을 추가해 결제 화면을 구성해 보세요."
+          emptyDescription="첫 노트 상품을 추가해 결제 화면을 구성해 보세요."
           emptyAction={
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Plus size={15} />}
-              onClick={handleOpenCreate}
-            >
-              상품 추가
-            </Button>
+            canWrite && (
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus size={15} />}
+                onClick={handleOpenCreate}
+              >
+                상품 추가
+              </Button>
+            )
           }
         />
       </Card>
@@ -290,7 +313,7 @@ const BillingProductManager = () => {
         <div className="flex items-start gap-2.5 body-5 text-font-2">
           <Package size={18} className="mt-px shrink-0 text-font-disabled" />
           <p>
-            총 크레딧은 지급 크레딧과 보너스 크레딧의 합입니다. 스토어 심사 정책상
+            총 노트는 지급 노트와 보너스 노트의 합입니다. 스토어 심사 정책상
             iOS·Android는 결제 금액을 스토어 등록 금액과 반드시 일치시켜야 합니다.
           </p>
         </div>
@@ -304,6 +327,11 @@ const BillingProductManager = () => {
         defaultPlatform={platformTab === "ALL" ? "IOS" : platformTab}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+      />
+
+      <BillingProductTranslationModal
+        product={translatingProduct}
+        onClose={() => setTranslatingProduct(null)}
       />
     </>
   );

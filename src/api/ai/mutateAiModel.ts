@@ -2,22 +2,43 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AiModel, AiModelRole } from "@/type/ai";
 import type { AppError } from "@/type/api";
-import { showAppToast } from "@/lib/toast";
+import { showAppToast, showErrorToast } from "@/lib/toast";
 
-/** 운영 설정만 변경한다. 모델명·제공사는 카탈로그가 소유하므로 바꾸지 않는다. */
+/** 튜닝만 변경한다. 모델명·제공사는 카탈로그가, 요금은 `updateAiModelPricing` 이 맡는다. */
 export interface UpdateAiModelRequest {
   isEnabled?: boolean;
-  creditCost?: number;
   maxOutputTokens?: number;
   temperature?: number;
   memo?: string;
+}
+
+/** 모델별 노트 요금. 운영이 고쳐 권한도 `creditPolicy:write` 로 따로 둔다. */
+export interface UpdateAiModelPricingRequest {
+  /** 1M 토큰당 원 */
+  inputPricePerMillion?: number;
+  outputPricePerMillion?: number;
+  cacheReadPricePerMillion?: number;
+  cacheWritePricePerMillion?: number;
+  /** 청구용 평균 캐시 비율(만분율) */
+  cacheRatioBps?: number;
+  /** 판매 배수 k 덮어쓰기(만분율). 손익분기 배수보다 낮으면 400 */
+  priceMultiplierBps?: number;
+  /** true 면 덮어쓰기를 비워 과금 정책의 k 로 되돌린다 */
+  useDefaultPriceMultiplier?: boolean;
 }
 
 export const updateAiModel = async (
   modelId: number,
   body: UpdateAiModelRequest,
 ) => {
-  await liveAxios.patch(`/admin/ai/models/${modelId}`, body);
+  await liveAxios.patch(`/ai/models/${modelId}`, body);
+};
+
+export const updateAiModelPricing = async (
+  modelId: number,
+  body: UpdateAiModelPricingRequest,
+) => {
+  await liveAxios.patch(`/ai/models/${modelId}/pricing`, body);
 };
 
 /**
@@ -29,14 +50,14 @@ export const updateAiModel = async (
  */
 export const assignAiModelRole = async (modelId: number, role: AiModelRole) => {
   const response = await liveAxios.put<AiModel>(
-    `/admin/ai/models/${modelId}/roles/${role}`,
+    `/ai/models/${modelId}/roles/${role}`,
   );
 
   return response.data;
 };
 
 /**
- * 모델 운영 설정 변경과 역할 지정.
+ * 모델 튜닝 · 요금 변경과 역할 지정.
  * 역할 지정은 서버에서 이전 모델의 역할을 해제하므로 목록 전체를 다시 조회합니다.
  */
 export const useAiModelMutation = () => {
@@ -55,6 +76,21 @@ export const useAiModelMutation = () => {
       showAppToast("success", successMessage ?? "모델 설정을 저장했습니다.");
       invalidateAiModelList();
     },
+    onError: (error) => showErrorToast(error),
+  });
+
+  const pricingMutation = useMutation<
+    void,
+    AppError,
+    { modelId: number; body: UpdateAiModelPricingRequest }
+  >({
+    mutationFn: ({ modelId, body }) => updateAiModelPricing(modelId, body),
+    onSuccess: () => {
+      showAppToast("success", "모델 요금을 저장했습니다.");
+      invalidateAiModelList();
+    },
+    // 판매 배수가 손익분기 미만이면 서버가 거절한다. 사유를 보여 줘야 모달에서 고칠 수 있다.
+    onError: (error) => showErrorToast(error),
   });
 
   const assignRoleMutation = useMutation<
@@ -69,5 +105,5 @@ export const useAiModelMutation = () => {
     },
   });
 
-  return { updateMutation, assignRoleMutation };
+  return { updateMutation, pricingMutation, assignRoleMutation };
 };

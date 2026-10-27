@@ -5,10 +5,11 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { LIVE_BASE_URI, MOCK_BASE_URI } from "./baseUri";
+import { isJwtExpired } from "@/lib/jwt";
 import {
   clearSession,
   getAccessToken,
-  getRefreshToken,
+  isRefreshExpired,
   setTokens,
 } from "@/store/useAdminStore";
 import type {
@@ -17,6 +18,8 @@ import type {
   AppError,
 } from "@/type/api";
 import type { TokenResponse } from "@/type/auth";
+import { reportError } from "@/lib/monitoring";
+import { FORBIDDEN_CODE, showAppToast } from "@/lib/toast";
 
 /** 기존 공통 응답 봉투만 골라내는 가드입니다. */
 const isLegacyApiSuccessEnvelope = <T>(
@@ -46,7 +49,7 @@ const onResponseSuccess = (response: AxiosResponse): AxiosResponse => {
 
 export const LOGIN_PATH = "/login";
 
-export const REFRESH_PATH = "/admin/auth/refresh";
+export const REFRESH_PATH = "/auth/refresh";
 
 /**
  * 인증 없이 부를 수 있는 경로. 이 경로의 401은 화면이 직접 문구로 처리한다.
@@ -54,7 +57,7 @@ export const REFRESH_PATH = "/admin/auth/refresh";
  * 재발급도 여기 있다. 재발급이 401로 끝났다는 것은 세션이 정말 끝났다는 뜻이라
  * **다시 재발급을 시도하면 안 된다.** 아래 재시도 로직이 이 목록을 보고 멈춘다.
  */
-const PUBLIC_PATHS = ["/admin/auth/login", REFRESH_PATH, "/admin/auth/logout"];
+const PUBLIC_PATHS = ["/auth/login", REFRESH_PATH, "/auth/logout"];
 
 const isPublicPath = (url?: string) =>
   Boolean(url && PUBLIC_PATHS.some((path) => url.startsWith(path)));
@@ -65,7 +68,7 @@ const isPublicPath = (url?: string) =>
  * 화면마다 401을 처리하면 어떤 화면은 빈 표를, 어떤 화면은 에러 문구를 띄운다.
  * 만료는 화면의 문제가 아니라 세션의 문제이므로 여기서 한 번만 처리합니다.
  */
-const handleUnauthorized = () => {
+export const handleUnauthorized = () => {
   clearSession();
 
   if (typeof window === "undefined") return;
@@ -76,6 +79,51 @@ const handleUnauthorized = () => {
   window.location.replace(
     `${LOGIN_PATH}?redirect=${encodeURIComponent(redirect)}&reason=expired`,
   );
+};
+
+/**
+ * 권한 거부(403 FORBIDDEN)를 받았을 때 부를 일. ReactQueryProvider 가 내 프로필(`get-me`)을
+ * 다시 읽도록 등록한다. 인터셉터는 React 밖이라 쿼리 클라이언트를 직접 쥐지 않는다.
+ */
+let forbiddenHandler: (() => void) | null = null;
+
+export const setForbiddenHandler = (handler: (() => void) | null) => {
+  forbiddenHandler = handler;
+};
+
+/**
+ * 권한 거부를 **한 곳에서** 알린다.
+ *
+ * 화면은 로그인 때 받은 권한으로 버튼을 그리는데, 그 사이 누가 직책 권한을 빼면 서버는
+ * 곧바로 막는다. 운영자에게는 "눌렀더니 안 된다"만 보이므로 권한이 바뀌었을 수 있다고
+ * 알리고, 내 권한을 다시 읽어 화면을 맞춘다. 동시에 여러 요청이 막혀도 안내는 하나다.
+ */
+const notifyForbidden = (message: string) => {
+  showAppToast("warning", message, {
+    id: "permission-forbidden",
+    description:
+      "권한이 바뀌었을 수 있어요. 내 권한을 다시 불러와 화면을 맞췄습니다. 계속 막히면 최고관리자에게 문의해 주세요.",
+  });
+
+  forbiddenHandler?.();
+};
+
+/**
+ * 만료가 확실해 보내지 않은 요청의 실패값.
+ *
+ * 화면은 이 뒤에 곧 로그인 화면으로 넘어가지만, 그 사이에도 에러 객체의 모양은
+ * 다른 실패와 같아야 한다. 화면마다 `error.code` 를 옵셔널로 다루게 만들지 않는다.
+ */
+const SESSION_EXPIRED_CODE = "SESSION_EXPIRED";
+
+const sessionExpiredError = () => {
+  const appError: AppError = {
+    code: SESSION_EXPIRED_CODE,
+    fields: {},
+    message: "세션이 만료되었습니다. 다시 로그인해 주세요.",
+  };
+
+  return Object.assign(new Error(appError.message), appError);
 };
 
 /**
@@ -92,17 +140,13 @@ let refreshPromise: Promise<string> | null = null;
 const refreshAxios = axios.create({
   baseURL: LIVE_BASE_URI,
   headers: { "Content-Type": "application/json" },
+  /* 재발급 토큰은 HttpOnly 쿠키로만 오간다. 쿠키를 실어 보내고 새 쿠키를 받으려면 자격증명이 필요하다. */
+  withCredentials: true,
 });
 
 /** 새 accessToken을 돌려준다. 실패하면 세션이 끝난 것이다. */
 const refreshAccessToken = async (): Promise<string> => {
-  const refreshToken = getRefreshToken();
-
-  if (!refreshToken) throw new Error("no refresh token");
-
-  const response = await refreshAxios.post<TokenResponse>(REFRESH_PATH, {
-    refreshToken,
-  });
+  const response = await refreshAxios.post<TokenResponse>(REFRESH_PATH);
 
   const tokens = unwrapApiData(response.data);
 
@@ -139,13 +183,42 @@ const createAdminAxios = ({
   const instance = axios.create({
     baseURL,
     headers: { "Content-Type": "application/json" },
+    /* 로그인·비밀번호 변경 응답이 심는 재발급 쿠키를 받고, 로그아웃에 실어 보내려면 자격증명이 필요하다. */
+    withCredentials: true,
   });
 
   /** 요청 인터셉터. 세션 토큰을 실어 보냅니다. */
-  const onRequest = (
+  const onRequest = async (
     config: InternalAxiosRequestConfig,
-  ): InternalAxiosRequestConfig => {
-    const accessToken = resolveAccessToken();
+  ): Promise<InternalAxiosRequestConfig> => {
+    let accessToken = resolveAccessToken();
+
+    /*
+      죽은 것이 확실한 토큰은 보내지 않는다.
+
+      exp 는 서명을 보지 않고 읽은 값이라 **무엇을 허용할지는 여기서 정하지
+      않는다.** 다만 이미 지난 시각이면 서버도 401 로 답할 것이 확실하므로,
+      그 왕복 한 번을 아끼고 곧장 재발급하거나 로그인 화면으로 보낸다.
+      exp 를 읽을 수 없으면 아무것도 하지 않고 서버 판정에 맡긴다.
+    */
+    if (expiresSessionOn401 && !isPublicPath(config.url)) {
+      if (isRefreshExpired()) {
+        /* 재발급 토큰까지 죽었으면 살려 낼 방법이 없다. 요청을 만들지 않는다. */
+        handleUnauthorized();
+
+        throw sessionExpiredError();
+      }
+
+      if (isJwtExpired(accessToken)) {
+        try {
+          accessToken = await requestRefresh();
+        } catch {
+          handleUnauthorized();
+
+          throw sessionExpiredError();
+        }
+      }
+    }
 
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
@@ -160,6 +233,11 @@ const createAdminAxios = ({
    * 화면에서 그대로 노출할 수 있는 에러 객체로 정규화하는 것도 여기서 합니다.
    */
   const onResponseError = async (error: AxiosError<ApiErrorResponse>) => {
+    /* 요청 인터셉터가 만료로 끊은 것. 이미 로그인 화면으로 보냈으므로 그대로 넘긴다. */
+    if ((error as unknown as AppError).code === SESSION_EXPIRED_CODE) {
+      return Promise.reject(error);
+    }
+
     const config = error.config as RetriableConfig | undefined;
 
     const canRetry =
@@ -189,11 +267,26 @@ const createAdminAxios = ({
       handleUnauthorized();
     }
 
+    // 4xx 는 대부분 입력·권한 문제라 수집하지 않는다. 서버가 깨진 5xx 만 모은다.
+    const status = error.response?.status;
+    if (status !== undefined && status >= 500) {
+      const path = config?.url?.split("?")[0] ?? "";
+      reportError(
+        new Error(
+          `[Admin API ${status}] ${config?.method?.toUpperCase() ?? ""} ${path}`,
+        ),
+        { code: error.response?.data?.code, status },
+      );
+    }
+
     const appError: AppError = {
       code: error.response?.data?.code ?? "UNKNOWN",
       fields: error.response?.data?.fields ?? {},
       message: error.response?.data?.message ?? "요청 처리에 실패했습니다.",
+      status,
     };
+
+    if (appError.code === FORBIDDEN_CODE) notifyForbidden(appError.message);
 
     return Promise.reject(Object.assign(new Error(appError.message), appError));
   };

@@ -13,7 +13,7 @@ export interface PushCampaignListParams {
 
 export const getPushCampaignList = async (params: PushCampaignListParams) => {
   const response = await adminAxios.get<PageResponse<PushCampaign>>(
-    "/admin/push/campaigns",
+    "/push/campaigns",
     { params },
   );
 

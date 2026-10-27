@@ -2,9 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Users } from "@/icons";
-import { cn, formatCredit } from "@/lib/utils";
+import { createIdempotencyKey } from "@/lib/idempotency";
+import { cn, formatCredit, formatSignedCredit } from "@/lib/utils";
 import {
   creditAdjustmentSchema,
   type CreditAdjustmentSchema,
@@ -19,7 +20,7 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
 import UserPickerModal from "./UserPickerModal";
-import { ADJUSTMENT_TYPE_OPTIONS } from "./adjustmentOptions";
+import { ADJUSTMENT_TYPE_OPTIONS } from "@/constants/billingOptions";
 
 interface CreditAdjustmentFormModalProps {
   isOpen: boolean;
@@ -27,6 +28,11 @@ interface CreditAdjustmentFormModalProps {
   /** 확인 다이얼로그 문구에 닉네임이 필요해 대상 유저를 함께 넘긴다. */
   onSubmit: (request: CreditAdjustmentRequest, user: AdjustableUser) => void;
   isSubmitting: boolean;
+  /**
+   * 대상 유저를 미리 정해 연다(유저 상세에서 열 때). 있으면 유저 검색 단계를 건너뛰고 바꿀 수도 없다.
+   * 잔액 · 차감 가능 노트로 초과 차감을 막으므로 조정 대상 검색이 준 값을 그대로 넘긴다.
+   */
+  initialUser?: AdjustableUser;
 }
 
 const EMPTY_VALUES: CreditAdjustmentSchema = {
@@ -36,32 +42,12 @@ const EMPTY_VALUES: CreditAdjustmentSchema = {
   reason: "",
 };
 
-/**
- * 멱등키 한 개.
- *
- * `crypto.randomUUID`는 **보안 컨텍스트(https · localhost)에서만** 존재한다.
- * 사내망 http나 LAN IP(`http://192.168.x.x:3100`)로 열면 `undefined`인데,
- * 이 모달은 닫혀 있어도 항상 렌더되므로 그냥 부르면 모달이 아니라
- * **크레딧 조정 페이지 전체가 렌더 중 예외로 죽는다.**
- *
- * `getRandomValues`는 비보안 컨텍스트에서도 쓸 수 있어 그쪽으로 물러선다.
- * 키의 용도는 중복 요청 식별이라 UUID 형식일 필요는 없고 충돌만 없으면 된다.
- */
-const createIdempotencyKey = (): string => {
-  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
-
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-    "",
-  );
-};
-
 const CreditAdjustmentFormModal = ({
   isOpen,
   onClose,
   onSubmit,
   isSubmitting,
+  initialUser,
 }: CreditAdjustmentFormModalProps) => {
   const [selectedUser, setSelectedUser] = useState<AdjustableUser | undefined>();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -71,31 +57,42 @@ const CreditAdjustmentFormModal = ({
     아예 고정해 두면 두 번째 조정이 영영 409로 막힌다. 그래서 '모달 1회 = 키 1개'다.
   */
   const [idempotencyKey, setIdempotencyKey] = useState(createIdempotencyKey);
+  const [wasOpen, setWasOpen] = useState(isOpen);
+
+  /*
+    조정은 1회성 작업이라 열 때마다 대상 유저와 멱등 키를 새로 잡는다. 이펙트에서
+    setState를 부르면 한 번 그린 뒤 다시 그리므로, 열림이 바뀐 렌더에서 곧바로 맞춘다.
+  */
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) {
+      setSelectedUser(initialUser);
+      setIdempotencyKey(createIdempotencyKey());
+    }
+  }
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
     setValue,
-    watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CreditAdjustmentSchema>({
     resolver: zodResolver(creditAdjustmentSchema),
     defaultValues: EMPTY_VALUES,
   });
 
-  // 조정은 1회성 작업이므로 모달을 열 때마다 빈 폼에서 시작한다.
+  // 폼 값도 모달을 열 때마다 빈 폼에서 시작한다.
   useEffect(() => {
     if (!isOpen) return;
 
-    setSelectedUser(undefined);
-    setIdempotencyKey(createIdempotencyKey());
-    reset(EMPTY_VALUES);
-  }, [isOpen, reset]);
+    reset({ ...EMPTY_VALUES, userId: initialUser?.userId ?? "" });
+  }, [isOpen, reset, initialUser?.userId]);
 
-  const values = watch();
-  const amount = Number.isFinite(values.amount) ? values.amount : 0;
-  const delta = values.type === "GRANT" ? amount : -amount;
+  const [type, watchedAmount] = useWatch({ control, name: ["type", "amount"] });
+  const amount = Number.isFinite(watchedAmount) ? watchedAmount : 0;
+  const delta = type === "GRANT" ? amount : -amount;
   const expectedBalance = selectedUser
     ? Math.max(0, selectedUser.creditBalance + delta)
     : 0;
@@ -109,7 +106,7 @@ const CreditAdjustmentFormModal = ({
     : 0;
   const isOverDeduction = Boolean(
     selectedUser &&
-      values.type === "DEDUCT" &&
+      type === "DEDUCT" &&
       amount > selectedUser.availableBalance,
   );
 
@@ -127,9 +124,10 @@ const CreditAdjustmentFormModal = ({
   return (
     <>
       <Modal
+        isDirty={isDirty}
         isOpen={isOpen}
         onClose={onClose}
-        title="크레딧 수동 조정"
+        title="노트 수동 조정"
         description="지급·차감 내역은 장부에 그대로 기록되며 되돌릴 수 없습니다."
         size="md"
         // 실수로 닫히면 입력한 사유가 사라지므로 오버레이 클릭으로 닫지 않는다.
@@ -178,13 +176,15 @@ const CreditAdjustmentFormModal = ({
                   </p>
                 </div>
 
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setIsPickerOpen(true)}
-                >
-                  변경
-                </Button>
+                {!initialUser && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsPickerOpen(true)}
+                  >
+                    변경
+                  </Button>
+                )}
               </div>
             ) : (
               <Button
@@ -214,7 +214,7 @@ const CreditAdjustmentFormModal = ({
             </FormField>
 
             <FormField
-              label="조정 크레딧"
+              label="조정 노트"
               htmlFor="adjustment-amount"
               required
               error={errors.amount?.message}
@@ -252,15 +252,14 @@ const CreditAdjustmentFormModal = ({
           {/* 실행 전에 잔액이 어떻게 바뀌는지 숫자로 먼저 보여준다. */}
           <dl className="flex items-center justify-between gap-4 rounded-field border border-border-main bg-subtle px-4 py-3 body-5">
             <div className="flex items-center gap-2">
-              <dt className="text-font-2">조정 크레딧</dt>
+              <dt className="text-font-2">조정 노트</dt>
               <dd
                 className={cn(
                   "font-semibold tabular-nums",
                   delta >= 0 ? "text-success" : "text-danger",
                 )}
               >
-                {delta > 0 ? "+" : ""}
-                {formatCredit(delta)}
+                {formatSignedCredit(delta)}
               </dd>
             </div>
 
@@ -274,7 +273,7 @@ const CreditAdjustmentFormModal = ({
 
           {isOverDeduction && selectedUser && (
             <p className="mt-2 body-6 text-font-error">
-              차감할 수 있는 크레딧은 {formatCredit(selectedUser.availableBalance)}
+              차감할 수 있는 노트는 {formatCredit(selectedUser.availableBalance)}
               까지입니다.
               {lockedBalance > 0 &&
                 ` 예약으로 잠긴 ${formatCredit(lockedBalance)}은 회수할 수 없습니다.`}

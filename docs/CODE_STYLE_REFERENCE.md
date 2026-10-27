@@ -39,7 +39,7 @@
 ## 2. 설정 파일
 
 - **tsconfig.json** — `strict: true`, `target: ES2017`, `moduleResolution: "bundler"`, `jsx: "react-jsx"`, 경로 별칭은 `@/*` → `./src/*` **하나뿐**이다.
-- **eslint.config.mjs** — flat config. `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript`를 펼쳐 쓰고 커스텀 룰은 추가하지 않는다.
+- **eslint.config.mjs** — flat config. `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript`를 펼쳐 쓰고 커스텀 룰은 추가하지 않는다. (plat-admin-fe도 같다 — 무시 경로만 기본값을 그대로 적어 둔다.)
 - **postcss.config.mjs** — `@tailwindcss/postcss` 하나.
 - **tailwind.config는 없다.** Tailwind v4이므로 토큰은 CSS의 `@theme inline` 블록에서 정의한다.
 - **prettier 설정 파일이 없다.** 코드에 나타난 실제 포맷은 큰따옴표, 세미콜론 있음, 후행 쉼표 있음, 들여쓰기 2칸, 폭 80자 기준이다.
@@ -255,7 +255,7 @@ export const useModalStore = create<ModalState>((set, get) => ({
 - `ReactQueryProvider` — `useState(() => new QueryClient({ defaultOptions: { queries: { staleTime: 1000*60*5, refetchOnWindowFocus: false } } }))`
 - `MSWProvider` — `process.env.NEXT_PUBLIC_API_MOCKING === "enabled"`일 때만 워커 기동, 준비 전에는 `null` 렌더
 - `SonnerProvider` — `unstyled: true` + `classNames`로 직접 스타일, 아이콘도 커스텀 SVG로 교체
-- 프로바이더는 `export default function` 또는 `const … export default` 둘 다 나타난다(혼용).
+- 프로바이더는 `export default function` 또는 `const … export default` 둘 다 나타난다(혼용). plat-admin-fe는 `const … export default` 하나로 맞췄다(개발 가이드 §2).
 
 ---
 

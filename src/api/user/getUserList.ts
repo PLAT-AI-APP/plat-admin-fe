@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import {
+  toPageRequest,
   toPageResponse,
   type AppError,
   type PageResponse,
@@ -22,8 +23,7 @@ export interface UserListParams {
  * 화면이 쓰는 {@link User}와 이름·널 표현이 달라 타입을 따로 둔다. 서버는 없는 값을
  * `null`로 주고 화면은 `undefined`로 다루며, 서버의 `birth`는 화면에서 `birthDate`로 읽는다.
  *
- * 성인 인증은 여기 없다 — 목록이 답할 질문이 아니라 유저 상세({@link UserDetailResponse})가
- * 답할 질문이다.
+ * 본인 · 성인인증은 목록에 오지 않는다. 상세(`UserDetailResponse`)에서만 본다.
  */
 export interface UserSummaryResponse {
   userId: string;
@@ -41,6 +41,8 @@ export interface UserSummaryResponse {
   lastLoginAt: string | null;
   /** 아직 수집하지 않는 값이라 항상 null이다. */
   lastLoginPlatform: User["lastLoginPlatform"] | null;
+  /** 서비스 역할. ADMIN 이면 서비스 관리자다(관리자 콘솔 계정과는 별개). */
+  role: User["role"];
   createdAt: string;
 }
 
@@ -63,13 +65,13 @@ export const toUser = (user: UserSummaryResponse): User => ({
   isMarketingAgreed: user.marketingAgreed ?? undefined,
   lastLoginAt: user.lastLoginAt ?? undefined,
   lastLoginPlatform: user.lastLoginPlatform ?? undefined,
+  role: user.role,
   createdAt: user.createdAt,
 });
 
 /** 빈 필터는 아예 보내지 않는다. 빈 문자열을 보내면 서버가 "빈 값으로 검색"으로 받는다. */
 const toRequestParams = (params: UserListParams) => ({
-  page: Math.max(params.page - 1, 0),
-  size: params.size,
+  ...toPageRequest(params),
   keyword: params.keyword?.trim() || undefined,
   status: params.status || undefined,
 });
@@ -87,7 +89,7 @@ export const getUserList = async (
   params: UserListParams,
 ): Promise<PageResponse<User>> => {
   const response = await liveAxios.get<PageWith<UserSummaryResponse>>(
-    "/admin/users",
+    "/users",
     { params: toRequestParams(params) },
   );
 

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
 import { ImageIcon } from "@/icons";
+import { toLoadableImageUrl } from "@/lib/imageUrl";
 import { cn } from "@/lib/utils";
 
 /**
@@ -123,7 +124,7 @@ const EntityImage = ({
   return (
     <div className={frameClassName} onClick={onClick}>
       <Image
-        src={src}
+        src={toLoadableImageUrl(src)}
         alt={alt}
         fill
         // 파일 서버가 이미 webp 변환본을 주므로 Next 최적화를 다시 태우지 않는다.

@@ -9,13 +9,15 @@ export const proactiveMessageSchema = z.object({
   ]),
   /**
    * 캐릭터는 선택 사항이다.
-   * 입력 자체는 문자열로 다루고, 전송 직전에 숫자로 변환한다.
+   * 캐릭터 ID는 Snowflake라 **전송할 때도 문자열 그대로 보낸다.** 숫자로 바꾸면
+   * `MAX_SAFE_INTEGER`를 넘는 끝자리가 뭉개져 다른 캐릭터를 가리키게 된다.
+   * 숫자만 받는 검사는 오타를 거르려는 것이지 숫자로 바꾸려는 것이 아니다.
    */
   characterId: z
     .string()
     .optional()
     .refine((value) => !value || /^[0-9]+$/.test(value), {
-      message: "캐릭터 ID는 숫자만 입력해 주세요.",
+      error: "캐릭터 ID는 숫자만 입력해 주세요.",
     }),
   content: z
     .string()

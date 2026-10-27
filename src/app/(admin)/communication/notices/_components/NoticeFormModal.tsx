@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useNoticeDetailQuery } from "@/api/notice/getNoticeDetail";
 import { noticeSchema, type NoticeSchema } from "@/schema/notice.schema";
 import type { NoticeFormValues } from "@/type/notice";
@@ -18,7 +18,7 @@ import Textarea from "@/components/ui/Textarea";
 import {
   NOTICE_CATEGORY_OPTIONS,
   NOTICE_STATUS_OPTIONS,
-} from "./noticeOptions";
+} from "@/app/(admin)/communication/notices/_constants/noticeOptions";
 
 interface NoticeFormModalProps {
   isOpen: boolean;
@@ -27,6 +27,11 @@ interface NoticeFormModalProps {
   noticeId?: number;
   onSubmit: (values: NoticeFormValues) => void;
   isSubmitting: boolean;
+  /**
+   * 게시 권한이 있는지. 없으면 상태에서 '게시'를 고를 수 없다.
+   * 게시는 앱에 곧바로 나가는 일이라 작성 권한만으로 열어 두지 않는다.
+   */
+  canPublish?: boolean;
 }
 
 type EditorTab = "WRITE" | "PREVIEW";
@@ -50,8 +55,19 @@ const NoticeFormModal = ({
   noticeId,
   onSubmit,
   isSubmitting,
+  canPublish = true,
 }: NoticeFormModalProps) => {
   const [tab, setTab] = useState<EditorTab>("WRITE");
+  const [wasOpen, setWasOpen] = useState(isOpen);
+
+  /*
+    열릴 때마다 작성 탭에서 시작한다. 이펙트에서 setState를 부르면 한 번 그린 뒤
+    다시 그리므로, 열림이 바뀐 렌더에서 곧바로 맞춘다.
+  */
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) setTab("WRITE");
+  }
   const { data: notice, isLoading } = useNoticeDetailQuery(
     isOpen && noticeId !== undefined ? noticeId : null,
   );
@@ -61,8 +77,7 @@ const NoticeFormModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<NoticeSchema>({
     resolver: zodResolver(noticeSchema),
     defaultValues: EMPTY_VALUES,
@@ -72,7 +87,6 @@ const NoticeFormModal = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    setTab("WRITE");
     reset(
       notice
         ? {
@@ -86,13 +100,14 @@ const NoticeFormModal = ({
     );
   }, [isOpen, notice, reset]);
 
-  const content = watch("content");
+  const content = useWatch({ control, name: "content" });
 
   const submit = handleSubmit((values) => onSubmit(values));
   const isPending = isSubmitting || isLoading;
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title={noticeId !== undefined ? "공지사항 수정" : "공지사항 등록"}
@@ -144,7 +159,13 @@ const NoticeFormModal = ({
               render={({ field }) => (
                 <Select
                   id="notice-status"
-                  options={NOTICE_STATUS_OPTIONS}
+                  options={
+                    canPublish || notice?.status === "PUBLISHED"
+                      ? NOTICE_STATUS_OPTIONS
+                      : NOTICE_STATUS_OPTIONS.filter(
+                          (option) => option.value !== "PUBLISHED",
+                        )
+                  }
                   value={field.value}
                   onChange={field.onChange}
                 />

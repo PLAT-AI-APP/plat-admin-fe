@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useAiModelMutation } from "@/api/ai/mutateAiModel";
+import { useCan } from "@/hooks/useCan";
 import { Layers, Scale, Star } from "@/icons";
 import { openConfirm } from "@/store/useConfirmStore";
 import type { AiModel, AiModelRole } from "@/type/ai";
@@ -13,7 +14,7 @@ import {
   AI_MODEL_ROLES,
   AI_MODEL_ROLE_DESCRIPTION,
   AI_MODEL_ROLE_LABEL,
-} from "../../_constants/aiOptions";
+} from "@/app/(admin)/ai/_constants/aiOptions";
 
 /** 역할을 한눈에 구분하기 위한 아이콘. 라벨과 달리 화면 장식이라 여기에 둔다. */
 const ROLE_ICON: Record<AiModelRole, ReactNode> = {
@@ -38,6 +39,8 @@ const AiModelRoleAssigner = ({
   models,
   isLoading,
 }: AiModelRoleAssignerProps) => {
+  /* 역할 지정은 서버에서 `aiModel:write` 다. 볼 수만 있으면 지금 지정만 보여 준다. */
+  const canWrite = useCan("aiModel:write");
   const { assignRoleMutation } = useAiModelMutation();
 
   const findHolder = (role: AiModelRole) =>
@@ -132,7 +135,9 @@ const AiModelRoleAssigner = ({
                 onChange={(event) =>
                   handleChange(role, Number(event.target.value))
                 }
-                disabled={assignRoleMutation.isPending || models.length === 0}
+                disabled={
+                  !canWrite || assignRoleMutation.isPending || models.length === 0
+                }
               />
             )}
           </div>

@@ -53,7 +53,7 @@ const CharacterBlockModal = ({
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CharacterBlockSchema>({
     resolver: zodResolver(characterBlockSchema),
     defaultValues: EMPTY_VALUES,
@@ -70,6 +70,7 @@ const CharacterBlockModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={characterName !== null}
       onClose={onClose}
       title="캐릭터 차단"

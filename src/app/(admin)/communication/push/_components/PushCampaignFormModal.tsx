@@ -2,9 +2,9 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import type { PushCampaignFormValues } from "@/api/communication/mutatePushCampaign";
-import dayjs from "@/lib/dayjs";
+import { parseKst } from "@/lib/dayjs";
 import {
   pushCampaignSchema,
   type PushCampaignSchema,
@@ -16,7 +16,7 @@ import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
-import { PUSH_TARGET_OPTIONS } from "../../_constants/labels";
+import { PUSH_TARGET_OPTIONS } from "@/app/(admin)/communication/_constants/communicationOptions";
 
 interface PushCampaignFormModalProps {
   isOpen: boolean;
@@ -50,8 +50,7 @@ const PushCampaignFormModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<PushCampaignSchema>({
     resolver: zodResolver(pushCampaignSchema),
     defaultValues: EMPTY_VALUES,
@@ -64,7 +63,7 @@ const PushCampaignFormModal = ({
     reset(EMPTY_VALUES);
   }, [isOpen, reset]);
 
-  const isScheduled = watch("isScheduled");
+  const isScheduled = useWatch({ control, name: "isScheduled" });
 
   const submit = handleSubmit((values) => {
     onSubmit({
@@ -74,13 +73,14 @@ const PushCampaignFormModal = ({
       // 예약을 끄면 예약 일시를 보내지 않아 임시 저장 상태로 만들어진다.
       scheduledAt:
         values.isScheduled && values.scheduledAt
-          ? dayjs(values.scheduledAt).toISOString()
+          ? parseKst(values.scheduledAt).toISOString()
           : undefined,
     });
   });
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={isOpen}
       onClose={onClose}
       title="푸시 작성"

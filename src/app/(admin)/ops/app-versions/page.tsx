@@ -6,7 +6,7 @@ export default function AppVersionPage() {
   return (
     <>
       <PageHeader
-        title="앱 버전 관리"
+        title="앱 버전"
         description="앱 최소·권장 버전과 강제 업데이트 정책을 관리합니다."
       />
 

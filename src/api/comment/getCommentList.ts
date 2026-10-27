@@ -1,8 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
+import { usePermittedQuery } from "@/api/usePermittedQuery";
 import {
+  toPageRequest,
   toPageResponse,
-  type AppError,
   type PageResponse,
   type PageWith,
 } from "@/type/api";
@@ -78,8 +78,7 @@ export const toComment = (item: CommentItemResponse): Comment => ({
 /** 빈 문자열 필터는 아예 빼고, 페이지는 0부터로 낮춰 서버가 받는 형태로 만든다. */
 const toRequestParams = (params: CommentListParams) => {
   const clean: Record<string, string | number | boolean> = {
-    page: Math.max(params.page - 1, 0),
-    size: params.size,
+    ...toPageRequest(params),
   };
   if (params.keyword?.trim()) clean.keyword = params.keyword.trim();
   if (params.targetType) clean.targetType = params.targetType;
@@ -95,7 +94,7 @@ export const getCommentList = async (
   params: CommentListParams,
 ): Promise<PageResponse<Comment>> => {
   const response = await liveAxios.get<PageWith<CommentItemResponse>>(
-    "/admin/comments",
+    "/comments",
     { params: toRequestParams(params) },
   );
 
@@ -106,7 +105,7 @@ export const getCommentList = async (
 
 /** 전 영역의 댓글을 한 화면에서 조회합니다. 대상 종류는 targetType으로 구분합니다. */
 export const useCommentListQuery = (params: CommentListParams) => {
-  return useQuery<PageResponse<Comment>, AppError>({
+  return usePermittedQuery<PageResponse<Comment>>("comment:read", {
     queryKey: ["get-comment-list", params],
     queryFn: () => getCommentList(params),
   });

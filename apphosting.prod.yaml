@@ -1,0 +1,46 @@
+# Firebase App Hosting 운영 설정(관리자 콘솔 plat-admin-fe). 운영 백엔드의 환경 이름이 `prod` 일 때만 읽는다.
+# 문서: https://firebase.google.com/docs/app-hosting/configure
+#
+# 이 저장소는 어느 서버를 볼지 `.env` 가 아니라 프로파일(local · develop · main)로 정한다(src/config/appEnv.ts).
+# 배포 환경에는 git 브랜치가 없어서 프로파일을 알 수 없고, 못 정하면 개발 서버(develop)로 뜬다.
+# 그래서 운영은 APP_ENV=main 을 반드시 명시한다.
+#
+# 이 설정으로 빌드하려면 appEnv.ts 의 main 프로파일이 admin-api.plat.so 를 가리켜야 한다(develop 브랜치 기준).
+# main 브랜치가 그 변경을 받기 전에는 아래 NEXT_PUBLIC_* 값이 그 자리를 덮어 막는다.
+
+runConfig:
+  # 관리자 콘솔은 트래픽이 적다. 사용량을 보고 조정한다.
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+
+# NEXT_PUBLIC_* 값은 빌드 때 번들에 박히므로 BUILD 가용성이 있어야 한다.
+env:
+  # 운영 프로파일. 이 값이 없으면 개발 서버를 보는 콘솔이 운영 주소로 뜬다.
+  - variable: APP_ENV
+    value: main
+    availability: [BUILD, RUNTIME]
+
+  # 아래 네 값은 main 프로파일 기본값과 같다. 프로파일 변경이 main 에 아직 없을 때를 대비한 안전장치로 명시한다.
+
+  # 실서버(plat-be 관리자 앱). 끝에 / 를 붙이지 않는다.
+  - variable: NEXT_PUBLIC_LIVE_BASE_URI
+    value: https://admin-api.plat.so
+    availability: [BUILD, RUNTIME]
+
+  # 이미지 서빙은 plat-be 사용자 API 앱이 받는다.
+  - variable: NEXT_PUBLIC_IMAGE_BASE_URI
+    value: https://api.plat.so
+    availability: [BUILD, RUNTIME]
+
+  # 문서의 '사이트에서 보기' 링크가 가리키는 사용자 사이트.
+  - variable: NEXT_PUBLIC_USER_SITE_URI
+    value: https://plat.so
+    availability: [BUILD, RUNTIME]
+
+  # MSW 목업은 운영에서 끈다. 운영에 가짜 화면이 뜨면 운영자가 진짜로 착각한다.
+  - variable: NEXT_PUBLIC_API_MOCKING
+    value: disabled
+    availability: [BUILD, RUNTIME]

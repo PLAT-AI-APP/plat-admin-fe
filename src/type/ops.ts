@@ -3,7 +3,8 @@ import type { PermissionKey } from "./permission";
 /**
  * 직책.
  *
- * 권한은 사람이 아니라 **직책**이 갖는다. 관리자는 직책에 들어갈 뿐이다.
+ * 권한은 사람이 아니라 **직책**이 갖는다. 관리자는 직책을 여러 개 가질 수 있고,
+ * 권한은 가진 직책들의 권한을 모두 합친 것이다.
  * 사람이 바뀌어도 직책은 남고, 규칙이 바뀌면 직책 하나만 고치면 된다.
  */
 export interface AdminRole {
@@ -18,9 +19,18 @@ export interface AdminRole {
    * "권한을 되돌릴 수 있는 사람이 아무도 없는" 상태가 만들어진다.
    */
   isSuperAdmin: boolean;
-  /** 이 직책에 속한 관리자 수. 지우기 전에 옮길 사람이 있는지 보여 준다. */
+  /**
+   * 이 직책을 가진 관리자 수. 지우기 전에 직책에서 뺄 사람이 있는지 보여 준다.
+   * 한 관리자가 여러 직책을 가질 수 있어 직책별 수를 더하면 전체 인원보다 클 수 있다.
+   */
   memberCount: number;
   createdAt: string;
+}
+
+/** 관리자가 가진 직책 하나. 표 · 헤더에서 바로 보여 주기 위해 이름을 함께 받는다. */
+export interface AdminRoleRef {
+  roleId: number;
+  roleName: string;
 }
 
 export interface AdminRoleFormValues {
@@ -38,30 +48,26 @@ export interface AdminRoleFormValues {
  */
 export type ManagerStatus = "INVITED" | "ACTIVE" | "INACTIVE" | "LOCKED";
 
-/** 로그인 실패가 이 횟수에 닿으면 계정을 잠근다. */
-export const MANAGER_LOCK_THRESHOLD = 5;
-
-/** 관리자 계정. 권한은 직접 갖지 않고 배정된 직책에서 가져온다. */
+/** 관리자 계정. 권한은 직접 갖지 않고 가진 직책들에서 가져온다. */
 export interface Manager {
   managerId: number;
   name: string;
   email: string;
-  roleId: number;
-  /** 표에서 바로 보여 주기 위해 서버가 함께 내려준다. */
-  roleName: string;
+  /** 가진 직책들. roleId 오름차순이며 최소 1개다. */
+  roles: AdminRoleRef[];
   status: ManagerStatus;
   /** 로그인 실패 누적. 성공하면 0으로 돌아간다. */
   failedLoginCount: number;
-  lastLoginAt?: string;
+  lastLoginAt: string | null;
   /** 마지막 접속 IP. 낯선 접속을 알아채는 최소 단서다. */
-  lastLoginIp?: string;
-  lockedAt?: string;
-  invitedAt?: string;
+  lastLoginIp: string | null;
+  lockedAt: string | null;
+  invitedAt: string | null;
   /**
    * 마지막으로 비밀번호를 바꾼 시각.
    * **값이 없으면 아직 임시 비밀번호를 쓰는 계정이다.**
    */
-  passwordUpdatedAt?: string;
+  passwordUpdatedAt: string | null;
   createdAt: string;
 }
 
@@ -74,7 +80,8 @@ export interface Manager {
 export interface ManagerFormValues {
   name: string;
   email: string;
-  roleId: number;
+  /** 가질 직책들. 수정 때는 이 목록으로 통째로 바꾼다. */
+  roleIds: number[];
 }
 
 /**
@@ -122,36 +129,170 @@ export interface DependencyHealth {
   status: HealthStatus;
   /** 응답 시간(ms). 같은 서버의 Redis는 1ms가 안 되므로 소수점이 올 수 있다. */
   latencyMs: number;
-  message?: string;
+  message: string | null;
+}
+
+/** CPU. 사용률과 함께 부하 평균을 준다 — "꽉 찼다"와 "밀려 있다"는 다른 사실이다. */
+export interface CpuHealth {
+  cores: number;
+  systemUsage: number;
+  /** 부하 평균. 코어 수로 나누기 전 원값이라 코어 수와 함께 읽어야 한다. */
+  loadAverage1m: number | null;
+  loadAverage5m: number | null;
+  loadAverage15m: number | null;
+  /** 코어별 사용률. 한 코어만 100%면 병렬화가 안 된 작업이 물려 있다는 뜻이다. */
+  coreUsages: number[];
 }
 
 /**
- * 서버 상태.
+ * 머신 메모리의 갈래.
+ *
+ * `anonymous + cached + free = total`이고 `available`은 그와 다른 절단면이다 —
+ * free에 회수 가능한 캐시를 더한 값이라 **캐시와 겹친다.** 둘을 더하면 안 된다.
+ */
+export interface MemoryHealth {
+  totalBytes: number;
+  /** 경보 기준. 회수해도 돌려받지 못하는 몫(`total - available`)이다. */
+  usedBytes: number;
+  availableBytes: number;
+  /** 프로세스가 실제로 쥔 몫. 파이 차트에서 캐시·free와 합쳐 전체가 된다. */
+  anonymousBytes: number;
+  cachedBytes: number;
+  freeBytes: number;
+  usage: number;
+  /** 스왑이 쓰이기 시작했다는 것 자체가 신호다. 없으면 0. */
+  swapTotalBytes: number;
+  swapUsedBytes: number;
+}
+
+/** 프로세스 한 개의 점유. 컨테이너 안에서는 보이는 것이 우리 프로세스뿐일 수 있다. */
+export interface ProcessUsage {
+  pid: number;
+  name: string;
+  command: string | null;
+  /** 실제로 물리 메모리를 차지한 크기(RSS) */
+  residentBytes: number;
+  /** 머신 전체 메모리 대비 % */
+  memoryUsage: number;
+  cpuUsage: number | null;
+  /** 이 어드민을 서빙하는 JVM 자신인가 */
+  isSelf: boolean;
+}
+
+/**
+ * JVM 힙. 머신 메모리와 따로 본다 — 머신에 여유가 있어도 힙이 차면 GC가 돌기
+ * 시작하고, 응답이 느려지는 원인은 그쪽인 경우가 많다.
+ */
+export interface JvmHealth {
+  /** 분모는 max가 아니라 committed다. max는 아직 받지 않은 몫까지 포함한다. */
+  heapUsage: number;
+  heapUsedBytes: number;
+  heapCommittedBytes: number;
+  heapMaxBytes: number;
+}
+
+/** 디스크 마운트 한 곳. 로그가 쌓여 꽉 차면 서버가 조용히 멈춘다. */
+export interface DiskUsage {
+  mountPoint: string;
+  totalBytes: number;
+  usedBytes: number;
+  usableBytes: number;
+  usage: number;
+}
+
+/**
+ * 서버 상태 한 장.
  *
  * 사용률과 절대량이 함께 온다. "메모리 75%"만으로는 조치를 정할 수 없다 —
  * 2GB 중 75%와 64GB 중 75%는 남은 여유가 다르다.
  */
 export interface ServerHealth {
   status: HealthStatus;
-  uptimeSeconds: number;
-  cpuUsage: number;
-  /** 이 서버에 주어진 코어 수 */
-  cpuCores: number;
-  memoryUsage: number;
-  memoryUsedBytes: number;
-  /** 머신(컨테이너)에 주어진 전체 메모리 */
-  memoryTotalBytes: number;
   /**
-   * JVM 힙 사용률.
-   *
-   * 머신 메모리와 따로 본다. 머신에 여유가 있어도 힙이 차면 GC가 돌기 시작하고,
-   * 응답이 느려지는 원인은 그쪽인 경우가 많다.
+   * 이 응답을 만든 admin 인스턴스. 호스트 · 의존성 · `jvm` 값은 이 한 대 기준이다.
+   * 서비스별 JVM은 `ServiceStatus`로 따로 본다.
    */
-  heapUsage: number;
-  heapUsedBytes: number;
-  heapMaxBytes: number;
+  instanceId: string;
+  /** 호스트 OS · JVM. 재현 환경을 맞출 때 먼저 확인하는 값이다. */
+  osName: string;
+  javaVersion: string;
+  startedAt: string;
+  uptimeSeconds: number;
+  cpu: CpuHealth;
+  memory: MemoryHealth;
+  jvm: JvmHealth;
+  /** 점유 상위 프로세스. 읽을 수 없는 환경이면 빈 배열이다. */
+  processes: ProcessUsage[];
+  disks: DiskUsage[];
   dependencies: DependencyHealth[];
   checkedAt: string;
+}
+
+/**
+ * 인스턴스 한 대의 현재 상태. 각 앱이 10초마다 스스로 알린 값이다.
+ *
+ * 컨테이너 메모리를 힙과 따로 받는다. 힙에 여유가 있어도 메타스페이스 · 스레드가
+ * 컨테이너 한도를 넘으면 OOMKilled로 죽는다 — 배분이 맞는지는 둘을 함께 봐야 갈린다.
+ */
+/**
+ * 인스턴스 단계. UP/DOWN만으로는 "재시작 중"과 "죽었다"가 갈리지 않는다.
+ * - RUNNING: 알림이 제때 옴
+ * - RESTART_REQUESTED: 재시작을 요청했고 아직 가져가지 않음
+ * - RESTARTING: 재시작 요청으로 내려감(곧 RUNNING)
+ * - STOPPED: 정상 종료를 알림(배포 · 수동 중지), 또는 재시작 후 2분 넘게 안 돌아옴
+ * - NO_RESPONSE: 30초 넘게 알림 없음(강제 종료 · 먹통)
+ */
+export type InstancePhase =
+  | "RUNNING"
+  | "RESTART_REQUESTED"
+  | "RESTARTING"
+  | "STOPPED"
+  | "NO_RESPONSE";
+
+export interface InstanceStatus {
+  instanceId: string;
+  /** RUNNING · RESTART_REQUESTED면 UP, 나머지는 DOWN. */
+  status: HealthStatus;
+  phase: InstancePhase;
+  /** 컨테이너 ID. 같은 인스턴스 이름으로 옛 · 새 컨테이너가 겹칠 때 가려 준다. */
+  host: string;
+  javaVersion: string;
+  /** `-X`로 시작하는 옵션만(힙 · GC). */
+  jvmOptions: string;
+  startedAt: string;
+  uptimeSeconds: number;
+  reportedAt: string;
+  cpuCores: number;
+  cpuUsage: number;
+  /** 분모는 상한(-Xmx)이다. committed 대비는 JVM이 필요한 만큼만 받아 두어 평소에도 90% 안팎이다. */
+  heapUsage: number;
+  heapUsedBytes: number;
+  heapCommittedBytes: number;
+  heapMaxBytes: number;
+  /** 한도가 없는 실행(로컬)이면 null. */
+  containerMemoryUsage: number | null;
+  containerMemoryUsedBytes: number | null;
+  containerMemoryLimitBytes: number | null;
+  /** 점검 게이트를 지나 처리 중인 요청 수. 게이트가 없는 앱(admin · batch)이면 null. */
+  inFlightRequests: number | null;
+  /** 요청과 떨어져 도는 채팅 답변 생성 수. ai 앱에만 있다. */
+  activeGenerations: number | null;
+}
+
+/**
+ * 서비스 하나와 그 인스턴스들.
+ *
+ * 서브도메인이 아니라 앱 이름(`app`)으로 묶는다. 서브도메인은 환경마다 다르고
+ * (api-dev · api) 내부 전용인 batch에는 없어서, 주소는 `domain`으로 곁들여 보여 준다.
+ * 지금은 서비스마다 한 대지만 대수를 늘려도 같은 모양으로 온다.
+ */
+export interface ServiceStatus {
+  /** api · ai · admin · batch. 모르는 이름이 와도(새 서비스) 그대로 보여 준다. */
+  app: string;
+  domain: string | null;
+  /** 모두 응답하면 UP, 일부면 DEGRADED, 하나도 없으면 DOWN. */
+  status: HealthStatus;
+  instances: InstanceStatus[];
 }
 
 /* -------------------------------------------------------------------------
@@ -277,6 +418,48 @@ export interface SystemEventLog {
 }
 
 /* -------------------------------------------------------------------------
+ * 접근 로그
+ * ---------------------------------------------------------------------- */
+
+/**
+ * 요청을 받은 plat-be 앱. 여러 앱이 한 테이블에 쌓으므로 경로만으로는 갈리지 않는다.
+ * 배치는 요청을 받지 않고, 지금은 관리자 앱 안에서 돌아(admin 으로 남는다) 필터에 두지 않는다.
+ */
+export const ACCESS_LOG_APPS = ["api", "admin", "ai"] as const;
+
+export type AccessLogApp = (typeof ACCESS_LOG_APPS)[number];
+
+/** 서버가 상태 코드에서 정한다. 2xx·3xx → INFO, 4xx → WARN, 5xx·예외 → ERROR. */
+export type AccessLogLevel = "INFO" | "WARN" | "ERROR";
+
+/**
+ * HTTP 요청 한 건.
+ *
+ * 관리자 활동 로그와 달리 **가공하지 않은 요청 원본**이다. 문의 대응에서 "이 유저가
+ * 실제로 무엇을 보냈고 무엇을 받았나"를 되짚는 자리라, 본문을 그대로 들고 있다.
+ * 본문은 서버가 적재 전에 가린다(비밀번호 · 토큰 · 전화번호 등).
+ */
+export interface AccessLog {
+  /** Snowflake라 문자열이다. */
+  logId: string;
+  app: AccessLogApp | (string & {});
+  method: string;
+  path: string;
+  queryString?: string;
+  status: number;
+  /** 토큰 주인. admin 앱 기록이면 관리자 ID다. 로그인 전 요청은 비어 있다. */
+  userId?: string;
+  durationMs: number;
+  /** 보관 기한이 지나면 본문부터 지워진다. */
+  requestBody?: string;
+  responseBody?: string;
+  level: AccessLogLevel;
+  remoteIp?: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
+/* -------------------------------------------------------------------------
  * 배치(스케줄) 작업
  * ---------------------------------------------------------------------- */
 
@@ -316,10 +499,10 @@ export interface BatchJob {
    * 아무도 알 수 없게 된다.
    */
   isEnabled: boolean;
-  lastRunStatus?: BatchRunStatus;
-  lastRunAt?: string;
+  lastRunStatus: BatchRunStatus | null;
+  lastRunAt: string | null;
   /** 다음 실행 예정. 꺼져 있으면 값이 없다. */
-  nextRunAt?: string;
+  nextRunAt: string | null;
 }
 
 /**
@@ -360,9 +543,104 @@ export interface BatchJobRun {
   log?: string;
 }
 
-/** 처리 대기 건수. 사이드바 · 헤더 뱃지가 쓴다. */
+/**
+ * 처리 대기 건수. 사이드바 · 헤더 뱃지가 쓴다.
+ *
+ * 서버는 볼 권한이 없는 영역을 세지 않고 0 으로 준다.
+ */
 export interface PendingCounts {
-  report: number;
+  /** 답변 대기 Q&A. */
   qna: number;
+  /** 신고가 들어왔지만 아직 노출 중인 댓글. */
   comment: number;
+  /** 검토 대기 신고 건. */
+  report: number;
+  /** 발송 대기 상품권 교환. 수익 서버의 별도 엔드포인트에서 온다. */
+  redemption: number;
+  /** 심사를 기다리는 탈퇴 캐릭터 인수 건. */
+  handover: number;
+  /** 승인 대기 환불이 있는 결제. */
+  refund: number;
+  /** 확인이 필요한(이상) 결제. */
+  paymentIssue: number;
+  /** 답변 기한(접수 + 3영업일)을 넘긴 문의. `qna` 에 포함된 수다. */
+  qnaOverdue: number;
+  /** 처리 기한(첫 신고 + 3영업일)을 넘긴 신고 케이스. `report` 에 포함된 수다. */
+  reportOverdue: number;
+  /** 처리 기한(신청 + 3영업일)을 넘긴 환불. `refund` 에 포함된 수다. */
+  refundOverdue: number;
+}
+
+/**
+ * 점검 단계. 판정은 서버가 시각으로 한다.
+ * - NOTICE: 예고. 모두 통과하고 사용자 화면이 예정 시각을 안내한다.
+ * - DRAINING: 소프트 종료. 새 요청은 막고 결제 승인 · 채팅 스트림처럼 진행 중인 흐름은 끝까지 간다.
+ * - CLOSED: 점검 중. 사용자 요청은 모두 막힌다. 이때 배포 · DB 작업을 한다.
+ * - OPEN: 평소(끝났거나 취소된 예약).
+ */
+export type MaintenancePhase = "OPEN" | "NOTICE" | "DRAINING" | "CLOSED";
+
+export type MaintenanceStatus = "SCHEDULED" | "CANCELLED" | "FINISHED";
+
+export interface MaintenanceWindow {
+  maintenanceId: string;
+  phase: MaintenancePhase;
+  status: MaintenanceStatus;
+  drainStartsAt: string;
+  closesAt: string;
+  expectedEndsAt: string | null;
+  message: string | null;
+  createdAt: string;
+  createdByName: string;
+  endedByName: string | null;
+  endedAt: string | null;
+}
+
+/** api · ai 인스턴스 한 대의 진행 중 수. 응답 없는 인스턴스는 수가 null 이다. */
+export interface MaintenanceInstance {
+  app: string;
+  instanceId: string;
+  phase: InstancePhase;
+  reportedAt: string;
+  inFlightRequests: number | null;
+  activeGenerations: number | null;
+}
+
+/** 점검 화면 한 장. "지금 닫아도 되나"를 가를 재료를 함께 준다. */
+export interface MaintenanceOverview {
+  current: MaintenanceWindow | null;
+  history: MaintenanceWindow[];
+  instances: MaintenanceInstance[];
+  /** 결제창을 연 뒤 아직 승인되지 않은 주문 수. */
+  pendingCheckouts: number;
+  latestCheckoutExpiresAt: string | null;
+}
+
+/**
+ * 사이트 설정. 사용자 사이트 푸터의 사업자 정보와 고객센터다.
+ *
+ * 모든 문자열은 빈 문자열을 허용하고 null 은 없다. 빈 칸은 푸터에서 감춘다.
+ * 통신판매업 신고번호는 신고 전이면 비워 둔다(PG 심사 전에는 채워야 한다).
+ */
+export interface SiteSettingsRequest {
+  companyName: string;
+  representative: string;
+  businessNumber: string;
+  mailOrderNumber: string;
+  address: string;
+  phone: string;
+  email: string;
+  supportHours: string;
+  privacyOfficer: string;
+  privacyOfficerContact: string;
+}
+
+export interface SiteSettings extends SiteSettingsRequest {
+  updatedByName: string | null;
+  updatedAt: string | null;
+}
+
+/** 신규 가입 일시 중단. 조회·변경이 같은 모양이다. */
+export interface SignupPause {
+  paused: boolean;
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAdminUniverseListQuery } from "@/api/universe/getAdminUniverseList";
 import { formatDate } from "@/lib/dayjs";
@@ -13,15 +12,14 @@ import EntityImage from "@/components/ui/EntityImage";
 import Pagination from "@/components/ui/Pagination";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import {
-  UNIVERSE_CATEGORY_LABEL,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
-} from "../../../universes/_constants/character";
-import UniverseStateBadge from "../../../universes/_components/UniverseStateBadge";
-import UniverseTendencyDot, {
-  UniverseTendencyLegend,
-} from "../../../universes/_components/UniverseTendencyDot";
-import { USER_DETAIL_PAGE_SIZE } from "./userDetailConstants";
+} from "@/constants/universeOptions";
+import UniverseStateBadge from "@/components/universe/UniverseStateBadge";
+import UniverseTendencyDot from "@/components/universe/UniverseTendencyDot";
+import UniverseTendencyLegend from "@/components/universe/UniverseTendencyLegend";
+import { USER_DETAIL_PAGE_SIZE } from "@/app/(admin)/users/[userId]/_constants/userDetailOptions";
+import AdultMark from "@/components/detail/AdultMark";
 
 interface UserUniversePanelProps {
   userId: string;
@@ -36,7 +34,6 @@ interface UserUniversePanelProps {
  * 서버가 크리에이터를 한 번 거쳐 세계관을 찾아 준다(`userId` 필터).
  */
 const UserUniversePanel = ({ userId, nickname }: UserUniversePanelProps) => {
-  const router = useRouter();
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useAdminUniverseListQuery({
@@ -70,6 +67,7 @@ const UserUniversePanel = ({ userId, nickname }: UserUniversePanelProps) => {
             <div className="flex min-w-0 items-center gap-1.5">
               <UniverseTendencyDot tendency={row.tendency} />
               <p className="title-5 truncate text-font-1">{row.title}</p>
+              {row.isAdult && <AdultMark title="성인 콘텐츠" />}
             </div>
             <p className="body-6 mt-0.5 truncate text-font-2">
               {row.introduce}
@@ -79,17 +77,6 @@ const UserUniversePanel = ({ userId, nickname }: UserUniversePanelProps) => {
             </p>
           </div>
         </div>
-      ),
-    },
-    {
-      key: "category",
-      header: "장르",
-      align: "center",
-      width: "90px",
-      render: (row) => (
-        <span className="body-5 text-font-2">
-          {UNIVERSE_CATEGORY_LABEL[row.category]}
-        </span>
       ),
     },
     {
@@ -167,7 +154,7 @@ const UserUniversePanel = ({ userId, nickname }: UserUniversePanelProps) => {
         getRowKey={(row) => row.universeId}
         isLoading={isLoading}
         skeletonRows={4}
-        onRowClick={(row) => router.push(`/universes/${row.universeId}`)}
+        getRowHref={(row) => `/universes/${row.universeId}`}
         emptyTitle="등록한 세계관이 없습니다."
         emptyDescription={`'${nickname}' 유저가 만든 세계관이 아직 없습니다.`}
       />

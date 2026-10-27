@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useListParams } from "@/hooks/useListParams";
 import { useBannedWordListQuery } from "@/api/word/getBannedWordList";
 import { useBannedWordMutation } from "@/api/word/mutateBannedWord";
 import { Trash } from "@/icons";
@@ -9,12 +9,14 @@ import { showErrorToast } from "@/lib/toast";
 import { formatAdmin } from "@/lib/utils";
 import type { BannedWordSchema } from "@/schema/bannedWord.schema";
 import { openConfirm } from "@/store/useConfirmStore";
+import { useCan } from "@/hooks/useCan";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type {
   BannedWord,
   BannedWordSort,
   BannedWordType,
 } from "@/type/bannedWord";
+import Can from "@/components/domain/Can";
 import Alert from "@/components/ui/Alert";
 import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
@@ -26,7 +28,7 @@ import Tabs from "@/components/ui/Tabs";
 import {
   BANNED_WORD_SORT_OPTIONS,
   BANNED_WORD_TYPE_TABS,
-} from "../../_constants/bannedWord";
+} from "@/app/(admin)/universes/banned-words/_constants/bannedWordOptions";
 import BannedWordAddForm from "./BannedWordAddForm";
 
 /** 탭마다 안내가 다르다. 두 표에서 운영자가 하는 일이 다르기 때문이다. */
@@ -41,11 +43,19 @@ const TAB_GUIDE: Record<BannedWordType, { title: string; body: string }> = {
   },
 };
 
+/** 주소에 실리는 목록 조건. 탭(`type`)도 함께 실어 새로고침해도 보던 사전에 머문다. */
+const DEFAULT_PARAMS = {
+  type: "BAN",
+  page: 1,
+  keyword: "",
+  sort: "CREATED_DESC",
+};
+
 const BannedWordManager = () => {
-  const [type, setType] = useState<BannedWordType>("BAN");
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [sort, setSort] = useState<BannedWordSort>("CREATED_DESC");
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const type = params.type as BannedWordType;
+  const sort = params.sort as BannedWordSort;
 
   const isBan = type === "BAN";
 
@@ -57,22 +67,14 @@ const BannedWordManager = () => {
     sort,
   });
   const { createMutation, deleteMutation } = useBannedWordMutation();
+  const canDelete = useCan("bannedWord:delete");
 
-  /** 탭·필터가 바뀌면 이전 페이지 번호가 의미를 잃으므로 항상 1페이지로 되돌린다. */
-  const handleChangeType = (next: BannedWordType) => {
-    setType(next);
-    setPage(1);
-  };
+  /* 탭·필터가 바뀌면 `useListParams`가 페이지를 1로 되돌린다. */
+  const handleChangeType = (next: BannedWordType) => setParams({ type: next });
 
-  const handleSearch = (next: string) => {
-    setKeyword(next);
-    setPage(1);
-  };
+  const handleSearch = (next: string) => setParams({ keyword: next });
 
-  const handleChangeSort = (next: BannedWordSort) => {
-    setSort(next);
-    setPage(1);
-  };
+  const handleChangeSort = (next: BannedWordSort) => setParams({ sort: next });
 
   /** 중복 단어는 서버가 409로 돌려주므로 이 화면에서만 에러 토스트를 붙인다. */
   const handleCreate = (values: BannedWordSchema, onSuccess: () => void) => {
@@ -125,22 +127,26 @@ const BannedWordManager = () => {
         <span className="body-5 text-font-2">{formatDate(row.createdAt)}</span>
       ),
     },
-    {
-      key: "actions",
-      header: "",
-      width: "56px",
-      align: "center",
-      render: (row) => (
-        <div className="flex justify-center">
-          <IconButton
-            label="삭제"
-            icon={<Trash size={16} />}
-            tone="danger"
-            onClick={() => handleDelete(row)}
-          />
-        </div>
-      ),
-    },
+    ...(canDelete
+      ? [
+          {
+            key: "actions",
+            header: "",
+            width: "56px",
+            align: "center" as const,
+            render: (row: BannedWord) => (
+              <div className="flex justify-center">
+                <IconButton
+                  label="삭제"
+                  icon={<Trash size={16} />}
+                  tone="danger"
+                  onClick={() => handleDelete(row)}
+                />
+              </div>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const columns: TableColumn<BannedWord>[] = [wordColumn, ...tailColumns];
@@ -151,11 +157,13 @@ const BannedWordManager = () => {
         {TAB_GUIDE[type].body}
       </Alert>
 
-      <BannedWordAddForm
-        type={type}
-        onSubmit={handleCreate}
-        isSubmitting={createMutation.isPending}
-      />
+      <Can permission="bannedWord:write">
+        <BannedWordAddForm
+          type={type}
+          onSubmit={handleCreate}
+          isSubmitting={createMutation.isPending}
+        />
+      </Can>
 
       <Card noPadding>
         <Tabs
@@ -202,7 +210,7 @@ const BannedWordManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
     </>

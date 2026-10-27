@@ -2,9 +2,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
 /**
  * 숫자에 3자리마다 콤마를 추가하는 함수
@@ -78,9 +76,29 @@ export const formatStatCount = (
 export const formatCurrency = (amount: number): string =>
   `${formatWithCommas(amount)}원`;
 
-/** 크레딧은 정수 단위로만 관리한다. */
+/** 노트는 정수 단위로만 관리한다. 화면 단위도 사용자 화면과 같은 '노트'로 쓴다. */
 export const formatCredit = (credit: number): string =>
-  `${formatWithCommas(Math.trunc(credit))} CR`;
+  `${formatWithCommas(Math.trunc(credit))} 노트`;
+
+/**
+ * 노트 증감을 부호가 붙은 문자열로 변환한다. (ex: +1,000 노트 · -500 노트 · 0 노트)
+ *
+ * 지급과 차감이 한 열에 섞이는 표에서 `-`만 붙고 `+`가 빠지면 지급이 "잔액"처럼
+ * 읽힌다. 그래서 양수에도 부호를 붙이고, 0에는 붙이지 않는다.
+ *
+ * 같은 표의 다른 열(조정 후 잔액 등)이 단위 없이 숫자만 적는 자리에서는
+ * `withUnit: false`로 " 노트"를 뗀다.
+ */
+export const formatSignedCredit = (
+  credit: number,
+  { withUnit = true }: { withUnit?: boolean } = {},
+): string => {
+  const value = Math.trunc(credit);
+  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+  const magnitude = Math.abs(value);
+
+  return `${sign}${withUnit ? formatCredit(magnitude) : formatWithCommas(magnitude)}`;
+};
 
 /** 증감률을 부호가 붙은 문자열로 변환한다. (ex: +12.4%) */
 export const formatDelta = (rate: number): string => {
@@ -140,3 +158,12 @@ export const formatBytes = (bytes: number): string => {
   // B 단위는 소수점이 의미 없다. 512.0 B 는 읽는 사람을 멈칫하게 한다.
   return `${exponent === 0 ? value : value.toFixed(1)} ${BYTE_UNITS[exponent]}`;
 };
+
+/** 목록 요약용: 마크다운 기호(제목·굵게·기울임·목록·인라인코드·링크)를 걷어 한 줄 글자만 남긴다. */
+export const stripMarkdown = (markdown: string) =>
+  markdown
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^\s{0,3}(#{1,6}|[-*+]|\d+\.|>)\s+/gm, "")
+    .replace(/(\*\*|__|\*|_|`)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();

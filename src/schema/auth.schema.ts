@@ -4,7 +4,8 @@ export const loginSchema = z.object({
   email: z
     .string()
     .min(1, "이메일을 입력해 주세요.")
-    .email("올바른 이메일 형식이 아닙니다."),
+    // z.email() 로 시작하면 형식 오류가 먼저 쌓여 빈 칸에도 "형식이 아닙니다"가 뜬다.
+    .check(z.email("올바른 이메일 형식이 아닙니다.")),
   password: z.string().min(1, "비밀번호를 입력해 주세요."),
 });
 
@@ -30,11 +31,11 @@ export const passwordChangeSchema = z
   })
   .refine((values) => values.newPassword === values.confirmPassword, {
     path: ["confirmPassword"],
-    message: "새 비밀번호가 서로 다릅니다.",
+    error: "새 비밀번호가 서로 다릅니다.",
   })
   .refine((values) => values.newPassword !== values.currentPassword, {
     path: ["newPassword"],
-    message: "현재 비밀번호와 다른 비밀번호를 입력해 주세요.",
+    error: "현재 비밀번호와 다른 비밀번호를 입력해 주세요.",
   });
 
 export type PasswordChangeSchema = z.infer<typeof passwordChangeSchema>;

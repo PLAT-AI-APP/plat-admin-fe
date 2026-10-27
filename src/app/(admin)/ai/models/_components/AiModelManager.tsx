@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAiModelListQuery } from "@/api/ai/getAiModelList";
 import { useAiModelMutation } from "@/api/ai/mutateAiModel";
+import { useCan } from "@/hooks/useCan";
 import { Edit } from "@/icons";
 import { formatDateTime } from "@/lib/dayjs";
 import { showAppToast } from "@/lib/toast";
@@ -14,7 +15,8 @@ import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import IconButton from "@/components/ui/IconButton";
 import Switch from "@/components/ui/Switch";
-import Table, { TableCellStack } from "@/components/ui/Table";
+import Table from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import type { TableColumn } from "@/components/ui/Table";
 import {
   AI_MODEL_ROLES,
@@ -22,7 +24,7 @@ import {
   AI_MODEL_ROLE_TONE,
   AI_PROVIDER_LABEL,
   AI_PROVIDER_TONE,
-} from "../../_constants/aiOptions";
+} from "@/app/(admin)/ai/_constants/aiOptions";
 import AiModelFormModal from "./AiModelFormModal";
 import AiModelRoleAssigner from "./AiModelRoleAssigner";
 
@@ -31,6 +33,7 @@ const AiModelManager = () => {
 
   const { data, isLoading } = useAiModelListQuery();
   const { updateMutation } = useAiModelMutation();
+  const canWrite = useCan("aiModel:write");
 
   const models = data ?? [];
 
@@ -92,7 +95,7 @@ const AiModelManager = () => {
             label={`${model.displayName} 사용 여부`}
             checked={model.isEnabled}
             onChange={(isEnabled) => handleToggleEnabled(model, isEnabled)}
-            disabled={updateMutation.isPending}
+            disabled={!canWrite || updateMutation.isPending}
           />
         </div>
       ),
@@ -119,13 +122,6 @@ const AiModelManager = () => {
           </div>
         );
       },
-    },
-    {
-      key: "creditCost",
-      header: "차감 크레딧",
-      align: "right",
-      numeric: true,
-      render: (model) => formatWithCommas(model.creditCost),
     },
     {
       key: "maxOutputTokens",
@@ -165,15 +161,16 @@ const AiModelManager = () => {
       header: "",
       width: "56px",
       align: "center",
-      render: (model) => (
-        <div className="flex justify-center">
-          <IconButton
-            label="수정"
-            icon={<Edit size={16} />}
-            onClick={() => setEditingModel(model)}
-          />
-        </div>
-      ),
+      render: (model) =>
+        canWrite && (
+          <div className="flex justify-center">
+            <IconButton
+              label="수정"
+              icon={<Edit size={16} />}
+              onClick={() => setEditingModel(model)}
+            />
+          </div>
+        ),
     },
   ];
 

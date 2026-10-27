@@ -2,12 +2,12 @@ import { ArrowDown, ArrowUp } from "@/icons";
 import { cn, formatDelta } from "@/lib/utils";
 import type { DashboardMetric, DashboardMetricKey } from "@/type/dashboard";
 import Card from "@/components/ui/Card";
-import Sparkline from "./Sparkline";
+import Sparkline from "@/components/chart/Sparkline";
 import {
   formatDeltaAmount,
   formatMetricValue,
   resolveDelta,
-} from "./dashboardMetric";
+} from "@/app/(admin)/_lib/dashboardMetric";
 
 interface MetricCardProps {
   metric: DashboardMetric;

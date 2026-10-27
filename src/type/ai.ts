@@ -32,6 +32,10 @@ export interface AiModelCatalogItem {
   /** 1M 토큰 기준 입력 단가 (원) */
   inputPricePerMillion: number;
   outputPricePerMillion: number;
+  /** 캐시에서 읽은 입력 1M 토큰당 원. 보통 입력의 1/10. */
+  cacheReadPricePerMillion: number;
+  /** 캐시에 쓴 입력 1M 토큰당 원. Anthropic 만 입력의 1.25배, 나머지는 입력과 같다. */
+  cacheWritePricePerMillion: number;
 }
 
 /** 모델 테스트 호출 결과 */
@@ -41,6 +45,13 @@ export interface AiModelPingResult {
   latencyMs: number;
   message: string;
   pingedAt: string;
+}
+
+/** 응답 형식 하나의 기준 대화 한 턴 노트. */
+export interface FormatNoteEstimate {
+  responseFormat: string;
+  responseFormatName: string;
+  estimatedNotes: number;
 }
 
 /** 운영에서 사용 중인 모델 설정 */
@@ -57,16 +68,31 @@ export interface AiModel {
    */
   roles: AiModelRole[];
   /**
-   * 배수 x1.0 기준 차감 크레딧. 실제 차감은 프롬프트 양 배수를 곱해 올림한 값이다.
+   * 판매 배수 k 덮어쓰기(만분율, 19600 = 1.96배). `null`이면 과금 정책의 k를 쓴다.
    *
-   * 이 값이 과금의 단일 출처다 — 서버가 대화를 태울 때마다 이 열을 읽는다. 바꾸면 다음 대화부터 바로 먹는다.
+   * 채팅 요금은 쓴 토큰으로 매긴다: 노트 = max(1, ceil(청구원가 × k ÷ 노트 기준가)).
    */
-  creditCost: number;
-  /** 이 모델의 출력 상한. 배수로 늘어난 값이 이 선을 넘지 못한다. */
+  priceMultiplierBps: number | null;
+  /** 이 모델에 실제로 적용되는 k(덮어쓰기가 없으면 과금 정책의 k). */
+  effectivePriceMultiplier: number;
+  /** 청구용 평균 캐시 비율(만분율, 7500 = 75%). 입력을 이 비율로 캐시 읽기 단가와 섞어 매긴다. */
+  cacheRatioBps: number;
+  /** 응답 형식별 기준 대화 한 턴의 예상 노트. 단가표와 맞춰 보는 미리보기다. */
+  formatNoteEstimates: FormatNoteEstimate[];
+  /** 이 모델의 출력 상한. 응답 형식의 출력 상한(+생각 몫)이 이 선을 넘지 못한다. */
   maxOutputTokens: number;
   temperature: number;
   memo: string;
-  updatedAt: string;
+  /**
+   * 1M 토큰당 원. 제공사가 가격을 바꾸면 여기서 고친다. 대화는 시작할 때 단가를 복사해 두므로
+   * 바꾼 뒤 시작한 대화부터 새 단가로 원가가 적힌다.
+   */
+  inputPricePerMillion: number;
+  outputPricePerMillion: number;
+  cacheReadPricePerMillion: number;
+  cacheWritePricePerMillion: number;
+  /** 한 번도 고친 적 없는 모델은 서버가 `null`을 준다. */
+  updatedAt: string | null;
 }
 
 /**
@@ -76,7 +102,11 @@ export interface AiModel {
  * 여기 적는 것은 서버가 내려주는 값을 좁혀 두는 것일 뿐, 목록의 출처가 아니다.
  */
 export type SystemPromptKey =
-  "SAFETY_FILTER" | "UNIVERSE_CHAT" | "UNIVERSE_REVIEW";
+  | "SAFETY_FILTER"
+  | "SAFETY_FILTER_ADULT"
+  | "UNIVERSE_CHAT"
+  | "UNIVERSE_REVIEW"
+  | "RECOMMENDATION";
 
 /**
  * 시스템 프롬프트.

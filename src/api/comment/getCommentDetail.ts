@@ -8,7 +8,7 @@ export const getCommentDetail = async (
   commentId: string,
 ): Promise<Comment> => {
   const response = await liveAxios.get<CommentItemResponse>(
-    `/admin/comments/${commentId}`,
+    `/comments/${commentId}`,
   );
 
   return toComment(response.data);

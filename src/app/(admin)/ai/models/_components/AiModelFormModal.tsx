@@ -18,7 +18,7 @@ import {
   AI_MODEL_ROLE_TONE,
   AI_PROVIDER_LABEL,
   AI_PROVIDER_TONE,
-} from "../../_constants/aiOptions";
+} from "@/app/(admin)/ai/_constants/aiOptions";
 
 interface AiModelFormModalProps {
   /** 수정 대상. null이면 모달을 닫는다. */
@@ -29,7 +29,6 @@ interface AiModelFormModalProps {
 }
 
 const EMPTY_VALUES: AiModelSchema = {
-  creditCost: 0,
   maxOutputTokens: 1_024,
   temperature: 0.7,
   memo: "",
@@ -58,7 +57,6 @@ const AiModelFormModal = ({
     if (!model) return;
 
     reset({
-      creditCost: model.creditCost,
       maxOutputTokens: model.maxOutputTokens,
       temperature: model.temperature,
       memo: model.memo,
@@ -70,10 +68,11 @@ const AiModelFormModal = ({
 
   return (
     <Modal
+      isDirty={isDirty}
       isOpen={model !== null}
       onClose={onClose}
       title="모델 설정 수정"
-      description="여기서 바꾼 값은 다음 대화부터 바로 적용됩니다. 모델명·제공사는 바꿀 수 없습니다."
+      description="여기서 바꾼 값은 다음 대화부터 바로 적용됩니다. 모델명·제공사는 바꿀 수 없고, 요금은 결제·노트 > 노트 요금에서 고칩니다."
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
@@ -140,23 +139,6 @@ const AiModelFormModal = ({
 
           <div className="grid grid-cols-2 gap-4">
             <FormField
-              label="차감 크레딧"
-              htmlFor="ai-model-credit-cost"
-              required
-              error={errors.creditCost?.message}
-              hint="배수 x1.0 기준"
-            >
-              <Input
-                id="ai-model-credit-cost"
-                type="number"
-                min={0}
-                max={999}
-                hasError={Boolean(errors.creditCost)}
-                {...register("creditCost", { valueAsNumber: true })}
-              />
-            </FormField>
-
-            <FormField
               label="최대 출력 토큰"
               htmlFor="ai-model-max-output-tokens"
               required
@@ -173,25 +155,25 @@ const AiModelFormModal = ({
                 {...register("maxOutputTokens", { valueAsNumber: true })}
               />
             </FormField>
-          </div>
 
-          <FormField
-            label="temperature"
-            htmlFor="ai-model-temperature"
-            required
-            error={errors.temperature?.message}
-            hint="0 ~ 2 · 이 모델에만 적용됩니다."
-          >
-            <Input
-              id="ai-model-temperature"
-              type="number"
-              min={0}
-              max={2}
-              step={0.1}
-              hasError={Boolean(errors.temperature)}
-              {...register("temperature", { valueAsNumber: true })}
-            />
-          </FormField>
+            <FormField
+              label="temperature"
+              htmlFor="ai-model-temperature"
+              required
+              error={errors.temperature?.message}
+              hint="0 ~ 2 · 이 모델에만 적용됩니다."
+            >
+              <Input
+                id="ai-model-temperature"
+                type="number"
+                min={0}
+                max={2}
+                step={0.1}
+                hasError={Boolean(errors.temperature)}
+                {...register("temperature", { valueAsNumber: true })}
+              />
+            </FormField>
+          </div>
 
           <FormField
             label="메모"
@@ -207,6 +189,7 @@ const AiModelFormModal = ({
               {...register("memo")}
             />
           </FormField>
+
         </form>
       )}
     </Modal>

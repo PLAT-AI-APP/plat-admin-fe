@@ -4,16 +4,16 @@
  * 역할(role) 개념은 두지 않는다. 비즈니스상 **모든 유저가 곧 크리에이터**라
  * 구분할 값이 없다. 크리에이터라는 말은 캐릭터·세계관 등 창작 데이터를 가리킬 때만 쓴다.
  *
- * **다섯 개 모두 서버가 실제로 내려줄 수 있는 값이다.** 콘솔에서 거는 제재는
- * 정지(`SUSPENDED`)와 해제(`ACTIVE`)뿐이지만, `BANNED`·`WARNED`를 타입에서 빼면
+ * **넷 모두 서버(`UserStatusType`)가 실제로 내려줄 수 있는 값이다.** 콘솔에서 거는
+ * 제재는 정지(`SUSPENDED`)와 해제(`ACTIVE`)뿐이지만, `BANNED`를 타입에서 빼면
  * 그 상태인 계정을 열었을 때 라벨과 뱃지 색이 `undefined`로 깨진다 —
  * 화면이 모르는 상태는 "없는 상태"가 아니라 **읽을 수 없는 상태**가 된다.
+ * (`WARNED`는 서버가 없앴다 — plat-be `docs/decisions/005-user-suspension-expiry.md`)
  */
 export type UserStatus =
   | "ACTIVE"
   | "SUSPENDED"
   | "BANNED"
-  | "WARNED"
   | "WITHDRAWN";
 /** 지금 지원하는 가입 경로. 애플 로그인은 아직 붙이지 않았다. */
 export type LoginProvider = "GOOGLE" | "KAKAO" | "EMAIL";
@@ -41,6 +41,9 @@ export const DEVICE_PLATFORM_LABEL: Record<DevicePlatform, string> = {
  * 한 사람을 확인하려고 스무 명의 번호를 화면에 띄울 이유가 없다.
  *
  * 셋 다 상세(`UserDetail`)에 있다. 필요한 한 명을 열어서 본다.
+ *
+ * 본인인증 · 성인인증 만료 시각과 19 토글은 **유저 행의 컬럼**이라 목록에도 싣는다.
+ * 집계와 달리 추가 조회가 없고, "성인인증 유저만 골라 보기"처럼 걸러서 볼 일이 있다.
  */
 export interface User {
   /**
@@ -63,12 +66,16 @@ export interface User {
   birthDate?: string;
   gender: Gender;
   /**
-   * 마케팅 정보 수신 동의 (푸시 발송 대상 산정에 쓰인다).
+   * 서비스 역할. ADMIN 이면 서비스 관리자다 — 서비스 화면에서 쓰는 계정에 준 관리자 역할로,
+   * 관리자 콘솔 계정과는 별개다.
+   */
+  role: "USER" | "CREATOR" | "ADMIN";
+  /**
+   * 마케팅 정보 수신 동의 (푸시 발송 대상 산정에 쓰인다). 가장 최근 동의 기록 기준이다.
    *
-   * **아직 모으지 않는 값이라 항상 비어 있다.** 서버에 동의 컬럼 자체가 없다.
-   * 값이 없는 유저가 아니라 아직 아무에게도 묻지 않은 것이므로, 화면은 `-`가
-   * 아니라 `미수집`으로 그린다 — `-`로 두면 운영자가 "이 사람만 동의를 안 했다"로
-   * 읽고 푸시 대상 판단을 그르친다.
+   * 비어 있으면 **마케팅 기록이 하나도 없는 유저**다(소셜 가입 뒤 동의 화면을 아직
+   * 거치지 않음). 거절(false)과 뜻이 다르므로 화면은 `미동의`가 아니라
+   * `NO_AGREEMENT_RECORD_LABEL`로 그린다.
    */
   isMarketingAgreed?: boolean;
   lastLoginAt?: string;
@@ -83,20 +90,35 @@ export interface User {
 }
 
 export interface UserDetail extends User {
+  /** 앱 프로필의 자기소개. 크리에이터 한 줄 소개로도 쓴다. 비워 둔 유저가 많다. */
+  bio?: string;
   /**
-   * 성인 인증 여부. NSFW 콘텐츠 노출 판단의 기준이다.
+   * 본인 · 성인인증은 지금 상태만 온다(인증 결과를 저장하지 않아 이력은 없다). 목록에는 없고 상세에서만 본다.
    *
-   * **목록에는 없다.** 한 명을 확인하러 오는 값이라 스무 줄에 늘어놓을 이유가 없고,
-   * 서버도 목록 한 페이지마다 인증 시각을 따로 훑어야 해서 조회가 한 번 더 나갔다.
+   * 본인인증(휴대폰)이 **지금** 유효한가. 서버가 조회 시각 기준으로 판정한다.
    */
-  isAdultVerified: boolean;
-  adultVerifiedAt?: string;
+  isIdentityVerified: boolean;
+  /** 마지막 본인인증 시각. */
+  identityVerifiedAt?: string;
   /**
-   * 본인인증에서 수집한 번호.
+   * 본인인증 만료 시각. 비어 있으면 인증한 적이 없는 것이다.
+   * **값이 있어도 지났으면 미인증이다** — 상태는 `detailVerificationStateOf()`로 읽는다.
+   */
+  identityVerifiedUntil?: string;
+  /** 성인인증이 **지금** 유효한가. NSFW 콘텐츠 노출 판단의 기준이다. */
+  isAdultVerified: boolean;
+  /** 마지막 성인인증 시각. 최신 본인인증이 미성년이면 비어 있다. */
+  adultVerifiedAt?: string;
+  /** 성인인증 만료 시각. 읽는 법은 `identityVerifiedUntil`과 같다. */
+  adultVerifiedUntil?: string;
+  /** 앱의 19 콘텐츠 보기 토글. 성인인증이 유효해야 켤 수 있고, 만료 · 미성년 재인증이면 꺼진다. */
+  adultContentEnabled: boolean;
+  /**
+   * 휴대폰번호.
    *
-   * **아직 모으지 않는 값이라 항상 비어 있다.** 본인인증으로 번호를 받아 두는
-   * 코드가 서버에 없다. 곧 붙을 기능이라 자리를 비워 두고, 붙는 날 서버가 이 칸만
-   * 채우면 화면이 그대로 살아난다.
+   * 본인인증은 붙었지만 **서버가 번호를 관리자 응답에 싣지 않아 항상 비어 있다**
+   * (`UserDetailResponse.phoneNumber`는 늘 null). 인증 여부는 `isIdentityVerified`로
+   * 본다. 서버가 번호를 싣기 시작하면 이 칸만 채우면 화면이 살아난다.
    */
   phoneNumber?: string;
   creditBalance: number;
@@ -111,7 +133,62 @@ export interface UserDetail extends User {
   followingCount: number;
   /** 누적 신고 접수 건수. 제재 판단 근거로 쓴다. */
   reportedCount: number;
+  /**
+   * 이 유저가 크리에이터로 **만든** 세계관의 개수와 대화 · 좋아요 합.
+   *
+   * `chatCount`(이 유저가 연 채팅방 수)와 축이 다르다. 한 사람이 플레이어이자
+   * 제작자라, 제작자로서의 성과는 이 셋으로 본다. 서버는 상태로 거르지 않는다 —
+   * 세계관 목록의 유저 필터와 같은 범위다.
+   */
+  universeCount: number;
+  universeChatCount: number;
+  universeLikeCount: number;
 }
+
+/**
+ * 인증 상태.
+ * - `VERIFIED` 만료 시각이 지금보다 뒤
+ * - `EXPIRED` 만료 시각이 지났다(다시 인증해야 한다)
+ * - `NONE` 인증한 적이 없어 만료 시각이 비어 있다
+ */
+export type VerificationState = "VERIFIED" | "EXPIRED" | "NONE";
+
+export const VERIFICATION_STATE_LABEL: Record<VerificationState, string> = {
+  VERIFIED: "인증됨",
+  EXPIRED: "만료",
+  NONE: "미인증",
+};
+
+export const VERIFICATION_STATE_TONE: Record<
+  VerificationState,
+  "success" | "warning" | "neutral"
+> = {
+  VERIFIED: "success",
+  EXPIRED: "warning",
+  NONE: "neutral",
+};
+
+/** 만료 시각으로 인증 상태를 읽는다. 서버 판정과 같게 "만료 시각이 지금보다 뒤"만 유효로 본다. */
+export const verificationStateOf = (until?: string): VerificationState => {
+  if (!until) return "NONE";
+
+  return new Date(until).getTime() > Date.now() ? "VERIFIED" : "EXPIRED";
+};
+
+/**
+ * 상세 화면의 인증 상태. 화면을 열어 둔 사이 만료가 지나도 맞도록 만료 시각을 먼저 본다.
+ *
+ * 만료 시각이 비어 있는데 서버가 유효하다고 한 경우(만료 시각이 생기기 전 기록)만
+ * 서버 판정을 따른다.
+ */
+export const detailVerificationStateOf = (
+  isVerified: boolean,
+  until?: string,
+): VerificationState => {
+  const state = verificationStateOf(until);
+
+  return state === "NONE" && isVerified ? "VERIFIED" : state;
+};
 
 /**
  * 크레딧 조정 대상으로 고르는 유저.
@@ -169,9 +246,51 @@ export const calculateAge = (birthDate?: string): number | undefined => {
  */
 export const UNCOLLECTED_LABEL = "미수집";
 
+/** 동의 기록이 아직 없는 유저의 표시 문구. 거절한 유저(`미동의`)와 구분한다. */
+export const NO_AGREEMENT_RECORD_LABEL = "기록 없음";
+
 /** 휴대폰번호를 010-1234-5678 형태로 표시한다. 아직 수집하지 않는 값이라 대개 비어 있다. */
 export const formatPhoneNumber = (phoneNumber?: string): string => {
   if (!phoneNumber) return UNCOLLECTED_LABEL;
 
   return phoneNumber.replace(/^(\d{3})(\d{3,4})(\d{4})$/, "$1-$2-$3");
 };
+
+/**
+ * 상태를 바꾼 주체.
+ * - ADMIN: 유저 관리 화면에서 운영자가 바꿨다.
+ * - REPORT: 신고 처리에서 운영자가 고른 조치로 바뀌었다(케이스가 붙는다).
+ * - SYSTEM: 정지 기간이 끝나 자동으로 풀렸다.
+ * - USER: 본인이 탈퇴했다.
+ */
+export type UserStatusSource = "ADMIN" | "REPORT" | "SYSTEM" | "USER";
+
+export const USER_STATUS_SOURCE_LABEL: Record<UserStatusSource, string> = {
+  ADMIN: "유저 관리",
+  REPORT: "신고 처리",
+  SYSTEM: "정지 만료 자동 해제",
+  USER: "본인 탈퇴",
+};
+
+/** 상태가 바뀐 기록 한 줄. 제재 · 해제 · 탈퇴가 모두 여기 남는다. */
+export interface UserStatusHistory {
+  historyId: string;
+  status: UserStatus;
+  reason: string | null;
+  /** 정지 만료 시각. 영구 정지 · 해제면 비어 있다. */
+  endedAt: string | null;
+  source: UserStatusSource;
+  /** 운영자가 바꾼 경우의 이름. 시스템 · 본인이면 비어 있다. */
+  adminName: string | null;
+  /** 신고 처리로 바뀐 경우의 케이스. */
+  reportCaseId: string | null;
+  createdAt: string;
+}
+
+/** 운영 메모. 유저에게 보이지 않는 운영자끼리의 기록이다. */
+export interface UserMemo {
+  memoId: string;
+  content: string;
+  adminName: string;
+  createdAt: string;
+}

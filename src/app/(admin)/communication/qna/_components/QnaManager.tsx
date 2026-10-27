@@ -1,20 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useListParams } from "@/hooks/useListParams";
 import { useQnaListQuery } from "@/api/communication/getQnaList";
 import { formatDateTime } from "@/lib/dayjs";
-import { formatAdmin, truncate } from "@/lib/utils";
+import { formatAdmin, formatCurrency, truncate } from "@/lib/utils";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type { QnaCategory, QnaItem, QnaStatus } from "@/type/communication";
+import DueBadge from "@/components/domain/DueBadge";
 import Badge from "@/components/ui/Badge";
+import Checkbox from "@/components/ui/Checkbox";
 import Card from "@/components/ui/Card";
 import Pagination from "@/components/ui/Pagination";
 import SearchInput from "@/components/ui/SearchInput";
 import Select from "@/components/ui/Select";
-import Table, {
-  TableCellStack,
-  type TableColumn,
-} from "@/components/ui/Table";
+import Table, { type TableColumn } from "@/components/ui/Table";
+import TableCellStack from "@/components/ui/TableCellStack";
 import Tabs from "@/components/ui/Tabs";
 import {
   QNA_CATEGORY_LABEL,
@@ -23,15 +25,28 @@ import {
   QNA_STATUS_LABEL,
   QNA_STATUS_TABS,
   QNA_STATUS_TONE,
-} from "../../_constants/labels";
+} from "@/app/(admin)/communication/_constants/communicationOptions";
+import { getRefundResult } from "@/app/(admin)/communication/qna/_lib/refundResult";
 import QnaDetailModal from "./QnaDetailModal";
 
+/** 주소에 실리는 목록 조건 */
+const DEFAULT_PARAMS = {
+  page: 1,
+  keyword: "",
+  status: "",
+  category: "",
+  /** "true"면 답변 기한을 넘긴 대기 문의만 */
+  overdue: "",
+};
+
 const QnaManager = () => {
-  const [page, setPage] = useState(1);
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState<QnaStatus | "">("");
-  const [category, setCategory] = useState<QnaCategory | "">("");
-  const [selectedQnaId, setSelectedQnaId] = useState<number | null>(null);
+  const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const { page, keyword } = params;
+  const status = params.status as QnaStatus | "";
+  const category = params.category as QnaCategory | "";
+  /* 기한은 답변 대기 문의에만 있다. 대기 탭이 아니면 걸지 않는다. */
+  const isOverdueOnly = params.overdue === "true" && status === "OPEN";
+  const [selectedQnaId, setSelectedQnaId] = useState<string | null>(null);
 
   const { data, isLoading } = useQnaListQuery({
     page,
@@ -39,23 +54,16 @@ const QnaManager = () => {
     keyword,
     status,
     category,
+    overdue: isOverdueOnly,
   });
 
-  /** 필터가 바뀌면 이전 페이지 번호가 의미를 잃으므로 항상 1페이지로 되돌린다. */
-  const handleChangeStatus = (next: QnaStatus | "") => {
-    setStatus(next);
-    setPage(1);
-  };
+  /* 필터가 바뀌면 `useListParams`가 페이지를 1로 되돌린다. */
+  const handleChangeStatus = (next: QnaStatus | "") => setParams({ status: next });
 
-  const handleChangeCategory = (next: QnaCategory | "") => {
-    setCategory(next);
-    setPage(1);
-  };
+  const handleChangeCategory = (next: QnaCategory | "") =>
+    setParams({ category: next });
 
-  const handleSearch = (next: string) => {
-    setKeyword(next);
-    setPage(1);
-  };
+  const handleSearch = (next: string) => setParams({ keyword: next });
 
   const columns: TableColumn<QnaItem>[] = [
     {
@@ -71,16 +79,40 @@ const QnaManager = () => {
     {
       key: "title",
       header: "제목",
-      render: (row) => (
-        <p className="max-w-100 truncate text-font-1">{row.title}</p>
-      ),
+      // 환불 문의는 금액과 환불 상태를 함께 보여 줘야 목록에서 바로 처리 순서를 잡을 수 있다. 표기는 상세와 같다.
+      render: (row) => {
+        if (!row.refund) {
+          return <p className="max-w-100 truncate text-font-1">{row.title}</p>;
+        }
+
+        const result = getRefundResult(row.refund);
+
+        return (
+          <TableCellStack
+            primary={<span className="block max-w-100 truncate">{row.title}</span>}
+            secondary={
+              <span className="flex items-center gap-1.5">
+                <Badge tone={result.tone}>{result.label}</Badge>
+                {formatCurrency(row.refund.refundAmount)}
+              </span>
+            }
+          />
+        );
+      },
     },
     {
       key: "user",
       header: "작성자",
       width: "140px",
+      // 행을 누르면 문의 상세가 열리므로 작성자 링크는 클릭이 행으로 번지지 않게 막는다.
       render: (row) => (
-        <span className="text-font-2">{truncate(row.userNickname, 12)}</span>
+        <Link
+          href={`/users/${row.userId}`}
+          onClick={(event) => event.stopPropagation()}
+          className="text-font-2 transition hover:text-brand"
+        >
+          {truncate(row.userNickname, 12)}
+        </Link>
       ),
     },
     {
@@ -92,6 +124,13 @@ const QnaManager = () => {
           {QNA_STATUS_LABEL[row.status]}
         </Badge>
       ),
+    },
+    {
+      /* 접수 + 3영업일. 답변 대기 문의에만 있다. */
+      key: "dueAt",
+      header: "기한",
+      width: "100px",
+      render: (row) => <DueBadge dueAt={row.dueAt} />,
     },
     {
       key: "createdAt",
@@ -116,7 +155,7 @@ const QnaManager = () => {
                 {formatDateTime(row.answeredAt)}
               </span>
             }
-            secondary={formatAdmin(row.answeredBy, row.answeredById)}
+            secondary={formatAdmin(row.answeredBy ?? undefined, row.answeredById ?? undefined)}
           />
         ) : (
           <span className="text-font-2">-</span>
@@ -138,23 +177,36 @@ const QnaManager = () => {
           <SearchInput
             value={keyword}
             onSearch={handleSearch}
-            placeholder="제목 · 내용 · 작성자로 검색"
+            placeholder="제목 · 내용 · 작성자 · ID로 검색"
           />
 
-          <Select
-            options={QNA_CATEGORY_OPTIONS}
-            value={category}
-            onChange={(event) =>
-              handleChangeCategory(event.target.value as QnaCategory | "")
-            }
-            selectBoxClassName="w-44"
-          />
+          <div className="flex items-center gap-2">
+            {status === "OPEN" && (
+              <Checkbox
+                label="기한 초과만"
+                checked={isOverdueOnly}
+                onChange={(event) =>
+                  setParams({ overdue: event.target.checked ? "true" : "" })
+                }
+                boxClassName="mr-1 shrink-0"
+              />
+            )}
+
+            <Select
+              options={QNA_CATEGORY_OPTIONS}
+              value={category}
+              onChange={(event) =>
+                handleChangeCategory(event.target.value as QnaCategory | "")
+              }
+              selectBoxClassName="w-44"
+            />
+          </div>
         </div>
 
         <Table
           columns={columns}
           rows={data?.content ?? []}
-          getRowKey={(row) => String(row.qnaId)}
+          getRowKey={(row) => row.qnaId}
           isLoading={isLoading}
           onRowClick={(row) => setSelectedQnaId(row.qnaId)}
           emptyTitle="조회된 문의가 없습니다."
@@ -165,7 +217,7 @@ const QnaManager = () => {
           page={page}
           totalCount={data?.totalCount ?? 0}
           pageSize={DEFAULT_PAGE_SIZE}
-          onChange={setPage}
+          onChange={(next) => setParams({ page: next })}
         />
       </Card>
 

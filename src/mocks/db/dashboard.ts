@@ -4,8 +4,15 @@ import type {
   DashboardSummary,
   DashboardTrendPoint,
 } from "@/type/dashboard";
-import { qnaItems } from "./communication";
-import { daysAgo, randomInt } from "../utils";
+import { daysAgo, randomInt } from "@/mocks/utils";
+
+/**
+ * 답변 대기 Q&A 건수.
+ *
+ * Q&A 목록은 실서버로 나가 목업 시드가 없다. 대기 건수(대시보드 · 사이드바 뱃지)를 실서버로
+ * 옮기는 일은 아직 범위 밖이라 고정값으로 둔다. 실제 대기 건수와 다를 수 있다.
+ */
+export const MOCK_PENDING_QNA_COUNT = 7;
 
 /**
  * 대시보드 추이 구간 (일).
@@ -91,7 +98,7 @@ const METRIC_SPECS: Pick<
   },
   { key: "chatCount", label: "총 대화 수", unit: "COUNT", countSuffix: "건" },
   { key: "paidAmount", label: "결제 금액", unit: "CURRENCY" },
-  { key: "creditUsed", label: "크레딧 사용량", unit: "CREDIT" },
+  { key: "creditUsed", label: "노트 사용량", unit: "CREDIT" },
 ];
 
 export const dashboardMetrics: DashboardMetric[] = METRIC_SPECS.map((spec) => ({
@@ -134,12 +141,12 @@ export const dashboardCreditUsage: DashboardSummary["creditUsage"] =
  * 대기 건수는 다른 도메인 목업과 어긋나지 않도록 실제 시드 배열에서 계산한다.
  *
  * 세계관 심사 대기 건수는 여기 없다. 세계관 목록은 이미 실서버로 나가므로
- * 화면이 `/admin/universes`를 직접 세고, 목업이 그와 다른 수를 말하지 않게 한다.
+ * 화면이 `/universes`를 직접 세고, 목업이 그와 다른 수를 말하지 않게 한다.
  */
 export const dashboardSummary: DashboardSummary = {
   metrics: dashboardMetrics,
   trend: dashboardTrend,
   creditUsage: dashboardCreditUsage,
   serverStatus: "UP",
-  pendingQnaCount: qnaItems.filter((qna) => qna.status === "OPEN").length,
+  pendingQnaCount: MOCK_PENDING_QNA_COUNT,
 };

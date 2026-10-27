@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type {
-  UniverseCategory,
   UniverseDetail,
   UniverseReviewStatus,
   UniverseStatus,
@@ -11,6 +10,7 @@ import type {
   ScenarioLifecycle,
   ScenarioType,
 } from "@/type/character";
+import type { CreatorTierCode } from "@/type/creatorTier";
 import type { HashtagCategory } from "@/type/hashtag";
 import type { ServiceLanguage } from "@/type/language";
 
@@ -25,7 +25,7 @@ interface CreatorSummaryResponse {
   creatorId: string;
   userId: string | null;
   nickname: string | null;
-  grade: string;
+  tier: CreatorTierCode;
   status: string;
 }
 
@@ -53,7 +53,14 @@ interface CharacterResponse {
 }
 
 interface AssetResponse {
-  assetId: string;
+  /**
+   * 계약은 문자열이지만 지금 서버는 `{ value: 123 }` 객체로 준다.
+   * plat-be `UniverseAssetId`만 다른 ID VO와 달리 `@JsonValue`가 없어서다.
+   * **숫자로 오므로 19자리 값은 JSON 파싱에서 이미 뭉개져 있다** — 서로 다른 에셋이
+   * 같은 ID가 되니, 화면은 에셋을 가를 때 `fileId`를 쓴다.
+   * 서버가 고쳐지면 `string`만 남기고 `toAssetId`를 지운다.
+   */
+  assetId: string | { value: number | string };
   fileId: string;
   assetName: string;
   assetSituation: string | null;
@@ -78,7 +85,6 @@ interface ScenarioResponse {
 interface UniverseDetailResponse {
   id: string;
   creator: CreatorSummaryResponse;
-  category: UniverseCategory;
   tendency: UniverseTendency;
   visibility: UniverseVisibility;
   status: UniverseStatus;
@@ -91,6 +97,11 @@ interface UniverseDetailResponse {
   profileImageUrl: string | null;
   createdAt: string;
   updatedAt: string | null;
+  /** 구버전 서버는 주지 않는다. */
+  adoptedAt?: string | null;
+  /** 구버전 서버는 주지 않는다. */
+  rightsAgreedAt?: string | null;
+  adult: boolean;
   translations: TranslationResponse[];
   hashtags: HashtagResponse[];
   character: CharacterResponse | null;
@@ -98,16 +109,19 @@ interface UniverseDetailResponse {
   scenarios: ScenarioResponse[];
 }
 
+/** 에셋 ID를 문자열로 맞춘다. 객체로 오는 이유는 `AssetResponse.assetId`에 있다. */
+const toAssetId = (assetId: AssetResponse["assetId"]): string =>
+  typeof assetId === "object" ? String(assetId.value) : String(assetId);
+
 const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
   universeId: response.id,
   creator: {
     creatorId: response.creator.creatorId,
     userId: response.creator.userId,
     nickname: response.creator.nickname,
-    grade: response.creator.grade,
+    tier: response.creator.tier,
     status: response.creator.status,
   },
-  category: response.category,
   tendency: response.tendency,
   visibility: response.visibility,
   status: response.status,
@@ -120,6 +134,10 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
   profileImageUrl: response.profileImageUrl,
   createdAt: response.createdAt,
   updatedAt: response.updatedAt,
+  adoptedAt: response.adoptedAt ?? null,
+  rightsAgreedAt: response.rightsAgreedAt ?? null,
+  // 아직 값을 주지 않는 서버에서는 일반으로 읽는다.
+  isAdult: response.adult ?? false,
   translations: response.translations.map((t) => ({
     language: t.language,
     title: t.title,
@@ -143,7 +161,7 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
       }
     : null,
   assets: response.assets.map((a) => ({
-    assetId: a.assetId,
+    assetId: toAssetId(a.assetId),
     fileId: a.fileId,
     assetName: a.assetName,
     assetSituation: a.assetSituation,
@@ -165,7 +183,7 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
 
 export const getUniverseDetail = async (universeId: string) => {
   const response = await liveAxios.get<UniverseDetailResponse>(
-    `/admin/universes/${universeId}`,
+    `/universes/${universeId}`,
   );
 
   return toDetail(response.data);

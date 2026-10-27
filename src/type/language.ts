@@ -21,25 +21,3 @@ export const SERVICE_LANGUAGE_LABEL: Record<ServiceLanguage, string> = {
   TH: "태국어",
   VI: "베트남어",
 };
-
-/** 언어별 문구 묶음. 한국어는 필수이고, 비어 있는 언어는 한국어로 대체한다. */
-export type LocalizedText = Record<ServiceLanguage, string>;
-
-export const EMPTY_LOCALIZED_TEXT: LocalizedText = {
-  KO: "",
-  EN: "",
-  JA: "",
-  ZH: "",
-  TH: "",
-  VI: "",
-};
-
-/** 해당 언어 문구. 번역이 없으면 한국어로 대체한다. */
-export const resolveLocalizedText = (
-  text: Partial<LocalizedText> | undefined,
-  language: ServiceLanguage = "KO",
-): string => text?.[language]?.trim() || text?.KO?.trim() || "";
-
-/** 번역이 채워진 언어 수 */
-export const countFilledLanguages = (text: Partial<LocalizedText>) =>
-  SERVICE_LANGUAGES.filter((language) => text[language]?.trim()).length;

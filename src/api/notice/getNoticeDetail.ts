@@ -30,7 +30,7 @@ export const toNoticeDetail = (notice: NoticeDetailResponse): NoticeDetail => ({
 
 export const getNoticeDetail = async (noticeId: number): Promise<NoticeDetail> => {
   const response = await liveAxios.get<NoticeDetailResponse>(
-    `/admin/notices/${noticeId}`,
+    `/notices/${noticeId}`,
   );
 
   return toNoticeDetail(response.data);
