@@ -112,6 +112,18 @@ export const MOCK_ORIGIN = "http://localhost:9090";
  */
 export const LIVE_PROXY_PATH = "/live-api";
 
+/**
+ * 로컬 실행(`next dev`)에서 이미지를 받는 길.
+ *
+ * plat-be nginx 가 모든 응답에 `Cross-Origin-Resource-Policy: same-site` 를 붙인다.
+ * 그래서 `localhost` 화면은 `api-dev.plat.so` 이미지를 `<img>`로 불러오지 못한다 —
+ * 공개 변형본도, 서명 원본도 브라우저가 막는다. 배포본은 plat.so 하위 도메인이라 괜찮다.
+ *
+ * 로컬에서만 이미지 주소를 이 경로로 바꾸고 `src/app/live-images` 라우트가 이미지
+ * 서버에서 받아 돌려준다. 같은 오리진이라 헤더에 걸리지 않는다.
+ */
+export const IMAGE_PROXY_PATH = "/live-images";
+
 export interface AppEnv {
   profile: AppProfile;
   label: string;

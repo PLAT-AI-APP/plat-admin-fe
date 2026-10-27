@@ -13,6 +13,8 @@
  * 긴 변 최대 1600px 로 줄인 `LG`를 쓰고, 원본이 꼭 필요한 곳은 서버가 서명 URL 을 준다.
  */
 
+import { IMAGE_PROXY_PATH } from "@/config/appEnv";
+
 /**
  * 이미지 서버 베이스.
  *
@@ -75,3 +77,21 @@ export const resolveImageUrl = <T extends ImageFileType>(
   type: T,
   variant: ImageVariantOf<T> = "LG" as ImageVariantOf<T>,
 ): string | undefined => url || buildImageUrl(fileId, type, variant);
+
+const IS_DEV_SERVER = process.env.NODE_ENV === "development";
+
+/**
+ * `<img>`에 넣기 직전의 주소. 로컬 실행에서만 이미지 서버 주소를 같은 오리진 프록시로 바꾼다.
+ *
+ * 서버가 준 서명 원본처럼 화면이 조립하지 않은 주소도 이미지 서버를 가리키면 함께 바꾼다.
+ * 이유는 `IMAGE_PROXY_PATH` 주석에 있다. 업로드 미리보기(`blob:`) 같은 다른 주소는 그대로 둔다.
+ */
+export const toLoadableImageUrl = <T extends string | null | undefined>(url: T): T | string => {
+  if (!IS_DEV_SERVER || !url || !IMAGE_BASE_URI) return url;
+
+  const imagePrefix = `${IMAGE_BASE_URI}/images/`;
+
+  return url.startsWith(imagePrefix)
+    ? `${IMAGE_PROXY_PATH}/${url.slice(imagePrefix.length)}`
+    : url;
+};

@@ -190,6 +190,13 @@ export const ADMIN_MENU: AdminMenuGroup[] = [
     icon: <Flag size={ICON_SIZE} />,
     children: [
       {
+        /* 세계관 · 이미지 AI 검수. AI가 확정하지 못한 건과 반려 사유를 본다. */
+        label: "콘텐츠 검수",
+        href: "/universes/content-reviews",
+        permission: "universe:read",
+        icon: <ShieldCheck size={SUB_ICON_SIZE} />,
+      },
+      {
         label: "신고",
         href: "/community/reports",
         pendingKey: "report",
