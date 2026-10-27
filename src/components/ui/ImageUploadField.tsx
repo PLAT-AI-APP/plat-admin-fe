@@ -7,7 +7,7 @@ import {
   type FileUploadType,
 } from "@/api/file/postFileUpload";
 import { ImageIcon, Trash, Upload } from "@/icons";
-import { buildImageUrl } from "@/lib/imageUrl";
+import { buildImageUrl, toLoadableImageUrl } from "@/lib/imageUrl";
 import { showAppToast, showErrorToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import Button from "./Button";
@@ -170,7 +170,7 @@ const ImageUploadField = ({
           className="relative w-full overflow-hidden rounded-field border border-border-main bg-subtle"
         >
           <Image
-            src={previewUrl}
+            src={toLoadableImageUrl(previewUrl)}
             alt="업로드한 이미지 미리보기"
             fill
             sizes="(max-width: 960px) 100vw, 960px"

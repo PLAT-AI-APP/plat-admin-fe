@@ -5,6 +5,7 @@ import { useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Close, ExternalLink } from "@/icons";
 import { useIsClient } from "@/hooks/useIsClient";
+import { toLoadableImageUrl } from "@/lib/imageUrl";
 import IconButton from "./IconButton";
 
 /**
@@ -134,7 +135,7 @@ const Lightbox = ({ items, index, onChangeIndex, onClose }: LightboxProps) => {
           onClick={(event) => event.stopPropagation()}
         >
           <Image
-            src={item.url}
+            src={toLoadableImageUrl(item.url)}
             alt={item.title}
             fill
             unoptimized

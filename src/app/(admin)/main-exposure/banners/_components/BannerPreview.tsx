@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { BANNER_ASPECT_RATIO } from "@/constants/mainExposure";
 import { ChevronLeft, ChevronRight, ImageIcon } from "@/icons";
-import { buildImageUrl } from "@/lib/imageUrl";
+import { buildImageUrl, toLoadableImageUrl } from "@/lib/imageUrl";
 import { cn } from "@/lib/utils";
 
 interface BannerPreviewProps {
@@ -40,7 +40,7 @@ const BannerPreview = ({
     >
       {imageUrl ? (
         <Image
-          src={imageUrl}
+          src={toLoadableImageUrl(imageUrl)}
           alt=""
           fill
           sizes="(max-width: 1440px) 100vw, 1440px"
