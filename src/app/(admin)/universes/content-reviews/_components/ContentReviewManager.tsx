@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useContentReviewCountsQuery,
   useContentReviewListQuery,
@@ -22,7 +22,7 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import EntityImage from "@/components/ui/EntityImage";
-import Select from "@/components/ui/Select";
+import Select, { type SelectOption } from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
@@ -33,8 +33,10 @@ import {
   TARGET_TYPE_OPTIONS,
   canDecide,
   canRetry,
+  imageFileTypeLabel,
   isManualDecision,
   taskStatusBadge,
+  taskTargetImage,
   taskTargetHref,
   taskTitle,
 } from "../_lib/reviewMeta";
@@ -42,7 +44,18 @@ import ReviewDecisionPanel from "./ReviewDecisionPanel";
 import ReviewInputView from "./ReviewInputView";
 
 /** 주소에 실리는 목록 조건. 처음 열면 관리자 확인이 필요한 건부터 본다. */
-const DEFAULT_PARAMS = { status: "MANUAL", targetType: "" };
+type ReviewSortOrder = "LATEST" | "OLDEST";
+
+const DEFAULT_PARAMS = {
+  status: "MANUAL",
+  targetType: "",
+  order: "LATEST" as ReviewSortOrder,
+};
+
+const REVIEW_SORT_OPTIONS: SelectOption<ReviewSortOrder>[] = [
+  { label: "최신순", value: "LATEST" },
+  { label: "오래된 순", value: "OLDEST" },
+];
 
 /** 처리된 건은 처리 시각, 아직 안 끝난 건은 접수 시각을 보여 준다. */
 const isFinishedTab = (status: ContentReviewQueueStatus) =>
@@ -57,64 +70,80 @@ const hasActions = (task: ContentReviewTask, canWrite: boolean) =>
   canWrite && (canDecide(task) || canRetry(task));
 
 /** 반려 사유 · 수정 안내 · 원본 이미지 · 관리자 판정. 행에 다 싣기엔 길어 펼쳐서 본다. */
-const ReviewDetail = ({ task, canWrite }: { task: ContentReviewTask; canWrite: boolean }) => (
-  /*
-    표는 내용 길이만큼 넓어진다(`min-w-max`). 펼친 내용이 그 너비 계산에 끼면 상세 설정 한 줄 길이만큼
-    가로 스크롤이 생기므로, 너비 계산에서는 빠지고(w-0) 실제로는 칸을 채워(min-w-full) 줄바꿈되게 한다.
-  */
-  <div className="flex w-0 min-w-full flex-col gap-3 px-5 py-4">
-    {task.reason && (
-      <div className="flex flex-col gap-1">
-        <span className="body-6 text-font-2">사유</span>
-        <p className="body-5 whitespace-pre-wrap wrap-anywhere text-font-1">{task.reason}</p>
-      </div>
-    )}
-    {task.findings.length > 0 && (
-      <div className="flex flex-col gap-1">
-        <span className="body-6 text-font-2">수정 안내</span>
-        <ul className="flex flex-col gap-1">
-          {task.findings.map((finding, index) => (
-            <li key={index} className="body-5 flex gap-2 text-font-1">
-              <Badge>
-                {SERVICE_LANGUAGE_LABEL[finding.language] ?? finding.language} ·{" "}
-                {FINDING_FIELD_LABEL[finding.field] ?? finding.field}
-              </Badge>
-              <span>{finding.guide}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    )}
-    {hasInputText(task) && <ReviewInputView key={task.taskId} input={task.input} />}
-    {task.input.images.length > 0 && (
-      <div className="flex flex-col gap-1">
-        <span className="body-6 text-font-2">원본 이미지 (누르면 새 탭에서 크게 봅니다. 주소가 만료되면 새로고침하세요)</span>
-        <div className="flex flex-wrap gap-2">
-          {task.input.images.map((image) => (
-            <a
-              key={image.fileId}
-              href={image.originalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex w-24 flex-col gap-1"
-            >
-              <EntityImage src={image.originalUrl} alt={`파일 ${image.fileId}`} fileId={image.fileId} />
-              <span className="caption-3 text-center text-font-2">
-                {IMAGE_FILE_TYPE_LABEL[image.fileType] ?? image.fileType}
-              </span>
-            </a>
-          ))}
+const ReviewDetail = ({ task, canWrite }: { task: ContentReviewTask; canWrite: boolean }) => {
+  const targetImage = taskTargetImage(task);
+
+  return (
+    /*
+      표는 내용 길이만큼 넓어진다(`min-w-max`). 펼친 내용이 그 너비 계산에 끼면 상세 설정 한 줄 길이만큼
+      가로 스크롤이 생기므로, 너비 계산에서는 빠지고(w-0) 실제로는 칸을 채워(min-w-full) 줄바꿈되게 한다.
+    */
+    <div className="flex w-0 min-w-full flex-col gap-3 px-5 py-4">
+      {task.reason ? (
+        <div className="flex flex-col gap-1">
+          <span className="body-6 text-font-2">AI 판단 사유</span>
+          <p className="body-5 whitespace-pre-wrap wrap-anywhere text-font-1">{task.reason}</p>
         </div>
-      </div>
-    )}
-    <p className="body-6 text-font-2">
-      작업 ID <span className="font-mono">{task.taskId}</span> · 시도 {task.attempts}회
-      {task.model && ` · ${task.model}`}
-      {task.policyVersion !== null && ` · 정책 v${task.policyVersion}`}
-    </p>
-    {hasActions(task, canWrite) && <ReviewDecisionPanel key={task.taskId} task={task} />}
-  </div>
-);
+      ) : (
+        <p className="body-6 text-font-disabled">AI 판단 사유가 제공되지 않았습니다.</p>
+      )}
+
+      {task.findings.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <span className="body-6 text-font-2">수정 안내</span>
+          <ul className="flex flex-col gap-1">
+            {task.findings.map((finding, index) => (
+              <li key={index} className="body-5 flex gap-2 text-font-1">
+                <Badge>
+                  {SERVICE_LANGUAGE_LABEL[finding.language] ?? finding.language} ·{" "}
+                  {FINDING_FIELD_LABEL[finding.field] ?? finding.field}
+                </Badge>
+                <span>{finding.guide}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {hasInputText(task) && <ReviewInputView key={task.taskId} input={task.input} />}
+      {task.input.images.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <span className="body-6 text-font-2">
+            {targetImage ? "검수 대상 이미지" : "검수 당시 첨부 이미지"} (누르면 새 탭에서 크게 봅니다. 주소가 만료되면 새로고침하세요)
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {task.input.images.map((image) => (
+              <a
+                key={image.fileId}
+                href={image.originalUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex w-24 flex-col gap-1"
+              >
+                <EntityImage
+                  src={image.originalUrl}
+                  alt={`${imageFileTypeLabel(image.fileType)} 미리보기`}
+                  fileId={image.fileId}
+                />
+                <span className="caption-3 text-center text-font-2">
+                  {IMAGE_FILE_TYPE_LABEL[image.fileType] ?? image.fileType}
+                </span>
+                <span className="caption-3 text-center font-mono text-font-2">
+                  {image.fileId}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+      <p className="body-6 text-font-2">
+        작업 ID <span className="font-mono">{task.taskId}</span> · 시도 {task.attempts}회
+        {task.model && ` · ${task.model}`}
+        {task.policyVersion !== null && ` · 정책 v${task.policyVersion}`}
+      </p>
+      {hasActions(task, canWrite) && <ReviewDecisionPanel key={task.taskId} task={task} />}
+    </div>
+  );
+};
 
 const hasDetail = (task: ContentReviewTask, canWrite: boolean) =>
   !!task.reason ||
@@ -127,12 +156,22 @@ const ContentReviewManager = () => {
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
   const status = params.status as ContentReviewQueueStatus;
   const targetType = params.targetType as ContentReviewTargetType | "";
+  const order = params.order as ReviewSortOrder;
   const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
   const canWrite = useHasPermission("universe:write");
 
   const { data: counts } = useContentReviewCountsQuery(targetType);
   const listQuery = useContentReviewListQuery({ status, targetType, size: DEFAULT_PAGE_SIZE });
-  const rows = listQuery.data?.pages.flatMap((page) => page.content) ?? [];
+  const rows = useMemo(() => {
+    const tasks = listQuery.data?.pages.flatMap((page) => page.content) ?? [];
+    const getSortTime = (task: ContentReviewTask) =>
+      isFinishedTab(status) ? task.completedAt ?? task.createdAt : task.createdAt;
+
+    return [...tasks].sort((left, right) => {
+      const difference = new Date(getSortTime(right)).getTime() - new Date(getSortTime(left)).getTime();
+      return order === "LATEST" ? difference : -difference;
+    });
+  }, [listQuery.data, order, status]);
 
   const tabs: TabItem<ContentReviewQueueStatus>[] = [
     { label: "관리자 확인 필요", value: "MANUAL", count: counts?.manual },
@@ -168,26 +207,37 @@ const ContentReviewManager = () => {
       render: (row) => {
         const href = taskTargetHref(row);
         const title = taskTitle(row);
+        const image = taskTargetImage(row);
         return (
-          <TableCellStack
-            primary={
-              <span className="flex items-center gap-1.5">
-                <Badge>{TARGET_TYPE_LABEL[row.targetType] ?? row.targetType}</Badge>
-                {href ? (
-                  <Link
-                    href={href}
-                    className="hover:underline"
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    {title}
-                  </Link>
-                ) : (
-                  title
-                )}
-              </span>
-            }
-            secondary={<span className="font-mono">{row.targetId}</span>}
-          />
+          <div className="flex items-center gap-3">
+            {image && (
+              <EntityImage
+                src={image.originalUrl}
+                alt={`${imageFileTypeLabel(image.fileType)} 미리보기`}
+                fileId={image.fileId}
+                className="w-12 shrink-0"
+              />
+            )}
+            <TableCellStack
+              primary={
+                <span className="flex items-center gap-1.5">
+                  <Badge>{TARGET_TYPE_LABEL[row.targetType] ?? row.targetType}</Badge>
+                  {href ? (
+                    <Link
+                      href={href}
+                      className="hover:underline"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {title}
+                    </Link>
+                  ) : (
+                    title
+                  )}
+                </span>
+              }
+              secondary={<span className="font-mono">{row.targetId}</span>}
+            />
+          </div>
         );
       },
     },
@@ -260,13 +310,22 @@ const ContentReviewManager = () => {
     <Card noPadding>
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
         <Tabs items={tabs} value={status} onChange={(next) => setParams({ status: next })} />
-        <Select
-          options={TARGET_TYPE_OPTIONS}
-          value={targetType}
-          onChange={(event) => setParams({ targetType: event.target.value })}
-          aria-label="검수 대상"
-          selectBoxClassName="w-40"
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            options={TARGET_TYPE_OPTIONS}
+            value={targetType}
+            onChange={(event) => setParams({ targetType: event.target.value })}
+            aria-label="검수 대상"
+            selectBoxClassName="w-40"
+          />
+          <Select
+            options={REVIEW_SORT_OPTIONS}
+            value={order}
+            onChange={(event) => setParams({ order: event.target.value as ReviewSortOrder })}
+            aria-label="검수 정렬"
+            selectBoxClassName="w-28"
+          />
+        </div>
       </div>
       <Table
         columns={columns}

@@ -35,7 +35,6 @@ import Textarea from "@/components/ui/Textarea";
 
 const POLICY_FIELDS = [
   { key: "shareBps", label: "배분 비율", unit: "%", toInput: (v: number) => String(v / 100), fromInput: (v: string) => Math.round(Number(v) * 100) },
-  { key: "noteUnitPrice", label: "노트 기준가", unit: "원", toInput: String, fromInput: Number },
   { key: "minRedeemAmount", label: "상품권 최소 교환", unit: "P", toInput: String, fromInput: Number },
   { key: "validYears", label: "포인트 유효기간", unit: "년", toInput: String, fromInput: Number },
 ] as const;
@@ -45,7 +44,6 @@ type PolicyKey = (typeof POLICY_FIELDS)[number]["key"];
 const HISTORY_COLUMNS: TableColumn<EarningPolicy>[] = [
   { key: "effectiveFrom", header: "적용 시작", width: "150px", numeric: true, render: (row) => <span className="text-font-2">{formatDateTime(row.effectiveFrom)}</span> },
   { key: "shareBps", header: "비율", align: "right", numeric: true, render: (row) => `${row.shareBps / 100}%` },
-  { key: "unit", header: "기준가", align: "right", numeric: true, render: (row) => `${row.noteUnitPrice}원` },
   { key: "min", header: "최소 교환", align: "right", numeric: true, render: (row) => `${formatWithCommas(row.minRedeemAmount)}P` },
   { key: "valid", header: "유효기간", align: "right", numeric: true, render: (row) => `${row.validYears}년` },
   { key: "memo", header: "사유", render: (row) => <TableCellStack primary={row.memo ?? "-"} secondary={row.changedByName} /> },
