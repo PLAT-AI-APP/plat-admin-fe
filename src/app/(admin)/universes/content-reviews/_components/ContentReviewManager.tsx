@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useContentReviewCountsQuery,
   useContentReviewListQuery,
@@ -13,15 +13,16 @@ import { cn } from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import { DEFAULT_PAGE_SIZE } from "@/type/api";
 import type {
+  ContentReviewCounts,
   ContentReviewQueueStatus,
   ContentReviewTargetType,
   ContentReviewTask,
 } from "@/type/contentReview";
 import { SERVICE_LANGUAGE_LABEL } from "@/type/language";
 import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import EntityImage from "@/components/ui/EntityImage";
+import Pagination from "@/components/ui/Pagination";
 import Select, { type SelectOption } from "@/components/ui/Select";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import TableCellStack from "@/components/ui/TableCellStack";
@@ -47,6 +48,7 @@ import ReviewInputView from "./ReviewInputView";
 type ReviewSortOrder = "LATEST" | "OLDEST";
 
 const DEFAULT_PARAMS = {
+  page: 1,
   status: "MANUAL",
   targetType: "",
   order: "LATEST" as ReviewSortOrder,
@@ -60,6 +62,18 @@ const REVIEW_SORT_OPTIONS: SelectOption<ReviewSortOrder>[] = [
 /** 처리된 건은 처리 시각, 아직 안 끝난 건은 접수 시각을 보여 준다. */
 const isFinishedTab = (status: ContentReviewQueueStatus) =>
   status === "APPROVED" || status === "REJECTED";
+
+const countByStatus = (counts: ContentReviewCounts | undefined, status: ContentReviewQueueStatus) => {
+  if (!counts) return 0;
+
+  return {
+    READY: counts.ready,
+    RUNNING: counts.running,
+    MANUAL: counts.manual,
+    APPROVED: counts.approved,
+    REJECTED: counts.rejected,
+  }[status];
+};
 
 /** 이미지 단독 검수가 아니면 검수된 문구가 있다 */
 const hasInputText = (task: ContentReviewTask) =>
@@ -154,6 +168,7 @@ const hasDetail = (task: ContentReviewTask, canWrite: boolean) =>
 
 const ContentReviewManager = () => {
   const [params, setParams] = useListParams(DEFAULT_PARAMS);
+  const page = params.page;
   const status = params.status as ContentReviewQueueStatus;
   const targetType = params.targetType as ContentReviewTargetType | "";
   const order = params.order as ReviewSortOrder;
@@ -161,9 +176,15 @@ const ContentReviewManager = () => {
   const canWrite = useHasPermission("universe:write");
 
   const { data: counts } = useContentReviewCountsQuery(targetType);
-  const listQuery = useContentReviewListQuery({ status, targetType, size: DEFAULT_PAGE_SIZE });
+  const totalCount = countByStatus(counts, status);
+  const listQuery = useContentReviewListQuery({
+    status,
+    targetType,
+    page,
+    size: DEFAULT_PAGE_SIZE,
+  });
   const rows = useMemo(() => {
-    const tasks = listQuery.data?.pages.flatMap((page) => page.content) ?? [];
+    const tasks = listQuery.data?.content ?? [];
     const getSortTime = (task: ContentReviewTask) =>
       isFinishedTab(status) ? task.completedAt ?? task.createdAt : task.createdAt;
 
@@ -172,6 +193,15 @@ const ContentReviewManager = () => {
       return order === "LATEST" ? difference : -difference;
     });
   }, [listQuery.data, order, status]);
+
+  useEffect(() => {
+    const lastPage = Math.max(1, Math.ceil(totalCount / DEFAULT_PAGE_SIZE));
+    if (page > lastPage) setParams({ page: lastPage });
+  }, [page, setParams, totalCount]);
+
+  useEffect(() => {
+    setExpandedKeys([]);
+  }, [page, status, targetType]);
 
   const tabs: TabItem<ContentReviewQueueStatus>[] = [
     { label: "관리자 확인 필요", value: "MANUAL", count: counts?.manual },
@@ -337,18 +367,12 @@ const ContentReviewManager = () => {
         renderExpanded={(row) => <ReviewDetail task={row} canWrite={canWrite} />}
         emptyTitle={status === "MANUAL" ? "관리자가 확인할 검수가 없습니다." : "검수 작업이 없습니다."}
       />
-      {listQuery.hasNextPage && (
-        <div className="flex justify-center border-t border-border-main py-3">
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={listQuery.isFetchingNextPage}
-            onClick={() => listQuery.fetchNextPage()}
-          >
-            더 보기
-          </Button>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        totalCount={totalCount}
+        pageSize={DEFAULT_PAGE_SIZE}
+        onChange={(next) => setParams({ page: next })}
+      />
     </Card>
   );
 };
