@@ -42,6 +42,25 @@ export const IMAGE_FILE_TYPE_LABEL: Record<string, string> = {
   UNIVERSE_ASSET: "에셋",
 };
 
+/**
+ * 이미지 검수 작업의 대상 원본. 이미지 단독 작업은 보통 한 장만 오지만,
+ * 대상 ID와 맞춰 찾아 두면 서버가 검수 입력에 부가 이미지를 넣어도 엉뚱한
+ * 미리보기를 보여 주지 않는다. 파일 ID가 빠진 구형 응답은 한 장짜리 입력을
+ * 보여 주기 위해 첫 이미지를 보조값으로 쓴다.
+ */
+export const taskTargetImage = (task: ContentReviewTask) => {
+  if (task.targetType !== "FILE") return undefined;
+
+  return (
+    task.input.images.find((image) => image.fileId === task.targetId) ??
+    task.input.images[0]
+  );
+};
+
+/** 이미지 역할을 알 수 없을 때도 파일 번호 대신 일관된 이름을 쓴다. */
+export const imageFileTypeLabel = (fileType?: string) =>
+  (fileType && IMAGE_FILE_TYPE_LABEL[fileType]) ?? "이미지";
+
 /** 수동 판정은 `adminId`가 아니라 이 코드로 가린다. AI 재검수 요청자도 `adminId`를 남긴다. */
 export const isManualDecision = (task: ContentReviewTask) =>
   task.reasonCode === "MANUAL_APPROVAL" || task.reasonCode === "MANUAL_REJECTION";
@@ -59,16 +78,16 @@ export const taskStatusBadge = (task: ContentReviewTask): { label: string; tone:
 };
 
 /**
- * 목록에 보일 대상 이름. 한국어 입력을 먼저 쓰고, 이미지는 파일 ID 로 부른다.
+ * 목록에 보일 대상 이름. 한국어 입력을 먼저 쓰고, 이미지는 용도로 부른다.
  * 세계관은 `texts`가 비어 오고 제목이 `fields`에 있다.
  */
 export const taskTitle = (task: ContentReviewTask) => {
   const universeTitle = task.targetType === "UNIVERSE" ? findUniverseTitle(task.input) : undefined;
   if (universeTitle) return universeTitle;
+  if (task.targetType === "FILE") return imageFileTypeLabel(taskTargetImage(task)?.fileType);
   const texts = task.input.texts;
   const text = texts.find((each) => each.language === "KO") ?? texts[0];
   if (text?.name) return text.name;
-  if (task.targetType === "FILE") return `이미지 ${task.targetId}`;
   return `${TARGET_TYPE_LABEL[task.targetType]} ${task.targetId}`;
 };
 
