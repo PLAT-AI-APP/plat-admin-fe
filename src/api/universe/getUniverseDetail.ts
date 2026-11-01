@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
+import type { ContentReviewStatus } from "@/type/contentReview";
 import type {
   UniverseDetail,
   UniverseModerationStatus,
@@ -90,6 +91,7 @@ interface UniverseDetailResponse {
   status: UniverseStatus;
   moderationStatus: UniverseModerationStatus;
   moderationReason: string | null;
+  reviewStatus: ContentReviewStatus | null;
   commentEnabled: boolean;
   chatCount: number;
   likeCount: number;
@@ -127,6 +129,7 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
   status: response.status,
   moderationStatus: response.moderationStatus,
   moderationReason: response.moderationReason,
+  reviewStatus: response.reviewStatus,
   commentEnabled: response.commentEnabled,
   chatCount: response.chatCount,
   likeCount: response.likeCount,

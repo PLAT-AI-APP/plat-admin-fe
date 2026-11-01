@@ -1,3 +1,4 @@
+import type { ContentReviewStatus } from "./contentReview";
 import type { CreatorTierCode } from "./creatorTier";
 import type { HashtagCategory } from "./hashtag";
 import type { ServiceLanguage } from "./language";
@@ -210,13 +211,15 @@ export interface UniverseExposureState {
   status: UniverseStatus;
   visibility: UniverseVisibility;
   moderationStatus: UniverseModerationStatus;
+  /** 현재 검수 판정. 상세에만 온다. 없으면(목록·검수 작업 없음) 검수는 보지 않는다. */
+  reviewStatus?: ContentReviewStatus | null;
 }
 
 /**
  * 노출될 수 없는 이유. 화면에 그대로 찍는다.
  * 노출 가능하면 `undefined`.
  *
- * 콘텐츠 검수 미승인도 노출을 막지만 세계관 응답에 없는 값이라 여기서는 보지 않는다.
+ * 콘텐츠 검수 미승인도 노출을 막는다. 검수 판정은 상세 응답에만 있어 목록에서는 보지 않는다.
  */
 export const universeBlockReason = (
   universe: UniverseExposureState,
@@ -228,6 +231,8 @@ export const universeBlockReason = (
   if (universe.moderationStatus === "BLOCKED") return "운영 제한";
   if (universe.visibility === "PRIVATE") return "비공개";
   if (universe.visibility === "UNLISTED") return "일부공개";
+  if (universe.reviewStatus === "PENDING") return "검수 대기";
+  if (universe.reviewStatus === "REJECTED") return "검수 반려";
 
   return undefined;
 };
@@ -374,6 +379,8 @@ export interface UniverseDetail {
   status: UniverseStatus;
   moderationStatus: UniverseModerationStatus;
   moderationReason: string | null;
+  /** 현재 검수 판정. 승인이 아니면 앱에 보이지 않는다. 검수 작업이 없는(비공개·기존) 세계관은 null. */
+  reviewStatus: ContentReviewStatus | null;
   commentEnabled: boolean;
   chatCount: number;
   likeCount: number;
