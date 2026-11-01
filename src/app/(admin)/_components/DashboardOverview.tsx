@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useDashboardSummaryQuery } from "@/api/dashboard/getDashboardSummary";
 import { usePendingCountsQuery } from "@/api/ops/getPendingCounts";
-import { useAdminUniverseCountQuery } from "@/api/universe/getAdminUniverseList";
+import { useContentReviewCountsQuery } from "@/api/contentReview/getContentReviews";
 import {
   Calendar,
   CreditCard,
@@ -50,13 +50,7 @@ const SPARK_DAYS = 14;
 /** 크레딧 사용처 합계 구간(일). 목업이 만드는 구간과 같아야 한다. */
 const CREDIT_WINDOW_DAYS = 30;
 
-/**
- * 세계관 심사 대기 숫자의 신선도.
- * 세계관 보드에서 승인·반려하고 돌아오면 곧바로 줄어야 한다.
- */
-const PENDING_REVIEW_STALE_TIME = 1000 * 60;
-
-/** 대기 건수 카드 (심사 · 문의 · 환불 · 결제 · 기한 초과 공용) */
+/** 대기 건수 카드 (검수 · 문의 · 환불 · 결제 · 기한 초과 공용) */
 const PendingCard = ({
   title,
   description,
@@ -101,14 +95,10 @@ const DashboardOverview = () => {
   const { data, isLoading, isError, error } = useDashboardSummaryQuery();
 
   /*
-    세계관 심사 대기 건수는 요약 응답에 담지 않고 세계관 목록에서 직접 센다.
-    세계관은 이미 실서버로 나가는 도메인이라, 요약이 따로 세면 보드의 "심사 대기"
-    탭과 다른 수를 말하게 된다. 같은 질의를 쓰면 두 화면이 어긋날 수 없다.
+    검수 대기 건수는 요약 응답에 담지 않고 검수 관제와 같은 건수 API 에서 센다.
+    같은 질의를 쓰면 관제의 "관리자 확인 필요" 탭과 두 화면이 어긋날 수 없다.
   */
-  const { data: pendingReviewCount } = useAdminUniverseCountQuery(
-    { reviewStatus: "PENDING" },
-    PENDING_REVIEW_STALE_TIME,
-  );
+  const { data: reviewCounts } = useContentReviewCountsQuery("");
 
   /* 환불 · 결제 · 기한 초과는 사이드바 · 벨과 같은 처리 대기 건수를 쓴다. 볼 권한이 없으면 서버가 0 을 준다. */
   const { data: pendingCounts } = usePendingCountsQuery();
@@ -213,11 +203,11 @@ const DashboardOverview = () => {
         {/* 세계관을 볼 수 없으면 숫자도 부르지 않는다. 0 으로 두면 "대기 없음"으로 읽힌다. */}
         <Can permission="universe:read">
           <PendingCard
-            title="세계관 심사 대기"
-            description="승인 전에는 앱에 노출되지 않습니다."
-            count={pendingReviewCount}
-            href="/universes?reviewStatus=PENDING"
-            linkLabel="심사하러 가기"
+            title="콘텐츠 검수 대기"
+            description="AI가 확정하지 못해 관리자 판정을 기다립니다."
+            count={reviewCounts?.manual}
+            href="/universes/content-reviews"
+            linkLabel="검수하러 가기"
             icon={<Globe size={22} />}
           />
         </Can>

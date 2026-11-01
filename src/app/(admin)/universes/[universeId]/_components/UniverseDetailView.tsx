@@ -8,6 +8,7 @@ import { useUniverseDetailQuery } from "@/api/universe/getUniverseDetail";
 import {
   showUniverseErrorToast,
   useUniverseMutation,
+  type UniverseModerationBody,
   type UniversePatchBody,
 } from "@/api/universe/mutateUniverse";
 import { formatDateTime } from "@/lib/dayjs";
@@ -54,8 +55,8 @@ import {
   universeTitleOf,
 } from "@/app/(admin)/universes/[universeId]/_lib/universeMeta";
 import {
-  UNIVERSE_REVIEW_LABEL,
-  UNIVERSE_REVIEW_TONE,
+  UNIVERSE_MODERATION_LABEL,
+  UNIVERSE_MODERATION_TONE,
   UNIVERSE_STATUS_LABEL,
   UNIVERSE_STATUS_TONE,
   UNIVERSE_TENDENCY_LABEL,
@@ -83,12 +84,12 @@ const koreanOf = (universe: UniverseDetail) =>
 /**
  * 세계관 상세 · 운영 콘솔.
  *
- * 조회만 하던 화면을 심사·상태·분류·댓글 조치와 번역·에셋·시나리오 검수까지
+ * 조회만 하던 화면을 운영 제한·상태·분류·댓글 조치와 번역·에셋·시나리오 확인까지
  * 하는 운영 화면으로 넓혔다. 화면의 목적은 두 가지다.
  *
  * - **판단에 필요한 것을 실제로 보여 준다.** 이미지(대표·에셋·캐릭터)를 원본
  *   경로로 그리고, 비어 있는 번역까지 드러내고, 회차 본문을 언어별로 대조한다.
- * - **판단한 것을 바로 조치한다.** 서버가 받는 값(심사·상태·공개 범위·성향·
+ * - **판단한 것을 바로 조치한다.** 서버가 받는 값(운영 제한·상태·공개 범위·성향·
  *   댓글)은 전부 헤더 드롭다운에서 처리한다.
  *
  * 삭제는 소프트 삭제라 삭제 대기 · 파기 세계관도 이 화면으로 열린다. 삭제 · 복구 조치는 다루지 않는다.
@@ -98,8 +99,8 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   const { data, isError } = useUniverseDetailQuery(universeId);
   // 인수 심사 목록은 세계관 ID 로도 찾는다. 인수 번호와 처리 이력이 거기 있다.
   const handoverListHref = `/universes/handovers?status=ALL&keyword=${universeId}`;
-  const { patchMutation, reviewMutation } = useUniverseMutation();
-  /* 심사 · 상태 · 공개 범위 · 분류 · 댓글 조치는 서버에서 모두 `universe:write` 다. */
+  const { patchMutation, moderationMutation } = useUniverseMutation();
+  /* 운영 제한 · 상태 · 공개 범위 · 분류 · 댓글 조치는 서버에서 모두 `universe:write` 다. */
   const canWrite = useCan("universe:write");
   const [isRejectOpen, setRejectOpen] = useState(false);
   const [settingsMode, setSettingsMode] = useState<UniverseSettingsMode | null>(
@@ -107,7 +108,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
   );
 
   // 조치는 전부 같은 한 건을 고친다. 하나가 날아가는 동안 나머지도 잠근다.
-  const isBusy = patchMutation.isPending || reviewMutation.isPending;
+  const isBusy = patchMutation.isPending || moderationMutation.isPending;
 
   const {
     control,
@@ -119,11 +120,8 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
     defaultValues: { reason: "" },
   });
 
-  const runReview = (
-    body: { reviewStatus: "APPROVED" | "PENDING" | "REJECTED"; reason?: string },
-    message: string,
-  ) =>
-    reviewMutation.mutate(
+  const runModeration = (body: UniverseModerationBody, message: string) =>
+    moderationMutation.mutate(
       { universeId, body, message },
       { onError: (error) => showUniverseErrorToast(error) },
     );
@@ -145,20 +143,21 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
     ? buildUniverseActions({
         universe: data,
         isBusy,
-        onApproveReview: () =>
-          runReview({ reviewStatus: "APPROVED" }, "심사를 승인했습니다."),
-        onRejectReview: () => {
+        onBlock: () => {
           reset({ reason: "" });
           setRejectOpen(true);
         },
-        onRequestReview: () =>
+        onClearBlock: () =>
           openConfirm({
-            title: "심사를 되돌릴까요?",
+            title: "운영 제한을 해제할까요?",
             description:
-              "심사 대기로 되돌아가고 반려 사유도 함께 지워집니다. 잘못 승인·반려한 것을 무를 때 사용하세요.",
-            confirmText: "되돌리기",
+              "제한 사유가 함께 지워집니다. 콘텐츠 검수 결과와 공개 범위는 바뀌지 않습니다.",
+            confirmText: "제한 해제",
             onConfirm: () =>
-              runReview({ reviewStatus: "PENDING" }, "심사를 되돌렸습니다."),
+              runModeration(
+                { moderationStatus: "CLEAR" },
+                "운영 제한을 해제했습니다.",
+              ),
           }),
         onActivate: () =>
           runPatch({ status: "ACTIVE" }, "세계관을 활성화했습니다."),
@@ -186,9 +185,9 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
     : [];
 
   const onReject = handleSubmit((values) => {
-    runReview(
-      { reviewStatus: "REJECTED", reason: values.reason },
-      "심사를 반려했습니다.",
+    runModeration(
+      { moderationStatus: "BLOCKED", reason: values.reason },
+      "세계관을 운영 제한했습니다.",
     );
     setRejectOpen(false);
   });
@@ -271,8 +270,10 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                   <StatusChip tone={UNIVERSE_VISIBILITY_TONE[data.visibility]}>
                     {UNIVERSE_VISIBILITY_LABEL[data.visibility]}
                   </StatusChip>
-                  <StatusChip tone={UNIVERSE_REVIEW_TONE[data.reviewStatus]}>
-                    {UNIVERSE_REVIEW_LABEL[data.reviewStatus]}
+                  <StatusChip
+                    tone={UNIVERSE_MODERATION_TONE[data.moderationStatus]}
+                  >
+                    {UNIVERSE_MODERATION_LABEL[data.moderationStatus]}
                   </StatusChip>
                   {/* 좋고 나쁨이 없는 분류라 점 없이 둔다. 더보기에서 바꾸는 값이다. */}
                   <StatusChip>{UNIVERSE_TENDENCY_LABEL[data.tendency]}</StatusChip>
@@ -308,7 +309,18 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                 { label: "대화량", value: formatWithCommas(data.chatCount) },
                 { label: "좋아요", value: formatWithCommas(data.likeCount) },
               ]}
-              action={canWrite ? <Dropdown items={actions} /> : undefined}
+              action={
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/universes/content-reviews/universes/${universeId}`}
+                  >
+                    <Button variant="secondary" size="sm">
+                      검수 이력 보기
+                    </Button>
+                  </Link>
+                  {canWrite && <Dropdown items={actions} />}
+                </div>
+              }
               createdAt={data.createdAt}
               updatedAt={data.updatedAt}
             />
@@ -325,14 +337,14 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
             )}
 
             {/*
-              정지·회수된 크리에이터의 세계관은 심사를 통과시켜도 계정 쪽 조치로
-              다시 내려갈 수 있다. 승인 버튼을 누르기 전에 보이는 자리에 둔다.
+              정지·회수된 크리에이터의 세계관은 제한을 풀어도 계정 쪽 조치로
+              다시 내려갈 수 있다. 해제 버튼을 누르기 전에 보이는 자리에 둔다.
             */}
             {isCreatorRisky && (
               <Alert tone="warning" title="정지된 크리에이터의 세계관입니다">
                 소유 크리에이터가 {creatorStatusLabel(data.creator.status)}{" "}
-                상태입니다. 심사를 승인해도 계정 조치로 다시 내려갈 수 있으니,
-                계정 상태를 먼저 확인하세요.
+                상태입니다. 운영 제한을 해제해도 계정 조치로 다시 내려갈 수
+                있으니, 계정 상태를 먼저 확인하세요.
               </Alert>
             )}
 
@@ -361,10 +373,10 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
               </p>
             )}
 
-            {/* 심사 반려 사유는 크리에이터 문의로 이어지므로 눈에 띄게 둔다. */}
-            {data.reviewStatus === "REJECTED" && data.reviewRejectionReason && (
-              <Alert tone="danger" title="심사 반려">
-                {data.reviewRejectionReason}
+            {/* 운영 제한 사유는 크리에이터 문의로 이어지므로 눈에 띄게 둔다. */}
+            {data.moderationStatus === "BLOCKED" && data.moderationReason && (
+              <Alert tone="danger" title="운영 제한">
+                {data.moderationReason}
               </Alert>
             )}
           </Card>
@@ -437,13 +449,13 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
         </>
       )}
 
-      {/* 심사 반려 모달. 반려 사유는 필수이며, 반려 시 공개 범위가 비공개로 함께 내려간다. */}
+      {/* 운영 제한 모달. 사유는 필수이며, 공개 범위 · 검수 결과는 바뀌지 않는다. */}
       <Modal
         isDirty={isDirty}
         isOpen={isRejectOpen}
         onClose={() => setRejectOpen(false)}
-        title="심사 반려"
-        description="반려 사유는 크리에이터에게 전달됩니다. 반려하면 공개 범위가 비공개로 함께 바뀝니다."
+        title="운영 제한"
+        description="제한하면 앱 공개 목록 · 상세 · 새 채팅 · 기존 채팅에서 막힙니다. 공개 범위와 검수 결과는 바뀌지 않습니다."
         size="md"
         footer={
           <>
@@ -453,9 +465,9 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
             <Button
               variant="danger"
               onClick={onReject}
-              isLoading={reviewMutation.isPending}
+              isLoading={moderationMutation.isPending}
             >
-              반려
+              제한
             </Button>
           </>
         }
@@ -464,7 +476,7 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
           control={control}
           name="reason"
           render={({ field }) => (
-            <FormField label="반려 사유" required error={errors.reason?.message}>
+            <FormField label="제한 사유" required error={errors.reason?.message}>
               <Textarea
                 {...field}
                 rows={4}

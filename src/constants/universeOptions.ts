@@ -5,7 +5,7 @@ import type {
   ChatExportStatus,
   ScenarioLifecycle,
   ScenarioType,
-  UniverseReviewStatus,
+  UniverseModerationStatus,
   UniverseStatus,
   UniverseTendency,
   UniverseVisibility,
@@ -88,23 +88,27 @@ export const UNIVERSE_STATUS_FILTER_OPTIONS: SelectOption[] = [
   })),
 ];
 
-export const UNIVERSE_REVIEW_LABEL: Record<UniverseReviewStatus, string> = {
-  PENDING: "심사 대기",
-  APPROVED: "승인",
-  REJECTED: "반려",
+/** 운영 제한 라벨. 콘텐츠 검수 결과가 아니라 운영자가 직접 건 제한이다. */
+export const UNIVERSE_MODERATION_LABEL: Record<
+  UniverseModerationStatus,
+  string
+> = {
+  CLEAR: "정상",
+  BLOCKED: "운영 제한",
 };
 
-export const UNIVERSE_REVIEW_TONE: Record<UniverseReviewStatus, BadgeTone> = {
-  PENDING: "warning",
-  APPROVED: "success",
-  REJECTED: "danger",
+export const UNIVERSE_MODERATION_TONE: Record<
+  UniverseModerationStatus,
+  BadgeTone
+> = {
+  CLEAR: "success",
+  BLOCKED: "danger",
 };
 
-export const UNIVERSE_REVIEW_FILTER_OPTIONS: SelectOption[] = [
-  { label: "심사 전체", value: "" },
-  { label: UNIVERSE_REVIEW_LABEL.PENDING, value: "PENDING" },
-  { label: UNIVERSE_REVIEW_LABEL.APPROVED, value: "APPROVED" },
-  { label: UNIVERSE_REVIEW_LABEL.REJECTED, value: "REJECTED" },
+export const UNIVERSE_MODERATION_FILTER_OPTIONS: SelectOption[] = [
+  { label: "제한 전체", value: "" },
+  { label: UNIVERSE_MODERATION_LABEL.CLEAR, value: "CLEAR" },
+  { label: "제한됨", value: "BLOCKED" },
 ];
 
 export const UNIVERSE_TENDENCY_LABEL: Record<UniverseTendency, string> = {

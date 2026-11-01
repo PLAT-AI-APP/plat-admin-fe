@@ -4,7 +4,7 @@ import type {
   ScenarioLifecycle,
   ScenarioType,
   Universe,
-  UniverseReviewStatus,
+  UniverseModerationStatus,
   UniverseScenario,
   UniverseStatus,
   UniverseTendency,
@@ -117,7 +117,7 @@ const UNIVERSE_TENDENCIES: readonly UniverseTendency[] = [
   "FEMALE_ORIENTED",
 ];
 
-const REVIEW_REJECTION_REASONS = [
+const MODERATION_REASONS = [
   "타인의 저작물로 보이는 이미지가 포함되어 있습니다.",
   "설명에 선정적인 표현이 있어 수정이 필요합니다.",
   "제목과 내용이 서로 맞지 않습니다.",
@@ -153,14 +153,14 @@ export const universes: Universe[] = characterBases.flatMap(
       );
 
       /*
-        심사·운영 상태를 섞어 둔다. 서버는 승인되지 않았거나 내려둔 세계관을
+        운영 제한·운영 상태를 섞어 둔다. 서버는 제한했거나 내려둔 세계관을
         홈 섹션에서 빼기 때문에, 운영 화면에서 그 이유를 구분할 수 있어야 한다.
 
         목업은 살아 있는 것(활성 · 비활성)만 만든다. 실서버는 삭제 대기 · 파기 ·
         인수 대기 세계관도 함께 준다.
       */
-      const reviewStatus: UniverseReviewStatus =
-        seed % 17 === 0 ? "REJECTED" : seed % 9 === 0 ? "PENDING" : "APPROVED";
+      const moderationStatus: UniverseModerationStatus =
+        seed % 17 === 0 ? "BLOCKED" : "CLEAR";
       const status: UniverseStatus = seed % 19 === 0 ? "INACTIVE" : "ACTIVE";
 
       return {
@@ -194,10 +194,10 @@ export const universes: Universe[] = characterBases.flatMap(
             : ("PRIVATE" as const),
         status,
         tendency: pickOne(seed * 4, UNIVERSE_TENDENCIES),
-        reviewStatus,
-        reviewRejectionReason:
-          reviewStatus === "REJECTED"
-            ? pickOne(seed, REVIEW_REJECTION_REASONS)
+        moderationStatus,
+        moderationReason:
+          moderationStatus === "BLOCKED"
+            ? pickOne(seed, MODERATION_REASONS)
             : undefined,
         commentEnabled: seed % 5 !== 0,
         assetCount: randomInt(seed * 5, 0, 64),

@@ -3,7 +3,6 @@ import {
   Eye,
   Layers,
   MessageSquare,
-  Refresh,
   ShieldAlert,
   ShieldCheck,
 } from "@/icons";
@@ -11,18 +10,20 @@ import type { DropdownItem } from "@/components/ui/Dropdown";
 import type { UniverseDetail } from "@/type/character";
 
 interface BuildUniverseActionsParams {
-  universe: Pick<UniverseDetail, "status" | "reviewStatus" | "commentEnabled">;
+  universe: Pick<
+    UniverseDetail,
+    "status" | "moderationStatus" | "commentEnabled"
+  >;
   /**
    * 조치가 전송 중인지.
    *
    * 모든 항목을 함께 잠근다. 이 메뉴의 조치는 전부 같은 세계관 한 건을 고치고
    * 204만 돌려받으므로, 연타하면 어떤 값이 마지막에 남는지 알 수 없다.
-   * (예: 승인 → 반려를 연달아 누르면 반려 사유만 남고 상태는 승인일 수 있다.)
+   * (예: 제한 → 해제를 연달아 누르면 어느 쪽이 남을지 알 수 없다.)
    */
   isBusy: boolean;
-  onApproveReview: () => void;
-  onRejectReview: () => void;
-  onRequestReview: () => void;
+  onBlock: () => void;
+  onClearBlock: () => void;
   onActivate: () => void;
   onChangeVisibility: () => void;
   onChangeClassification: () => void;
@@ -34,50 +35,41 @@ interface BuildUniverseActionsParams {
 /**
  * 세계관 운영 액션 메뉴.
  *
- * 캐릭터 상세(`buildCharacterActions`)와 같은 방식으로 한 곳에서 만들어, 심사·
+ * 캐릭터 상세(`buildCharacterActions`)와 같은 방식으로 한 곳에서 만들어, 운영 제한·
  * 상태·분류·댓글 조치를 상세 헤더의 드롭다운으로 모은다. 이미 그 상태인 항목과
  * 조치 전송 중에는 항목을 비활성화한다.
  *
  * 삭제는 이 메뉴에 없다. 삭제 · 파기는 제작자 삭제와 파기 배치가, 인수 대기는 탈퇴가 정한다.
- * 비활성화는 없다. 공개된 세계관을 내릴 때는 사유를 남기는 심사 반려로 한다.
+ * 비활성화는 없다. 공개된 세계관을 내릴 때는 사유를 남기는 운영 제한으로 한다.
+ * 콘텐츠 검수 승인 · 반려는 검수 관제(`/universes/content-reviews`)에서 한다.
  */
 export const buildUniverseActions = ({
   universe,
   isBusy,
-  onApproveReview,
-  onRejectReview,
-  onRequestReview,
+  onBlock,
+  onClearBlock,
   onActivate,
   onChangeVisibility,
   onChangeClassification,
   onChangeAdult,
   onToggleComment,
 }: BuildUniverseActionsParams): DropdownItem[] => {
-  const reviewActions: DropdownItem[] = [
-    {
-      label: "심사 승인",
-      icon: <ShieldCheck size={15} />,
-      disabled: universe.reviewStatus === "APPROVED",
-      onSelect: onApproveReview,
-    },
-    {
-      label: "심사 반려",
-      icon: <ShieldAlert size={15} />,
-      tone: "danger" as const,
-      disabled: universe.reviewStatus === "REJECTED",
-      onSelect: onRejectReview,
-    },
-    {
-      // 승인·반려를 무르는 **유일한 수단**이다. 서버에 되돌리기 API가 따로 없고,
-      // 대기로 되돌리면 반려 사유도 함께 지워진다.
-      label: "심사 되돌리기 (대기)",
-      icon: <Refresh size={15} />,
-      disabled: universe.reviewStatus === "PENDING",
-      onSelect: onRequestReview,
-    },
-  ];
+  // 지금 상태의 반대 조치 하나만 둔다.
+  const moderationAction: DropdownItem =
+    universe.moderationStatus === "BLOCKED"
+      ? {
+          label: "제한 해제",
+          icon: <ShieldCheck size={15} />,
+          onSelect: onClearBlock,
+        }
+      : {
+          label: "운영 제한",
+          icon: <ShieldAlert size={15} />,
+          tone: "danger" as const,
+          onSelect: onBlock,
+        };
 
-  // 비활성화는 없앴다 — 공개된 세계관을 내릴 때는 사유가 남는 "심사 반려"로 한다.
+  // 비활성화는 없앴다 — 공개된 세계관을 내릴 때는 사유가 남는 "운영 제한"으로 한다.
   // 예전에 비활성으로 내려 둔 세계관만 다시 열 수 있게 활성화를 남긴다.
   const statusActions: DropdownItem[] =
     universe.status === "INACTIVE"
@@ -120,7 +112,7 @@ export const buildUniverseActions = ({
   };
 
   return [
-    ...reviewActions,
+    moderationAction,
     ...statusActions,
     ...settingActions,
     commentAction,

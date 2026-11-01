@@ -8,7 +8,7 @@ import {
 } from "@/type/api";
 import type {
   AdminUniverseListItem,
-  UniverseReviewStatus,
+  UniverseModerationStatus,
   UniverseStatus,
   UniverseTendency,
   UniverseVisibility,
@@ -42,7 +42,7 @@ export type UniverseOrder =
 export interface AdminUniverseFilterParams {
   visibility?: UniverseVisibility | "";
   status?: UniverseStatus | "";
-  reviewStatus?: UniverseReviewStatus | "";
+  moderationStatus?: UniverseModerationStatus | "";
   tendency?: UniverseTendency | "";
   commentEnabled?: "true" | "false" | "";
   /** 성인 분류. 서버는 Boolean 쿼리로 받으므로 문자열 "true"/"false"를 보낸다. */
@@ -86,7 +86,7 @@ interface AdminUniverseItemResponse {
   tendency: UniverseTendency;
   visibility: UniverseVisibility;
   status: UniverseStatus;
-  reviewStatus: UniverseReviewStatus;
+  moderationStatus: UniverseModerationStatus;
   official: boolean;
   chatCount: number;
   likeCount: number;
@@ -113,7 +113,7 @@ const toItem = (item: AdminUniverseItemResponse): AdminUniverseListItem => ({
   tendency: item.tendency,
   visibility: item.visibility,
   status: item.status,
-  reviewStatus: item.reviewStatus,
+  moderationStatus: item.moderationStatus,
   isOfficial: item.official,
   chatCount: item.chatCount,
   likeCount: item.likeCount,
@@ -139,7 +139,7 @@ const toRequestParams = (params: AdminUniverseListParams) => {
   if (params.keyword?.trim()) clean.keyword = params.keyword.trim();
   if (params.visibility) clean.visibility = params.visibility;
   if (params.status) clean.status = params.status;
-  if (params.reviewStatus) clean.reviewStatus = params.reviewStatus;
+  if (params.moderationStatus) clean.moderationStatus = params.moderationStatus;
   if (params.tendency) clean.tendency = params.tendency;
   if (params.commentEnabled) clean.commentEnabled = params.commentEnabled;
   if (params.adult) clean.adult = params.adult;
@@ -186,7 +186,7 @@ const COUNT_STALE_TIME = 1000 * 60 * 30;
  * "지금 몇 건 남았나"를 읽을 수 없다.
  *
  * 다만 **운영자가 방금 줄인 숫자**는 예외라, 그런 조건은 `staleTime`을 짧게
- * 넘겨 쓴다(심사 대기 등).
+ * 넘겨 쓴다.
  */
 export const useAdminUniverseCountQuery = (
   filter: AdminUniverseFilterParams,

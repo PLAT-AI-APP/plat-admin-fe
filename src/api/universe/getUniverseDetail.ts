@@ -3,7 +3,7 @@ import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
 import type {
   UniverseDetail,
-  UniverseReviewStatus,
+  UniverseModerationStatus,
   UniverseStatus,
   UniverseTendency,
   UniverseVisibility,
@@ -88,8 +88,8 @@ interface UniverseDetailResponse {
   tendency: UniverseTendency;
   visibility: UniverseVisibility;
   status: UniverseStatus;
-  reviewStatus: UniverseReviewStatus;
-  reviewRejectionReason: string | null;
+  moderationStatus: UniverseModerationStatus;
+  moderationReason: string | null;
   commentEnabled: boolean;
   chatCount: number;
   likeCount: number;
@@ -125,8 +125,8 @@ const toDetail = (response: UniverseDetailResponse): UniverseDetail => ({
   tendency: response.tendency,
   visibility: response.visibility,
   status: response.status,
-  reviewStatus: response.reviewStatus,
-  reviewRejectionReason: response.reviewRejectionReason,
+  moderationStatus: response.moderationStatus,
+  moderationReason: response.moderationReason,
   commentEnabled: response.commentEnabled,
   chatCount: response.chatCount,
   likeCount: response.likeCount,
