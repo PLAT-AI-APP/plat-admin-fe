@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import { showAppToast, showErrorToast } from "@/lib/toast";
 import type { AppError } from "@/type/api";
+import type { ContentReviewMonitor } from "@/type/contentReview";
 import { contentReviewQueryKeys } from "./queryKeys";
 
 /** 서버가 받는 동시 검수 한도 범위 */
@@ -31,6 +32,15 @@ export const useContentReviewSettingsMutation = () => {
     },
     onSuccess: (_, payload) => {
       showAppToast("success", successMessage(payload));
+      // 다시 받기 전까지 옛 값이 보이면 그 값을 기준으로 다음 변경을 계산한다. 저장한 값을 먼저 반영한다.
+      queryClient.setQueriesData<ContentReviewMonitor>(
+        { queryKey: ["content-review", "monitor"] },
+        (monitor) =>
+          monitor && {
+            ...monitor,
+            settings: { ...monitor.settings, ...payload, ...(payload.paused === false && { pausedUntil: null }) },
+          },
+      );
       queryClient.invalidateQueries({ queryKey: contentReviewQueryKeys.all() });
     },
     onError: (error) => showErrorToast(error),

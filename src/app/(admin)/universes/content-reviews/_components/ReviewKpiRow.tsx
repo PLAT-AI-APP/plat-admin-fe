@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import {
   MAX_CONCURRENT_MAX,
   MAX_CONCURRENT_MIN,
@@ -31,11 +31,34 @@ const QUEUE_PARTS = [
   { key: "retrying", label: "재시도 대기", className: "bg-warning" },
 ] as const;
 
-/** 동시 검수 한도. −/+ 한 번이 곧 저장이다. 진행 중인 검수는 끊지 않는다. */
+/** 마지막으로 누른 뒤 이만큼 지나면 저장한다. 연달아 누른 값은 한 번에 저장한다. */
+const SAVE_DELAY_MS = 500;
+
+/**
+ * 동시 검수 한도. 누른 만큼 숫자를 먼저 바꾸고 손을 멈추면 저장한다. 진행 중인 검수는 끊지 않는다.
+ * 서버 값을 기준으로 매번 저장하면, 다시 받기 전에 누른 클릭이 옛 값으로 계산돼 사라진다.
+ */
 const LimitStepper = ({ value }: { value: number }) => {
   const canWrite = useHasPermission("universe:write");
-  const mutation = useContentReviewSettingsMutation();
-  const change = (next: number) => mutation.mutate({ maxConcurrent: next });
+  const { mutate } = useContentReviewSettingsMutation();
+  const [draft, setDraft] = useState<number | null>(null);
+  const shown = draft ?? value;
+  const change = (next: number) => setDraft(next);
+
+  useEffect(() => {
+    if (draft === null) return;
+    const timer = window.setTimeout(() => {
+      // 저장 중에 더 누르면 그 값이 남아 다음 저장으로 이어진다.
+      const settle = () => setDraft((current) => (current === draft ? null : current));
+      if (draft === value) {
+        settle();
+        return;
+      }
+      mutate({ maxConcurrent: draft }, { onSettled: settle });
+    }, SAVE_DELAY_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [draft, mutate, value]);
   const buttonClass =
     "size-9 body-2 text-font-1 transition hover:bg-surface-hover disabled:cursor-not-allowed disabled:text-font-disabled";
 
@@ -49,20 +72,20 @@ const LimitStepper = ({ value }: { value: number }) => {
         type="button"
         aria-label="한도 줄이기"
         className={buttonClass}
-        disabled={!canWrite || mutation.isPending || value <= MAX_CONCURRENT_MIN}
-        onClick={() => change(value - 1)}
+        disabled={!canWrite || shown <= MAX_CONCURRENT_MIN}
+        onClick={() => change(shown - 1)}
       >
         −
       </button>
       <span className="min-w-9 border-x border-border-main text-center title-5 leading-9 tabular-nums">
-        {value}
+        {shown}
       </span>
       <button
         type="button"
         aria-label="한도 늘리기"
         className={buttonClass}
-        disabled={!canWrite || mutation.isPending || value >= MAX_CONCURRENT_MAX}
-        onClick={() => change(value + 1)}
+        disabled={!canWrite || shown >= MAX_CONCURRENT_MAX}
+        onClick={() => change(shown + 1)}
       >
         +
       </button>
