@@ -214,10 +214,13 @@ const ContentReviewManager = ({ manualCount, manualAiFailureCount }: ContentRevi
   });
   const rows = listQuery.data?.content ?? [];
 
+  // 건수를 받기 전에는 0건으로 보여 새로고침·링크로 연 2쪽이 1쪽으로 돌아간다. 받은 뒤에만 넘친 쪽을 당긴다.
+  const isTotalKnown = counts !== undefined && (!(isManualTab && reasonGroup) || reasonGroupCount(reasonGroup) !== undefined);
   useEffect(() => {
+    if (!isTotalKnown) return;
     const lastPage = Math.max(1, Math.ceil(totalCount / DEFAULT_PAGE_SIZE));
     if (page > lastPage) setParams({ page: lastPage });
-  }, [page, setParams, totalCount]);
+  }, [isTotalKnown, page, setParams, totalCount]);
 
   /* 조건이 바뀐 렌더에서 바로 비운다. effect 로 비우면 한 프레임 동안 다른 목록의 선택이 남는다. */
   const filterKey = `${page}-${tab}-${reasonGroup}`;
