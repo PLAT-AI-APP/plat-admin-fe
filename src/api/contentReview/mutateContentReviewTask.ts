@@ -70,6 +70,28 @@ export const BULK_RETRY_MAX = 50;
  * AI 장애로 넘어온 건 여러 개를 AI 에 다시 맡긴다. 건별로 성공 · 실패가 따로 온다.
  * 그사이 처리된 건은 실패로 돌아오므로 건수만 알리고 목록을 새로 받는다.
  */
+/**
+ * 건너뛴 이유별 건수. 서버는 건마다 실패 코드를 준다 — CONFLICT·NOT_FOUND 는 그사이 처리·변경된 건,
+ * *_NOT_FOUND 는 원본(세계관·이미지)이 지워진 건이다. 건너뛴 건이 없으면 undefined.
+ */
+const bulkRetrySkipReasons = (results: ContentReviewBulkRetryResult["results"]) => {
+  const failed = results.filter((result) => !result.ok);
+  if (!failed.length) return undefined;
+  const changed = failed.filter((result) => result.errorCode === "CONFLICT" || result.errorCode === "NOT_FOUND").length;
+  const missing = failed.filter(
+    (result) => result.errorCode !== "NOT_FOUND" && result.errorCode?.endsWith("_NOT_FOUND"),
+  ).length;
+  const other = failed.length - changed - missing;
+
+  return [
+    changed && `이미 처리·변경됨 ${changed}건`,
+    missing && `원본이 삭제됨 ${missing}건`,
+    other && `기타 오류 ${other}건`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+};
+
 export const useContentReviewBulkRetryMutation = () => {
   const invalidate = useInvalidateContentReviews();
 
@@ -82,13 +104,17 @@ export const useContentReviewBulkRetryMutation = () => {
         })
       ).data,
     onSuccess: ({ results }) => {
-      const failed = results.filter((result) => !result.ok).length;
-      showAppToast(
-        failed ? "warning" : "success",
-        failed
-          ? `${results.length - failed}건을 다시 맡겼고 ${failed}건은 이미 처리돼 건너뛰었습니다.`
-          : `${results.length}건을 AI 에 다시 맡겼습니다.`,
-      );
+      const succeeded = results.filter((result) => result.ok).length;
+      const skipped = bulkRetrySkipReasons(results);
+      if (!skipped) {
+        showAppToast("success", `${succeeded}건을 AI 에 다시 맡겼습니다.`);
+      } else {
+        showAppToast(
+          succeeded ? "warning" : "error",
+          succeeded ? `${succeeded}건을 다시 맡기고 나머지는 건너뛰었습니다.` : "다시 맡긴 건이 없습니다.",
+          { description: skipped },
+        );
+      }
       invalidate();
     },
     onError: (error) => handleTaskError(error, invalidate),
