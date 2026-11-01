@@ -64,6 +64,9 @@ export interface ContentReviewTask {
   attempts: number;
   /** 재검수·수동 판정으로 대체된 과거 이력 */
   superseded: boolean;
+  supersededAt: string | null;
+  /** 관리자 승인만 풀 수 있는 건(성인 해제·관리자 반려 뒤 수정) */
+  manualRequired: boolean;
   model: string | null;
   policyVersion: number | null;
   /** 수동 판정이면 `MANUAL_APPROVAL` · `MANUAL_REJECTION` */
@@ -90,11 +93,106 @@ export interface ContentReviewCounts {
   rejected: number;
 }
 
-/** 모든 AI 서버가 함께 쓰는 동시 검수 한도 */
-export interface ContentReviewSettings {
-  maxConcurrent: number;
-  /** 지금 잡힌 실행 슬롯 수. 상태별 건수의 running 과 다를 수 있다. */
-  activeExecutions: number;
-  updatedBy: string | null;
-  updatedAt: string;
+/** 관리자 확인 대기의 사유 묶음. AI 장애는 다시 맡기면 되고, 판단 보류는 사람이 봐야 한다. */
+export type ContentReviewReasonGroup = "AI_FAILURE" | "AI_HOLD";
+
+/** AI 서버가 검수 종류별로 보내는 준비 상태. 꺼짐은 설정, 프롬프트 없음은 운영 누락이다. */
+export type ReviewProcessorState = "READY" | "DISABLED" | "NO_PROMPT";
+
+export type ReviewProcessorType = "UNIVERSE" | "FILE" | "CHARACTER";
+
+/** 신호(15초 TTL)가 살아 있는 AI 인스턴스 하나 */
+export interface ContentReviewWorker {
+  instanceId: string;
+  startedAt: string;
+  lastSeenAt: string;
+  active: number;
+  processors: Partial<Record<ReviewProcessorType, ReviewProcessorState>>;
+}
+
+/** 지금 실행 슬롯을 잡은 작업 */
+export interface ContentReviewActiveExecution {
+  taskId: string;
+  targetType: ContentReviewTargetType;
+  targetId: string;
+  title: string | null;
+  thumbnailUrl: string | null;
+  attempt: number;
+  instanceId: string;
+  startedAt: string;
+  leaseExpiresAt: string;
+}
+
+/** 처리량 차트 한 칸. 1시간은 5분, 6시간은 15분, 24시간은 1시간 단위다. */
+export interface ContentReviewSeriesPoint {
+  bucketStart: string;
+  approved: number;
+  rejected: number;
+  manual: number;
+  failed: number;
+}
+
+export type ContentReviewMonitorRange = "1h" | "6h" | "24h";
+
+/** 관제 화면 한 장에 필요한 값. 요청 시점의 DB · Redis 상태다. */
+export interface ContentReviewMonitor {
+  settings: {
+    maxConcurrent: number;
+    /** 관리자가 멈춘 상태. 풀 때까지 유지된다. */
+    paused: boolean;
+    /** 제공사 연속 실패로 자동으로 멈춘 경우 다시 시작하는 시각 */
+    pausedUntil: string | null;
+    updatedBy: string | null;
+    updatedAt: string;
+  };
+  workers: ContentReviewWorker[];
+  queue: {
+    readyDue: number;
+    waitingImage: number;
+    retrying: number;
+    running: number;
+    manual: number;
+    manualAiFailure: number;
+    oldestReadyAt: string | null;
+    oldestManualAt: string | null;
+  };
+  active: ContentReviewActiveExecution[];
+  lastHour: {
+    completed: number;
+    failed: number;
+    manual: number;
+    avgMs: number | null;
+    p95Ms: number | null;
+  };
+  series: ContentReviewSeriesPoint[];
+}
+
+export type ContentReviewAttemptOutcome = "APPROVED" | "REJECTED" | "MANUAL" | "FAILED" | "STALE";
+
+/** AI 호출 한 번의 기록. 실패 원인은 작업이 아니라 여기에 남는다. 30일 보관. */
+export interface ContentReviewAttempt {
+  attemptId: string;
+  taskId: string;
+  targetType: ContentReviewTargetType;
+  targetId: string;
+  title: string | null;
+  attempt: number;
+  instanceId: string;
+  model: string | null;
+  startedAt: string;
+  finishedAt: string | null;
+  outcome: ContentReviewAttemptOutcome;
+  errorCode: string | null;
+  durationMs: number | null;
+}
+
+/** 세계관 하나와 연결 이미지의 모든 작업(대체된 것 포함)과 시도 */
+export interface UniverseReviewTimeline {
+  universeId: string;
+  tasks: ContentReviewTask[];
+  attempts: ContentReviewAttempt[];
+}
+
+export interface ContentReviewBulkRetryResult {
+  results: { taskId: string; ok: boolean; errorCode: string | null }[];
 }

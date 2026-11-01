@@ -13,7 +13,7 @@ import {
   AUTO_REFRESH_LABEL,
   AUTO_REFRESH_SECONDS,
   type AutoRefreshSeconds,
-} from "@/app/(admin)/ops/server/_hooks/useAutoRefresh";
+} from "@/hooks/useAutoRefresh";
 import {
   HEALTH_STATUS_DESCRIPTION,
   HEALTH_STATUS_LABEL,

@@ -4,6 +4,8 @@ import type {
   ContentReviewFindingField,
   ContentReviewTargetType,
   ContentReviewTask,
+  ReviewProcessorState,
+  ReviewProcessorType,
 } from "@/type/contentReview";
 import { findUniverseTitle } from "./reviewFields";
 
@@ -113,3 +115,99 @@ export const canRetry = (task: ContentReviewTask) =>
 /** 대상 상세로 가는 주소. 세계관만 관리자 화면 ID 와 검수 대상 ID 가 같다. */
 export const taskTargetHref = (task: ContentReviewTask) =>
   task.targetType === "UNIVERSE" ? `/universes/${task.targetId}` : undefined;
+
+/** 관제 화면의 워커 칩. 꺼짐은 설정이라 회색, 프롬프트 없음은 운영 누락이라 빨강이다. */
+export const PROCESSOR_LABEL: Record<ReviewProcessorType, string> = {
+  UNIVERSE: "세계관",
+  FILE: "이미지",
+  CHARACTER: "캐릭터",
+};
+
+export const PROCESSOR_STATE_META: Record<
+  ReviewProcessorState,
+  { label: string; dotClass: string; textClass: string }
+> = {
+  READY: { label: "정상", dotClass: "bg-success", textClass: "text-success" },
+  DISABLED: { label: "꺼짐", dotClass: "bg-font-disabled", textClass: "text-font-2" },
+  NO_PROMPT: { label: "프롬프트 없음", dotClass: "bg-danger", textClass: "text-danger" },
+};
+
+/** AI 장애로 넘어온 건. 사람이 보지 않아도 AI 에 다시 맡기면 된다. 서버 `AI_FAILURE` 묶음과 같다. */
+export const AI_FAILURE_REASON_CODES = ["RETRY_EXHAUSTED", "PROVIDER_FAILED", "INPUT_CHANGED"];
+
+export const isAiFailure = (task: ContentReviewTask) =>
+  task.jobStatus === "MANUAL" && AI_FAILURE_REASON_CODES.includes(task.reasonCode ?? "");
+
+/** 관리자 확인 대기로 넘긴 이유. 모르는 코드는 코드 그대로 보여 준다. */
+export const MANUAL_REASON_LABEL: Record<string, string> = {
+  RETRY_EXHAUSTED: "AI 응답 실패 3회",
+  PROVIDER_FAILED: "AI 응답 실패",
+  INPUT_CHANGED: "검수 중 내용 바뀜",
+  DECISION_REJECTED: "공개 부적합 의심",
+  DECISION_REFUSED: "AI 가 판정 거부",
+  DECISION_LOW_CONFIDENCE: "판정 확신 낮음",
+  ADULT_RATING_UNCERTAIN: "성인 등급 불확실",
+  ADULT_SETTING_REQUIRED: "성인 설정 필요",
+  OTHER_UNCERTAIN: "판단 불확실",
+  IMAGE_EXPLICIT_SEXUAL: "노골적 성적 이미지 의심",
+  IMAGE_GRAPHIC_VIOLENCE: "잔혹 폭력 의심",
+  IMAGE_MINOR_SEXUAL: "미성년 성적 묘사 의심",
+  IMAGE_UNCERTAIN: "이미지 판단 불확실",
+  IMAGE_REFUSED: "AI 가 이미지 판정 거부",
+  IMAGE_REVIEW_REJECTED: "연결 이미지 반려됨",
+  MANUAL_APPROVAL: "관리자 승인",
+  MANUAL_REJECTION: "관리자 반려",
+};
+
+export const manualReasonLabel = (task: ContentReviewTask) =>
+  task.manualRequired && !task.reasonCode
+    ? "관리자 확인 필수"
+    : (task.reasonCode && MANUAL_REASON_LABEL[task.reasonCode]) ?? task.reasonCode ?? "-";
+
+/**
+ * 시도 로그의 오류 코드. 서버 `AiErrorCode` · 파일 오류는 이름 그대로, 그 밖의 예외는 클래스 이름으로 온다.
+ * 아는 것만 우리말로 바꾸고 나머지는 "AI 호출 실패"로 묶는다(원래 코드는 옆에 함께 보인다).
+ */
+export const ATTEMPT_ERROR_LABEL: Record<string, string> = {
+  AI_PROVIDER_TIMEOUT: "응답 시간 초과",
+  AI_PROVIDER_RATE_LIMITED: "요청 한도 초과",
+  AI_PROVIDER_QUOTA_EXHAUSTED: "사용 한도 소진",
+  AI_PROVIDER_AUTH_FAILED: "AI 키 인증 실패",
+  AI_PROVIDER_MODEL_UNAVAILABLE: "모델 사용 불가",
+  AI_PROVIDER_OVERLOADED: "제공사 과부하",
+  AI_PROVIDER_REFUSED: "제공사 응답 거부",
+  AI_PROVIDER_FAILED: "AI 응답 오류",
+  FILE_READ_FAILED: "이미지 읽기 실패",
+  FILE_NOT_FOUND: "이미지 파일 없음",
+};
+
+export const attemptErrorLabel = (code: string | null) =>
+  code ? ATTEMPT_ERROR_LABEL[code] ?? "AI 호출 실패" : "AI 호출 실패";
+
+/** 6200 → "6.2초", 65000 → "1분 5초" */
+export const formatDurationMs = (ms: number | null | undefined) => {
+  if (ms === null || ms === undefined) return "-";
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}초`;
+  const seconds = Math.round(ms / 1000);
+  return `${Math.floor(seconds / 60)}분 ${seconds % 60}초`;
+};
+
+/** 기다린 시간. 분 단위로 충분하고, 하루를 넘기면 일로 묶는다. */
+export const formatWaited = (from: string | null, now = Date.now()) => {
+  if (!from) return "-";
+  const minutes = Math.max(0, Math.floor((now - new Date(from).getTime()) / 60_000));
+  if (minutes < 1) return "1분 미만";
+  if (minutes < 60) return `${minutes}분`;
+  if (minutes < 1440) return `${Math.floor(minutes / 60)}시간 ${minutes % 60}분`;
+  return `${Math.floor(minutes / 1440)}일 ${Math.floor((minutes % 1440) / 60)}시간`;
+};
+
+/** 실행 경과. 슬롯 칸에서 1초마다 바뀐다. */
+export const formatElapsed = (from: string, now: number) => {
+  const seconds = Math.max(0, Math.floor((now - new Date(from).getTime()) / 1000));
+  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+};
+
+/** 세계관 검수 이력 화면 주소 */
+export const universeHistoryHref = (universeId: string) =>
+  `/universes/content-reviews/universes/${universeId}`;
