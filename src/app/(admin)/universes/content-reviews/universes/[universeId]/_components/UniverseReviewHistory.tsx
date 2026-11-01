@@ -201,6 +201,23 @@ const UniverseReviewHistory = ({ universeId }: { universeId: string }) => {
     detail.moderationStatus === "CLEAR" &&
     (!currentUniverseTask || currentUniverseTask.reviewStatus === "APPROVED");
 
+  // 없는 ID(404)·잘못된 ID(400)를 빈 이력처럼 그리면 현재 상태·누적 칸이 사실처럼 보인다.
+  const isMissing = timelineQuery.error?.status === 404 || timelineQuery.error?.status === 400;
+  if (isMissing) {
+    return (
+      <>
+        <BackLink href="/universes/content-reviews" label="검수 관제" />
+        <PageHeader title={`세계관 ${universeId}`} description="검수 이력" />
+        <Card>
+          <EmptyState
+            title="세계관을 찾을 수 없습니다."
+            description="ID 를 다시 확인해 주세요. 파기된 세계관은 검수 이력도 함께 지워집니다."
+          />
+        </Card>
+      </>
+    );
+  }
+
   return (
     <>
       <BackLink href="/universes/content-reviews" label="검수 관제" />
