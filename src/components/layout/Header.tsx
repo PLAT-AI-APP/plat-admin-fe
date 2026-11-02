@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useLogoutMutation } from "@/api/auth/logout";
 import { ADMIN_MENU, isMenuItemActive } from "@/constants/menu";
+import { APP_TITLE, TITLE_PREFIX } from "@/constants/title";
 import { useIsClient } from "@/hooks/useIsClient";
 import { ChevronRight, Gear, Logout, Moon, Search, Sun } from "@/icons";
 import { useAdminStore } from "@/store/useAdminStore";
@@ -66,7 +67,7 @@ const Header = () => {
     전부 "PLAT 관리자"라 어느 탭이 무엇인지 알 수 없다.
   */
   useEffect(() => {
-    document.title = pageLabel ? `${pageLabel} · PLAT 관리자` : "PLAT 관리자";
+    document.title = pageLabel ? `${TITLE_PREFIX}${pageLabel} · PLAT 관리자` : APP_TITLE;
   }, [pageLabel, pathname]);
 
   /*
