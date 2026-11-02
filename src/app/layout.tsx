@@ -4,11 +4,12 @@ import MSWProvider from "@/providers/MSWProvider";
 import ReactQueryProvider from "@/providers/ReactQueryProvider";
 import SonnerProvider from "@/providers/SonnerProvider";
 import ThemeProvider from "@/providers/ThemeProvider";
+import { APP_TITLE } from "@/constants/title";
 import ConfirmDialogHost from "@/components/ui/ConfirmDialogHost";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PLAT 관리자",
+  title: APP_TITLE,
   description: "PLAT 서비스 운영 관리자",
 };
 
