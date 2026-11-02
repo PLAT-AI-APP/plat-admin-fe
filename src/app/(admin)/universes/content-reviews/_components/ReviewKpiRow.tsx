@@ -4,19 +4,17 @@ import {
   MAX_CONCURRENT_MIN,
   useContentReviewSettingsMutation,
 } from "@/api/contentReview/mutateContentReviewSettings";
-import { formatDateTime } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import { useHasPermission } from "@/store/useAdminStore";
 import type { ContentReviewMonitor } from "@/type/contentReview";
-import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
 import { formatDurationMs, formatWaited } from "../_lib/reviewMeta";
 
-const KpiCard = ({ label, value, children }: { label: string; value: ReactNode; children: ReactNode }) => (
+const KpiCard = ({ label, value, children }: { label: string; value: ReactNode; children?: ReactNode }) => (
   <Card bodyClassName="p-4">
     <p className="body-5 text-font-2">{label}</p>
     <div className="mt-2 heading-1 font-bold text-font-0 tabular-nums">{value}</div>
-    <div className="mt-2.5 flex flex-col gap-1">{children}</div>
+    {children && <div className="mt-2.5 flex flex-col gap-1">{children}</div>}
   </Card>
 );
 
@@ -35,10 +33,10 @@ const QUEUE_PARTS = [
 const SAVE_DELAY_MS = 500;
 
 /**
- * 동시 검수 한도. 누른 만큼 숫자를 먼저 바꾸고 손을 멈추면 저장한다. 진행 중인 검수는 끊지 않는다.
+ * 실행 중 / 동시 검수 한도. 누른 만큼 왼쪽 한도 숫자를 먼저 바꾸고 손을 멈추면 저장한다. 진행 중인 검수는 끊지 않는다.
  * 서버 값을 기준으로 매번 저장하면, 다시 받기 전에 누른 클릭이 옛 값으로 계산돼 사라진다.
  */
-const LimitStepper = ({ value }: { value: number }) => {
+const LimitControl = ({ active, value }: { active: number; value: number }) => {
   const canWrite = useHasPermission("universe:write");
   const { mutate } = useContentReviewSettingsMutation();
   const [draft, setDraft] = useState<number | null>(null);
@@ -63,32 +61,37 @@ const LimitStepper = ({ value }: { value: number }) => {
     "size-9 body-2 text-font-1 transition hover:bg-surface-hover disabled:cursor-not-allowed disabled:text-font-disabled";
 
   return (
-    <div
-      role="group"
-      aria-label="동시 검수 한도"
-      className="flex items-center overflow-hidden rounded-field border border-border-strong"
-    >
-      <button
-        type="button"
-        aria-label="한도 줄이기"
-        className={buttonClass}
-        disabled={!canWrite || shown <= MAX_CONCURRENT_MIN}
-        onClick={() => change(shown - 1)}
-      >
-        −
-      </button>
-      <span className="min-w-9 border-x border-border-main text-center title-5 leading-9 tabular-nums">
+    <div className="flex items-center justify-between gap-2">
+      <span>
+        {active}
+        <span className="mx-1 title-2 font-medium text-font-disabled">/</span>
         {shown}
       </span>
-      <button
-        type="button"
-        aria-label="한도 늘리기"
-        className={buttonClass}
-        disabled={!canWrite || shown >= MAX_CONCURRENT_MAX}
-        onClick={() => change(shown + 1)}
+      <div
+        role="group"
+        aria-label={`동시 검수 한도 ${shown}`}
+        className="flex items-center overflow-hidden rounded-field border border-border-strong"
       >
-        +
-      </button>
+        <button
+          type="button"
+          aria-label="한도 줄이기"
+          className={buttonClass}
+          disabled={!canWrite || shown <= MAX_CONCURRENT_MIN}
+          onClick={() => change(shown - 1)}
+        >
+          −
+        </button>
+        <span aria-hidden className="h-5 w-px bg-border-main" />
+        <button
+          type="button"
+          aria-label="한도 늘리기"
+          className={buttonClass}
+          disabled={!canWrite || shown >= MAX_CONCURRENT_MAX}
+          onClick={() => change(shown + 1)}
+        >
+          +
+        </button>
+      </div>
     </div>
   );
 };
@@ -127,32 +130,11 @@ const ReviewKpiRow = ({ monitor }: { monitor: ContentReviewMonitor }) => {
 
       <KpiCard
         label="실행 중 / 동시 검수 한도"
-        value={
-          <div className="flex items-center justify-between gap-2">
-            <span>
-              {monitor.active.length}
-              <span className="mx-1 title-2 font-medium text-font-disabled">/</span>
-              {settings.maxConcurrent}
-            </span>
-            <LimitStepper value={settings.maxConcurrent} />
-          </div>
-        }
-      >
-        <p className="body-6 text-font-2">
-          모든 AI 서버 합산 · {MAX_CONCURRENT_MIN}~{MAX_CONCURRENT_MAX} · 재시작 없이 바로 반영
-        </p>
-        <p className="body-6 text-font-2">
-          마지막 변경 {settings.updatedBy ? `관리자 ${settings.updatedBy} · ` : ""}
-          {formatDateTime(settings.updatedAt)}
-        </p>
-      </KpiCard>
+        value={<LimitControl active={monitor.active.length} value={settings.maxConcurrent} />}
+      />
 
       <KpiCard label="관리자 확인 필요" value={<>{queue.manual}<Unit>건</Unit></>}>
-        <div className="flex flex-wrap gap-1.5">
-          <Badge tone="danger">AI 장애 {queue.manualAiFailure}</Badge>
-          <Badge tone="warning">AI 판단 보류 {queue.manual - queue.manualAiFailure}</Badge>
-        </div>
-        <p className="mt-1 body-6 text-font-2">
+        <p className="body-6 text-font-2">
           가장 오래 기다린 건{" "}
           <strong className={cn("font-semibold", queue.oldestManualAt ? "text-danger" : "text-font-1")}>
             {formatWaited(queue.oldestManualAt)}

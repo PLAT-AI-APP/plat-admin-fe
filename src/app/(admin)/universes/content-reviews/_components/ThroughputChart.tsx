@@ -59,7 +59,11 @@ const ThroughputChart = ({ series, range, onRangeChange, isLoading }: Throughput
     <Card
       className="min-w-0 flex-[1_1_420px]"
       title="처리량"
-      description={`최근 ${RANGE_META[range].label} · ${RANGE_META[range].bucket} 단위 · 막대에 올리면 건수`}
+      action={
+        <span className="body-5 text-font-2">
+          {RANGE_META[range].label} · {RANGE_META[range].bucket} 단위
+        </span>
+      }
     >
       <Tabs items={RANGE_TABS} value={range} onChange={onRangeChange} />
       {isLoading ? (
