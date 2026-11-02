@@ -245,7 +245,6 @@ const UniverseReviewHistory = ({ universeId }: { universeId: string }) => {
           <Card
             noPadding
             title="검수 이력"
-            description="세계관 본문과 연결 이미지의 모든 접수 · AI 판정 · 관리자 판정 · 실패 시도를 최신순으로 보여 줍니다. 줄을 누르면 시도 기록과 작업 정보가 펼쳐집니다."
           >
             {timelineQuery.isLoading ? (
               <Skeleton className="m-5 h-40" />
@@ -273,13 +272,7 @@ const UniverseReviewHistory = ({ universeId }: { universeId: string }) => {
                           className="flex w-full items-start gap-2 text-left"
                         >
                           <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-                            <Badge
-                              tone={event.kindTone === "dark" ? "neutral" : event.kindTone}
-                              className={cn(event.kindTone === "dark" && "bg-font-1 text-surface")}
-                            >
-                              {event.kind}
-                            </Badge>
-                            <Badge tone={event.group === "file" ? "info" : "neutral"}>{event.target}</Badge>
+                            {event.kindTone === "dark" && <Badge className="bg-font-1 text-surface">{event.kind}</Badge>}
                             <span className="title-5 text-font-1">{event.title}</span>
                           </span>
                           <ChevronDown
