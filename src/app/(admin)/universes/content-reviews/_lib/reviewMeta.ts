@@ -1,6 +1,7 @@
 import type { BadgeTone } from "@/components/ui/Badge";
 import type { SelectOption } from "@/components/ui/Select";
 import type {
+  ContentReviewAttemptOutcome,
   ContentReviewFindingField,
   ContentReviewTargetType,
   ContentReviewTask,
@@ -180,6 +181,15 @@ export const ATTEMPT_ERROR_LABEL: Record<string, string> = {
 
 export const attemptErrorLabel = (code: string | null) =>
   code ? ATTEMPT_ERROR_LABEL[code] ?? "AI 호출 실패" : "AI 호출 실패";
+
+/** 시도 한 번의 결과. 실패는 오류 라벨로 대신 보여 준다. */
+export const ATTEMPT_OUTCOME_LABEL: Record<ContentReviewAttemptOutcome, string> = {
+  APPROVED: "승인",
+  REJECTED: "반려",
+  MANUAL: "관리자 이관",
+  FAILED: "실패",
+  STALE: "검수 중 내용 바뀜",
+};
 
 /** 6200 → "6.2초", 65000 → "1분 5초" */
 export const formatDurationMs = (ms: number | null | undefined) => {

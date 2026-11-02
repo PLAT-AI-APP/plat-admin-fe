@@ -7,6 +7,7 @@ import { useUniverseDetailQuery } from "@/api/universe/getUniverseDetail";
 import { UNIVERSE_VISIBILITY_LABEL } from "@/constants/universeOptions";
 import { formatDateTime, formatDateTimeSecond, toKst } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
+import { ChevronDown } from "@/icons";
 import { useHasPermission } from "@/store/useAdminStore";
 import type { ContentReviewTask } from "@/type/contentReview";
 import { SERVICE_LANGUAGE_LABEL } from "@/type/language";
@@ -20,6 +21,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import EntityImage from "@/components/ui/EntityImage";
 import Skeleton from "@/components/ui/Skeleton";
 import {
+  ATTEMPT_OUTCOME_LABEL,
   FINDING_FIELD_LABEL,
   attemptErrorLabel,
   canDecide,
@@ -177,6 +179,9 @@ const Stat = ({ label, value, danger }: { label: string; value: number; danger?:
  */
 const UniverseReviewHistory = ({ universeId }: { universeId: string }) => {
   const [filter, setFilter] = useState<TimelineGroup | "all">("all");
+  const [openKeys, setOpenKeys] = useState<string[]>([]);
+  const toggleOpen = (key: string) =>
+    setOpenKeys((prev) => (prev.includes(key) ? prev.filter((each) => each !== key) : [...prev, key]));
   const timelineQuery = useUniverseReviewTimelineQuery(universeId);
   const detailQuery = useUniverseDetailQuery(universeId);
   const tasks = useMemo(() => timelineQuery.data?.tasks ?? [], [timelineQuery.data]);
@@ -249,7 +254,7 @@ const UniverseReviewHistory = ({ universeId }: { universeId: string }) => {
           <Card
             noPadding
             title="검수 이력"
-            description="세계관 본문과 연결 이미지의 모든 접수 · AI 판정 · 관리자 판정 · 실패 시도를 최신순으로 보여 줍니다."
+            description="세계관 본문과 연결 이미지의 모든 접수 · AI 판정 · 관리자 판정 · 실패 시도를 최신순으로 보여 줍니다. 줄을 누르면 시도 기록과 작업 정보가 펼쳐집니다."
             action={
               <div role="group" aria-label="이력 필터" className="flex flex-wrap gap-1.5">
                 {FILTERS.map((each) => {
@@ -280,72 +285,97 @@ const UniverseReviewHistory = ({ universeId }: { universeId: string }) => {
               <EmptyState title="검수 기록이 없습니다." />
             ) : (
               <ol className="px-5 py-2">
-                {visibleEvents.map((event) => (
-                  <li key={event.key} className="flex gap-3.5 border-b border-border-main py-3.5 last:border-b-0">
-                    <div className="w-21 shrink-0 text-right">
-                      <p className="title-6 tabular-nums text-font-1">{toKst(event.at).format("HH:mm")}</p>
-                      <p className="body-6 text-font-2">{toKst(event.at).format("MM.DD")}</p>
-                    </div>
-                    <div className="flex flex-col items-center pt-1">
-                      <span aria-hidden className={cn("size-2.5 rounded-full ring-4 ring-surface", DOT_CLASS[event.kindTone])} />
-                      <span aria-hidden className="mt-1 w-0.5 flex-1 bg-border-main" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <Badge
-                          tone={event.kindTone === "dark" ? "neutral" : event.kindTone}
-                          className={cn(event.kindTone === "dark" && "bg-font-1 text-surface")}
-                        >
-                          {event.kind}
-                        </Badge>
-                        <Badge tone={event.group === "file" ? "info" : "neutral"}>{event.target}</Badge>
-                        <span className="title-5 text-font-1">{event.title}</span>
+                {visibleEvents.map((event) => {
+                  const isOpen = openKeys.includes(event.key);
+                  return (
+                    <li key={event.key} className="flex gap-3.5 border-b border-border-main py-3.5 last:border-b-0">
+                      <div className="w-21 shrink-0 text-right">
+                        <p className="title-6 tabular-nums text-font-1">{toKst(event.at).format("HH:mm")}</p>
+                        <p className="body-6 text-font-2">{toKst(event.at).format("MM.DD")}</p>
                       </div>
-                      {event.body && !event.isIntake && (
-                        <p className="mt-1.5 body-5 whitespace-pre-wrap wrap-anywhere text-font-1">{event.body}</p>
-                      )}
-                      {!event.isIntake &&
-                        event.task.findings.map((finding, index) => (
-                          <div key={index} className="mt-2 rounded-field bg-warning-bg px-3 py-2.5 body-5 text-font-1">
-                            <strong className="font-semibold">
-                              수정 안내 · {FINDING_FIELD_LABEL[finding.field] ?? finding.field}
-                            </strong>{" "}
-                            — {finding.guide}
-                          </div>
-                        ))}
-                      {event.attempts.length > 0 && (
-                        <div className="mt-2 overflow-hidden rounded-field border border-border-main">
-                          {event.attempts.map((attempt) => (
-                            <div
-                              key={attempt.attemptId}
-                              className="flex flex-wrap gap-x-3.5 gap-y-1 border-t border-border-main px-3 py-2 body-6 text-font-2 first:border-t-0"
+                      <div className="flex flex-col items-center pt-1">
+                        <span aria-hidden className={cn("size-2.5 rounded-full ring-4 ring-surface", DOT_CLASS[event.kindTone])} />
+                        <span aria-hidden className="mt-1 w-0.5 flex-1 bg-border-main" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <button
+                          type="button"
+                          aria-expanded={isOpen}
+                          onClick={() => toggleOpen(event.key)}
+                          className="flex w-full items-start gap-2 text-left"
+                        >
+                          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+                            <Badge
+                              tone={event.kindTone === "dark" ? "neutral" : event.kindTone}
+                              className={cn(event.kindTone === "dark" && "bg-font-1 text-surface")}
                             >
-                              <span className="font-semibold tabular-nums text-font-1">시도 {attempt.attempt}</span>
-                              <span className="tabular-nums">{formatDateTimeSecond(attempt.startedAt)}</span>
-                              {attempt.outcome === "FAILED" ? (
-                                <>
-                                  <span className="font-semibold text-danger">{attemptErrorLabel(attempt.errorCode)}</span>
-                                  <span className="font-mono">{attempt.errorCode}</span>
-                                </>
-                              ) : (
-                                <span className="font-semibold text-font-1">{attempt.outcome}</span>
-                              )}
-                              <span className="tabular-nums">{formatDurationMs(attempt.durationMs)}</span>
-                              <span className="font-mono">{attempt.instanceId}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <p className="mt-1.5 body-6 text-font-2">
-                        작업 <span className="font-mono">{event.task.taskId}</span>
-                        {event.task.reasonCode && ` · ${event.task.reasonCode}`}
-                        {!event.isIntake && event.task.model && ` · ${event.task.model}`}
-                        {!event.isIntake && event.task.policyVersion !== null && ` · 정책 v${event.task.policyVersion}`}
-                        {event.task.supersededAt && ` · ${formatDateTime(event.task.supersededAt)}에 대체됨`}
-                      </p>
-                    </div>
-                  </li>
-                ))}
+                              {event.kind}
+                            </Badge>
+                            <Badge tone={event.group === "file" ? "info" : "neutral"}>{event.target}</Badge>
+                            <span className="title-5 text-font-1">{event.title}</span>
+                          </span>
+                          <ChevronDown
+                            size={16}
+                            className={cn("mt-1 shrink-0 text-font-2 transition-transform", isOpen && "rotate-180")}
+                          />
+                        </button>
+                        {/* 접으면 사유를 한 줄로, 펼치면 같은 자리에서 전문으로 보여 준다. 아래 상자에 다시 싣지 않는다. */}
+                        {event.body && !event.isIntake && (
+                          <p
+                            className={cn(
+                              "mt-1.5 body-5 text-font-1",
+                              isOpen ? "whitespace-pre-wrap wrap-anywhere" : "truncate",
+                            )}
+                          >
+                            {event.body}
+                          </p>
+                        )}
+                        {isOpen && (
+                          <div className="mt-2 overflow-hidden rounded-field border border-border-main">
+                            {!event.isIntake &&
+                              event.task.findings.map((finding, index) => (
+                                <div
+                                  key={index}
+                                  className="border-b border-border-main bg-warning-bg px-3 py-2.5 body-5 text-font-1"
+                                >
+                                  <strong className="font-semibold">
+                                    수정 안내 · {FINDING_FIELD_LABEL[finding.field] ?? finding.field}
+                                  </strong>{" "}
+                                  — {finding.guide}
+                                </div>
+                              ))}
+                            {event.attempts.map((attempt) => (
+                              <div
+                                key={attempt.attemptId}
+                                className="flex flex-wrap gap-x-3.5 gap-y-1 border-b border-border-main px-3 py-2 body-6 text-font-2"
+                              >
+                                <span className="font-semibold tabular-nums text-font-1">시도 {attempt.attempt}</span>
+                                <span className="tabular-nums">{formatDateTimeSecond(attempt.startedAt)}</span>
+                                {attempt.outcome === "FAILED" ? (
+                                  <>
+                                    <span className="font-semibold text-danger">{attemptErrorLabel(attempt.errorCode)}</span>
+                                    <span className="font-mono">{attempt.errorCode}</span>
+                                  </>
+                                ) : (
+                                  <span className="font-semibold text-font-1">{ATTEMPT_OUTCOME_LABEL[attempt.outcome]}</span>
+                                )}
+                                <span className="tabular-nums">{formatDurationMs(attempt.durationMs)}</span>
+                                <span className="font-mono">{attempt.instanceId}</span>
+                              </div>
+                            ))}
+                            <p className="px-3 py-2 body-6 text-font-2">
+                              작업 <span className="font-mono">{event.task.taskId}</span>
+                              {event.task.reasonCode && ` · ${event.task.reasonCode}`}
+                              {!event.isIntake && event.task.model && ` · ${event.task.model}`}
+                              {!event.isIntake && event.task.policyVersion !== null && ` · 정책 v${event.task.policyVersion}`}
+                              {event.task.supersededAt && ` · ${formatDateTime(event.task.supersededAt)}에 대체됨`}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ol>
             )}
           </Card>
