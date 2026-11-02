@@ -132,11 +132,8 @@ export const PROCESSOR_STATE_META: Record<
   NO_PROMPT: { label: "프롬프트 없음", dotClass: "bg-danger", textClass: "text-danger" },
 };
 
-/** AI 장애로 넘어온 건. 사람이 보지 않아도 AI 에 다시 맡기면 된다. 서버 `AI_FAILURE` 묶음과 같다. */
-export const AI_FAILURE_REASON_CODES = ["RETRY_EXHAUSTED", "PROVIDER_FAILED", "INPUT_CHANGED"];
-
-export const isAiFailure = (task: ContentReviewTask) =>
-  task.jobStatus === "MANUAL" && AI_FAILURE_REASON_CODES.includes(task.reasonCode ?? "");
+/** AI 장애로 넘어온 건. 사람이 보지 않아도 AI 에 다시 맡기면 된다. 어떤 사유가 장애인지는 서버가 정한다. */
+export const isAiFailure = (task: ContentReviewTask) => task.reasonGroup === "AI_FAILURE";
 
 /** 관리자 확인 대기로 넘긴 이유. 모르는 코드는 코드 그대로 보여 준다. */
 export const MANUAL_REASON_LABEL: Record<string, string> = {

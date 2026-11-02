@@ -71,6 +71,8 @@ export interface ContentReviewTask {
   policyVersion: number | null;
   /** 수동 판정이면 `MANUAL_APPROVAL` · `MANUAL_REJECTION` */
   reasonCode: string | null;
+  /** 관리자 확인 대기의 사유 묶음. 분류는 서버가 정하고, MANUAL 이 아니면 null */
+  reasonGroup: ContentReviewReasonGroup | null;
   reason: string | null;
   findings: ContentReviewFinding[];
   /** 수동 판정자 또는 AI 재검수 요청자. 있다고 수동 판정은 아니다. */
