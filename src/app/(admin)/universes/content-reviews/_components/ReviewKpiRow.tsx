@@ -22,10 +22,9 @@ const Unit = ({ children }: { children: ReactNode }) => (
   <span className="ml-1 body-4 font-medium text-font-2">{children}</span>
 );
 
-/** 대기열 구성 막대. 세 갈래가 각각 다른 이유로 기다린다. */
+/** 대기열 구성 막대. 두 갈래가 각각 다른 이유로 기다린다. */
 const QUEUE_PARTS = [
   { key: "readyDue", label: "실행 가능", className: "bg-brand" },
-  { key: "waitingImage", label: "이미지 대기", className: "bg-info" },
   { key: "retrying", label: "재시도 대기", className: "bg-warning" },
 ] as const;
 
@@ -98,7 +97,7 @@ const LimitControl = ({ active, value }: { active: number; value: number }) => {
 
 const ReviewKpiRow = ({ monitor }: { monitor: ContentReviewMonitor }) => {
   const { queue, settings, lastHour } = monitor;
-  const queueTotal = queue.readyDue + queue.waitingImage + queue.retrying;
+  const queueTotal = queue.readyDue + queue.retrying;
   const attempts = lastHour.completed + lastHour.failed;
   const failRate = attempts ? (lastHour.failed / attempts) * 100 : 0;
 
