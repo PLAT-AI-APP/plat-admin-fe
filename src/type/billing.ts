@@ -182,7 +182,7 @@ export interface LedgerEntry {
  * 주문마다 결제한 PG가 적히고 환불도 **그 PG로** 나간다. 새 주문의 PG를 바꿔도
  * 이미 받은 주문은 원래 PG로 취소되므로, 화면은 PG를 건마다 보여 준다.
  */
-export type PaymentPgProvider = "TOSS" | "KAKAO_PAY" | "INICIS" | "NICE";
+export type PaymentPgProvider = "TOSS" | "KAKAO_PAY" | "INICIS" | "NICE" | "PORTONE";
 
 /** plat-be `PaymentMethod`. PG가 알려 준 결제수단이며 승인 전에는 비어 있다. */
 export type PaymentOrderMethod =
