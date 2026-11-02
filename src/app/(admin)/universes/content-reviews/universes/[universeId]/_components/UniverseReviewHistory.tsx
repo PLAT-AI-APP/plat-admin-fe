@@ -37,14 +37,7 @@ import {
 } from "../../../_lib/reviewMeta";
 import ReviewDecisionPanel from "../../../_components/ReviewDecisionPanel";
 import ReviewInputView from "../../../_components/ReviewInputView";
-import { buildTimeline, type TimelineGroup } from "./reviewTimeline";
-
-const FILTERS: { label: string; value: TimelineGroup | "all" }[] = [
-  { label: "전체", value: "all" },
-  { label: "세계관 본문", value: "universe" },
-  { label: "이미지", value: "file" },
-  { label: "관리자 판정", value: "admin" },
-];
+import { buildTimeline } from "./reviewTimeline";
 
 /** 타임라인 점 색. 판정 주체가 먼저 읽혀야 한다. */
 const DOT_CLASS: Record<string, string> = {
@@ -178,7 +171,6 @@ const Stat = ({ label, value, danger }: { label: string; value: number; danger?:
  * 최신순으로 펴고, 지금 판정할 건이 있으면 맨 위에서 처리한다.
  */
 const UniverseReviewHistory = ({ universeId }: { universeId: string }) => {
-  const [filter, setFilter] = useState<TimelineGroup | "all">("all");
   const [openKeys, setOpenKeys] = useState<string[]>([]);
   const toggleOpen = (key: string) =>
     setOpenKeys((prev) => (prev.includes(key) ? prev.filter((each) => each !== key) : [...prev, key]));
@@ -196,7 +188,6 @@ const UniverseReviewHistory = ({ universeId }: { universeId: string }) => {
     detail?.translations[0]?.title ??
     (currentUniverseTask ? taskTitle(currentUniverseTask) : `세계관 ${universeId}`);
   const profileImage = currentUniverseTask?.input.images.find((image) => image.fileType === "UNIVERSE_PROFILE");
-  const visibleEvents = events.filter((event) => filter === "all" || event.group === filter);
   const statusBadge = currentUniverseTask ? taskStatusBadge(currentUniverseTask) : null;
   /* 서버 공개 조건과 같다: 활성 · 비공개 아님 · 제한 없음 · 검수 승인(작업이 없으면 기존 승인 유지). */
   const isExposed =
@@ -255,37 +246,14 @@ const UniverseReviewHistory = ({ universeId }: { universeId: string }) => {
             noPadding
             title="검수 이력"
             description="세계관 본문과 연결 이미지의 모든 접수 · AI 판정 · 관리자 판정 · 실패 시도를 최신순으로 보여 줍니다. 줄을 누르면 시도 기록과 작업 정보가 펼쳐집니다."
-            action={
-              <div role="group" aria-label="이력 필터" className="flex flex-wrap gap-1.5">
-                {FILTERS.map((each) => {
-                  const isOn = filter === each.value;
-                  return (
-                    <button
-                      key={each.value}
-                      type="button"
-                      aria-pressed={isOn}
-                      onClick={() => setFilter(each.value)}
-                      className={cn(
-                        "h-8 rounded-full border px-3 body-5 transition",
-                        isOn
-                          ? "border-brand bg-surface-selected font-semibold text-brand"
-                          : "border-border-strong bg-surface font-medium text-font-1 hover:bg-surface-hover",
-                      )}
-                    >
-                      {each.label}
-                    </button>
-                  );
-                })}
-              </div>
-            }
           >
             {timelineQuery.isLoading ? (
               <Skeleton className="m-5 h-40" />
-            ) : visibleEvents.length === 0 ? (
+            ) : events.length === 0 ? (
               <EmptyState title="검수 기록이 없습니다." />
             ) : (
               <ol className="px-5 py-2">
-                {visibleEvents.map((event) => {
+                {events.map((event) => {
                   const isOpen = openKeys.includes(event.key);
                   return (
                     <li key={event.key} className="flex gap-3.5 border-b border-border-main py-3.5 last:border-b-0">
