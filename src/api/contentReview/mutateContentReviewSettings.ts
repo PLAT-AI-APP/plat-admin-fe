@@ -34,7 +34,7 @@ export const useContentReviewSettingsMutation = () => {
       showAppToast("success", successMessage(payload));
       // 다시 받기 전까지 옛 값이 보이면 그 값을 기준으로 다음 변경을 계산한다. 저장한 값을 먼저 반영한다.
       queryClient.setQueriesData<ContentReviewMonitor>(
-        { queryKey: ["content-review", "monitor"] },
+        { queryKey: contentReviewQueryKeys.monitorAll() },
         (monitor) =>
           monitor && {
             ...monitor,
