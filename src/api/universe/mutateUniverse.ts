@@ -3,7 +3,7 @@ import { liveAxios } from "..";
 import { showAppToast } from "@/lib/toast";
 import type { AppError } from "@/type/api";
 import type {
-  UniverseReviewStatus,
+  UniverseModerationStatus,
   UniverseStatus,
   UniverseTendency,
   UniverseVisibility,
@@ -13,7 +13,7 @@ import type {
  * 세계관 운영 조치(실서버 plat-admin, liveAxios).
  *
  * 두 엔드포인트로 나뉜다. 일반 운영 값은 `PATCH /universes/{id}`,
- * 심사 결과는 `PATCH /universes/{id}/review`. 둘 다 204라 응답에 값이 없어,
+ * 운영 제한은 `PATCH /universes/{id}/moderation`. 둘 다 204라 응답에 값이 없어,
  * 보낸 값을 그대로 문구에 쓴다.
  */
 
@@ -31,9 +31,9 @@ export interface UniversePatchBody {
   adult?: boolean;
 }
 
-export interface UniverseReviewBody {
-  reviewStatus: UniverseReviewStatus;
-  /** 반려(REJECTED)일 때만 필수. 반려는 노출도 비공개로 함께 내려간다. */
+export interface UniverseModerationBody {
+  moderationStatus: UniverseModerationStatus;
+  /** 제한(BLOCKED)일 때만 필수. 해제하면 서버가 사유를 지운다. 검수 결과 · 공개 범위는 바뀌지 않는다. */
   reason?: string;
 }
 
@@ -44,11 +44,11 @@ export const patchUniverse = async (
   await liveAxios.patch(`/universes/${universeId}`, body);
 };
 
-export const reviewUniverse = async (
+export const moderateUniverse = async (
   universeId: string,
-  body: UniverseReviewBody,
+  body: UniverseModerationBody,
 ) => {
-  await liveAxios.patch(`/universes/${universeId}/review`, body);
+  await liveAxios.patch(`/universes/${universeId}/moderation`, body);
 };
 
 /**
@@ -69,8 +69,8 @@ export const APP_SYNC_DELAY_NOTICE =
  */
 const UNIVERSE_ERROR_MESSAGE: Record<string, string> = {
   UNIVERSE_STATUS_TRANSITION_INVALID: "이 세계관은 상태를 바꿀 수 없습니다.",
-  UNIVERSE_REVIEW_REASON_REQUIRED:
-    "반려 사유를 입력해야 심사를 반려할 수 있습니다.",
+  UNIVERSE_MODERATION_REASON_REQUIRED:
+    "운영 제한 사유를 입력해야 제한할 수 있습니다.",
   UNIVERSE_NOT_FOUND: "세계관을 찾을 수 없습니다. 이미 삭제되었을 수 있습니다.",
 };
 
@@ -114,18 +114,18 @@ export const useUniverseMutation = () => {
     },
   });
 
-  /** 심사 승인·반려·재심사 요청. */
-  const reviewMutation = useMutation<
+  /** 운영 제한 · 해제. */
+  const moderationMutation = useMutation<
     void,
     AppError,
-    { universeId: string; body: UniverseReviewBody; message: string }
+    { universeId: string; body: UniverseModerationBody; message: string }
   >({
-    mutationFn: ({ universeId, body }) => reviewUniverse(universeId, body),
+    mutationFn: ({ universeId, body }) => moderateUniverse(universeId, body),
     onSuccess: (_, { message }) => {
       showAppToast("success", message, { description: APP_SYNC_DELAY_NOTICE });
       invalidateUniverses();
     },
   });
 
-  return { patchMutation, reviewMutation };
+  return { patchMutation, moderationMutation };
 };
