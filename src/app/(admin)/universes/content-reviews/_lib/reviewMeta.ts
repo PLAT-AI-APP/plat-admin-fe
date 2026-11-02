@@ -43,6 +43,7 @@ export const IMAGE_FILE_TYPE_LABEL: Record<string, string> = {
   UNIVERSE_PROFILE: "대표 이미지",
   CHARACTER_PROFILE: "캐릭터",
   UNIVERSE_ASSET: "에셋",
+  USER_PROFILE: "사용자 프로필",
 };
 
 /**
@@ -68,15 +69,29 @@ export const imageFileTypeLabel = (fileType?: string) =>
 export const isManualDecision = (task: ContentReviewTask) =>
   task.reasonCode === "MANUAL_APPROVAL" || task.reasonCode === "MANUAL_REJECTION";
 
+/** 본문 승인 뒤 연결 이미지 때문에 공개가 막힌 세계관(`imageHoldCode`). */
+const IMAGE_HOLD_BADGE: Record<string, { label: string; tone: BadgeTone }> = {
+  IMAGE_PENDING: { label: "이미지 검수 대기", tone: "neutral" },
+  IMAGE_REJECTED: { label: "이미지 반려", tone: "danger" },
+  ADULT_SETTING_REQUIRED: { label: "성인 설정 필요", tone: "warning" },
+};
+
 /**
  * 행의 상태 뱃지. 작업 진행(`jobStatus`)과 판정(`reviewStatus`)을 한 칸으로 합친다.
  * 관리자 확인 필요(MANUAL)는 반려처럼 보이지 않게 경고색으로 둔다.
  */
 export const taskStatusBadge = (task: ContentReviewTask): { label: string; tone: BadgeTone } => {
+  // 본문은 승인됐어도 연결 이미지가 막으면 공개되지 않는다. 승인으로 보이면 안 된다.
+  if (task.reviewStatus === "APPROVED" && task.imageHoldCode) {
+    return IMAGE_HOLD_BADGE[task.imageHoldCode] ?? { label: "이미지 확인 필요", tone: "warning" };
+  }
   if (task.jobStatus === "READY") return { label: "자동 검수 대기", tone: "neutral" };
   if (task.jobStatus === "RUNNING") return { label: "검수 중", tone: "info" };
   if (task.jobStatus === "MANUAL") return { label: "관리자 확인 필요", tone: "warning" };
-  if (task.reviewStatus === "REJECTED") return { label: "반려", tone: "danger" };
+  if (task.reviewStatus === "REJECTED") {
+    // 이미지는 AI 가 확실한 위반을 직접 반려한다. 제작자가 이의 신청할 수 있어 관리자 반려와 나눠 보인다.
+    return { label: isManualDecision(task) ? "반려" : "AI 반려", tone: "danger" };
+  }
   return { label: "승인", tone: "success" };
 };
 
@@ -152,7 +167,9 @@ export const MANUAL_REASON_LABEL: Record<string, string> = {
   IMAGE_MINOR_SEXUAL: "미성년 성적 묘사 의심",
   IMAGE_UNCERTAIN: "이미지 판단 불확실",
   IMAGE_REFUSED: "AI 가 이미지 판정 거부",
-  IMAGE_REVIEW_REJECTED: "연결 이미지 반려됨",
+  IMAGE_REVIEW_PENDING: "연결 이미지 검수 대기",
+  IMAGE_REVIEW_BLOCKED: "연결 이미지 미통과",
+  USER_APPEAL: "사용자 이의 신청",
   MANUAL_APPROVAL: "관리자 승인",
   MANUAL_REJECTION: "관리자 반려",
 };

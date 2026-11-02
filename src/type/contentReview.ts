@@ -83,6 +83,11 @@ export interface ContentReviewTask {
   nextAttemptAt: string | null;
   leaseExpiresAt: string | null;
   leaseExpired: boolean;
+  /**
+   * 세계관 작업만. 본문은 승인돼도 연결 이미지 때문에 공개되지 않은 이유.
+   * `IMAGE_PENDING`(이미지 검수 대기) · `IMAGE_REJECTED`(이미지 반려) · `ADULT_SETTING_REQUIRED`(성인 설정 필요)
+   */
+  imageHoldCode: string | null;
 }
 
 /** 대체된 이력을 뺀 현재 작업 수. 세계관 수가 아니라 작업 수다. */
@@ -150,7 +155,6 @@ export interface ContentReviewMonitor {
   workers: ContentReviewWorker[];
   queue: {
     readyDue: number;
-    waitingImage: number;
     retrying: number;
     running: number;
     manual: number;

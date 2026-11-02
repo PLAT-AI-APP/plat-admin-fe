@@ -189,13 +189,13 @@ const UniverseReviewHistory = ({ universeId }: { universeId: string }) => {
     (currentUniverseTask ? taskTitle(currentUniverseTask) : `세계관 ${universeId}`);
   const profileImage = currentUniverseTask?.input.images.find((image) => image.fileType === "UNIVERSE_PROFILE");
   const statusBadge = currentUniverseTask ? taskStatusBadge(currentUniverseTask) : null;
-  /* 서버 공개 조건과 같다: 활성 · 비공개 아님 · 제한 없음 · 검수 승인(작업이 없으면 기존 승인 유지). */
+  /* 서버 공개 조건과 같다: 활성 · 비공개 아님 · 제한 없음 · 본문 승인과 이미지 보류 없음(작업이 없으면 기존 승인 유지). */
   const isExposed =
     !!detail &&
     detail.status === "ACTIVE" &&
     detail.visibility !== "PRIVATE" &&
     detail.moderationStatus === "CLEAR" &&
-    (!currentUniverseTask || currentUniverseTask.reviewStatus === "APPROVED");
+    (!currentUniverseTask || (currentUniverseTask.reviewStatus === "APPROVED" && !currentUniverseTask.imageHoldCode));
 
   // 없는 ID(404)·잘못된 ID(400)를 빈 이력처럼 그리면 현재 상태·누적 칸이 사실처럼 보인다.
   const isMissing = timelineQuery.error?.status === 404 || timelineQuery.error?.status === 400;
