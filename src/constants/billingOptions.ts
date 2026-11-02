@@ -116,6 +116,7 @@ export const PAYMENT_PG_PROVIDER_LABEL: Record<PaymentPgProvider, string> = {
   TOSS: "토스페이먼츠",
   INICIS: "KG이니시스",
   NICE: "나이스페이먼츠",
+  PORTONE: "포트원",
 };
 
 export const PAYMENT_PG_PROVIDER_FILTER_OPTIONS: SelectOption[] = [
