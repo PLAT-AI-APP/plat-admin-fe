@@ -14,7 +14,7 @@ export interface CharacterExposureState {
 /**
  * 앱에 노출될 수 있는 캐릭터인지.
  *
- * 세계관과 달리 심사 상태를 보지 않는다. 서버 `CharacterEntity`에
+ * 세계관과 달리 운영 제한을 보지 않는다. 서버 `CharacterEntity`에
  * `reviewStatus`가 있긴 하지만 **그 값을 읽거나 바꾸는 API가 하나도 없어**
  * 어드민이 알 수 없는 값이다. 모르는 값을 판정에 넣으면 화면이 근거 없는
  * 결론을 말하게 된다.

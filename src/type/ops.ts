@@ -559,6 +559,8 @@ export interface PendingCounts {
   redemption: number;
   /** 심사를 기다리는 탈퇴 캐릭터 인수 건. */
   handover: number;
+  /** AI 가 확정하지 못해 관리자 판정을 기다리는 검수 작업. */
+  contentReview: number;
   /** 승인 대기 환불이 있는 결제. */
   refund: number;
   /** 확인이 필요한(이상) 결제. */

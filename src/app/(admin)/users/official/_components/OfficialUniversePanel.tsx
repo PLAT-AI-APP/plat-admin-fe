@@ -12,8 +12,8 @@ import EntityImage from "@/components/ui/EntityImage";
 import Pagination from "@/components/ui/Pagination";
 import Table, { type TableColumn } from "@/components/ui/Table";
 import {
-  UNIVERSE_REVIEW_LABEL,
-  UNIVERSE_REVIEW_TONE,
+  UNIVERSE_MODERATION_LABEL,
+  UNIVERSE_MODERATION_TONE,
   UNIVERSE_VISIBILITY_LABEL,
   UNIVERSE_VISIBILITY_TONE,
 } from "@/constants/universeOptions";
@@ -88,12 +88,12 @@ const OfficialUniversePanel = () => {
       ),
     },
     {
-      key: "review",
-      header: "심사",
+      key: "moderation",
+      header: "운영 제한",
       align: "center",
       render: (row) => (
-        <Badge tone={UNIVERSE_REVIEW_TONE[row.reviewStatus]}>
-          {UNIVERSE_REVIEW_LABEL[row.reviewStatus]}
+        <Badge tone={UNIVERSE_MODERATION_TONE[row.moderationStatus]}>
+          {UNIVERSE_MODERATION_LABEL[row.moderationStatus]}
         </Badge>
       ),
     },

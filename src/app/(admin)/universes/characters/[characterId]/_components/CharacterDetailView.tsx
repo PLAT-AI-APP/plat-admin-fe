@@ -41,8 +41,8 @@ import {
   isExposableCharacter,
 } from "@/app/(admin)/universes/characters/_lib/characterExposure";
 import {
-  UNIVERSE_REVIEW_LABEL,
-  UNIVERSE_REVIEW_TONE,
+  UNIVERSE_MODERATION_LABEL,
+  UNIVERSE_MODERATION_TONE,
   UNIVERSE_STATUS_LABEL,
   UNIVERSE_STATUS_TONE,
   UNIVERSE_VISIBILITY_LABEL,
@@ -447,7 +447,7 @@ const UniverseSection = ({
 /**
  * 등장 세계관 한 줄. 누르면 세계관 상세로 넘어간다.
  *
- * 칩은 세계관 상세 히어로와 같은 셋(운영 상태 · 공개 범위 · 심사)을 같은 순서로 둔다.
+ * 칩은 세계관 상세 히어로와 같은 셋(운영 상태 · 공개 범위 · 운영 제한)을 같은 순서로 둔다.
  * 목록에서 본 칩이 상세에서 다른 모양이면 같은 세계관인지 다시 확인하게 된다.
  */
 const UniverseRow = ({ universe }: { universe: Universe }) => (
@@ -471,8 +471,8 @@ const UniverseRow = ({ universe }: { universe: Universe }) => (
         <StatusChip tone={UNIVERSE_VISIBILITY_TONE[universe.visibility]}>
           {UNIVERSE_VISIBILITY_LABEL[universe.visibility]}
         </StatusChip>
-        <StatusChip tone={UNIVERSE_REVIEW_TONE[universe.reviewStatus]}>
-          {UNIVERSE_REVIEW_LABEL[universe.reviewStatus]}
+        <StatusChip tone={UNIVERSE_MODERATION_TONE[universe.moderationStatus]}>
+          {UNIVERSE_MODERATION_LABEL[universe.moderationStatus]}
         </StatusChip>
         {universe.isOfficial && <StatusChip tone="brand">공식</StatusChip>}
       </div>

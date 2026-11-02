@@ -91,7 +91,7 @@ const UserUniversePanel = ({ userId, nickname }: UserUniversePanelProps) => {
       ),
     },
     {
-      /* 세계관 목록과 같은 규칙으로 심사 · 상태를 한 칸에 담는다. */
+      /* 세계관 목록과 같은 규칙으로 운영 제한 · 상태를 한 칸에 담는다. */
       key: "state",
       header: "상태",
       align: "center",
@@ -99,7 +99,7 @@ const UserUniversePanel = ({ userId, nickname }: UserUniversePanelProps) => {
       render: (row) => (
         <UniverseStateBadge
           status={row.status}
-          reviewStatus={row.reviewStatus}
+          moderationStatus={row.moderationStatus}
         />
       ),
     },

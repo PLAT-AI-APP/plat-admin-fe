@@ -31,8 +31,8 @@ import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import {
   UNIVERSE_ADULT_FILTER_OPTIONS,
   UNIVERSE_ORDER_OPTIONS,
-  UNIVERSE_REVIEW_FILTER_OPTIONS,
-  UNIVERSE_REVIEW_LABEL,
+  UNIVERSE_MODERATION_FILTER_OPTIONS,
+  UNIVERSE_MODERATION_LABEL,
   UNIVERSE_STATUS_FILTER_OPTIONS,
   UNIVERSE_STATUS_LABEL,
   UNIVERSE_TENDENCY_LABEL,
@@ -52,7 +52,7 @@ const DEFAULT_PARAMS = {
   order: "CREATED_DESC",
   visibility: "",
   status: "",
-  reviewStatus: "",
+  moderationStatus: "",
   tendency: "",
   commentEnabled: "",
   adult: "",
@@ -108,49 +108,51 @@ const COMMENT_FILTER_OPTIONS: SelectOption[] = [
 /* 업무 흐름 탭                                                          */
 /* ------------------------------------------------------------------ */
 
-/** 심사 대기 숫자의 신선도. 방금 처리한 건이 탭에 남아 있으면 안 된다. */
-const PENDING_COUNT_STALE_TIME = 1000 * 60;
-
-type BoardTab = "ALL" | "PENDING" | "REJECTED";
+type BoardTab = "ALL" | "BLOCKED";
 
 /** 탭 프리셋 어디에도 없는 조합. 탭 목록에 없으므로 아무 탭도 켜지지 않는다. */
 type BoardTabValue = BoardTab | "CUSTOM";
 
 /**
- * 탭이 정하는 것은 상태 · 심사 두 축뿐이다. 나머지 필터는 탭과 무관하게 유지된다.
+ * 탭이 정하는 것은 상태 · 운영 제한 두 축뿐이다. 나머지 필터는 탭과 무관하게 유지된다.
  *
  * "운영 중"처럼 정상인 것을 모아 보는 탭은 두지 않는다. 목록의 대부분이 그것이라
  * 전체 탭과 거의 같은 화면이 되고, 이제는 상태 뱃지가 한 칸에서 같은 말을 한다.
  * 탭은 **조치가 필요한 쪽**만 남긴다.
  *
- * 비활성 탭은 없다. 운영 비활성화를 없애고 공개된 세계관도 반려(사유 필수)로 내린다.
+ * 비활성 탭은 없다. 운영 비활성화를 없애고 공개된 세계관도 운영 제한(사유 필수)으로 내린다.
+ * 검수 대기 탭도 없다. 목록 API 가 검수 상태로 거르지 않아, 검수는 검수 관제(`/universes/content-reviews`)에서 본다.
  */
-const TAB_FILTERS: Record<BoardTab, { status: string; reviewStatus: string }> =
-  {
-    ALL: { status: "", reviewStatus: "" },
-    PENDING: { status: "", reviewStatus: "PENDING" },
-    REJECTED: { status: "", reviewStatus: "REJECTED" },
-  };
+const TAB_FILTERS: Record<
+  BoardTab,
+  { status: string; moderationStatus: string }
+> = {
+  ALL: { status: "", moderationStatus: "" },
+  BLOCKED: { status: "", moderationStatus: "BLOCKED" },
+};
 
 /**
  * 현재 조건이 어느 탭인지 되짚는다.
  *
- * 탭 전용 파라미터를 따로 두지 않고 `status` · `reviewStatus`에서 되짚는 이유는,
+ * 탭 전용 파라미터를 따로 두지 않고 `status` · `moderationStatus`에서 되짚는 이유는,
  * 주소가 조건의 원본이어야 하기 때문이다. 탭 파라미터를 따로 두면 상세에서
  * 넘어온 주소나 필터 Select로 만든 조합과 탭이 어긋난다.
  *
- * 어느 탭에도 해당하지 않는 조합(예: 심사 승인 + 삭제 대기)이면 `CUSTOM`이다.
+ * 어느 탭에도 해당하지 않는 조합(예: 정상 + 삭제 대기)이면 `CUSTOM`이다.
  * 이때는 **아무 탭도 켜지지 않는다** — 없는 탭을 켜 두는 것보다 정직하다.
  */
-const resolveTab = (status: string, reviewStatus: string): BoardTabValue => {
+const resolveTab = (
+  status: string,
+  moderationStatus: string,
+): BoardTabValue => {
   const entries = Object.entries(TAB_FILTERS) as [
     BoardTab,
-    { status: string; reviewStatus: string },
+    { status: string; moderationStatus: string },
   ][];
 
   const found = entries.find(
     ([, filter]) =>
-      filter.status === status && filter.reviewStatus === reviewStatus,
+      filter.status === status && filter.moderationStatus === moderationStatus,
   );
 
   return found?.[0] ?? "CUSTOM";
@@ -169,8 +171,8 @@ const UniverseManager = () => {
   const order = isSupportedOrder(params.order) ? params.order : "CREATED_DESC";
   const visibility = params.visibility as AdminUniverseListParams["visibility"];
   const status = params.status as AdminUniverseListParams["status"];
-  const reviewStatus =
-    params.reviewStatus as AdminUniverseListParams["reviewStatus"];
+  const moderationStatus =
+    params.moderationStatus as AdminUniverseListParams["moderationStatus"];
   const tendency = params.tendency as AdminUniverseListParams["tendency"];
   const commentEnabled =
     params.commentEnabled as AdminUniverseListParams["commentEnabled"];
@@ -184,7 +186,7 @@ const UniverseManager = () => {
       order,
       visibility,
       status,
-      reviewStatus,
+      moderationStatus,
       tendency,
       commentEnabled,
       adult,
@@ -194,20 +196,14 @@ const UniverseManager = () => {
 
   /*
     탭 숫자. 화면 필터와 무관한 전체 건수이고, 목록보다 오래 묵혀 쓴다.
-
-    심사 대기만 짧게 잡는다. 운영자가 상세에서 승인 · 반려하고 돌아오면 곧바로
-    줄어야 하는 숫자다. 반려는 쌓여 있는 값이라 오래 묵혀도 된다.
+    운영 제한은 쌓여 있는 값이라 오래 묵혀도 된다.
   */
-  const { data: pendingCount } = useAdminUniverseCountQuery(
-    { reviewStatus: "PENDING" },
-    PENDING_COUNT_STALE_TIME,
-  );
-  const { data: rejectedCount } = useAdminUniverseCountQuery({
-    reviewStatus: "REJECTED",
+  const { data: blockedCount } = useAdminUniverseCountQuery({
+    moderationStatus: "BLOCKED",
   });
 
   const rows = data?.content ?? [];
-  const activeTab = resolveTab(params.status, params.reviewStatus);
+  const activeTab = resolveTab(params.status, params.moderationStatus);
 
   /*
     개수가 아직 안 온 탭은 숫자를 비워 둔다(`undefined`). 0을 먼저 그리면
@@ -215,8 +211,7 @@ const UniverseManager = () => {
   */
   const tabs: TabItem<BoardTabValue>[] = [
     { label: "전체", value: "ALL" },
-    { label: "심사 대기", value: "PENDING", count: pendingCount },
-    { label: "반려", value: "REJECTED", count: rejectedCount },
+    { label: "운영 제한", value: "BLOCKED", count: blockedCount },
   ];
 
   const clearDrilldown = () => setParams({ creatorId: "", hashtagId: "" });
@@ -355,14 +350,14 @@ const UniverseManager = () => {
       ),
     },
     {
-      /* 심사 · 상태를 한 칸으로. 두 축은 서버에서 독립이라 값이 아니라 표시만 합친다. */
+      /* 운영 제한 · 상태를 한 칸으로. 두 축은 서버에서 독립이라 값이 아니라 표시만 합친다. */
       key: "state",
       header: "상태",
       align: "center",
       render: (row) => (
         <UniverseStateBadge
           status={row.status}
-          reviewStatus={row.reviewStatus}
+          moderationStatus={row.moderationStatus}
         />
       ),
     },
@@ -424,7 +419,10 @@ const UniverseManager = () => {
       header: "공개 범위",
       value: (row) => UNIVERSE_VISIBILITY_LABEL[row.visibility],
     },
-    { header: "심사", value: (row) => UNIVERSE_REVIEW_LABEL[row.reviewStatus] },
+    {
+      header: "운영 제한",
+      value: (row) => UNIVERSE_MODERATION_LABEL[row.moderationStatus],
+    },
     { header: "상태", value: (row) => UNIVERSE_STATUS_LABEL[row.status] },
     { header: "댓글", value: (row) => (row.commentEnabled ? "허용" : "불가") },
     // CSV는 원본 숫자를 담는다. 축약값을 담으면 스프레드시트에서 합계를 못 낸다.
@@ -438,7 +436,7 @@ const UniverseManager = () => {
       <Alert tone="info" title="세계관은 캐릭터와 시나리오를 품는 단위입니다.">
         세계관 하나에 <b>캐릭터</b>가 등장하고, 유저는 세계관에 들어와{" "}
         <b>시나리오</b>를 골라 대화를 시작합니다. 행을 클릭하면 번역 · 에셋 ·
-        시나리오를 함께 검수하고 심사 · 상태를 조치할 수 있습니다.
+        시나리오를 함께 확인하고 운영 제한 · 상태를 조치할 수 있습니다.
       </Alert>
 
       {/* 다른 화면에서 넘어온 드릴다운. 걸려 있는 줄 모르면 "세계관이 몇 개 없다"고 오해한다. */}
@@ -473,8 +471,8 @@ const UniverseManager = () => {
         noPadding
       >
         {/*
-          업무 흐름 탭. 탭이 정하는 것은 상태 · 심사뿐이고, 어느 탭에도 없는
-          조합(예: 심사 승인 + 삭제 대기)을 필터로 만들면 아무 탭도 켜지지 않는다.
+          업무 흐름 탭. 탭이 정하는 것은 상태 · 운영 제한뿐이고, 어느 탭에도 없는
+          조합(예: 정상 + 삭제 대기)을 필터로 만들면 아무 탭도 켜지지 않는다.
         */}
         <Tabs
           items={tabs}
@@ -529,13 +527,13 @@ const UniverseManager = () => {
               aria-label="성인 분류 필터"
             />
             <Select
-              options={UNIVERSE_REVIEW_FILTER_OPTIONS}
-              value={reviewStatus}
+              options={UNIVERSE_MODERATION_FILTER_OPTIONS}
+              value={moderationStatus}
               onChange={(event) =>
-                setParams({ reviewStatus: event.target.value })
+                setParams({ moderationStatus: event.target.value })
               }
               selectBoxClassName="w-28"
-              aria-label="심사 상태 필터"
+              aria-label="운영 제한 필터"
             />
             <Select
               options={UNIVERSE_STATUS_FILTER_OPTIONS}

@@ -27,7 +27,7 @@ import {
 import {
   useAutoRefresh,
   type AutoRefreshSeconds,
-} from "@/app/(admin)/ops/server/_hooks/useAutoRefresh";
+} from "@/hooks/useAutoRefresh";
 
 /** 임계치를 넘은 지표를 한 줄로 모은다. 카드를 다 훑기 전에 먼저 보여야 한다. */
 const collectWarnings = (

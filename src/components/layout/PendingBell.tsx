@@ -45,6 +45,12 @@ const PENDING_ENTRIES: PendingEntry[] = [
     hint: "탈퇴한 크리에이터가 남긴 캐릭터",
   },
   {
+    key: "contentReview",
+    label: "검수 판정 대기",
+    href: "/universes/content-reviews",
+    hint: "AI 가 확정하지 못한 세계관 · 이미지",
+  },
+  {
     key: "refund",
     label: "환불 요청",
     href: "/billing/payments?tab=REFUND_REQUESTED",
@@ -96,6 +102,7 @@ const PendingBell = () => {
     data.comment +
     data.report +
     data.handover +
+    data.contentReview +
     data.redemption +
     data.refund +
     data.paymentIssue;
