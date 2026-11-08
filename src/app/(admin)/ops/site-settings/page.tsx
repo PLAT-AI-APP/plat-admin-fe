@@ -1,4 +1,6 @@
 import PageHeader from "@/components/layout/PageHeader";
+import PaymentPauseCard from "./_components/PaymentPauseCard";
+import RefundExecutionPauseCard from "./_components/RefundExecutionPauseCard";
 import SignupPauseCard from "./_components/SignupPauseCard";
 import SiteSettingsForm from "./_components/SiteSettingsForm";
 
@@ -16,6 +18,8 @@ export default function SiteSettingsPage() {
 
       <div className="flex flex-col gap-4">
         <SignupPauseCard />
+        <PaymentPauseCard />
+        <RefundExecutionPauseCard />
         <SiteSettingsForm />
       </div>
     </>
