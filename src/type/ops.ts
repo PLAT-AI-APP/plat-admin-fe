@@ -646,3 +646,24 @@ export interface SiteSettings extends SiteSettingsRequest {
 export interface SignupPause {
   paused: boolean;
 }
+
+/**
+ * 신규 결제 일시 중단. 조회·변경이 같은 모양이다.
+ *
+ * `true`면 새 주문 생성과 승인 시작을 막는다. 이미 시작한 승인, 지급·환불·웹훅은
+ * 그대로 돈다. 화면의 "신규 결제 허용"은 이 값의 반대다.
+ */
+export interface PaymentPause {
+  paused: boolean;
+}
+
+/**
+ * 환불 실행 일시 중단. 조회·변경이 같은 모양이다.
+ *
+ * `true`면 관리자 승인·직접 환불·강제 환불이 409로 막힌다. **사용자의 환불 신청은
+ * 계속 접수된다** — 신청은 REQUESTED로 쌓이고, 재개한 뒤 관리자가 다시 승인해야 한다.
+ * 신규 결제 중단과 서로 영향을 주지 않는다.
+ */
+export interface RefundExecutionPause {
+  paused: boolean;
+}
