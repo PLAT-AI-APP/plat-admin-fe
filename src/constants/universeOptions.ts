@@ -10,6 +10,7 @@ import type {
   UniverseTendency,
   UniverseVisibility,
 } from "@/type/character";
+import type { ContentReviewStatus } from "@/type/contentReview";
 
 /**
  * 캐릭터 도메인 화면들이 공유하는 라벨 · 뱃지 톤 정의.
@@ -110,6 +111,32 @@ export const UNIVERSE_MODERATION_FILTER_OPTIONS: SelectOption[] = [
   { label: UNIVERSE_MODERATION_LABEL.CLEAR, value: "CLEAR" },
   { label: "제한됨", value: "BLOCKED" },
 ];
+
+/**
+ * 콘텐츠 검수 판정 라벨.
+ *
+ * 운영 제한(`moderationStatus`)과 **다른 축**이다. 운영 제한은 운영자가 직접 건
+ * 것이고, 이쪽은 AI · 관리자 심사의 결과다. 둘 다 정상이어야 앱에 보인다.
+ *
+ * 서버는 검수 작업이 하나도 없는 세계관도 `PENDING`으로 내려준다
+ * (`UniverseAdminService.toDetail`의 `getOrDefault`). "검수 기록 없음"은
+ * 따로 구분하지 않는다 — 아직 통과하지 못했다는 뜻은 같기 때문이다.
+ */
+export const UNIVERSE_REVIEW_LABEL: Record<ContentReviewStatus, string> = {
+  PENDING: "검수 대기",
+  APPROVED: "검수 승인",
+  REJECTED: "검수 반려",
+};
+
+/**
+ * 대기를 회색이 아니라 경고색으로 둔다. 대기는 "아직 아무 일도 없음"이 아니라
+ * **앱에 안 보이는 상태**라, 노출 사유 한 줄과 같은 무게로 읽혀야 한다.
+ */
+export const UNIVERSE_REVIEW_TONE: Record<ContentReviewStatus, BadgeTone> = {
+  PENDING: "warning",
+  APPROVED: "success",
+  REJECTED: "danger",
+};
 
 export const UNIVERSE_TENDENCY_LABEL: Record<UniverseTendency, string> = {
   ALL: "전체",
