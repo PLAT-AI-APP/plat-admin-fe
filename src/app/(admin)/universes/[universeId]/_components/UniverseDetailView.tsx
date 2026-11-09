@@ -57,6 +57,8 @@ import {
 import {
   UNIVERSE_MODERATION_LABEL,
   UNIVERSE_MODERATION_TONE,
+  UNIVERSE_REVIEW_LABEL,
+  UNIVERSE_REVIEW_TONE,
   UNIVERSE_STATUS_LABEL,
   UNIVERSE_STATUS_TONE,
   UNIVERSE_TENDENCY_LABEL,
@@ -275,6 +277,16 @@ const UniverseDetailView = ({ universeId }: UniverseDetailViewProps) => {
                   >
                     {UNIVERSE_MODERATION_LABEL[data.moderationStatus]}
                   </StatusChip>
+                  {/*
+                    운영 제한 다음에 둔다 — 노출을 막는 두 축을 나란히 읽게 한다.
+                    구버전 서버는 판정을 주지 않는다. 그때는 칩을 빼고, 없는 값을
+                    "대기"로 지어내지 않는다.
+                  */}
+                  {data.reviewStatus && (
+                    <StatusChip tone={UNIVERSE_REVIEW_TONE[data.reviewStatus]}>
+                      {UNIVERSE_REVIEW_LABEL[data.reviewStatus]}
+                    </StatusChip>
+                  )}
                   {/* 좋고 나쁨이 없는 분류라 점 없이 둔다. 더보기에서 바꾸는 값이다. */}
                   <StatusChip>{UNIVERSE_TENDENCY_LABEL[data.tendency]}</StatusChip>
                   {!data.commentEnabled && (
