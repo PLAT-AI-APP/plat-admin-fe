@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import {
   toPageRequest,
@@ -72,5 +72,7 @@ export const useHashtagSuggestListQuery = (params: HashtagSuggestListParams) => 
   return useQuery<PageResponse<HashtagSuggestGroup>, AppError>({
     queryKey: ["get-hashtag-suggest-list", params],
     queryFn: () => getHashtagSuggestList(params),
+    // 페이지·필터를 바꿔도 새 결과가 올 때까지 이전 목록을 그대로 둔다(표가 스켈레톤으로 깜빡이지 않는다).
+    placeholderData: keepPreviousData,
   });
 };

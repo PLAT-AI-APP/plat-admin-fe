@@ -85,6 +85,11 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   output: "standalone",
 
+  experimental: {
+    /* 아이콘 배럴(src/icons)을 통과하는 임포트를 실제 쓴 아이콘으로만 좁힌다. 하나를 쓰려고 전부 싣지 않는다. */
+    optimizePackageImports: ["@/icons"],
+  },
+
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },
