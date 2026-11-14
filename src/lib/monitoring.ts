@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/nextjs";
+import type * as Sentry from "@sentry/nextjs";
 
 /**
  * 오류 수집(Sentry). DSN 이 없으면 아무것도 하지 않는다 — DSN 은 운영 준비 때 환경 변수로 넣는다.
@@ -17,10 +17,19 @@ export const sentryOptions = {
   tracesSampleRate: 0,
 };
 
+let sentryModule: Promise<typeof Sentry> | null = null;
+
+/**
+ * SDK 는 첫 화면 JS 의 절반 가까이를 차지해 따로 받는다. 화면이 뜬 뒤 한 번만 받아 온다.
+ */
+export const loadSentry = () => (sentryModule ??= import("@sentry/nextjs"));
+
 export const reportError = (
   error: unknown,
   extra?: Record<string, unknown>,
 ): void => {
   if (!isMonitoringEnabled) return;
-  Sentry.captureException(error, extra ? { extra } : undefined);
+  void loadSentry().then((sdk) =>
+    sdk.captureException(error, extra ? { extra } : undefined),
+  );
 };
