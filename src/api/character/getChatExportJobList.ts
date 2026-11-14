@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { adminAxios } from "..";
 import type { AppError, PageResponse } from "@/type/api";
 import type { ChatExportJob, ChatExportStatus } from "@/type/character";
@@ -30,6 +30,8 @@ export const useChatExportJobListQuery = (params: ChatExportJobListParams) => {
   return useQuery<PageResponse<ChatExportJob>, AppError>({
     queryKey: ["get-chat-export-job-list", params],
     queryFn: () => getChatExportJobList(params),
+    // 페이지·필터를 바꿔도 새 결과가 올 때까지 이전 목록을 그대로 둔다(표가 스켈레톤으로 깜빡이지 않는다).
+    placeholderData: keepPreviousData,
     refetchInterval: (query) => {
       const hasRunningJob = query.state.data?.content.some(
         (job) => job.status === "PENDING" || job.status === "PROCESSING",

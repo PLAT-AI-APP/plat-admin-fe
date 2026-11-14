@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueryClient } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import { usePermittedQuery } from "@/api/usePermittedQuery";
 import { showAppToast, showErrorToast } from "@/lib/toast";
@@ -34,6 +34,8 @@ export const useUserMemosQuery = (params: UserMemoListParams) =>
   usePermittedQuery<PageResponse<UserMemo>>("user:read", {
     queryKey: ["get-user-memos", params],
     queryFn: () => getUserMemos(params),
+    // 페이지·필터를 바꿔도 새 결과가 올 때까지 이전 목록을 그대로 둔다(표가 스켈레톤으로 깜빡이지 않는다).
+    placeholderData: keepPreviousData,
   });
 
 /** 메모 작성 · 삭제. 둘 다 `user:write` 다. */
