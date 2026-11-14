@@ -1,3 +1,4 @@
+import { keepPreviousData } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import { usePermittedQuery } from "../usePermittedQuery";
 import {
@@ -47,6 +48,8 @@ export const useRedemptionListQuery = (params: RedemptionListParams) =>
   usePermittedQuery<PageResponse<Redemption>>("earning:read", {
     queryKey: earningQueryKeys.redemptionList(params),
     queryFn: () => getRedemptionList(params),
+    // 페이지·필터를 바꿔도 새 결과가 올 때까지 이전 목록을 그대로 둔다(표가 스켈레톤으로 깜빡이지 않는다).
+    placeholderData: keepPreviousData,
   });
 
 /** 펼친 행에서만 부른다. 처리 내역은 신청 한 건의 이력이다. */

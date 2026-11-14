@@ -1,3 +1,4 @@
+import { keepPreviousData } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import { usePermittedQuery } from "@/api/usePermittedQuery";
 import {
@@ -64,6 +65,8 @@ export const useReportCaseListQuery = (params: ReportCaseListParams) => {
   return usePermittedQuery<PageResponse<ReportCaseItem>>("report:read", {
     queryKey: ["get-report-case-list", params],
     queryFn: () => getReportCaseList(params),
+    // 페이지·필터를 바꿔도 새 결과가 올 때까지 이전 목록을 그대로 둔다(표가 스켈레톤으로 깜빡이지 않는다).
+    placeholderData: keepPreviousData,
   });
 };
 
