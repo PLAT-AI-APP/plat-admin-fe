@@ -9,8 +9,12 @@ import { toBanner, type BannerResponse } from "./getBannerList";
 /** 저장 요청 본문. 빈 링크는 보내지 않는다 — 서버도 "링크 없음"과 구분하지 않는다. */
 const toRequestBody = (values: BannerFormValues) => ({
   language: values.language,
-  name: values.name,
-  imageFileId: values.imageFileId,
+  title: values.title,
+  description: values.description ?? null,
+  badges: values.badges,
+  tags: values.tags,
+  backgroundImageFileId: values.backgroundImageFileId,
+  foregroundImageFileId: values.foregroundImageFileId ?? null,
   linkUrl: values.linkUrl ?? null,
   isActive: values.isActive,
   startDate: values.startDate ?? null,

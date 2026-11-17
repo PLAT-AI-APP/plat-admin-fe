@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { BANNER_ASPECT_RATIO } from "@/constants/mainExposure";
+import { BANNER_ASPECT_RATIO, BANNER_LIMITS } from "@/constants/mainExposure";
 import { toDateInputValue } from "@/lib/dayjs";
 import { bannerSchema, type BannerSchema } from "@/schema/banner.schema";
 import {
@@ -19,7 +19,10 @@ import ImageUploadField from "@/components/ui/ImageUploadField";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
+import Textarea from "@/components/ui/Textarea";
 import BannerPreview from "./BannerPreview";
+import BadgePicker from "./BadgePicker";
+import LabelInput from "./LabelInput";
 
 /** 신규 등록 · 수정 · 다른 언어로 복제. 셋 다 같은 폼을 쓴다. */
 export type BannerFormMode = "create" | "edit" | "copy";
@@ -38,8 +41,12 @@ interface BannerFormModalProps {
 
 const emptyValues = (language: ServiceLanguage): BannerSchema => ({
   language,
-  name: "",
-  imageFileId: "",
+  title: "",
+  description: "",
+  badges: [],
+  tags: [],
+  backgroundImageFileId: "",
+  foregroundImageFileId: "",
   linkUrl: "",
   isActive: true,
   startDate: "",
@@ -92,8 +99,12 @@ const BannerFormModal = ({
 
     reset({
       language: mode === "copy" ? copyTargetLanguage(banner) : banner.language,
-      name: banner.name,
-      imageFileId: banner.imageFileId,
+      title: banner.title,
+      description: banner.description ?? "",
+      badges: banner.badges,
+      tags: banner.tags,
+      backgroundImageFileId: banner.backgroundImageFileId,
+      foregroundImageFileId: banner.foregroundImageFileId ?? "",
       linkUrl: banner.linkUrl ?? "",
       isActive: banner.isActive,
       startDate: toDateInputValue(banner.startDate),
@@ -101,11 +112,30 @@ const BannerFormModal = ({
     });
   }, [isOpen, mode, banner, defaultLanguage, reset]);
 
-  const imageFileId = useWatch({ control, name: "imageFileId" });
+  const [
+    backgroundImageFileId,
+    foregroundImageFileId,
+    title,
+    description,
+    badges,
+    tags,
+  ] = useWatch({
+    control,
+    name: [
+      "backgroundImageFileId",
+      "foregroundImageFileId",
+      "title",
+      "description",
+      "badges",
+      "tags",
+    ],
+  });
 
   const submit = handleSubmit((formValues) => {
     onSubmit({
       ...formValues,
+      description: formValues.description || undefined,
+      foregroundImageFileId: formValues.foregroundImageFileId || undefined,
       /* 빈 문자열을 그대로 보내면 "링크 없음"과 "빈 링크"가 섞인다. */
       linkUrl: formValues.linkUrl || undefined,
       startDate: formValues.startDate || undefined,
@@ -124,8 +154,8 @@ const BannerFormModal = ({
       title={modalTitle}
       description={
         mode === "copy"
-          ? "원본 배너의 값을 그대로 가져왔습니다. 노출할 언어를 고르고 그 언어 이미지로 바꿔 주세요."
-          : "배너는 이미지 한 장으로 나갑니다. 문구는 이미지 안에 넣어 주세요."
+          ? "원본 배너의 값을 그대로 가져왔습니다. 노출할 언어를 고르고 문구를 그 언어로 바꿔 주세요."
+          : "이벤트형 배너입니다. 배경 이미지 위 오른쪽에 전경 이미지가, 왼쪽 아래에 뱃지 · 제목 · 설명 · 태그가 얹혀 나갑니다."
       }
       size="lg"
       footer={
@@ -142,7 +172,16 @@ const BannerFormModal = ({
       <form onSubmit={submit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <p className="body-5 font-medium text-font-1">미리보기</p>
-          <BannerPreview imageFileId={imageFileId} index={1} totalCount={5} />
+          <BannerPreview
+            backgroundImageFileId={backgroundImageFileId}
+            foregroundImageFileId={foregroundImageFileId}
+            title={title}
+            description={description}
+            badges={badges}
+            tags={tags}
+            index={1}
+            totalCount={5}
+          />
         </div>
 
         <FormField
@@ -166,38 +205,113 @@ const BannerFormModal = ({
           />
         </FormField>
 
-        {/* 목록에서 배너를 가리키는 이름. 노출 문구는 전부 이미지 안에 있다. */}
         <FormField
-          label="배너 이름"
-          required
-          htmlFor="banner-name"
-          error={errors.name?.message}
-          hint="어드민에서만 쓰는 이름입니다. 앱에는 나가지 않습니다."
+          label="뱃지"
+          error={errors.badges?.message}
+          hint={`제목 위에 고른 순서대로 나열됩니다. ${BANNER_LIMITS.badgeCount}개까지 고를 수 있고, 글자는 앱 언어에 맞춰 나갑니다.`}
         >
-          <Input
-            id="banner-name"
-            placeholder="예: 9월 출석 이벤트"
-            hasError={Boolean(errors.name)}
-            {...register("name")}
+          <Controller
+            control={control}
+            name="badges"
+            render={({ field }) => (
+              <BadgePicker
+                value={field.value}
+                onChange={field.onChange}
+                maxCount={BANNER_LIMITS.badgeCount}
+              />
+            )}
           />
         </FormField>
 
         <FormField
-          label="배너 이미지"
+          label="제목"
           required
-          error={errors.imageFileId?.message}
-          hint="권장 비율 1720 × 310. 앱은 이 이미지를 그대로 깝니다. 문구가 있다면 노출 언어에 맞는 것을 올려 주세요."
+          htmlFor="banner-title"
+          error={errors.title?.message}
+          hint="목록에서 배너를 가리키는 이름으로도 씁니다."
+        >
+          <Input
+            id="banner-title"
+            placeholder="예: 9월 출석 이벤트"
+            hasError={Boolean(errors.title)}
+            {...register("title")}
+          />
+        </FormField>
+
+        <FormField
+          label="설명"
+          htmlFor="banner-description"
+          error={errors.description?.message}
+        >
+          <Textarea
+            id="banner-description"
+            rows={2}
+            placeholder="예: 매일 출석하고 노트를 받아 가세요."
+            hasError={Boolean(errors.description)}
+            {...register("description")}
+          />
+        </FormField>
+
+        <FormField
+          label="태그"
+          htmlFor="banner-tags"
+          error={errors.tags?.message}
+          hint={`설명 아래에 #태그 로 나갑니다. Enter 로 추가하고 ${BANNER_LIMITS.tagCount}개까지 넣을 수 있습니다.`}
         >
           <Controller
             control={control}
-            name="imageFileId"
+            name="tags"
+            render={({ field }) => (
+              <LabelInput
+                id="banner-tags"
+                value={field.value}
+                onChange={field.onChange}
+                maxCount={BANNER_LIMITS.tagCount}
+                maxLength={BANNER_LIMITS.tagLength}
+                placeholder="예: 출석"
+                prefix="#"
+                hasError={Boolean(errors.tags)}
+              />
+            )}
+          />
+        </FormField>
+
+        <FormField
+          label="배경 이미지"
+          required
+          error={errors.backgroundImageFileId?.message}
+          hint="권장 비율 64 : 23 (예: 2560 × 920). 원본 크기 그대로 깔리고 문구는 왼쪽 아래에 얹힙니다. 글자 없는 이미지를 올려 주세요."
+        >
+          <Controller
+            control={control}
+            name="backgroundImageFileId"
             render={({ field }) => (
               <ImageUploadField
                 value={field.value}
                 onChange={field.onChange}
                 fileType="MAIN_BANNER"
                 aspectRatio={BANNER_ASPECT_RATIO}
-                hasError={Boolean(errors.imageFileId)}
+                hasError={Boolean(errors.backgroundImageFileId)}
+              />
+            )}
+          />
+        </FormField>
+
+        <FormField
+          label="전경 이미지"
+          error={errors.foregroundImageFileId?.message}
+          hint="배경 위 오른쪽에 얹혀 강조되는 이미지입니다(캐릭터 등). 배경이 투명한 PNG 를 배경과 같은 비율로 올려 주세요. 오른쪽 아래 기준으로 높이를 꽉 채웁니다. 비우면 배경만 나갑니다."
+        >
+          <Controller
+            control={control}
+            name="foregroundImageFileId"
+            render={({ field }) => (
+              <ImageUploadField
+                value={field.value}
+                onChange={field.onChange}
+                fileType="MAIN_BANNER"
+                aspectRatio={BANNER_ASPECT_RATIO}
+                hasError={Boolean(errors.foregroundImageFileId)}
               />
             )}
           />

@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { BANNER_LIMITS } from "@/constants/mainExposure";
 import { SERVICE_LANGUAGES } from "@/type/language";
+import { BANNER_BADGE_CODES } from "@/type/mainExposure";
 
 /**
  * 링크 형식.
@@ -21,14 +23,26 @@ export const bannerSchema = z
     language: z.enum(SERVICE_LANGUAGES, {
       error: "언어를 선택해 주세요.",
     }),
-    /* 어드민 목록에서만 쓰는 이름. 노출 문구는 전부 이미지 안에 있다. */
-    name: z
+    /* 앱에 나가는 제목. 목록에서 배너를 가리키는 이름이기도 하다. */
+    title: z
       .string()
       .trim()
-      .min(1, "배너 이름을 입력해 주세요.")
-      .max(40, "배너 이름은 40자 이내로 입력해 주세요."),
+      .min(1, "제목을 입력해 주세요.")
+      .max(40, "제목은 40자 이내로 입력해 주세요."),
+    description: z
+      .string()
+      .trim()
+      .max(120, "설명은 120자 이내로 입력해 주세요."),
+    /* 개수는 선택 칸이 막는다. 여기서는 서버 한도만 한 번 더 본다. */
+    badges: z.array(z.enum(BANNER_BADGE_CODES)).max(BANNER_LIMITS.badgeCount),
+    /* 태그 개수·글자 수도 입력 칸이 막는다. */
+    tags: z
+      .array(z.string().min(1).max(BANNER_LIMITS.tagLength))
+      .max(BANNER_LIMITS.tagCount),
     /* 업로드 API가 발급한 파일 ID. 화면은 이 값으로 이미지 URL을 만든다. */
-    imageFileId: z.string().min(1, "배너 이미지를 업로드해 주세요."),
+    backgroundImageFileId: z.string().min(1, "배경 이미지를 업로드해 주세요."),
+    /* 비우면 배경만 나간다. */
+    foregroundImageFileId: z.string(),
     /* 비우면 눌러도 이동하지 않는다. 그래서 필수가 아니다. */
     linkUrl: z
       .string()

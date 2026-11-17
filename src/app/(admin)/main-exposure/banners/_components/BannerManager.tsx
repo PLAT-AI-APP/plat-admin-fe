@@ -193,7 +193,7 @@ const BannerManager = () => {
   const handleDelete = (banner: Banner) => {
     openConfirm({
       title: "배너를 삭제할까요?",
-      description: `'${banner.name}' 배너가 ${SERVICE_LANGUAGE_LABEL[banner.language]} 메인 화면에서 즉시 제거됩니다. 다른 언어에 걸어 둔 배너는 그대로입니다.`,
+      description: `'${banner.title}' 배너가 ${SERVICE_LANGUAGE_LABEL[banner.language]} 메인 화면에서 즉시 제거됩니다. 다른 언어에 걸어 둔 배너는 그대로입니다.`,
       warning: "삭제한 배너는 되돌릴 수 없습니다.",
       confirmText: "삭제",
       tone: "danger",
@@ -232,8 +232,8 @@ const BannerManager = () => {
   return (
     <>
       <Alert tone="info">
-        배너는 <b>이미지 한 장</b>으로 나갑니다. 제목·설명 같은 문구는 이미지 안에
-        넣어 주세요. 목록은 <b>언어별로 따로</b> 관리되며 위에서부터 순서대로 그
+        배너는 <b>배경 이미지</b> 위에 <b>전경 이미지</b>(오른쪽 강조)와 문구를 얹어
+        그립니다. 이미지에는 글자를 넣지 말아 주세요. 목록은 <b>언어별로 따로</b> 관리되며 위에서부터 순서대로 그
         언어의 메인 캐러셀에 노출됩니다. 순서를 바꾼 뒤에는 반드시 &apos;순서
         저장&apos;을 눌러 주세요.
       </Alert>
@@ -265,7 +265,12 @@ const BannerManager = () => {
         {previewTarget ? (
           <div className="flex flex-col gap-3">
             <BannerPreview
-              imageFileId={previewTarget.imageFileId}
+              backgroundImageFileId={previewTarget.backgroundImageFileId}
+              foregroundImageFileId={previewTarget.foregroundImageFileId}
+              title={previewTarget.title}
+              description={previewTarget.description}
+              badges={previewTarget.badges}
+              tags={previewTarget.tags}
               index={previewIndex + 1}
               totalCount={activeBanners.length}
             />
@@ -389,20 +394,20 @@ const BannerManager = () => {
                             {index + 1}
                           </span>
 
-                          {/* 배너의 내용은 전부 이미지 안에 있다. 목록에서도 이미지가 본문이다. */}
+                          {/* 목록에서는 배경 썸네일과 제목으로 배너를 가린다. */}
                           <div className="hidden w-40 shrink-0 lg:block">
                             <EntityImage
                               src={banner.thumbnailUrl}
-                              alt={banner.name}
+                              alt={banner.title}
                               ratio="banner"
-                              fileId={banner.imageFileId}
+                              fileId={banner.backgroundImageFileId}
                             />
                           </div>
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
                               <p className="truncate body-4 font-medium text-font-1">
-                                {banner.name}
+                                {banner.title}
                               </p>
                               <Badge
                                 tone={banner.isActive ? "success" : "neutral"}
