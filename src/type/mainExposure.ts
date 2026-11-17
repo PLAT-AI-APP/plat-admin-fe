@@ -89,13 +89,12 @@ export interface LanguageCount {
 /**
  * 메인 배너.
  *
- * **배너는 이미지 한 장이 전부다.** 예전에는 세계관을 물고 제목·설명·태그를
- * 앱이 템플릿에 합성했지만, 배너에는 캐릭터 소개뿐 아니라 이벤트·공지처럼
- * 세계관이 없는 것도 들어온다. 템플릿을 걷어내고 완성된 이미지를 그대로
- * 내보낸다 — 무엇을 그릴지는 이미지가 정하고, 어드민은 어디로 보낼지만 정한다.
+ * **배너는 템플릿으로 그린다(이벤트형).** 넓게 까는 배경 이미지 위 오른쪽에
+ * 전경 이미지(투명 배경 캐릭터 등)를 얹어 강조하고, 왼쪽 아래에 뱃지·제목·
+ * 설명·#태그를 얹는다. 이미지에는 글자를 넣지 않는다.
  *
- * **배너 한 건은 언어 하나에만 속한다.** 이미지에 글자가 박혀 있어서다.
- * 다른 언어에도 같은 자리를 채우려면 그 언어 이미지로 복제한다.
+ * **배너 한 건은 언어 하나에만 속한다.** 문구가 그 언어로 적혀 있어서다.
+ * 다른 언어에도 같은 자리를 채우려면 복제해서 문구를 바꾼다.
  */
 /** 배너 뱃지 코드. 서버 `BannerBadge` 와 같은 목록이다. 글자·색은 `BANNER_BADGES` 가 정한다. */
 export const BANNER_BADGE_CODES = ["EVENT", "NOTICE", "NEW", "UPDATE", "HOT"] as const;
@@ -115,8 +114,11 @@ export interface Banner {
   /** 설명 아래 태그. `#` 없이 담는다. */
   tags: string[];
   /** 배경 이미지 파일 ID. 서버가 URL을 주지 않는 자리에서만 조립에 쓴다. */
-  imageFileId: string;
-  imageUrl: string;
+  backgroundImageFileId: string;
+  backgroundImageUrl: string;
+  /** 배경 위 오른쪽에 얹어 강조하는 이미지(투명 배경). 없으면 배경만 나간다. */
+  foregroundImageFileId?: string;
+  foregroundImageUrl?: string;
   /** 목록용 축소본(FIT400). */
   thumbnailUrl: string;
   /**
@@ -147,7 +149,8 @@ export interface BannerFormValues {
   description?: string;
   badges: BannerBadge[];
   tags: string[];
-  imageFileId: string;
+  backgroundImageFileId: string;
+  foregroundImageFileId?: string;
   linkUrl?: string;
   isActive: boolean;
   startDate?: string;

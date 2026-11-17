@@ -232,8 +232,8 @@ const BannerManager = () => {
   return (
     <>
       <Alert tone="info">
-        배너는 <b>이미지 한 장</b>으로 나갑니다. 제목·설명 같은 문구는 이미지 안에
-        넣어 주세요. 목록은 <b>언어별로 따로</b> 관리되며 위에서부터 순서대로 그
+        배너는 <b>배경 이미지</b> 위에 <b>전경 이미지</b>(오른쪽 강조)와 문구를 얹어
+        그립니다. 이미지에는 글자를 넣지 말아 주세요. 목록은 <b>언어별로 따로</b> 관리되며 위에서부터 순서대로 그
         언어의 메인 캐러셀에 노출됩니다. 순서를 바꾼 뒤에는 반드시 &apos;순서
         저장&apos;을 눌러 주세요.
       </Alert>
@@ -265,7 +265,8 @@ const BannerManager = () => {
         {previewTarget ? (
           <div className="flex flex-col gap-3">
             <BannerPreview
-              imageFileId={previewTarget.imageFileId}
+              backgroundImageFileId={previewTarget.backgroundImageFileId}
+              foregroundImageFileId={previewTarget.foregroundImageFileId}
               title={previewTarget.title}
               description={previewTarget.description}
               badges={previewTarget.badges}
@@ -399,7 +400,7 @@ const BannerManager = () => {
                               src={banner.thumbnailUrl}
                               alt={banner.title}
                               ratio="banner"
-                              fileId={banner.imageFileId}
+                              fileId={banner.backgroundImageFileId}
                             />
                           </div>
 
