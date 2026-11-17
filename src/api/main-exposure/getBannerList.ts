@@ -8,7 +8,7 @@ import type { ServiceLanguage } from "@/type/language";
  * 서버가 내려주는 배너 한 줄.
  *
  * 없는 값은 `null`로 오고 화면은 `undefined`로 다룬다.
- * `thumbnailUrl`은 목록용 축소본이라 크게 보여줄 자리에는 `imageUrl`을 쓴다.
+ * `thumbnailUrl`은 목록용 축소본이라 크게 보여줄 자리에는 `backgroundImageUrl`을 쓴다.
  */
 export interface BannerResponse {
   mainBannerId: string;
@@ -17,8 +17,10 @@ export interface BannerResponse {
   description: string | null;
   badges: BannerBadge[];
   tags: string[];
-  imageFileId: string;
-  imageUrl: string;
+  backgroundImageFileId: string;
+  backgroundImageUrl: string;
+  foregroundImageFileId: string | null;
+  foregroundImageUrl: string | null;
   thumbnailUrl: string;
   linkUrl: string | null;
   isActive: boolean;
@@ -35,8 +37,10 @@ export const toBanner = (banner: BannerResponse): Banner => ({
   description: banner.description ?? undefined,
   badges: banner.badges,
   tags: banner.tags,
-  imageFileId: banner.imageFileId,
-  imageUrl: banner.imageUrl,
+  backgroundImageFileId: banner.backgroundImageFileId,
+  backgroundImageUrl: banner.backgroundImageUrl,
+  foregroundImageFileId: banner.foregroundImageFileId ?? undefined,
+  foregroundImageUrl: banner.foregroundImageUrl ?? undefined,
   thumbnailUrl: banner.thumbnailUrl,
   linkUrl: banner.linkUrl ?? undefined,
   isActive: banner.isActive,

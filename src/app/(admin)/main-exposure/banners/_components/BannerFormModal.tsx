@@ -45,7 +45,8 @@ const emptyValues = (language: ServiceLanguage): BannerSchema => ({
   description: "",
   badges: [],
   tags: [],
-  imageFileId: "",
+  backgroundImageFileId: "",
+  foregroundImageFileId: "",
   linkUrl: "",
   isActive: true,
   startDate: "",
@@ -102,7 +103,8 @@ const BannerFormModal = ({
       description: banner.description ?? "",
       badges: banner.badges,
       tags: banner.tags,
-      imageFileId: banner.imageFileId,
+      backgroundImageFileId: banner.backgroundImageFileId,
+      foregroundImageFileId: banner.foregroundImageFileId ?? "",
       linkUrl: banner.linkUrl ?? "",
       isActive: banner.isActive,
       startDate: toDateInputValue(banner.startDate),
@@ -110,15 +112,30 @@ const BannerFormModal = ({
     });
   }, [isOpen, mode, banner, defaultLanguage, reset]);
 
-  const [imageFileId, title, description, badges, tags] = useWatch({
+  const [
+    backgroundImageFileId,
+    foregroundImageFileId,
+    title,
+    description,
+    badges,
+    tags,
+  ] = useWatch({
     control,
-    name: ["imageFileId", "title", "description", "badges", "tags"],
+    name: [
+      "backgroundImageFileId",
+      "foregroundImageFileId",
+      "title",
+      "description",
+      "badges",
+      "tags",
+    ],
   });
 
   const submit = handleSubmit((formValues) => {
     onSubmit({
       ...formValues,
       description: formValues.description || undefined,
+      foregroundImageFileId: formValues.foregroundImageFileId || undefined,
       /* 빈 문자열을 그대로 보내면 "링크 없음"과 "빈 링크"가 섞인다. */
       linkUrl: formValues.linkUrl || undefined,
       startDate: formValues.startDate || undefined,
@@ -138,7 +155,7 @@ const BannerFormModal = ({
       description={
         mode === "copy"
           ? "원본 배너의 값을 그대로 가져왔습니다. 노출할 언어를 고르고 문구를 그 언어로 바꿔 주세요."
-          : "이벤트형 배너입니다. 배경 이미지 위에 뱃지 · 제목 · 설명 · 태그가 얹혀 나갑니다."
+          : "이벤트형 배너입니다. 배경 이미지 위 오른쪽에 전경 이미지가, 왼쪽 아래에 뱃지 · 제목 · 설명 · 태그가 얹혀 나갑니다."
       }
       size="lg"
       footer={
@@ -156,7 +173,8 @@ const BannerFormModal = ({
         <div className="flex flex-col gap-2">
           <p className="body-5 font-medium text-font-1">미리보기</p>
           <BannerPreview
-            imageFileId={imageFileId}
+            backgroundImageFileId={backgroundImageFileId}
+            foregroundImageFileId={foregroundImageFileId}
             title={title}
             description={description}
             badges={badges}
@@ -261,19 +279,39 @@ const BannerFormModal = ({
         <FormField
           label="배경 이미지"
           required
-          error={errors.imageFileId?.message}
+          error={errors.backgroundImageFileId?.message}
           hint="권장 비율 64 : 23 (예: 2560 × 920). 원본 크기 그대로 깔리고 문구는 왼쪽 아래에 얹힙니다. 글자 없는 이미지를 올려 주세요."
         >
           <Controller
             control={control}
-            name="imageFileId"
+            name="backgroundImageFileId"
             render={({ field }) => (
               <ImageUploadField
                 value={field.value}
                 onChange={field.onChange}
                 fileType="MAIN_BANNER"
                 aspectRatio={BANNER_ASPECT_RATIO}
-                hasError={Boolean(errors.imageFileId)}
+                hasError={Boolean(errors.backgroundImageFileId)}
+              />
+            )}
+          />
+        </FormField>
+
+        <FormField
+          label="전경 이미지"
+          error={errors.foregroundImageFileId?.message}
+          hint="배경 위 오른쪽에 얹혀 강조되는 이미지입니다(캐릭터 등). 배경이 투명한 PNG 를 배경과 같은 비율로 올려 주세요. 오른쪽 아래 기준으로 높이를 꽉 채웁니다. 비우면 배경만 나갑니다."
+        >
+          <Controller
+            control={control}
+            name="foregroundImageFileId"
+            render={({ field }) => (
+              <ImageUploadField
+                value={field.value}
+                onChange={field.onChange}
+                fileType="MAIN_BANNER"
+                aspectRatio={BANNER_ASPECT_RATIO}
+                hasError={Boolean(errors.foregroundImageFileId)}
               />
             )}
           />

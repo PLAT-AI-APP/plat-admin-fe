@@ -40,7 +40,9 @@ export const bannerSchema = z
       .array(z.string().min(1).max(BANNER_LIMITS.tagLength))
       .max(BANNER_LIMITS.tagCount),
     /* 업로드 API가 발급한 파일 ID. 화면은 이 값으로 이미지 URL을 만든다. */
-    imageFileId: z.string().min(1, "배경 이미지를 업로드해 주세요."),
+    backgroundImageFileId: z.string().min(1, "배경 이미지를 업로드해 주세요."),
+    /* 비우면 배경만 나간다. */
+    foregroundImageFileId: z.string(),
     /* 비우면 눌러도 이동하지 않는다. 그래서 필수가 아니다. */
     linkUrl: z
       .string()
