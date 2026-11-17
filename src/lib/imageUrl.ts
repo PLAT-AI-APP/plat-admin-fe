@@ -38,8 +38,8 @@ export const IMAGE_VARIANTS = {
   UNIVERSE_PROFILE: ["LG", "SQ80", "SQ140"],
   UNIVERSE_ASSET: ["LG", "SQ80"],
   CHARACTER_PROFILE: ["LG", "SQ40", "SQ140"],
-  /** 배너는 가로로 긴 그림이라 정사각 변형본이 없다. 목록 썸네일은 `FIT400`을 쓴다. */
-  MAIN_BANNER: ["LG", "FIT400"],
+  /** 배너는 가로로 긴 그림이라 정사각 변형본이 없다. 목록 썸네일은 `FIT400`, 앱 배경은 원본 크기 `SC10`을 쓴다. */
+  MAIN_BANNER: ["LG", "FIT400", "SC10"],
   /** 교환 상품 아이콘. 제작자 화면은 SQ140, 어드민 목록은 SQ80을 쓴다. */
   REWARD_PRODUCT: ["LG", "SQ80", "SQ140"],
 } as const;

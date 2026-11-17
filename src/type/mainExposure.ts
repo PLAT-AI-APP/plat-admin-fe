@@ -102,14 +102,15 @@ export interface Banner {
   bannerId: string;
   /** 이 배너가 나갈 언어. 캐러셀 순서도 언어별로 따로 매긴다. */
   language: ServiceLanguage;
-  /**
-   * 어드민 목록에서 배너를 가리키는 이름.
-   *
-   * **앱에는 나가지 않는다.** 노출 문구는 전부 이미지 안에 있어서, 이 이름이
-   * 없으면 목록도 삭제 확인창도 썸네일 말고는 배너를 지칭할 말이 없다.
-   */
-  name: string;
-  /** 배너 이미지 파일 ID. 서버가 URL을 주지 않는 자리에서만 조립에 쓴다. */
+  /** 제목. 앱에 나가고, 목록·삭제 확인창에서 배너를 가리키는 이름이기도 하다. */
+  title: string;
+  /** 제목 아래 설명. */
+  description?: string;
+  /** 제목 위 뱃지 라벨. 정해진 목록이 없고 색은 라벨에서 만든다(lib/badgeColor). */
+  badges: string[];
+  /** 설명 아래 태그. `#` 없이 담는다. */
+  tags: string[];
+  /** 배경 이미지 파일 ID. 서버가 URL을 주지 않는 자리에서만 조립에 쓴다. */
   imageFileId: string;
   imageUrl: string;
   /** 목록용 축소본(FIT400). */
@@ -138,7 +139,10 @@ export interface Banner {
 
 export interface BannerFormValues {
   language: ServiceLanguage;
-  name: string;
+  title: string;
+  description?: string;
+  badges: string[];
+  tags: string[];
   imageFileId: string;
   linkUrl?: string;
   isActive: boolean;

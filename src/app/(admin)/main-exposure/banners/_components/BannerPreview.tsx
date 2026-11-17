@@ -3,12 +3,17 @@
 import Image from "next/image";
 import { BANNER_ASPECT_RATIO } from "@/constants/mainExposure";
 import { ChevronLeft, ChevronRight, ImageIcon } from "@/icons";
+import { badgeColor } from "@/lib/badgeColor";
 import { buildImageUrl, toLoadableImageUrl } from "@/lib/imageUrl";
 import { cn } from "@/lib/utils";
 
 interface BannerPreviewProps {
-  /** 배너 이미지 파일 ID. 비어 있으면 자리표시를 그린다. */
+  /** 배경 이미지 파일 ID. 비어 있으면 자리표시를 그린다. */
   imageFileId?: string;
+  title?: string;
+  description?: string;
+  badges?: string[];
+  tags?: string[];
   /** 캐러셀 순번 표시 (ex: 1/5) */
   index?: number;
   totalCount?: number;
@@ -16,14 +21,17 @@ interface BannerPreviewProps {
 }
 
 /**
- * 실제 앱 메인 최상단 캐러셀과 동일한 비율의 미리보기.
+ * 실제 앱 메인 최상단 캐러셀과 같은 비율·배치의 미리보기(이벤트형 템플릿).
  *
- * **앱은 올린 이미지를 그대로 깐다.** 제목·설명·태그를 덧그리던 템플릿은
- * 걷어냈으므로 여기서도 아무것도 얹지 않는다. 좌우 화살표와 순번만 캐러셀
- * 자체의 표시라 남겨 둔다. 조작 기능은 없다.
+ * 배경 이미지 위에 뱃지 → 제목 → 설명 → #태그 순으로 얹는다. 앱(plat-fe 의 EventBanner)과 배치·뱃지 색이
+ * 같아야 한다. 좌우 화살표와 순번은 캐러셀 자체의 표시이고 조작 기능은 없다.
  */
 const BannerPreview = ({
   imageFileId,
+  title,
+  description,
+  badges = [],
+  tags = [],
   index,
   totalCount,
   className,
@@ -53,6 +61,40 @@ const BannerPreview = ({
           <p className="caption-3">이미지를 올리면 여기에 보입니다.</p>
         </div>
       )}
+
+      {/* 글자가 놓이는 왼쪽 아래만 어둡게 깐다. */}
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-preview-scrim via-preview-scrim/40 via-55% to-transparent" />
+
+      <div className="absolute inset-x-0 bottom-0 flex max-w-[60%] flex-col gap-1.5 pb-5 pl-12 text-preview-font">
+        {badges.length > 0 && (
+          <ul className="flex flex-wrap gap-1">
+            {badges.map((badge) => (
+              <li
+                key={badge}
+                className="rounded-full px-2 py-0.5 caption-3 font-semibold"
+                style={{ backgroundColor: badgeColor(badge) }}
+              >
+                {badge}
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="line-clamp-2 text-2xl leading-tight font-bold break-keep">
+          {title || "제목"}
+        </p>
+        {description && (
+          <p className="line-clamp-2 body-5 break-keep text-preview-font/85">
+            {description}
+          </p>
+        )}
+        {tags.length > 0 && (
+          <ul className="flex flex-wrap gap-x-1.5 caption-2 text-preview-font/65">
+            {tags.map((tag) => (
+              <li key={tag}>#{tag}</li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {index !== undefined && totalCount !== undefined && (
         <span className="absolute right-3 bottom-3 rounded-chip bg-preview-scrim px-1.5 py-0.5 caption-3 font-medium text-preview-font/90 tabular-nums">
