@@ -13,7 +13,10 @@ import type { ServiceLanguage } from "@/type/language";
 export interface BannerResponse {
   mainBannerId: string;
   language: ServiceLanguage;
-  name: string;
+  title: string;
+  description: string | null;
+  badges: string[];
+  tags: string[];
   imageFileId: string;
   imageUrl: string;
   thumbnailUrl: string;
@@ -28,7 +31,10 @@ export interface BannerResponse {
 export const toBanner = (banner: BannerResponse): Banner => ({
   bannerId: banner.mainBannerId,
   language: banner.language,
-  name: banner.name,
+  title: banner.title,
+  description: banner.description ?? undefined,
+  badges: banner.badges,
+  tags: banner.tags,
   imageFileId: banner.imageFileId,
   imageUrl: banner.imageUrl,
   thumbnailUrl: banner.thumbnailUrl,

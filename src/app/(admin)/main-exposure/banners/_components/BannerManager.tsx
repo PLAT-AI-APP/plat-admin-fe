@@ -11,6 +11,7 @@ import {
   useBannerLanguageCountQuery,
   useBannerListQuery,
 } from "@/api/main-exposure/getBannerList";
+import { BANNER_BADGE_SUGGESTIONS } from "@/constants/mainExposure";
 import { useBannerMutation } from "@/api/main-exposure/mutateBanner";
 import { Copy, Edit, ExternalLink, Grip, ImageIcon, Plus, Trash } from "@/icons";
 import { formatDate } from "@/lib/dayjs";
@@ -64,6 +65,13 @@ const BannerManager = () => {
 
   const banners = drafts[language] ?? data ?? [];
   const activeBanners = banners.filter((banner) => banner.isActive);
+  // 뱃지는 정해진 목록이 없다. 기본 후보에 이 언어에서 이미 쓴 라벨을 더해 다시 치지 않게 한다.
+  const badgeSuggestions = [
+    ...new Set([
+      ...BANNER_BADGE_SUGGESTIONS,
+      ...banners.flatMap((banner) => banner.badges),
+    ]),
+  ];
   const previewTarget = activeBanners[previewIndex] ?? activeBanners[0];
 
   const savedOrder = data?.map((banner) => banner.bannerId) ?? [];
@@ -193,7 +201,7 @@ const BannerManager = () => {
   const handleDelete = (banner: Banner) => {
     openConfirm({
       title: "배너를 삭제할까요?",
-      description: `'${banner.name}' 배너가 ${SERVICE_LANGUAGE_LABEL[banner.language]} 메인 화면에서 즉시 제거됩니다. 다른 언어에 걸어 둔 배너는 그대로입니다.`,
+      description: `'${banner.title}' 배너가 ${SERVICE_LANGUAGE_LABEL[banner.language]} 메인 화면에서 즉시 제거됩니다. 다른 언어에 걸어 둔 배너는 그대로입니다.`,
       warning: "삭제한 배너는 되돌릴 수 없습니다.",
       confirmText: "삭제",
       tone: "danger",
@@ -266,6 +274,10 @@ const BannerManager = () => {
           <div className="flex flex-col gap-3">
             <BannerPreview
               imageFileId={previewTarget.imageFileId}
+              title={previewTarget.title}
+              description={previewTarget.description}
+              badges={previewTarget.badges}
+              tags={previewTarget.tags}
               index={previewIndex + 1}
               totalCount={activeBanners.length}
             />
@@ -389,11 +401,11 @@ const BannerManager = () => {
                             {index + 1}
                           </span>
 
-                          {/* 배너의 내용은 전부 이미지 안에 있다. 목록에서도 이미지가 본문이다. */}
+                          {/* 목록에서는 배경 썸네일과 제목으로 배너를 가린다. */}
                           <div className="hidden w-40 shrink-0 lg:block">
                             <EntityImage
                               src={banner.thumbnailUrl}
-                              alt={banner.name}
+                              alt={banner.title}
                               ratio="banner"
                               fileId={banner.imageFileId}
                             />
@@ -402,7 +414,7 @@ const BannerManager = () => {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
                               <p className="truncate body-4 font-medium text-font-1">
-                                {banner.name}
+                                {banner.title}
                               </p>
                               <Badge
                                 tone={banner.isActive ? "success" : "neutral"}
@@ -478,6 +490,7 @@ const BannerManager = () => {
         mode={formMode}
         banner={formSource}
         defaultLanguage={language}
+        badgeSuggestions={badgeSuggestions}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
       />
