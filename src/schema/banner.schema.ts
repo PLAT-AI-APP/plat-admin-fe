@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BANNER_LIMITS } from "@/constants/mainExposure";
 import { SERVICE_LANGUAGES } from "@/type/language";
+import { BANNER_BADGE_CODES } from "@/type/mainExposure";
 
 /**
  * 링크 형식.
@@ -32,10 +33,9 @@ export const bannerSchema = z
       .string()
       .trim()
       .max(120, "설명은 120자 이내로 입력해 주세요."),
-    /* 개수·글자 수는 입력 칸이 막는다. 여기서는 서버 한도만 한 번 더 본다. */
-    badges: z
-      .array(z.string().min(1).max(BANNER_LIMITS.badgeLength))
-      .max(BANNER_LIMITS.badgeCount),
+    /* 개수는 선택 칸이 막는다. 여기서는 서버 한도만 한 번 더 본다. */
+    badges: z.array(z.enum(BANNER_BADGE_CODES)).max(BANNER_LIMITS.badgeCount),
+    /* 태그 개수·글자 수도 입력 칸이 막는다. */
     tags: z
       .array(z.string().min(1).max(BANNER_LIMITS.tagLength))
       .max(BANNER_LIMITS.tagCount),

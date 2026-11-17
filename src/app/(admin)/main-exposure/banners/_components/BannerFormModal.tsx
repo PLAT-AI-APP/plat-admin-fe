@@ -21,6 +21,7 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
 import BannerPreview from "./BannerPreview";
+import BadgePicker from "./BadgePicker";
 import LabelInput from "./LabelInput";
 
 /** 신규 등록 · 수정 · 다른 언어로 복제. 셋 다 같은 폼을 쓴다. */
@@ -34,8 +35,6 @@ interface BannerFormModalProps {
   banner?: Banner;
   /** 신규 등록 시 기본 언어. 지금 보고 있는 언어 탭이다. */
   defaultLanguage: ServiceLanguage;
-  /** 뱃지 입력 후보. 기본 후보에 이 언어에서 이미 쓴 라벨을 더한 것. */
-  badgeSuggestions: string[];
   onSubmit: (values: BannerFormValues) => void;
   isSubmitting: boolean;
 }
@@ -74,7 +73,6 @@ const BannerFormModal = ({
   mode,
   banner,
   defaultLanguage,
-  badgeSuggestions,
   onSubmit,
   isSubmitting,
 }: BannerFormModalProps) => {
@@ -191,24 +189,17 @@ const BannerFormModal = ({
 
         <FormField
           label="뱃지"
-          htmlFor="banner-badges"
           error={errors.badges?.message}
-          hint={`제목 위에 나열됩니다. Enter 로 추가하고 ${BANNER_LIMITS.badgeCount}개까지 넣을 수 있습니다. 색은 라벨에 따라 자동으로 정해집니다.`}
+          hint={`제목 위에 고른 순서대로 나열됩니다. ${BANNER_LIMITS.badgeCount}개까지 고를 수 있고, 글자는 앱 언어에 맞춰 나갑니다.`}
         >
           <Controller
             control={control}
             name="badges"
             render={({ field }) => (
-              <LabelInput
-                id="banner-badges"
+              <BadgePicker
                 value={field.value}
                 onChange={field.onChange}
                 maxCount={BANNER_LIMITS.badgeCount}
-                maxLength={BANNER_LIMITS.badgeLength}
-                placeholder="예: 이벤트"
-                suggestions={badgeSuggestions}
-                hasError={Boolean(errors.badges)}
-                colored
               />
             )}
           />

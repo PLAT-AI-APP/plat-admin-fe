@@ -11,7 +11,6 @@ import {
   useBannerLanguageCountQuery,
   useBannerListQuery,
 } from "@/api/main-exposure/getBannerList";
-import { BANNER_BADGE_SUGGESTIONS } from "@/constants/mainExposure";
 import { useBannerMutation } from "@/api/main-exposure/mutateBanner";
 import { Copy, Edit, ExternalLink, Grip, ImageIcon, Plus, Trash } from "@/icons";
 import { formatDate } from "@/lib/dayjs";
@@ -65,13 +64,6 @@ const BannerManager = () => {
 
   const banners = drafts[language] ?? data ?? [];
   const activeBanners = banners.filter((banner) => banner.isActive);
-  // 뱃지는 정해진 목록이 없다. 기본 후보에 이 언어에서 이미 쓴 라벨을 더해 다시 치지 않게 한다.
-  const badgeSuggestions = [
-    ...new Set([
-      ...BANNER_BADGE_SUGGESTIONS,
-      ...banners.flatMap((banner) => banner.badges),
-    ]),
-  ];
   const previewTarget = activeBanners[previewIndex] ?? activeBanners[0];
 
   const savedOrder = data?.map((banner) => banner.bannerId) ?? [];
@@ -490,7 +482,6 @@ const BannerManager = () => {
         mode={formMode}
         banner={formSource}
         defaultLanguage={language}
-        badgeSuggestions={badgeSuggestions}
         onSubmit={handleSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
       />
