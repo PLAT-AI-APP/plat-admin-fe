@@ -1,18 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { BANNER_ASPECT_RATIO } from "@/constants/mainExposure";
+import { BANNER_ASPECT_RATIO, BANNER_BADGES } from "@/constants/mainExposure";
 import { ChevronLeft, ChevronRight, ImageIcon } from "@/icons";
-import { badgeColor } from "@/lib/badgeColor";
 import { buildImageUrl, toLoadableImageUrl } from "@/lib/imageUrl";
 import { cn } from "@/lib/utils";
+import type { BannerBadge } from "@/type/mainExposure";
 
 interface BannerPreviewProps {
   /** 배경 이미지 파일 ID. 비어 있으면 자리표시를 그린다. */
   imageFileId?: string;
   title?: string;
   description?: string;
-  badges?: string[];
+  badges?: BannerBadge[];
   tags?: string[];
   /** 캐러셀 순번 표시 (ex: 1/5) */
   index?: number;
@@ -72,9 +72,9 @@ const BannerPreview = ({
               <li
                 key={badge}
                 className="rounded-full px-2 py-0.5 caption-3 font-semibold"
-                style={{ backgroundColor: badgeColor(badge) }}
+                style={{ backgroundColor: BANNER_BADGES[badge].color }}
               >
-                {badge}
+                {BANNER_BADGES[badge].label}
               </li>
             ))}
           </ul>

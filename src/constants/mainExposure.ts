@@ -1,4 +1,8 @@
-import type { HomeSectionConfig, HomeSectionKey } from "@/type/mainExposure";
+import type {
+  BannerBadge,
+  HomeSectionConfig,
+  HomeSectionKey,
+} from "@/type/mainExposure";
 
 /**
  * 메인 섹션 편성 설정.
@@ -51,13 +55,21 @@ export const HOME_SECTION_CONFIG: Record<HomeSectionKey, HomeSectionConfig> = {
 /** 배너 노출 비율. 앱 메인 최상단 캐러셀과 동일하다. */
 export const BANNER_ASPECT_RATIO = "64 / 23";
 
-/** 뱃지 입력의 기본 후보. 정해진 목록이 아니라 지름길이다 — 그 언어에서 이미 쓴 라벨이 여기에 더해진다. */
-export const BANNER_BADGE_SUGGESTIONS = ["공지", "이벤트", "캐릭터"];
+/**
+ * 뱃지 코드별 글자·색. 흰 글자를 얹는 바탕색이다.
+ * 앱(plat-fe 의 constants/bannerBadge.ts)과 색이 같아야 미리보기와 실제 화면이 같다.
+ */
+export const BANNER_BADGES: Record<BannerBadge, { label: string; color: string }> = {
+  EVENT: { label: "이벤트", color: "oklch(0.58 0.19 25)" },
+  NOTICE: { label: "공지", color: "oklch(0.5 0.02 260)" },
+  NEW: { label: "신규", color: "oklch(0.58 0.15 150)" },
+  UPDATE: { label: "업데이트", color: "oklch(0.56 0.16 255)" },
+  HOT: { label: "인기", color: "oklch(0.6 0.18 50)" },
+};
 
 /** 서버 `MainBannerFormRequest` 와 같은 한도. */
 export const BANNER_LIMITS = {
   badgeCount: 3,
-  badgeLength: 12,
   tagCount: 5,
   tagLength: 20,
 } as const;

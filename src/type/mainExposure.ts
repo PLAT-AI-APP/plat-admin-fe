@@ -97,6 +97,10 @@ export interface LanguageCount {
  * **배너 한 건은 언어 하나에만 속한다.** 이미지에 글자가 박혀 있어서다.
  * 다른 언어에도 같은 자리를 채우려면 그 언어 이미지로 복제한다.
  */
+/** 배너 뱃지 코드. 서버 `BannerBadge` 와 같은 목록이다. 글자·색은 `BANNER_BADGES` 가 정한다. */
+export const BANNER_BADGE_CODES = ["EVENT", "NOTICE", "NEW", "UPDATE", "HOT"] as const;
+export type BannerBadge = (typeof BANNER_BADGE_CODES)[number];
+
 export interface Banner {
   /** Snowflake가 아니지만 다른 ID와 같이 서버가 문자열로 내린다. */
   bannerId: string;
@@ -106,8 +110,8 @@ export interface Banner {
   title: string;
   /** 제목 아래 설명. */
   description?: string;
-  /** 제목 위 뱃지 라벨. 정해진 목록이 없고 색은 라벨에서 만든다(lib/badgeColor). */
-  badges: string[];
+  /** 제목 위 뱃지 코드. 글자·색은 `BANNER_BADGES` 가 정한다. */
+  badges: BannerBadge[];
   /** 설명 아래 태그. `#` 없이 담는다. */
   tags: string[];
   /** 배경 이미지 파일 ID. 서버가 URL을 주지 않는 자리에서만 조립에 쓴다. */
@@ -141,7 +145,7 @@ export interface BannerFormValues {
   language: ServiceLanguage;
   title: string;
   description?: string;
-  badges: string[];
+  badges: BannerBadge[];
   tags: string[];
   imageFileId: string;
   linkUrl?: string;

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { liveAxios } from "..";
 import type { AppError } from "@/type/api";
-import type { Banner, LanguageCount } from "@/type/mainExposure";
+import type { Banner, BannerBadge, LanguageCount } from "@/type/mainExposure";
 import type { ServiceLanguage } from "@/type/language";
 
 /**
@@ -15,7 +15,7 @@ export interface BannerResponse {
   language: ServiceLanguage;
   title: string;
   description: string | null;
-  badges: string[];
+  badges: BannerBadge[];
   tags: string[];
   imageFileId: string;
   imageUrl: string;
