@@ -40,8 +40,14 @@ const BannerPreview = ({
   totalCount,
   className,
 }: BannerPreviewProps) => {
-  const backgroundImageUrl = buildImageUrl(backgroundImageFileId, "MAIN_BANNER");
-  const foregroundImageUrl = buildImageUrl(foregroundImageFileId, "MAIN_BANNER");
+  const backgroundImageUrl = buildImageUrl(
+    backgroundImageFileId,
+    "MAIN_BANNER",
+  );
+  const foregroundImageUrl = buildImageUrl(
+    foregroundImageFileId,
+    "MAIN_BANNER",
+  );
 
   return (
     <div
@@ -67,8 +73,8 @@ const BannerPreview = ({
         </div>
       )}
 
-      {/* 글자가 놓이는 왼쪽 아래만 어둡게 깐다. */}
-      <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-preview-scrim via-preview-scrim/40 via-55% to-transparent" />
+      {/* 앱과 같은 막: 왼쪽 끝 #11141F 80% 에서 가운데 #000000 0% 로 옅어진다. 배경 위, 전경 아래. */}
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-[#11141F]/80 to-black/0 to-50%" />
 
       {/* 전경은 배너 높이에 맞춰 만든다. 어둡게 깐 막 위, 오른쪽 끝에 높이 100% 로 얹는다. */}
       {foregroundImageUrl && (
